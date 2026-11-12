@@ -171,6 +171,7 @@ public sealed partial class Server
             if (turretWeapon is not null)
             {
                 turretWeapon.SetGunner(boarder);
+                StrategyEvent(boarder, "completed:gunner", turretWeapon.SourcePartId);
                 Console.WriteLine($"[boardship] bound gunner ship {boarder.Id} to carrier {carrier.Id} turret weapon mount {slot}");
             }
             else
@@ -668,6 +669,7 @@ public sealed partial class Server
 
         // Successful teleport: clear the ripcord state (the native's
         // SetRipcordModel(NULL) once UseRipcord returns true, shipIGC.cpp:293).
+        StrategyEvent(rip, "completed:ripcord", rip.HullType.HullId);
         rip.SetRipcordModel(null);
         UpdatePeerSectorSnapshot(rip, targetSector);
     }
@@ -2360,6 +2362,7 @@ public sealed partial class Server
         // this is a pure extraction; only the peer-specific SET_CLUSTER send
         // remains here.
         UndockShipState(live.Ship, live.Sector);
+        StrategyEvent(live.Ship, "launched", live.Ship.HullType.HullId);
 
         // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the only place
         // that calls m_ship->SetStation(NULL) client-side (appmsg.cpp:1044-1049).

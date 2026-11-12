@@ -63,7 +63,7 @@ public sealed partial class Server
         _config = config;
         InitializeConsole();
         _config.Bots.ApplyEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_BOTS_CIV_STRATEGY"));
-        Console.WriteLine($"[boot] bots.civStrategy = {_config.Bots.CivStrategy.ToString().ToLowerInvariant()} (observation only)");
+        Console.WriteLine($"[boot] bots.civStrategy = {_config.Bots.CivStrategy.ToString().ToLowerInvariant()} ({(_config.Bots.CivStrategy ? "commander/fleet experiment" : "observation only")})");
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
@@ -861,6 +861,7 @@ public sealed partial class Server
         else if (_config.BenchmarkSeed is { } warpSeed)
             _host.WarpExitRandom = new Random(warpSeed ^ 0x57415250);
         Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
+        Allegiance.Core.Strategy.CivExecutionPlan.ValidateCoverageShare(_config.Bots.CivStrategyCoverageShare);
         if (_config.Bots.CivStrategy)
         {
             _host.StrategyDamage = RecordStrategyDamage;

@@ -4,6 +4,97 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1001 commander/fleet Fast qualification — 2026-11-12 UTC
+
+The one full Fast sweep ran **14,149 cases in 560.3 s: 14,123 passed / 6 failed /
+20 skipped**. All 33 new P1001 Fast cases and all nine infrastructure checks
+passed. Four executions exceeded the calibrated **11.517 s** limit. The gate
+remains **FAIL**. Every distinct failed or slow method was run three times alone
+on current and archived dispatch-base `16e166a1`, alternating trees. Theory
+filters include every parameter case; counts below are Passed / Failed / Skipped
+per repetition, followed by the longest case duration per repetition.
+
+| Method | Current, three isolated runs | Dispatch base, three isolated runs |
+|---|---|---|
+| MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire | **0/1/0; 0/1/0; 1/0/0**; max s: 38.200 / 38.195 / 1.554 | **0/1/0; 0/1/0; 0/1/0**; max s: 38.189 / 38.177 / 38.191 |
+| P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats | **1/0/0; 1/0/0; 1/0/0**; max s: 3.334 / 3.418 / 3.500 | **1/0/0; 1/0/0; 1/0/0**; max s: 3.451 / 3.432 / 3.431 |
+| SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts | **2/0/0; 2/0/0; 2/0/0**; max s: 4.329 / 4.320 / 4.277 | **2/0/0; 2/0/0; 2/0/0**; max s: 4.442 / 4.478 / 4.326 |
+| GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster | **1/0/0; 1/0/0; 1/0/0**; max s: 0.557 / 0.547 / 0.562 | **1/0/0; 1/0/0; 1/0/0**; max s: 0.565 / 0.572 / 0.521 |
+| LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds | **0/1/0; 1/0/0; 0/1/0**; max s: 1.002 / 0.985 / 0.999 | **0/1/0; 1/0/0; 0/1/0**; max s: 0.995 / 0.958 / 0.996 |
+| NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge | **1/0/0; 1/0/0; 1/0/0**; max s: 1.436 / 1.434 / 1.442 | **1/0/0; 1/0/0; 1/0/0**; max s: 1.430 / 1.409 / 1.351 |
+| P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission | **1/2/0; 2/1/0; 2/1/0**; max s: 0.473 / 0.551 / 0.528 | **3/0/0; 3/0/0; 3/0/0**; max s: 0.510 / 0.549 / 0.527 |
+| P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work | **8/0/0; 8/0/0; 8/0/0**; max s: 1.478 / 1.487 / 1.468 | **8/0/0; 8/0/0; 8/0/0**; max s: 1.482 / 1.482 / 1.478 |
+| WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange | **1/0/0; 1/0/0; 1/0/0**; max s: 0.307 / 0.305 / 0.312 | **1/0/0; 1/0/0; 1/0/0**; max s: 0.304 / 0.295 / 0.295 |
+
+Sweep observations: missile lock lacked its partial tip at full lock; warp transit
+collected initial-miner statuses instead of the expected own-ship status; the
+warp-bomb deadline was `5.0000000000000009` against an upper bound of 5; NPC
+defender distance increased from 163.2 to 218.8; auto-seat elapsed time was
+31.500000000000313 against [28,31]; roster stint elapsed time was 8.14999962
+against [4,8].
+These existing native receipt/timing/NPC families remain qualified as shown,
+including failures reproduced alone and any boundary not reproduced on the three base
+runs. Passing repeats do not erase sweep failures or establish that they are cleared.
+The other overruns were support selection civ 25 (13.594 s), turret-carrier
+selection (13.054 s), and 400-peer publisher scan measurement (11.641 s).
+No publisher, timer, native NPC, missile-lock, roster or auto-seat behavior was
+changed for this task. Native bot movement changes are confined to the ON marker.
+
+Raw receipts: `.scratch/p1001/fast/` and `.scratch/p1001/fast-reproductions/`.
+Counts, durations and current/base case rows are also in
+[P1001 qualification evidence](reports/P1001_assets/qualification.json). The
+[P1001 report](reports/CIV_STRATEGY_COMMANDER_P1001.md) separately retains OFF
+arrival observations and task-development failures.
+
+## P1001 OFF comparison qualification — 2026-11-12 UTC
+
+An attempted new G/P/O comparison stopped in its **OFF** arm at the unchanged
+five-second stationary-target predicate: an Omicron bomber had a station target
+and zero velocity. The ON arm had not run. An OFF-only copy of that exact guard
+was then run three times alone on each tree, alternating current and archived
+dispatch base `16e166a1`, with the same map/loadout seed 1001 and artwork.
+
+| OFF-only original guard | Passed / Failed / Skipped per run |
+|---|---|
+| Current tree | **1/0/0; 1/0/0; 0/1/0** |
+| Dispatch base | **1/0/0; 1/0/0; 1/0/0** |
+
+The current-tree failure was a defending Phoenix scout with a ship target and
+zero velocity. The base controls did not reproduce it; this remains an
+**unresolved intermittent OFF observation**, not a confirmed base reproduction
+or a cleared flake. No OFF movement code or threshold was changed. The new
+comparative fixture records OFF idle duration and asserts the five-second bound
+for ON. Existing P700/P707 tests remain unchanged and strict for both arms.
+The temporary control class was removed before the final build.
+
+Raw evidence: `.scratch/p1001/off-parking-controls/` and
+`.scratch/p1001/quorum-pre-off-fix/`. Final gate and never-parks results are in
+[the P1001 report](reports/CIV_STRATEGY_COMMANDER_P1001.md).
+
+## P1001 OFF showcase arrival qualification — 2026-11-12 UTC
+
+The first original default OFF showcase trial failed its existing arrival guard:
+**20/30 reached** against 24 required after 480.1 wall seconds. It still recorded
+3,416 shots / 1,211 hits / 13 kills, and its longest stationary-target interval
+was **1.903 s**. The unchanged five-second parking guard did not fail.
+
+The exact default method was then run three times alone on current and archived
+dispatch-base `16e166a1`. Current's next three original trials supply its isolated
+repetitions; none of the original five was discarded.
+
+| `P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds` | Passed / Failed / Skipped per isolated run |
+|---|---|
+| Current, original trials 2–4 | **1/0/0; 1/0/0; 1/0/0** |
+| Dispatch-base follow-ups | **1/0/0; 1/0/0; 1/0/0** |
+
+Current's fifth original OFF trial also passed: the original OFF set is
+**4 passed / 1 failed / 0 skipped**, with no parking-limit violation. Initial base
+qualification was **5/0/0**. The follow-ups did not reproduce the arrival miss on
+base; the original remains an **unresolved intermittent OFF arrival observation**,
+not a confirmed base reproduction or a waived gate. Home-swapped/batched variants
+and all six P707 cases passed in OFF's first cohort. Test source and limits are
+unchanged. Evidence: `.scratch/p1001/{neverparks,arrival-controls}/`.
+
 ## P997 construction-effect gate qualification — 2026-11-11 UTC
 
 The single complete Fast sweep ran **14,044 cases: 14,035 passed, 6 failed,

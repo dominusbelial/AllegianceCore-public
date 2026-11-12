@@ -206,6 +206,13 @@ internal sealed partial class BotManager
             if (now < bot.PurchaseScheduledAt) return;
             if (bot.PurchasePacer is { } pacer && !pacer.TrySend(now)) return;
             if (!RepickRelaunchLoadout(bot, cs)) return;
+            if (bot.CivCoverageDuty is "turret" or "gunner" && !bot.CivCrewPurchaseDeferred)
+            {
+                // Yield once so the ordinary gunner flow (ahead of launch on
+                // the next decision pass) can buy docked hardware or board.
+                bot.CivCrewPurchaseDeferred = true;
+                return;
+            }
         }
         if (bot.FinaleBomberActive) bot.FinaleGrantVerified = false;
         cs.ResetBuyLoadoutAcks();
@@ -226,6 +233,7 @@ internal sealed partial class BotManager
             // every granted part equipped. The initial spawn purchase is recorded
             // in SeatCombatClient (RelaunchAttempts > 0 keeps this from double-counting).
             if (ack.FLaunch) WeaponCoverage.Global.RecordPurchase(bot.Side, ack.HullId, ack.Parts);
+            CivCoverage.ObserveGrant(cs, ack.HullId, ack.Parts, ack.FLaunch);
             bot.LoadoutRefused = !ack.FLaunch;
             if (bot.TechLoadouts && ack.FBoughtEverything && ack.FLaunch && bot.PendingTechLoadout is { } selected
                 && ack.HullId == selected.HullId && selected.Parts.All(p => ack.Parts.Contains(p)))
@@ -297,6 +305,7 @@ internal sealed partial class BotManager
             bot.LifeSession = cs;
             bot.LifeGeneration = world.MissionGeneration;
             bot.LifeCookie = world.Mission?.Cookie;
+            if (world.WorldReady) RefreshCivDuty(bot, cs);
             if (!bot.ObjectivesPending) return true;
             if (!world.WorldReady) return false;
             short? battleTarget = _mapBattleTarget ? ResolveShowcaseTarget(world) : null;

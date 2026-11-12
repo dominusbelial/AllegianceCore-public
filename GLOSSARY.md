@@ -2347,13 +2347,31 @@ list in **reverse**.
   a content identity including version and equipment subtype data.
 - **Portfolio choice** — public-opponent, crew/funding/time-aware power spikes
   and deterministic primary/counter selection in
-  `src/Allegiance.Core/Strategy/CivPortfolio.cs`; observation-only server wiring
+  `src/Allegiance.Core/Strategy/CivPortfolio.cs`; server policy wiring
   and bounded grant/damage/economy/station-loss receipts in
   `src/Allegiance.Server/Server.CivStrategy.cs`. `bots.civStrategy` defaults off;
-  P1000 never replaces the existing commander/fleet/loadout policies.
+  P1000 supplies profiles; P1001 activates commander/fleet execution behind the same flag.
 - **Receipt audit / comparison** — `tools/p999-civ-strategy/receipts.py` parses
   match-stamped JSON windows; the tool's `--production` mode exports the loaded
   profile choices and ordering witnesses. Tests:
   `tests/Allegiance.Core.Tests/P1000CivProfileTests.cs`,
   `tests/Allegiance.ClientCore.Tests/P1000CivStrategyLoopbackTests.cs`.
   Report: `docs/reports/CIV_STRATEGY_PROFILE_P1000.md`.
+
+- **Civ strategy execution (P1001, default off)** — runtime portfolio orders in
+  `src/Allegiance.Core/Strategy/CivExecutionPlan.cs` use the existing briefing;
+  `tools/allegiance-mcp/ResearchCommander.CivStrategy.cs` separates bounded research,
+  construction, repair and delivery jobs with wallet settlement and rock leases.
+  `tools/allegiance-mcp/CivLoadoutPolicy.cs` ranks complete fits by live GA and
+  public opponent defenses; `tools/allegiance-mcp/BotManager.CivStrategy.cs`
+  shares duties across showcase/skirmish, rotation and worker recovery, retaining
+  the existing SC7 strike quorum where feasible; support uses fighter seats and
+  preserves scout, recon and strike allocations.
+  ON flight-goal liveness reuses P707 thrust pulses; regression coverage is in
+  `tests/Allegiance.ClientCore.Tests/P1001CivLivenessTests.cs`.
+  Bounded exploration in `tools/allegiance-mcp/CivCoverage.cs` is distinct from
+  sortie duties in `tools/allegiance-mcp/BotManager.CivMechanisms.cs` and actual
+  stage evidence in `src/Allegiance.Server/Server.CivCoverage.cs`;
+  `tools/p999-civ-strategy/coverage_receipts.py` audits the separate stages.
+  Reused native gates: `docs/parity/p1001-native-gates.csv`; report:
+  `docs/reports/CIV_STRATEGY_COMMANDER_P1001.md`.

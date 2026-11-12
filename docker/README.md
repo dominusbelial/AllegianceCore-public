@@ -398,14 +398,19 @@ and bypass freshness checks for ordered events. The environment override accepts
 snapshots are enabled and does not change transport or broadcast scheduling.
 See [the P968 measurements](../docs/reports/PUBLISHER_STREAM_INDEX_P968.md).
 
-### Civilization strategy observations (P1000)
+### Civilization strategy experiment (P1000/P1001)
 
-Server JSON `"bots": { "civStrategy": true }` builds immutable profiles from the
-loaded core and logs a portfolio choice using the public opponent civilizations.
-Default: **false**. `ALLEGIANCE_BOTS_CIV_STRATEGY=1` / `true` / `on` enables it;
-`0` / `false` / `off` disables it, overriding JSON. Empty preserves JSON. Compose
-passes this variable through. The startup receipt states the effective value.
-P1000 only observes: research ordering, funding, fleet mix and loadouts continue
-through the existing code. `[civ-strategy]` JSON receipts describe choices at match
-start, research completion times, and bounded 60-simulation-second event windows
-plus a final window. `tools/p999-civ-strategy/receipts.py` reads these receipts.
+Server JSON `"bots": { "civStrategy": true, "civStrategyCoverageShare": 0.15 }`
+chooses and executes a loaded-core portfolio through native donations, constructor
+orders and legal fleet purchases. Default: **false**. The existing
+`ALLEGIANCE_BOTS_CIV_STRATEGY=1` / `true` / `on` enables it; `0` / `false` / `off`
+disables it, overriding JSON. Empty preserves JSON. Compose passes this variable
+through. No additional environment variable or service is required.
+
+Coverage share accepts `0..0.25` (default `0.15`). `[civ-strategy]` retains its
+bounded choice/research/economy/damage receipts; `[civ-coverage]` records distinct
+selection, grant, launch, firing, hit and completion stages. Workers learn the
+policy through the existing selected-plan briefing, including remote supervisors
+and owned skirmish drivers. See
+[the P1001 report](../docs/reports/CIV_STRATEGY_COMMANDER_P1001.md) for gates,
+assumptions and the paired rig plan. The switch remains off pending rig review.

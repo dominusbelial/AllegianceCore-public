@@ -8,6 +8,9 @@ namespace Allegiance.Tools.McpSpawner;
 
 internal sealed partial class BotManager
 {
+    internal static bool ResearchTacticsEnabled(ResearchBriefing briefing)
+        => briefing.TechMode == "research"
+            || !Allegiance.Core.Strategy.CivExecutionPlan.TryRead(briefing.Plan, out _, out _);
     private readonly object _researchGate = new();
     private readonly Dictionary<short, ResearchCommander> _research = new();
     private readonly Dictionary<short, short> _researchRocks = new();
@@ -107,11 +110,15 @@ internal sealed partial class BotManager
                                 // (same epoch, new civ). Rebuild the commander so it executes
                                 // the NEW civ's plan instead of the boot-time one.
                                 if (!_research.TryGetValue(side, out var commander) || commander.Epoch != briefing.Epoch
-                                    || commander.PlanCivId != briefing.Plan.CivId)
+                                    || commander.PlanCivId != briefing.Plan.CivId
+                                    || Allegiance.Core.Strategy.CivExecutionPlan.TryRead(briefing.Plan, out _, out _)
+                                        && commander.PlanName != briefing.Plan.Name)
                                 {
                                     commander?.ReleaseReservations();
                                     commander = new(side, briefing.Epoch, new ResearchTree(core, briefing.Plan.CivId, briefing.Settings),
-                                        briefing.Plan, initial.Value, _researchRocks, briefing.Loop, briefing.ResearchTimeScale);
+                                        briefing.Plan, initial.Value,
+                                        Allegiance.Core.Strategy.CivExecutionPlan.TryRead(briefing.Plan, out _, out _) ? new() : _researchRocks,
+                                        briefing.Loop, briefing.ResearchTimeScale);
                                     _research[side] = commander;
                                 }
                                 foreach (var action in commander.Tick(ResearchSnapshot(peer, side, recordedRocks)))
@@ -124,6 +131,12 @@ internal sealed partial class BotManager
                                             commandId: action.Kind == "goto" ? OrderChange.CidGoto : OrderChange.CidBuild, otTarget: (short)IgcObjectType.Asteroid, oidTarget: action.Target); break;
                                         case "chat": peer.SendChat(action.Text, ChatTarget.Team); break;
                                     }
+                                // An unlocked showcase receives the marker for
+                                // purchases/funding, but its authored march owns
+                                // combat destinations. Do not introduce a second
+                                // tactical commander merely because it has a plan.
+                                if (!ResearchTacticsEnabled(briefing))
+                                { _researchTactics.Remove(side); continue; }
                                 if (!_researchTactics.TryGetValue(side, out var tactics) || tactics.Epoch != briefing.Epoch)
                                     _researchTactics[side] = tactics = (briefing.Epoch, new ResearchTactics());
                                 var targets = ObserveTacticalTargets(peer.World, side).Concat(tactical.Targets)
@@ -250,6 +263,6 @@ internal sealed partial class BotManager
             world.DevelopmentTechsFor(side) ?? TechTreeBitMask.Empty, stations.Select(s => s.StationTypeId).ToArray(),
             new(world.CompletedDevelopments), units, rocks,
             world.BucketFundingFor(side).ToDictionary(kv => kv.Key,
-                kv => new ResearchCommander.Funding(kv.Value.InvestedMoney, kv.Value.InvestedTimeMs)), world.MissionGoals);
+                kv => new ResearchCommander.Funding(kv.Value.InvestedMoney, kv.Value.InvestedTimeMs)), world.MissionGoals, world.OwnWalletDebited, world.OwnDonationSettled);
     }
 }

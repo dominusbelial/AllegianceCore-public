@@ -109,13 +109,14 @@ public sealed class P1000CivStrategyLoopbackTests(ITestOutputHelper output)
                     now = (tick + 1) * .05;
                     typeof(Srv).GetField("_simNow", Private)!.SetValue(server, now);
                     hash.AppendData(BitConverter.GetBytes(tick));
-                    // Scripted commander funding and pilot replenishment are identical inputs.
-                    // No flag-dependent selection or hidden opponent state enters the tape.
+                    // Scripted first-step funding and pilot replenishment exercise the selected
+                    // plan. OFF stays pinned; ON now intentionally selects a portfolio.
                     if (tick == 0)
                         foreach (var side in mission.Sides)
                         {
                             var first = mission.ResearchPlans[side.Id].Steps[0];
-                            var bucket = side.Buckets.Single(b => b.Development?.DevelopmentId == first.Id);
+                            var bucket = side.Buckets.Single(b => first.Action == "develop"
+                                ? b.Development?.DevelopmentId == first.Id : b.StationType?.StationTypeId == first.Id);
                             bucket.AddMoney(bucket.Price);
                         }
                     foreach (var (_, ship, _) in population)
@@ -146,11 +147,12 @@ public sealed class P1000CivStrategyLoopbackTests(ITestOutputHelper output)
     }
 
     [SkippableFact]
-    public void On_and_off_have_identical_plans_and_every_combat_frame_with_receipts()
+    public void Enabled_strategy_keeps_combat_and_bounded_receipts_on_the_seeded_tape()
     {
         var off = Replay(false); var on = Replay(true);
-        Assert.Equal(off.Plans, on.Plans);
-        Assert.Equal(off.Frames, on.Frames); Assert.Equal(off.Bytes, on.Bytes); Assert.Equal(off.Digest, on.Digest);
+        Assert.DoesNotContain("civ-strategy/", off.Plans);
+        Assert.Contains("civ-strategy/", on.Plans);
+        Assert.NotEqual(off.Plans, on.Plans);
         Assert.True(on.Hits > 0);
         var receipts = on.Log.Split('\n').Where(l => l.StartsWith("[civ-strategy] "))
             .Select(l => JsonDocument.Parse(l[15..]).RootElement.Clone()).ToArray();

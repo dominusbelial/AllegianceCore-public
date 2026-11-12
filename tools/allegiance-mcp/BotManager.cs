@@ -222,6 +222,7 @@ internal sealed partial class BotManager : IDisposable
         Partition = partition;
         _host = host;
         _port = port;
+        CivCoverage.Reset();
         WeaponCoverage.Global.BeginRun();   // P796 — one coverage run per manager (process invariant)
         using var telemetryOwnership = new PendingOwnership();
         _stallTelemetry = telemetryOwnership.Own(new StallWatchdog());
@@ -789,6 +790,7 @@ internal sealed partial class BotManager : IDisposable
         // P796 — a real launch ack: the hull was bought and launched and every
         // granted part is equipped (coverage rows).
         WeaponCoverage.Global.RecordPurchase(actualSide, granted.HullId, granted.Parts);
+        CivCoverage.ObserveGrant(cs, granted.HullId, granted.Parts, true);
         ownership.Transfer();
         medevacScout = pickedMedevac;
         canBuyRescueProbe = pickedCanBuy;
@@ -2768,6 +2770,7 @@ bool isThreat =
                     AvoidClearancePad + HullRadius(ActualHullId(bot)) + 6f, pathShips, bot.TargetId, out var avoidGoal))
                 target = avoidGoal;
         }
+        bool civFlight = CivFlightLiveness(bot, cs, ref stateM);
         var toTarget = target - pos;
         float dist = toTarget.Length();
         if (dist <= 1e-3f) { cs.CommandControls(ControlData.Neutral, stateM); return; }
@@ -2775,6 +2778,7 @@ bool isThreat =
         var body = orient.TimesInverse(Vector3.CrossProduct(orient.GetForward(), dir));
         float yaw = Math.Clamp(2.0f * body.Y, -1f, 1f);
         float pitch = Math.Clamp(2.0f * -body.X, -1f, 1f);
+        if (civFlight) (yaw, pitch, _) = SteerTowardDirection(orient, dir);
         float distFactor = dist >= brake ? 1f : Math.Clamp((dist - arrival) / (brake - arrival), 0f, 1f);
         float align = Math.Clamp(-orient.TimesInverse(dir).Z, 0f, 1f);
         float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
@@ -2890,6 +2894,7 @@ bool isThreat =
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
 
+        MaybeCivRipcord(bot, cs, now);
         if (TryDriveSupport(bot, now)) return;
 
         // P431 — outside a temporary defence engagement, the commanded ship-target
@@ -2932,6 +2937,7 @@ bool isThreat =
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(cs) && !KillsGame(cs)
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
             && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
+                || CivStationDutyHull(bot, cs, flyingHull, myCluster)
                 || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)
                     && bot.PreviousLegalLoadout?.Strike is { } strike && strike.HullId == flyingHull.HullId))
             && (bot.TargetSector is null || bot.TargetSector == myCluster))
@@ -3245,8 +3251,10 @@ bool isThreat =
                 // Native attack keeps facing the lead while Dodge supplies RCS
                 // (Igc/shipIGC.cpp:2363,2470-2489; common.cpp:1785-1786).
                 var (dyaw, dpitch, dangle) = SteerTowardDirection(orient, aimDir);
+                int dodgeMovement = SiegeNavigation.DirectionButtons(dodgeGoal - myPos, orient);
+                CivFlightLiveness(bot, cs, ref dodgeMovement);
                 cs.CommandControls(new ControlData(dyaw, dpitch, 0, AttackThrottle(dangle)),
-                    CloakApproach(bot, cs, SiegeNavigation.DirectionButtons(dodgeGoal - myPos, orient)));
+                    CloakApproach(bot, cs, dodgeMovement));
             }
             else CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);
             return;   // dodge suppresses all weapons this tick
@@ -3308,6 +3316,9 @@ bool isThreat =
             bot.CombatEscapeUntil = now + CombatEscapeHoldSeconds;
         if (now < bot.CombatEscapeUntil)
             state |= (bot.ShipId & 1) == 0 ? ShipControlState.LeftButton : ShipControlState.RightButton;
+        // ON uses one lateral direction even when the ordinary strafe law
+        // already supplied the opposite button; opposite RCS inputs cancel.
+        CivFlightLiveness(bot, cs, ref state);
 
         // Fire gate (shipIGC.cpp:2600): allWeapons iff angleToLead ≤ c_fMaxOffAngle
         // AND t ≤ lifespan·openFireDistPercentage, plus the kept friendly-line check.
@@ -4986,6 +4997,7 @@ bool isThreat =
         // (After the aleph exit-clear: a scout that just transited must clear
         // the warp volume first or it bounces back into the aleph.)
         if (TryDriveExploration(bot, cs, now)) return;
+        MaybeCivRipcord(bot, cs, now);
         if (TryDriveSupport(bot, now)) return;
         ReleaseUnscorableKillOrder(bot, cs);
         if (DriveCommanderOrder(bot, now)) return;
@@ -6288,6 +6300,11 @@ bool isThreat =
         /// see <see cref="Showcase.HullRole"/>). Determines its OWN target sector
         /// (bombers → enemy home) and its route/staging group.</summary>
         public string Role = "fighter";
+        internal int CivFleetOrdinal = -1, CivFleetSize;
+        internal string? CivDutyPlan, CivCoverageDuty, CivOriginalRole;
+        internal bool CivOriginalMine, CivOriginalAleph, CivCoverageFlew, CivCrewPurchaseDeferred, CivCrewDockLaunchPending;
+        internal double CivRipcordAt = double.NegativeInfinity;
+        internal short CivRipcordFrom = -1;
         public bool TechLoadouts;
         public bool SupportRefitting;
         public double SupportCheckAt;

@@ -113,6 +113,7 @@ internal sealed class WeaponCoverage
         {
             foreach (var id in weaponPartIds)
             {
+                CivCoverage.ObserveUse(shipId, id);
                 var stat = _parts.TryGetValue(id, out var ps) ? ps : new PartStat(0, 0, 0, 0);
                 _parts[id] = stat with { Fired = stat.Fired + 1 };
             }
@@ -124,6 +125,7 @@ internal sealed class WeaponCoverage
     /// its expendable missile type both fire.</summary>
     internal void RecordMissileLaunch(short shipId, short launcherPartId)
     {
+        CivCoverage.ObserveUse(shipId, launcherPartId);
         var core = Catalog.RepresentativeCore();
         short missileType = core.Launchers.TryGetValue(launcherPartId, out var l) ? l.ExpendabletypeId : (short)-1;
         lock (_sync)
@@ -139,6 +141,7 @@ internal sealed class WeaponCoverage
     /// dispenser part and its expendable type both fire.</summary>
     internal void RecordDispenserDrop(short shipId, short launcherPartId)
     {
+        CivCoverage.ObserveUse(shipId, launcherPartId);
         var core = Catalog.RepresentativeCore();
         short type = core.Launchers.TryGetValue(launcherPartId, out var l) ? l.ExpendabletypeId : (short)-1;
         string kind = core.ProbeTypes.ContainsKey(type) ? "probe" : core.MineTypes.ContainsKey(type) ? "mine"

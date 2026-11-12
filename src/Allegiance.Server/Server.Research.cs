@@ -96,6 +96,7 @@ public sealed partial class Server
         var consumed = FedPacket.Pack(new ShipDelete { ShipId = builder.Id, Sdr = ShipDelete.SdrTerminate }.Encode());
         foreach (var peer in _peerShips)
             if (ReferenceEquals(peer.Value.Ship.Mission, mission)) SendPeer(peer.Key, consumed);
+        StrategyEvent(builder, "completed:construction", station.Type.StationTypeId);
         BroadcastTeamChat(mission, station.SideId, station.Type.CompletionSound, $"Finished building {station.Type.Name}");
     }
 

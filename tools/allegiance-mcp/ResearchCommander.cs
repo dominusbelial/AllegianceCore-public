@@ -16,7 +16,7 @@ internal sealed partial class ResearchCommander
     internal sealed record Funding(long Money, long Milliseconds);
     internal sealed record Snapshot(double Time, bool Started, int Wallet, TechTreeBitMask Developments,
         short[] Stations, HashSet<short> CompletedDevelopments, Unit[] Units, Rock[] Rocks,
-        IReadOnlyDictionary<short, Funding> FundingByBucket, MissionGoals? Goals = null)
+        IReadOnlyDictionary<short, Funding> FundingByBucket, MissionGoals? Goals = null, long WalletDebited = 0, long DonationSettled = 0)
     {
         internal Snapshot(double time, bool started, int wallet, TechTreeBitMask developments,
             short[] stations, HashSet<short> completedDevelopments, Unit[] units, Rock[] rocks,
@@ -26,7 +26,8 @@ internal sealed partial class ResearchCommander
     internal sealed record Command(string Kind, short Id = -1, int Amount = 0, short Target = -1, string Text = "");
     internal sealed record Report(short Side, string Plan, int Step, int TotalSteps, string Action, string Name,
         string Status, double ProgressPercent, double StepProgressPercent, int Money, double? EtaSeconds,
-        string EtaBasis, string[] CompletedTechs, string[] Stations, short? Constructor, short? ReservedRock, int Cycles);
+        string EtaBasis, string[] CompletedTechs, string[] Stations, short? Constructor, short? ReservedRock, int Cycles,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Job[]? Jobs = null);
 
     private sealed class Work
     {
@@ -62,6 +63,7 @@ internal sealed partial class ResearchCommander
     /// fresh briefing's <c>Plan.CivId</c> (the epoch is unchanged — native keeps
     /// one mission identity across a pre-start civ change).</summary>
     internal short PlanCivId => _plan.CivId;
+    internal string PlanName => _plan.Name;
 
     internal ResearchCommander(short side, string epoch, ResearchTree tree, ResearchPlan plan,
         TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false, double researchTimeScale = 1)
