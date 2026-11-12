@@ -41,4 +41,5 @@ public readonly record struct Explosion(
     float Radius,
     double Time,
     Vector3 Position,
-    Model? Launcher);
+    Model? Launcher,
+    HitSource Source = default);

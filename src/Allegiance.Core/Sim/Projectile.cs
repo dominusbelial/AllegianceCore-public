@@ -8,6 +8,9 @@ namespace Allegiance.Core.Sim;
 /// then terminates on the following update.</summary>
 public sealed class Projectile : Model, IOrdnance
 {
+    /// <summary>Observation-only weapon part ID; -1 for synthetic/probe rounds.</summary>
+    public short SourcePartId { get; init; } = -1;
+
     private readonly Sector _sector;
     private readonly double _timeExpire;
     private bool _terminated;
@@ -119,7 +122,7 @@ public sealed class Projectile : Model, IOrdnance
             float damageScale = (Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageGuns) ?? 1;
             _sector.ResolveExplosion(new Explosion(ProjectileType.DamageType,
                 ProjectileType.BlastPower * damageScale, ProjectileType.BlastRadius,
-                _timeExpire, expiryPos, Launcher), _timeExpire);
+                _timeExpire, expiryPos, Launcher, new(HitKind.Gun, null, ProjectileType.DamageType, _timeExpire, SourcePartId)), _timeExpire);
         }
         if (!_sector.DefersMovement) Position += Velocity * (float)dt;
     }

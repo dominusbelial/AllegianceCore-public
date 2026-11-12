@@ -1,0 +1,1630 @@
+{
+  "base": "67c950eb",
+  "solution_build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tool_projects_built": 135,
+  "isolated_new_tests": {
+    "profile": [
+      {
+        "repeat": 1,
+        "Passed": 15
+      },
+      {
+        "repeat": 2,
+        "Passed": 15
+      },
+      {
+        "repeat": 3,
+        "Passed": 15
+      }
+    ],
+    "config": [
+      {
+        "repeat": 1,
+        "Passed": 11
+      },
+      {
+        "repeat": 2,
+        "Passed": 11
+      },
+      {
+        "repeat": 3,
+        "Passed": 11
+      }
+    ],
+    "receipt": [
+      {
+        "repeat": 1,
+        "Passed": 2
+      },
+      {
+        "repeat": 2,
+        "Passed": 2
+      },
+      {
+        "repeat": 3,
+        "Passed": 2
+      }
+    ],
+    "loopback": [
+      {
+        "repeat": 1,
+        "Passed": 2
+      },
+      {
+        "repeat": 2,
+        "Passed": 2
+      },
+      {
+        "repeat": 3,
+        "Passed": 2
+      }
+    ]
+  },
+  "existing_integration_tests": {
+    "integration": [
+      {
+        "repeat": 1,
+        "Passed": 27
+      },
+      {
+        "repeat": 2,
+        "Passed": 27
+      },
+      {
+        "repeat": 3,
+        "Passed": 27
+      }
+    ]
+  },
+  "fast": {
+    "seconds": 541.0906997790007,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 144,
+        "outcomes": {
+          "Passed": 144
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5144,
+        "outcomes": {
+          "Passed": 5126,
+          "NotExecuted": 17,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2411,
+        "outcomes": {
+          "Passed": 2408,
+          "Failed": 3
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6362,
+        "outcomes": {
+          "Passed": 6357,
+          "Failed": 2,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1553846153846155,
+      "referenceMs": 4.3558,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.553846153846155
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.1321181
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+        "outcome": "Failed",
+        "seconds": 30.6636921
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 12.2072217
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+        "outcome": "Passed",
+        "seconds": 16.6033009
+      }
+    ]
+  },
+  "non_task_isolation": [
+    {
+      "case": 1,
+      "method": "Allegiance.ClientCore.Tests.WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4922685"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5179533"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5049338"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5063268"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5021730"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5294266"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 2,
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 4,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.5629296",
+              "00:00:04.0522834",
+              "00:00:03.2960022",
+              "00:00:01.8670197"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 4,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.8965020",
+              "00:00:04.0692494",
+              "00:00:03.2901232",
+              "00:00:02.5836852"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 3,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.8900742",
+              "00:00:02.5686410",
+              "00:00:03.2743621",
+              "00:00:04.0598993"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (14.94 - 15.06)\nActual: 14.850000000054024"
+            ]
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 3,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.5756877",
+              "00:00:03.2766383",
+              "00:00:01.8779291",
+              "00:00:04.0340217"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (14.94 - 15.06)\nActual: 14.900000000054206"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 4,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.0579804",
+              "00:00:03.2903560",
+              "00:00:02.5781291",
+              "00:00:01.8469960"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 3,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.0215806",
+              "00:00:03.2613637",
+              "00:00:02.5676198",
+              "00:00:01.8457727"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (14.94 - 15.06)\nActual: 14.850000000054024"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": 3,
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:39.0899518"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:38.9683775"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          },
+          {
+            "repeat": 3,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:38.6751703"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:39.1005492"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:39.0102403"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          },
+          {
+            "repeat": 3,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:38.4640791"
+            ],
+            "errors": [
+              "lock never reached full + partial tip in the client world (lock 1.000)"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": 4,
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5739157"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.10000038"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5883754"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.35000038"
+            ]
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5665374"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5868205"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.30000019"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5622804"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5839140"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.44999981"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": 5,
+      "method": "Allegiance.Core.Tests.MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5439828"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5458901"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5520107"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5517035"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5465708"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.5477988"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 6,
+      "method": "Allegiance.Core.Tests.LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9254356"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9219951"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9121627"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9973485"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.0327683"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9400883"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 7,
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.9960561"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.1000000000003"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.9967810"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.000000000000306"
+            ]
+          },
+          {
+            "repeat": 3,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.9916921"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.75000000000032"
+            ]
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.9878724"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.600000000000318"
+            ]
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.9662637"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 0,
+            "Failed": 1,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.0148363"
+            ],
+            "errors": [
+              "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.400000000000283"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": 8,
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.0432655",
+              "00:00:02.9941980"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.0180748",
+              "00:00:02.9716928"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9632150",
+              "00:00:04.0252755"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.9414976",
+              "00:00:02.9213122"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.9502630",
+              "00:00:02.9190914"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 2,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:02.9308869",
+              "00:00:04.0406334"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 9,
+      "method": "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3845672"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3761026"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3608208"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3959835"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3837851"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4100288"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 10,
+      "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5075246"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4695209"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4841024"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4857229"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.5123967"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.4883686"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 11,
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3543753"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3548806"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3868522"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3567170"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3626600"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.3863078"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 12,
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.3021668"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.3016511"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.2952023"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.3020167"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.3058374"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 1,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:00.3098742"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 13,
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.7313545",
+              "00:00:03.4536296",
+              "00:00:05.6128552"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.4536983",
+              "00:00:05.3831192",
+              "00:00:03.3349958"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.4582841",
+              "00:00:03.3927995",
+              "00:00:05.5008005"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:05.4914672",
+              "00:00:04.5175010",
+              "00:00:03.4112157"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:05.3488596",
+              "00:00:04.3663461",
+              "00:00:03.2923724"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 3,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.2695292",
+              "00:00:04.4519998",
+              "00:00:05.4178420"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "case": 14,
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "lanes": {
+        "base": [
+          {
+            "repeat": 1,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.7260840",
+              "00:00:03.5395576",
+              "00:00:03.6344999",
+              "00:00:05.1839781",
+              "00:00:03.6769779",
+              "00:00:04.5495212",
+              "00:00:05.8051918",
+              "00:00:04.0323710",
+              "00:00:04.4430249",
+              "00:00:02.2762171"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:05.1317113",
+              "00:00:04.4798146",
+              "00:00:03.6791719",
+              "00:00:02.2553584",
+              "00:00:03.5736490",
+              "00:00:03.6576994",
+              "00:00:04.0876700",
+              "00:00:05.7662487",
+              "00:00:03.5609922",
+              "00:00:04.4693915"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.5728161",
+              "00:00:05.9820662",
+              "00:00:03.7372768",
+              "00:00:03.7318992",
+              "00:00:04.8654141",
+              "00:00:05.3167241",
+              "00:00:03.9024355",
+              "00:00:02.3368386",
+              "00:00:04.6126382",
+              "00:00:04.0624244"
+            ],
+            "errors": []
+          }
+        ],
+        "current": [
+          {
+            "repeat": 1,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:01.8026869",
+              "00:00:04.0669416",
+              "00:00:02.8319584",
+              "00:00:03.7126185",
+              "00:00:02.9862002",
+              "00:00:02.8320618",
+              "00:00:03.2045776",
+              "00:00:02.8543938",
+              "00:00:03.4538918",
+              "00:00:04.4281304"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 2,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:03.2178968",
+              "00:00:02.8077272",
+              "00:00:04.0136405",
+              "00:00:01.8449065",
+              "00:00:04.3536950",
+              "00:00:02.7913844",
+              "00:00:03.4464628",
+              "00:00:03.6661605",
+              "00:00:02.9828009",
+              "00:00:02.8328129"
+            ],
+            "errors": []
+          },
+          {
+            "repeat": 3,
+            "Passed": 10,
+            "Failed": 0,
+            "NotExecuted": 0,
+            "durations": [
+              "00:00:04.1519128",
+              "00:00:01.9164322",
+              "00:00:04.6086614",
+              "00:00:02.9715677",
+              "00:00:02.9357414",
+              "00:00:03.2695589",
+              "00:00:02.8873089",
+              "00:00:03.8020667",
+              "00:00:03.5483068",
+              "00:00:02.9829067"
+            ],
+            "errors": []
+          }
+        ]
+      }
+    }
+  ],
+  "never_parks": [
+    {
+      "repeat": 1,
+      "lane": "base",
+      "exit": 0,
+      "wall_seconds": 155,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 148.7,
+      "samples": 1486,
+      "reached": 24,
+      "longest_park_seconds": 2.804,
+      "shots": 5610,
+      "hits": 2884,
+      "kills": 17,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 1,
+      "lane": "off",
+      "exit": 0,
+      "wall_seconds": 156,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 150.7,
+      "samples": 1506,
+      "reached": 24,
+      "longest_park_seconds": 2.005,
+      "shots": 5109,
+      "hits": 2439,
+      "kills": 21,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 1,
+      "lane": "on",
+      "exit": 0,
+      "wall_seconds": 166,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 160.6,
+      "samples": 1604,
+      "reached": 24,
+      "longest_park_seconds": 2.21,
+      "shots": 5816,
+      "hits": 3267,
+      "kills": 21,
+      "strategy_choice_lines": 2,
+      "effective_flag_on": true
+    },
+    {
+      "repeat": 2,
+      "lane": "base",
+      "exit": 0,
+      "wall_seconds": 231,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 225.6,
+      "samples": 2253,
+      "reached": 24,
+      "longest_park_seconds": 2.004,
+      "shots": 6111,
+      "hits": 2788,
+      "kills": 16,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 2,
+      "lane": "off",
+      "exit": 0,
+      "wall_seconds": 355,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 349.8,
+      "samples": 3494,
+      "reached": 24,
+      "longest_park_seconds": 1.209,
+      "shots": 2216,
+      "hits": 793,
+      "kills": 6,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 2,
+      "lane": "on",
+      "exit": 0,
+      "wall_seconds": 191,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 184.6,
+      "samples": 1844,
+      "reached": 24,
+      "longest_park_seconds": 4.007,
+      "shots": 6666,
+      "hits": 3374,
+      "kills": 20,
+      "strategy_choice_lines": 2,
+      "effective_flag_on": true
+    },
+    {
+      "repeat": 3,
+      "lane": "base",
+      "exit": 0,
+      "wall_seconds": 378,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 373.3,
+      "samples": 3728,
+      "reached": 24,
+      "longest_park_seconds": 2.005,
+      "shots": 3207,
+      "hits": 1113,
+      "kills": 8,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 3,
+      "lane": "off",
+      "exit": 0,
+      "wall_seconds": 286,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 279.9,
+      "samples": 2795,
+      "reached": 24,
+      "longest_park_seconds": 1.814,
+      "shots": 2107,
+      "hits": 628,
+      "kills": 4,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 3,
+      "lane": "on",
+      "exit": 0,
+      "wall_seconds": 152,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 145.4,
+      "samples": 1452,
+      "reached": 24,
+      "longest_park_seconds": 2.006,
+      "shots": 6205,
+      "hits": 2901,
+      "kills": 18,
+      "strategy_choice_lines": 2,
+      "effective_flag_on": true
+    },
+    {
+      "repeat": 4,
+      "lane": "base",
+      "exit": 0,
+      "wall_seconds": 355,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 349.1,
+      "samples": 3486,
+      "reached": 24,
+      "longest_park_seconds": 0.603,
+      "shots": 2564,
+      "hits": 1131,
+      "kills": 7,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 4,
+      "lane": "off",
+      "exit": 0,
+      "wall_seconds": 296,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 290.1,
+      "samples": 2897,
+      "reached": 24,
+      "longest_park_seconds": 1.511,
+      "shots": 3112,
+      "hits": 1518,
+      "kills": 12,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 4,
+      "lane": "on",
+      "exit": 0,
+      "wall_seconds": 174,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 167.8,
+      "samples": 1676,
+      "reached": 24,
+      "longest_park_seconds": 1.616,
+      "shots": 5036,
+      "hits": 1929,
+      "kills": 14,
+      "strategy_choice_lines": 2,
+      "effective_flag_on": true
+    },
+    {
+      "repeat": 5,
+      "lane": "base",
+      "exit": 0,
+      "wall_seconds": 395,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 389.4,
+      "samples": 3888,
+      "reached": 24,
+      "longest_park_seconds": 1.807,
+      "shots": 4870,
+      "hits": 2013,
+      "kills": 15,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 5,
+      "lane": "off",
+      "exit": 0,
+      "wall_seconds": 186,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 179.3,
+      "samples": 1791,
+      "reached": 24,
+      "longest_park_seconds": 1.907,
+      "shots": 3627,
+      "hits": 1890,
+      "kills": 12,
+      "strategy_choice_lines": 0,
+      "effective_flag_on": false
+    },
+    {
+      "repeat": 5,
+      "lane": "on",
+      "exit": 0,
+      "wall_seconds": 272,
+      "outcome": "Passed",
+      "error": null,
+      "test_seconds": 265.9,
+      "samples": 2655,
+      "reached": 24,
+      "longest_park_seconds": 0.301,
+      "shots": 1050,
+      "hits": 197,
+      "kills": 0,
+      "strategy_choice_lines": 2,
+      "effective_flag_on": true
+    }
+  ],
+  "compose_config": "Unavailable: Docker/Compose executable absent",
+  "autonomous_receipt_audits": [
+    {
+      "trial": 1,
+      "matches": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "complete": false,
+          "choices": 2,
+          "research": 0,
+          "windows": 6,
+          "grants": 52,
+          "damage": 30,
+          "overflow_events": 0
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "matches": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "complete": false,
+          "choices": 2,
+          "research": 0,
+          "windows": 6,
+          "grants": 63,
+          "damage": 31,
+          "overflow_events": 0
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "matches": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "complete": true,
+          "choices": 2,
+          "research": 0,
+          "windows": 6,
+          "grants": 49,
+          "damage": 30,
+          "overflow_events": 0
+        }
+      ]
+    },
+    {
+      "trial": 4,
+      "matches": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "complete": false,
+          "choices": 2,
+          "research": 0,
+          "windows": 6,
+          "grants": 48,
+          "damage": 19,
+          "overflow_events": 0
+        }
+      ]
+    },
+    {
+      "trial": 5,
+      "matches": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "complete": false,
+          "choices": 2,
+          "research": 0,
+          "windows": 9,
+          "grants": 32,
+          "damage": 2,
+          "overflow_events": 0
+        }
+      ]
+    }
+  ],
+  "loopback_wire": {
+    "frames": 21410,
+    "bytes": 1061622,
+    "hit_receipts": 4140,
+    "sha256": "06BAB376D13E480CFAECDC83A2D4CB38F28F400588FE705D186CED0C7FCD4611",
+    "base_off_on_identical": true
+  },
+  "new_python_tests": [
+    {
+      "repeat": 1,
+      "Passed": 4,
+      "Failed": 0,
+      "Skipped": 0
+    },
+    {
+      "repeat": 2,
+      "Passed": 4,
+      "Failed": 0,
+      "Skipped": 0
+    },
+    {
+      "repeat": 3,
+      "Passed": 4,
+      "Failed": 0,
+      "Skipped": 0
+    }
+  ],
+  "glossary_paths_checked": 783
+}

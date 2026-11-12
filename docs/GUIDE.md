@@ -899,3 +899,16 @@ families. Two observers can detect a changed mapping, but a successful check
 cannot classify every real NAT. The later two-network hardware check remains
 necessary. Ordinary **Host LAN game**, dedicated servers, offline skirmishes,
 and manual TCP connections retain their existing defaults.
+
+### Civilization strategy observations (P1000)
+
+`bots.civStrategy` defaults off. The environment override
+`ALLEGIANCE_BOTS_CIV_STRATEGY` accepts `1/0`, `true/false`, `on/off`; empty preserves
+JSON. Enabled servers build core-derived civilization profiles and record a
+primary/counter portfolio from public opponent specifications. P1000 leaves
+commander scheduling, funding, roles and loadouts unchanged. Choices are logged
+once when a match starts, after lobby civilization changes; `[civ-strategy]`
+receipts also contain completion times and bounded minute/end-of-match summaries
+of grants, weapon/victim-hull damage, miners/ore/paydays and station kills/losses.
+See `docs/reports/CIV_STRATEGY_PROFILE_P1000.md` and
+`tools/p999-civ-strategy/receipts.py` for assumptions and analysis.

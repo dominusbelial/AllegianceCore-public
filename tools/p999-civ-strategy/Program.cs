@@ -14,11 +14,30 @@ if (args.Length < 1)
 var output = args[0];
 var file = args.ElementAtOrDefault(1) ?? Path.Combine(ExternalPaths.Require(ExternalResourceKind.Artwork), "PCore001.igc");
 var seed = args.Length > 2 ? long.Parse(args[2]) : 999;
-var opponentCivs = args.Length > 3 ? args[3].Split(',').Select(short.Parse).ToArray() : null;
+var opponentCivs = args.Length > 3 && args[3] != "--production" ? args[3].Split(',').Select(short.Parse).ToArray() : null;
 var core = StaticCore.Load(IgcReader.ParseFile(file));
 var name = Path.GetFileNameWithoutExtension(file);
 Directory.CreateDirectory(output);
 var json = new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+if (args.Contains("--production"))
+{
+    var profiles = core.Civilizations.Keys.Order().Select(id => Allegiance.Core.Strategy.CivProfile.Get(core, id)).ToArray();
+    var rows = profiles.Select(profile =>
+    {
+        var enemies = profiles.Where(p => p.Civ != profile.Civ && (opponentCivs is null || opponentCivs.Contains(p.Civ))).ToArray();
+        var choice = Allegiance.Core.Strategy.CivPortfolio.Choose(core, profile, enemies, seed);
+        var tree = new ResearchTree(core, profile.Civ);
+        return new { profile.Civ, profile.Name, profile.CoreIdentity, profile.CoreVersion, profile.Settings,
+            profile.Economy, routeCount = profile.Routes.Length, choice,
+            baseline = tree.Generate(name, prioritizeResearch: true),
+            comparison = Allegiance.Core.Strategy.CivPortfolio.ComparisonPlan(tree, choice, name),
+            nodes = tree.Nodes, initial = new ResearchState(tree).Unlocks,
+            routes = profile.Routes };
+    }).ToArray();
+    File.WriteAllText(Path.Combine(output, "production.json"), JsonSerializer.Serialize(rows, json) + "\n");
+    Console.WriteLine($"{name}: {rows.Length} production profiles, observation only; seed={seed}");
+    return 0;
+}
 var civs = core.Civilizations.Values.OrderBy(c => c.CivilizationId).Select(c =>
 {
     var tree = new ResearchTree(core, c.CivilizationId);

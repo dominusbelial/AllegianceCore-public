@@ -404,6 +404,8 @@ public sealed partial class Ship : Model, IShipIgc
 
     private int _loadoutUpdateDepth;
     private bool _loadoutUpdateDirty;
+    private bool _strategyInventoryDirty;
+    private int _strategyInventoryDepth;
 
     /// <summary>Native queues one final loadout per purchase/swap
     /// (FedSrv/fsship.cpp:694-735). Nested batches publish only at the outer end.</summary>
@@ -424,6 +426,11 @@ public sealed partial class Ship : Model, IShipIgc
             {
                 owner._loadoutUpdateDirty = false;
                 owner.Mission?.Site.LoadoutChangeEvent(owner, null!, LoadoutChange.Mounted);
+            }
+            if (owner._loadoutUpdateDepth == 0 && owner._strategyInventoryDirty)
+            {
+                owner._strategyInventoryDirty = false;
+                owner.ObserveStrategyInventory();
             }
         }
     }
@@ -1018,7 +1025,37 @@ public sealed partial class Ship : Model, IShipIgc
     public long LoadoutVersion => _loadoutVersion;
     private long _loadoutVersion;
 
-    private void BumpLoadout() => _loadoutVersion++;
+    private void BumpLoadout()
+    {
+        _loadoutVersion++;
+        ObserveStrategyInventory();
+    }
+    private void ObserveStrategyInventory()
+    {
+        if (Mission?.Site.StrategyInventoryEnabled != true) return;
+        if (_loadoutUpdateDepth > 0 || _strategyInventoryDepth > 0) _strategyInventoryDirty = true;
+        else Mission.Site.StrategyInventoryEvent(this);
+    }
+
+    // Observation batching has no effect on the native loadout/wire batch.
+    private readonly struct StrategyInventoryUpdate : IDisposable
+    {
+        private readonly Ship? _owner;
+        internal StrategyInventoryUpdate(Ship owner)
+        {
+            _owner = owner.Mission?.Site.StrategyInventoryEnabled == true ? owner : null;
+            if (_owner is not null) _owner._strategyInventoryDepth++;
+        }
+        public void Dispose()
+        {
+            if (_owner is null) return;
+            if (--_owner._strategyInventoryDepth == 0 && _owner._loadoutUpdateDepth == 0 && _owner._strategyInventoryDirty)
+            {
+                _owner._strategyInventoryDirty = false;
+                _owner.ObserveStrategyInventory();
+            }
+        }
+    }
 
     /// <summary>
     /// P192 — the ship's cargo hold: a fixed-capacity array of spare parts,
@@ -3402,7 +3439,7 @@ public sealed partial class Ship : Model, IShipIgc
         {
             if (mission.Core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectileType))
             {
-                var weapon = new Weapon(this, w, projectileType, mountId);
+                var weapon = new Weapon(this, w, projectileType, mountId) { SourcePartId = type.PartId };
                 _weapons.Add(weapon);
         BindTurretGunner(weapon);
                 part.FunctionalWeapon = weapon;
@@ -3683,6 +3720,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// if it is malformed (the native <c>bBoot</c> condition).</returns>
     public bool TryApplyReloadEntry(sbyte mount, short amountTransfered)
     {
+        using var inventory = new StrategyInventoryUpdate(this);
         // (mount >= 0) || (mount < -c_maxCargo) → boot (FedSrv.CPP:6531).
         if (mount >= 0 || mount < -CargoCapacity) return false;
 
@@ -4302,13 +4340,14 @@ public sealed partial class Ship : Model, IShipIgc
             FunctionalWeapon = p.FunctionalWeapon,
             FreeSpawn = p.FreeSpawn,
         };
+        ObserveStrategyInventory();
     }
 
     /// <summary>Empty a cargo slot (native <c>ppart-&gt;Terminate()</c> on a
     /// fully-drained/NA cargo item, <c>FedSrv.CPP:6555,6614,6632</c>).</summary>
     public void ClearCargoSlot(int slot)
     {
-        if (slot >= 0 && slot < _cargo.Length) _cargo[slot] = null;
+        if (slot >= 0 && slot < _cargo.Length) { _cargo[slot] = null; ObserveStrategyInventory(); }
     }
 
     /// <summary>The native <c>c_packAmmo</c> pack type (<c>Igc/igc.h:549</c>).</summary>
@@ -4407,7 +4446,7 @@ public sealed partial class Ship : Model, IShipIgc
         if (newType.Type is DataPartTypeIGC.Weapon w && Mission is { } mission &&
             mission.Core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectileType))
         {
-            var weapon = new Weapon(this, w, projectileType, part.MountId);
+            var weapon = new Weapon(this, w, projectileType, part.MountId) { SourcePartId = newType.PartId };
             _weapons.Add(weapon);
         BindTurretGunner(weapon);
             replacement.FunctionalWeapon = weapon;
@@ -5427,6 +5466,13 @@ public sealed partial class Ship : Model, IShipIgc
             if (skillDamageRecorded || amount <= 0 || launcher is not Ship attacker
                 || (_fraction >= skillHullBefore && _shieldFraction >= skillShieldBefore)) return;
             skillDamageRecorded = true;
+            if (Mission?.Site.StrategyDamageEnabled == true)
+            {
+                double removed = Math.Max(0, skillHullBefore - _fraction) * maxHP;
+                if (MountedShieldType() is { } observedShield)
+                    removed += Math.Max(0, skillShieldBefore - _shieldFraction) * EffectiveMaxShieldStrength(observedShield);
+                Mission.Site.StrategyDamageEvent(this, launcher, hit, type, amount, removed);
+            }
             Mission?.Skills?.Record(attacker.SideId, ShowcaseSkill.ShipDamage);
             Mission?.Skills?.Damage(attacker.SideId, false, type);
         }
@@ -8774,6 +8820,7 @@ public sealed partial class Ship : Model, IShipIgc
             if (candidate.Id == SideId) { side = candidate; break; }
         if (side is null) return;
         float proceeds = Ore * EffectiveOreCreditPerUnit();
+        if (mission.Site.StrategyEconomyEnabled) mission.Site.StrategyOreSoldEvent(this, Ore, (long)proceeds);
         side.Money += (long)proceeds;
         mission.Site.PaydayEvent(side, proceeds);
         Ore = 0;

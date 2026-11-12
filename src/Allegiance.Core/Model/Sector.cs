@@ -2448,8 +2448,8 @@ public sealed partial class Sector : IClusterIgc
                 // single-target this slice; BlastPower/BlastRadius (AoE) are read
                 // but not acted on (same honest-deferral as homing, P91).
                 ship.PendingHit = ord is Missile hitMissile
-                    ? new(HitKind.Missile, hitMissile.MissileType.LauncherName, ord.DamageType, now)
-                    : new(HitKind.Gun, null, ord.DamageType, now);
+                    ? new(HitKind.Missile, hitMissile.MissileType.LauncherName, ord.DamageType, now, hitMissile.MissileType.ExpendableTypeId)
+                    : new(HitKind.Gun, null, ord.DamageType, now, (ord as Projectile)?.SourcePartId ?? (short)-1);
                 DamageResult shipDr = ship.ReceiveDamage(
                     ord.DamageType,
                     ord.Power * gaMul,
@@ -2486,7 +2486,7 @@ public sealed partial class Sector : IClusterIgc
                         ord.BlastRadius,
                         now,
                         position1,
-                        ord.Launcher);
+                        ord.Launcher, TelemetrySource(ord, now));
                     ResolveExplosion(blast, now);
                 }
 
@@ -2550,7 +2550,7 @@ public sealed partial class Sector : IClusterIgc
                         ord.BlastRadius,
                         now,
                         position1,
-                        ord.Launcher);
+                        ord.Launcher, TelemetrySource(ord, now));
                     ResolveExplosion(blast, now);
                 }
 
@@ -2639,7 +2639,7 @@ public sealed partial class Sector : IClusterIgc
                         ord.BlastRadius,
                         now,
                         position1,
-                        ord.Launcher);
+                        ord.Launcher, TelemetrySource(ord, now));
                     ResolveExplosion(blast, now);
                 }
 
@@ -2724,7 +2724,7 @@ public sealed partial class Sector : IClusterIgc
                         ord.BlastRadius,
                         now,
                         position1,
-                        ord.Launcher);
+                        ord.Launcher, TelemetrySource(ord, now));
                     ResolveExplosion(blast, now);
                 }
 
@@ -3987,7 +3987,7 @@ public sealed partial class Sector : IClusterIgc
                 ship.TimeLastMineExplosion = hit.Time;
                 ship.Mission?.Site.MineHitEvent(hit.Mine, hit.P1, hit.P2);
             }
-            ship.PendingHit = new(HitKind.Mine, hit.Mine.MineType.LauncherName, hit.Type, hit.Time);
+            ship.PendingHit = new(HitKind.Mine, hit.Mine.MineType.LauncherName, hit.Type, hit.Time, hit.Mine.MineType.ExpendableTypeId);
             ship.ReceiveDamage(hit.Type, hit.Damage, hit.Time, hit.P1, hit.P2, hit.Launcher);
         }
     }
@@ -4141,7 +4141,7 @@ public sealed partial class Sector : IClusterIgc
             switch (target)
             {
                 case Ship ship:
-                    ship.PendingHit = new(HitKind.Blast, null, type, e.Time);
+                    ship.PendingHit = new(HitKind.Blast, null, type, e.Time, e.Source.SourceId, e.Source.Kind);
                     ship.ReceiveDamage(type, amount, e.Time, p, e.Position, e.Launcher);
                     if (ship.Dead) Remove(ship);
                     break;
@@ -4626,7 +4626,7 @@ public sealed partial class Sector : IClusterIgc
             float gaMul = (missile.Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles) ?? 1f;
             ResolveExplosion(new Explosion(missile.MissileType.DamageType,
                 missile.MissileType.BlastPower * gaMul, missile.MissileType.BlastRadius,
-                now, contact, missile.Launcher), now);
+                now, contact, missile.Launcher, TelemetrySource(missile, now)), now);
         }
         if (missile.Launcher is Ship launcher) launcher.Mission?.Site.MissileDestroyedEvent(missile);
     }
@@ -4652,8 +4652,13 @@ public sealed partial class Sector : IClusterIgc
         if (warp.Warp.Position is not { Length: 3 } p) return;
         sector.ResolveExplosion(new Explosion(bomb.MissileType.DamageType,
             bomb.MissileType.Power, bomb.MissileType.BlastRadius, bomb.TimeExplosion,
-            new Vector3(p[0], p[1], p[2]), null), now); // warpIGC.h:65-87
+            new Vector3(p[0], p[1], p[2]), null,
+            new(HitKind.Missile, bomb.MissileType.LauncherName, bomb.MissileType.DamageType, bomb.TimeExplosion, bomb.MissileType.ExpendableTypeId)), now); // warpIGC.h:65-87
     }
+
+    private static HitSource TelemetrySource(IOrdnance ord, double now) => ord is Missile missile
+        ? new(HitKind.Missile, missile.MissileType.LauncherName, ord.DamageType, now, missile.MissileType.ExpendableTypeId)
+        : new(HitKind.Gun, null, ord.DamageType, now, (ord as Projectile)?.SourcePartId ?? (short)-1);
 
     private sealed record ScheduledWarpBomb(double TimeExplosion, ResolvedWarp Warp, DataMissileTypeIGC MissileType);
 

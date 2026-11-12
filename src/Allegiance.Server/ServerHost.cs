@@ -995,6 +995,19 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// friendly-fire alert needs. The host sends at most one alert per ship per
     /// 10 s.</summary>
     public Action<Ship, Model?, double, byte, float>? ShipDamaged;
+    public Action<Ship, Model?, HitSource, byte, float, double>? StrategyDamage;
+    public bool StrategyDamageEnabled => StrategyDamage is not null;
+    public void StrategyDamageEvent(Ship victim, Model? attacker, HitSource source, byte type, float raw, double removed)
+        => StrategyDamage?.Invoke(victim, attacker, source, type, raw, removed);
+    public Action<Ship>? StrategyInventory;
+    public bool StrategyInventoryEnabled => StrategyInventory is not null;
+    public void StrategyInventoryEvent(Ship ship) => StrategyInventory?.Invoke(ship);
+    public Action<Ship, double, double>? StrategyOreSold;
+    public void StrategyOreSoldEvent(Ship ship, double ore, long credits) => StrategyOreSold?.Invoke(ship, ore, credits);
+    public Action<Side, long>? StrategyPayday;
+    public bool StrategyEconomyEnabled => StrategyPayday is not null;
+    public void StrategyPaydayEvent(Side side, long amount) => StrategyPayday?.Invoke(side, amount);
+
 
     /// <summary>The world-mission site implementation of <c>DamageShipEvent</c>
     /// (<c>shipIGC.cpp:398,1312</c> → <c>FedSrvSiteBase::DamageShipEvent</c>,
@@ -1341,6 +1354,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             else
             {
                 float proceeds = sh.Ore * sh.EffectiveOreCreditPerUnit();   // shipIGC.cpp:1987-1990 (× GA[c_gaMiningYield])
+                StrategyOreSoldEvent(sh, sh.Ore, (long)proceeds);
                 side.Money += (long)proceeds;              // credit treasury (conversion)
                 PaydayEvent(side, proceeds);               // seam → host payout / FM_S_PAYDAY
                 var sellNote = $"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {sh.EffectiveOreCreditPerUnit():F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed";

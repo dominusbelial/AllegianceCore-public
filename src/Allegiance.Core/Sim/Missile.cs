@@ -154,7 +154,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 if (position1 != Vector3.Zero && MissileType.BlastPower != 0)
                     _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
                         MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),
-                        MissileType.BlastRadius, now, position1, Launcher), now);
+                        MissileType.BlastRadius, now, position1, Launcher, new(HitKind.Missile, MissileType.LauncherName, MissileType.DamageType, now, MissileType.ExpendableTypeId)), now);
                 return DamageResult.Killed;
             }
         }
@@ -210,7 +210,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             if (MissileType.BlastPower != 0)
                 _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
                     MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),
-                    MissileType.BlastRadius, now, Position, Launcher), now);
+                    MissileType.BlastRadius, now, Position, Launcher, new(HitKind.Missile, MissileType.LauncherName, MissileType.DamageType, now, MissileType.ExpendableTypeId)), now);
             EndReason = "expired";
             (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
             return;

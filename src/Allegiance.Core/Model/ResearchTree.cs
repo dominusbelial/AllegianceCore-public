@@ -209,8 +209,13 @@ public sealed class ResearchState
         if (n.Kind == "develop") DevelopmentTechs = DevelopmentTechs.Or(TechTreeBitMask.FromBytes(n.Effects));
         if (n.Kind == "station") Stations.Add(n.Id);
         _completed.Add((n.Kind, n.Id));
-        var unlocks = Unlocks;
-        foreach (var expected in step.ExpectedUnlocks)
-            if (!unlocks.Contains(expected)) throw new InvalidDataException($"expected unlock missing: {expected}");
+        // Profile route witnesses carry no expected-unlock assertions. Avoid
+        // rebuilding the entire purchase catalogue for that empty validation.
+        if (step.ExpectedUnlocks.Count > 0)
+        {
+            var unlocks = Unlocks;
+            foreach (var expected in step.ExpectedUnlocks)
+                if (!unlocks.Contains(expected)) throw new InvalidDataException($"expected unlock missing: {expected}");
+        }
     }
 }

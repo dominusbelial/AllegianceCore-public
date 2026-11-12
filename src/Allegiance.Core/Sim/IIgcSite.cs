@@ -28,6 +28,15 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public interface IIgcSite
 {
+    /// <summary>Modern observation only; no native rule or wire counterpart.</summary>
+    bool StrategyDamageEnabled => false;
+    bool StrategyEconomyEnabled => false;
+    bool StrategyInventoryEnabled => false;
+    void StrategyInventoryEvent(Ship ship) { }
+    void StrategyPaydayEvent(Allegiance.Core.Model.Side side, long amount) { }
+    void StrategyOreSoldEvent(Ship ship, double ore, long credits) { }
+    void StrategyDamageEvent(Ship victim, Model? attacker, HitSource source, byte type, float raw, double removed) { }
+
     // ── clock ──────────────────────────────────────────────────────────────
     // igc.h:4760 — identity on the server (no client/server skew here).
     /// <summary>Identity on the server. C++ <c>igc.h:4760</c>.</summary>

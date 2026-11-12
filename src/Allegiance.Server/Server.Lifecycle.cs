@@ -62,6 +62,8 @@ public sealed partial class Server
         _shutdown = false;
         _config = config;
         InitializeConsole();
+        _config.Bots.ApplyEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_BOTS_CIV_STRATEGY"));
+        Console.WriteLine($"[boot] bots.civStrategy = {_config.Bots.CivStrategy.ToString().ToLowerInvariant()} (observation only)");
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
@@ -859,6 +861,13 @@ public sealed partial class Server
         else if (_config.BenchmarkSeed is { } warpSeed)
             _host.WarpExitRandom = new Random(warpSeed ^ 0x57415250);
         Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
+        if (_config.Bots.CivStrategy)
+        {
+            _host.StrategyDamage = RecordStrategyDamage;
+            _host.StrategyInventory = RecordStrategyInventory;
+            _host.StrategyOreSold = RecordStrategyOre;
+            _host.StrategyPayday = RecordStrategyPayday;
+        }
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.ShipChangedCluster = OnShipChangedCluster; // P760: ChangeCluster -> SDR_LEFTSECTOR
@@ -1397,11 +1406,13 @@ public sealed partial class Server
         var selectedMap = !playerCreated && _config.Showcase.MapRotation is not null ? NextMap(g) : ((MapRotationEntry Entry, int Seed, string Receipt)?)null;
         MapGenConfig? mg = selectedMap is { } selected ? selected.Entry.MapGen : g.MapGen;
         bool fromMapGen = mg is not null;
+        int? strategyMapSeed = selectedMap?.Seed;
         if (fromMapGen)
         {
             // Generated station types must belong to the receiving civilization.
             var pmp = ToCoreParams(mg!, g.Teams, swapHomes ? civIds.Reverse().ToArray() : civIds, goals, selectedMap?.Seed ?? mg!.Seed ?? SimulationRandom?.Next(),
                 ResearchSettingsFor(g));
+            strategyMapSeed = pmp.Seed;
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
@@ -1467,6 +1478,7 @@ public sealed partial class Server
             ? choice.Entry.Map ?? $"gen:{Enum.Parse<MapGenType>(choice.Entry.MapGen!.Type, true)}" : g.Map;
         lock (_matchups) _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription, homeDescription, selectedMap?.Receipt ?? "", mapName));
         Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
+        InitializeCivStrategy(mission, civSeed, fromMapGen ? $"gen:{mg!.Type}" : mapName, strategyMapSeed, swapHomes);
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
