@@ -163,7 +163,7 @@ internal sealed partial class BotManager
     private static bool MaybeDropMedevacProbe(ActiveBot bot, ConnectionSession cs, double now,
         short sector, Vector3 position, DataProbeTypeIGC probe, short launcherPartId)
     {
-        if (!bot.MedevacScout) return false;
+        if (!bot.MedevacScout && bot.CivCoverageDuty != "rescue") return false;
         var world = cs.World;
         bool ownStation = world.Stations.Values.Any(s => s.SideId == bot.Side && s.ClusterId == sector);
         var (pods, ejects) = ObserveOwnPods(bot, world, sector, now);

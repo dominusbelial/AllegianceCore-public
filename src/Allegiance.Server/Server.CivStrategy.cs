@@ -17,6 +17,7 @@ public sealed partial class Server
         internal int? MapSeed;
         internal bool Swapped;
         internal bool ChoicesWritten;
+        internal readonly Dictionary<short, PortfolioChoice> Choices = new();
         internal int Sequence;
         internal readonly Dictionary<(short Side, string Kind, short Id, short Hull), (long Count, double Amount, double First, double Last)> Events = new();
         internal readonly Dictionary<(short Side, short VictimSide, short Hull, HitKind Kind, short Source, byte Damage), (long Count, double Raw, double Removed)> Damage = new();
@@ -57,7 +58,25 @@ public sealed partial class Server
         var receipts = _strategyReceipts.GetValue(mission, _ => new());
         receipts.NextFlush = mission.LastUpdate + 60;
         receipts.Seed = seed; receipts.Map = map; receipts.MapSeed = mapSeed; receipts.Swapped = swapped;
-        foreach (var side in mission.Sides) _ = CivProfile.Get(mission.Core, side.Civilization.CivilizationId, mission.Research);
+        InstallCivStrategyPlans(mission);
+    }
+    private void InstallCivStrategyPlans(Mission mission)
+    {
+        if (_config?.Bots.CivStrategy != true || !_strategyReceipts.TryGetValue(mission, out var receipts)) return;
+        receipts.Choices.Clear();
+        var profiles = mission.Sides.ToDictionary(s => s.Id, s => CivProfile.Get(mission.Core, s.Civilization.CivilizationId, mission.Research));
+        foreach (var side in mission.Sides)
+        {
+            var choice = CivPortfolio.Choose(mission.Core, profiles[side.Id], profiles.Where(p => p.Key != side.Id).Select(p => p.Value), receipts.Seed,
+                new PortfolioSettings(ResearchTimeScale: _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1,
+                    Goals: GoalRotationConfig.Describe(mission.Goals), Map: receipts.Map, MapSeed: receipts.MapSeed));
+            receipts.Choices[side.Id] = choice;
+            // Also supply an execution marker to unlocked showcases: the fleet
+            // shares the same policy and uses its live shop, without inventing tech.
+            mission.ResearchPlans[side.Id] = CivExecutionPlan.Build(new ResearchTree(mission.Core,
+                profiles[side.Id].Civ, mission.Research), choice, Path.GetFileNameWithoutExtension(_config.StaticCore),
+                _config.Bots.CivStrategyCoverageShare);
+        }
     }
     private void WriteCivStrategyChoices(Mission mission, StrategyReceipts receipts)
     {
@@ -68,9 +87,7 @@ public sealed partial class Server
         foreach (var side in mission.Sides)
         {
             var profile = profiles[side.Id];
-            var options = new PortfolioSettings(ResearchTimeScale: _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1,
-                Goals: GoalRotationConfig.Describe(mission.Goals), Map: map, MapSeed: receipts.MapSeed);
-            var choice = CivPortfolio.Choose(mission.Core, profile, profiles.Where(p => p.Key != side.Id).Select(p => p.Value), seed, options);
+            var choice = receipts.Choices[side.Id];
             StrategyLog(new StrategyChoiceReceipt("choice", mission.Skills?.Match ?? 0, mission.Cookie, seed, side.Id,
                 profile.Civ, profile.CoreIdentity, profile.CoreVersion, map,
                 swapped ? mission.Sides.Count - 1 - side.Id : side.Id,
@@ -136,7 +153,7 @@ public sealed partial class Server
         lock (_matchups) match = _matchups.TryGetValue(mission, out var m) ? m.Number : 0;
         // At most one bounded JSON window per simulation minute and one final flush.
         StrategyLog(new StrategyWindowReceipt("window", match, mission.Cookie, now, ++r.Sequence, final,
-            r.Events.OrderBy(p => p.Key).Select(p => new StrategyGrantReceipt(p.Key.Side, p.Key.Kind, p.Key.Id,
+            r.Events.Where(p => p.Key.Kind is "hull" or "part").OrderBy(p => p.Key).Select(p => new StrategyGrantReceipt(p.Key.Side, p.Key.Kind, p.Key.Id,
                 p.Key.Hull, p.Value.Count, p.Value.Amount, p.Value.First, p.Value.Last)).ToArray(),
             r.Damage.OrderBy(p => p.Key).Select(p => new StrategyDamageReceipt(p.Key.Side, p.Key.VictimSide, p.Key.Hull,
                 p.Key.Kind.ToString(), p.Key.Source, p.Key.Damage, p.Value.Count, p.Value.Raw, p.Value.Removed)).ToArray(),
@@ -148,6 +165,7 @@ public sealed partial class Server
                 return new StrategySideReceipt(side.Id, side.Civilization.CivilizationId, miners.Length,
                     miners.Sum(ship => ship.Ore), e.Paydays, e.Income, e.Ore, e.OreCredits, s.Kills, s.Losses);
             }).ToArray(), r.OverflowEvents, r.OverflowAmount), StrategyReceiptJsonContext.Default.StrategyWindowReceipt);
+        WriteCivCoverage(mission, r, now, final);
         r.Events.Clear(); r.Damage.Clear(); r.Economy.Clear(); r.Stations.Clear(); r.OverflowEvents = 0; r.OverflowAmount = 0;
     }
 }

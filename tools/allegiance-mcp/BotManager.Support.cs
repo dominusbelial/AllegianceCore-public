@@ -567,6 +567,11 @@ internal sealed partial class BotManager
     private void SupportCompleted(ActiveBot bot, double duration)
     {
         lock (SupportRow(bot)) { var row = SupportRow(bot); row.Completed++; row.DurationSum += duration; }
+        if (bot.CivCoverageDuty == "repair")
+        {
+            Console.WriteLine($"[civ-mechanism] cookie={bot.Cs?.World.Mission?.Cookie} side={bot.Side} pilot={bot.ShipId} stage=completed mechanism=repair");
+            bot.CivCoverageDuty = null;
+        }
     }
 
     private void SupportSummaryTick(ActiveBot bot, double now)

@@ -900,15 +900,35 @@ cannot classify every real NAT. The later two-network hardware check remains
 necessary. Ordinary **Host LAN game**, dedicated servers, offline skirmishes,
 and manual TCP connections retain their existing defaults.
 
-### Civilization strategy observations (P1000)
+### Civilization strategy experiment (P1000/P1001)
 
-`bots.civStrategy` defaults off. The environment override
-`ALLEGIANCE_BOTS_CIV_STRATEGY` accepts `1/0`, `true/false`, `on/off`; empty preserves
-JSON. Enabled servers build core-derived civilization profiles and record a
-primary/counter portfolio from public opponent specifications. P1000 leaves
-commander scheduling, funding, roles and loadouts unchanged. Choices are logged
-once when a match starts, after lobby civilization changes; `[civ-strategy]`
-receipts also contain completion times and bounded minute/end-of-match summaries
-of grants, weapon/victim-hull damage, miners/ore/paydays and station kills/losses.
-See `docs/reports/CIV_STRATEGY_PROFILE_P1000.md` and
-`tools/p999-civ-strategy/receipts.py` for assumptions and analysis.
+`bots.civStrategy` defaults off. `ALLEGIANCE_BOTS_CIV_STRATEGY` accepts `1/0`,
+`true/false`, `on/off`; empty preserves JSON. Enabled servers choose a loaded-core
+primary/counter portfolio using public opponent specifications and send its
+runtime order through the existing research briefing. Authored plans are unchanged.
+The commander uses up to four independent research jobs and two construction
+jobs, repairs lost prerequisites, leases side-observed rocks, and keeps two
+complete defensive fits plus two replacement miners in reserve. Combat decisions
+continue while research or construction waits.
+
+Fleet duties and legal purchases follow that profile, live GA and observed
+opponent hulls/public attributes. Unknown enemy shields use an explicit core
+preferred-fit assumption. Rescue, repair, mine-layer, boarding, gunner and finale
+obligations retain their existing controls and hardware gates. Rotation rebuilds
+policy from the new civ/settings while retaining the fleet's stable slots.
+
+`bots.civStrategyCoverageShare` defaults to `0.15`, accepts `0..0.25`, and bounds
+exploratory purchase slots and full-fit resource estimates. Required support and
+finale duties take priority. Opening research earns a matching bounded coverage
+allowance; blocked openings can switch to useful ready work. Once the opening
+finishes, the remaining reachable research/station/drone tail proceeds.
+
+`[civ-strategy]` retains choices, exact completion timestamps and bounded minute/
+final windows for grants, damage, economy and stations. `[civ-coverage]` separates
+worker selections from server-observed grants, launches, firing, hits and completed
+mechanisms; an unexercised or unavailable mechanism is never reported as complete.
+Coverage can allocate a turret carrier and gunner only when the bounded share
+provides two crew slots; an explicit `ALLEGIANCE_GUNNERS=off` still disables them.
+Ripcord coverage uses an observed friendly anchor while ordinary flight continues. The default-off path retains the existing
+commander and purchase policy. See `docs/reports/CIV_STRATEGY_COMMANDER_P1001.md`
+and `tools/p999-civ-strategy/receipts.py`.

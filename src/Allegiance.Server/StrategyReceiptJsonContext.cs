@@ -20,8 +20,14 @@ internal sealed record StrategySideReceipt(short Side, short Civ, int Miners, fl
 internal sealed record StrategyWindowReceipt(string Kind, long Match, uint Cookie, double Sim, int Sequence, bool Final,
     StrategyGrantReceipt[] Grants, StrategyDamageReceipt[] Damage, StrategySideReceipt[] Sides, long OverflowEvents, double OverflowAmount);
 
+internal sealed record StrategyCoverageEvent(short Side, string Stage, string Mechanism, short Id, long Count);
+internal sealed record StrategyCoverageReachable(short Side, short[] Hulls, short[] Parts, string[] Mechanisms);
+internal sealed record StrategyCoverageWindow(string Kind, long Match, uint Cookie, double Sim, int Sequence, bool Final,
+    double Share, StrategyCoverageEvent[] Events, StrategyCoverageReachable[] Reachable, long OverflowEvents, double OverflowAmount);
+
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StrategyChoiceReceipt))]
 [JsonSerializable(typeof(StrategyResearchReceipt))]
 [JsonSerializable(typeof(StrategyWindowReceipt))]
+[JsonSerializable(typeof(StrategyCoverageWindow))]
 internal sealed partial class StrategyReceiptJsonContext : JsonSerializerContext;

@@ -11,7 +11,8 @@ namespace Allegiance.Tools.McpSpawner;
 internal static class TechLoadoutSelector
 {
     internal sealed record Selection(short HullId, string HullName, IReadOnlyList<ExpandedPartData> Parts,
-        long Price, string Reason, ShowcaseFinale.StrikeLoadout? Strike = null);
+        long Price, string Reason, ShowcaseFinale.StrikeLoadout? Strike = null,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? CoverageDuty = null);
 
     private sealed record Context(StaticCore Core, TechTreeBitMask Techs, byte[]? Local,
         HashSet<short> Hulls, HashSet<short> Parts, long Budget);

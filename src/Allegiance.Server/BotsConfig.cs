@@ -1,9 +1,10 @@
 namespace Allegiance.Server;
 
-/// <summary>Modern bot policy experiments. P1000 only observes; P1001 will act.</summary>
+/// <summary>Default-off modern bot policy experiments.</summary>
 public sealed class BotsConfig
 {
     public bool CivStrategy { get; set; }
+    public double CivStrategyCoverageShare { get; set; } = Allegiance.Core.Strategy.CivExecutionPlan.DefaultCoverageShare;
     public void ApplyEnvironment(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return;

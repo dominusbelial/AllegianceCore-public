@@ -44,7 +44,6 @@ internal sealed partial class BotManager
     /// gunner cadence and the bot's own flight control cadence.</summary>
     private const float TurretControlDt = 0.15f;
 
-    private static GunnerPolicy.Tuning GunnerTune => GunnerPolicy.Effective;
 
     private static Showcase.HullRole RoleOf(ActiveBot bot)
         => Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var r) ? r : Showcase.HullRole.Fighter;
@@ -71,7 +70,7 @@ internal sealed partial class BotManager
     /// </summary>
     private bool TryGunnerFlow(ActiveBot bot, double now)
     {
-        if (!GunnerTune.Enable) return false;
+        if (!GunnerTuneFor(bot).Enable) return false;
         var cs = bot.Cs;
         if (cs is null) return false;
         if (cs.World.MyShipId is not { } my) return false;
@@ -84,6 +83,26 @@ internal sealed partial class BotManager
             parent = me.ParentId;
             mount = me.BoardTurretId;
             station = me.StationId;
+        }
+
+        if (bot.CivCoverageDuty is "turret" or "gunner")
+        {
+            if (station < 0 && !bot.CivCoverageFlew)
+            {
+                bot.CivCoverageFlew = true;
+                if (!boarded && bot.CivCrewDockLaunchPending && cs.World.Ships.TryGetValue(my, out var flying))
+                {
+                    CivCoverage.ObserveAccepted(bot.Side, cs.World.ResearchBriefing!.Epoch, my,
+                        flying.HullId, flying.Loadout ?? [], true);
+                    bot.CivCrewDockLaunchPending = false;
+                }
+            }
+            if (boarded) CivCoverage.ObserveCrewed(cs);
+            else if (station >= 0 && bot.CivCoverageFlew && !bot.CarrierHullBought)
+            {
+                ApplyCivCoverageDuty(bot, null); // every fresh purchase needs a new coverage allocation
+                if (!GunnerTuneFor(bot).Enable) return false;
+            }
         }
 
         // 1 — already a boarded turret gunner → drive the turret, nothing else.
@@ -132,6 +151,9 @@ internal sealed partial class BotManager
                 sideShips++;
                 if (ship.ParentId >= 0) gunners++;
             }
+        if (!GunnerPolicy.Effective.Enable && bot.CivCoverageDuty is "turret" or "gunner"
+            && Allegiance.Core.Strategy.CivExecutionPlan.TryRead(cs.World.ResearchBriefing?.Plan, out double share, out _))
+            return gunners >= Math.Max(0, CivCoverage.CrewSlots(bot.CivFleetSize, share) - 1);
         return gunners >= Math.Max(1, sideShips / 5);
     }
 
@@ -156,6 +178,8 @@ internal sealed partial class BotManager
         if (bot.GunnerBoardings == 0)
         {
             bot.GunnerBoardings++;
+            if (bot.CivCoverageDuty == "gunner")
+                Console.WriteLine($"[civ-mechanism] cookie={cs.World.Mission?.Cookie} side={bot.Side} pilot={bot.ShipId} stage=completed mechanism=gunner");
             Console.WriteLine($"[gunner] board ok: {bot.Name} (ship {bot.ShipId}) -> carrier {carrierId} turret mount {turretMount}");
         }
 
@@ -187,11 +211,11 @@ internal sealed partial class BotManager
         if (lead && leadDir.LengthSquared() > 1e-6f) aim = leadDir;
         else aim = aim.LengthSquared() > 1e-6f ? aim.Normalize() : bot.TurretOrientation.GetForward();
 
-        float remaining = GunnerPolicy.SlewToward(bot.TurretOrientation, aim, TurretControlDt, GunnerTune);
+        float remaining = GunnerPolicy.SlewToward(bot.TurretOrientation, aim, TurretControlDt, GunnerTuneFor(bot));
         var controls = GunnerPolicy.AimControls(bot.TurretOrientation, aim);
 
         uint serverMs = GunnerServerTimeMs(bot, cs);
-        bool fire = GunnerPolicy.FireGate(remaining, dist, weaponRange, GunnerTune) && serverMs != 0u;
+        bool fire = GunnerPolicy.FireGate(remaining, dist, weaponRange, GunnerTuneFor(bot)) && serverMs != 0u;
         if (fire)
         {
             var update = ClientActiveTurretUpdate.FromLocalTime(bot.ServerClock,
@@ -351,18 +375,19 @@ internal sealed partial class BotManager
             // FedSrv.CPP:2342-2345). Scope 1 ensured the turret mounts are armed.
             cs.SendBuyLoadout(bot.HullId, fLaunch: false, bot.Parts ?? []);
             bot.CarrierHullBought = true;
-            bot.CarrierGatherUntil = now + GunnerTune.GatherSeconds;
+            bot.CarrierGatherUntil = now + GunnerTuneFor(bot).GatherSeconds;
             short stat;
             lock (cs.Gate) stat = cs.World.Ships.TryGetValue(bot.ShipId, out var sm) ? sm.StationId : (short)-1;
-            Console.WriteLine($"[gunner] carrier {bot.Name} (ship {bot.ShipId}) docked in turret hull at station {stat}, holding launch up to {GunnerTune.GatherSeconds:F0}s for gunners");
+            Console.WriteLine($"[gunner] carrier {bot.Name} (ship {bot.ShipId}) docked in turret hull at station {stat}, holding launch up to {GunnerTuneFor(bot).GatherSeconds:F0}s for gunners");
             return true;
         }
 
         int gunners = CountCarrierGunners(cs, bot.ShipId);
         bool urgent = CarrierUrgentLaunch(bot, cs, now);
-        int recruit = GunnerPolicy.RecruitLimit(capacity, GunnerTune);
+        int recruit = GunnerPolicy.RecruitLimit(capacity, GunnerTuneFor(bot));
         if (urgent || now >= (bot.CarrierGatherUntil ?? double.PositiveInfinity) || gunners >= recruit)
         {
+            if (bot.CivCoverageDuty == "turret") bot.CivCrewDockLaunchPending = true;
             cs.SendDocked();                             // FM_C_DOCKED(48) undock announce
             bot.CarrierHullBought = false;
             bot.CarrierGatherUntil = null;
@@ -414,7 +439,7 @@ internal sealed partial class BotManager
     {
         var role = RoleOf(bot);
         if (!GunnerPolicy.CanServeAsGunner(role)) return false;
-        if (!GunnerPolicy.ShouldSeekBoard(role, FreePilotsOnSide(bot.Side), GunnerTune)) return false;
+        if (!GunnerPolicy.ShouldSeekBoard(role, FreePilotsOnSide(bot.Side), GunnerTuneFor(bot))) return false;
 
         short myStation;
         lock (cs.Gate) myStation = cs.World.Ships.TryGetValue(bot.ShipId, out var me) ? me.StationId : (short)-1;
@@ -436,9 +461,9 @@ internal sealed partial class BotManager
                 return false;
             }
             // Give the board a bounded window to reflect (SHIP_STATUS refresh).
-            if (now - bot.GunnerSeekSince < GunnerTune.BoardConfirmSeconds) return true;
+            if (now - bot.GunnerSeekSince < GunnerTuneFor(bot).BoardConfirmSeconds) return true;
             bot.GunnerCarrierId = null;   // timed out → fall back to launching normally
-            Console.WriteLine($"[gunner] {bot.Name} board of {pending} not confirmed in {GunnerTune.BoardConfirmSeconds:F0}s — launching own ship");
+            Console.WriteLine($"[gunner] {bot.Name} board of {pending} not confirmed in {GunnerTuneFor(bot).BoardConfirmSeconds:F0}s — launching own ship");
             return false;
         }
         if (candidate is null)
@@ -449,12 +474,12 @@ internal sealed partial class BotManager
             // tick behind, or its seats just freed). Park (defer OUR launch) so the
             // carrier's gather window overlaps us instead of us insta-launching
             // straight past it. Bounded by BoardParkSeconds; then launch normally.
-            if (GunnerTune.Enable && HasDockedTurretCarrierAtStation(cs, core, myStation, bot.Side))
+            if (GunnerTuneFor(bot).Enable && HasDockedTurretCarrierAtStation(cs, core, myStation, bot.Side))
             {
                 if (bot.GunnerParkUntil is null)
                 {
-                    bot.GunnerParkUntil = now + GunnerTune.BoardParkSeconds;
-                    Console.WriteLine($"[gunner] {bot.Name} parked at station {myStation} awaiting a docked turret carrier's gather (up to {GunnerTune.BoardParkSeconds:F0}s)");
+                    bot.GunnerParkUntil = now + GunnerTuneFor(bot).BoardParkSeconds;
+                    Console.WriteLine($"[gunner] {bot.Name} parked at station {myStation} awaiting a docked turret carrier's gather (up to {GunnerTuneFor(bot).BoardParkSeconds:F0}s)");
                 }
                 if (now < bot.GunnerParkUntil) return true;
                 bot.GunnerParkUntil = null;

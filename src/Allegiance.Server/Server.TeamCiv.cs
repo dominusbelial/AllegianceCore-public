@@ -217,15 +217,24 @@ public sealed partial class Server
         if (!mission.ResearchPlans.ContainsKey(side.Id)) return;   // not a research/showcase game
         if (!_missionConfigs.TryGetValue(mission, out var game)) return;
         bool research = _config.Showcase.TechMode == "research";
-        if (!research && game.ResearchPlanDirectory is null) return;
+        if (!research && game.ResearchPlanDirectory is null && !_config.Bots.CivStrategy) return;
         try
         {
-            var selection = ResearchPlanCatalog.Select(mission.Core,
-                Path.GetFileNameWithoutExtension(_config.StaticCore), side.Civilization.CivilizationId,
-                game.ResearchPlanDirectory ?? Path.Combine(AppContext.BaseDirectory, "showcase-plans"),
-                game.ResearchPlans.GetValueOrDefault(side.Id, "auto"), ResearchSettingsFor(game));
-            mission.ResearchPlans[side.Id] = selection.Plan;
-            Console.WriteLine($"[changeciv] side {side.Id}: research plan -> civ{selection.Plan.CivId} '{selection.Plan.Name}': {selection.Message}");
+            if (_config.Bots.CivStrategy)
+            {
+                InstallCivStrategyPlans(mission);
+                var plan = mission.ResearchPlans[side.Id];
+                Console.WriteLine($"[changeciv] side {side.Id}: portfolio -> civ{plan.CivId} '{plan.Name}'");
+            }
+            else
+            {
+                var selection = ResearchPlanCatalog.Select(mission.Core,
+                    Path.GetFileNameWithoutExtension(_config.StaticCore), side.Civilization.CivilizationId,
+                    game.ResearchPlanDirectory ?? Path.Combine(AppContext.BaseDirectory, "showcase-plans"),
+                    game.ResearchPlans.GetValueOrDefault(side.Id, "auto"), ResearchSettingsFor(game));
+                mission.ResearchPlans[side.Id] = selection.Plan;
+                Console.WriteLine($"[changeciv] side {side.Id}: research plan -> civ{selection.Plan.CivId} '{selection.Plan.Name}': {selection.Message}");
+            }
         }
         catch (Exception ex) when (ex is InvalidDataException or KeyNotFoundException or ArgumentException)
         {
@@ -235,9 +244,12 @@ public sealed partial class Server
         // The client executor (P703) and the bot research commander read the
         // briefing, so hand them the re-selected plan now.
         foreach (var peer in _peerShips
-                     .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == side.Id)
+                     .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
+                         && (_config.Bots.CivStrategy
+                             ? mission.Sides.Any(s => s.Id == kv.Value.Ship.SideId)
+                             : kv.Value.Ship.SideId == side.Id))
                      .Select(kv => kv.Key).ToArray())
-            SendResearchBriefing(peer, mission, side);
+            SendResearchBriefing(peer, mission, mission.Sides.First(s => s.Id == _peerShips[peer].Ship.SideId));
     }
 
     /// <summary>The P703 briefing payload for one side, or null when the side

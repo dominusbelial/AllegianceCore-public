@@ -27,7 +27,7 @@ public sealed record PortfolioChoice(string InputHash, long Seed, short Civ, Imm
     PortfolioSettings Assumptions, PortfolioCandidate? Primary, PortfolioCandidate? Counter,
     ImmutableArray<PortfolioCandidate> Alternatives, ImmutableArray<PortfolioCandidate> CounterAlternatives, ImmutableArray<string> Rejections);
 
-/// <summary>Observation-only modern policy. Own legality is exact ResearchState replay;
+/// <summary>Shared modern portfolio policy. Own legality is exact ResearchState replay;
 /// delivered power and funding/time utility are explicit estimates, not native game rules.</summary>
 public static class CivPortfolio
 {

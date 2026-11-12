@@ -1139,6 +1139,12 @@ public sealed partial class ClientWorld
         }
     }
 
+    /// <summary>Observed own-wallet debits; lets parallel jobs reserve outstanding
+    /// donations even when simultaneous income hides the wallet decrease.</summary>
+    public long OwnWalletDebited { get; private set; }
+    /// <summary>Self-debit or NA-credit MONEY_CHANGE amounts. A seated commander
+    /// issues only donations; this includes both accepted spends and refunds.</summary>
+    public long OwnDonationSettled { get; private set; }
     private readonly Dictionary<short, int> _moneyByShipId = new();
     private readonly Dictionary<short, short> _autoDonateTargetByShipId = new();
 
@@ -1163,6 +1169,7 @@ public sealed partial class ClientWorld
     {
         _moneyByShipId.TryGetValue(ship, out var cur);
         _moneyByShipId[ship] = cur + delta;
+        if (ship == MyShipId && delta < 0) OwnWalletDebited -= (long)delta;
     }
 
     /// <summary>P442 — the set of player ships this client has been told about:
@@ -2393,6 +2400,7 @@ public sealed partial class ClientWorld
         _researchProduction.Clear();
         _retiredResearchProduction.Clear();
         _initialTechsBySideId.Clear();
+        OwnWalletDebited = 0; OwnDonationSettled = 0;
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
         _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
         _feedbackLines.Clear();
@@ -4757,6 +4765,8 @@ public sealed partial class ClientWorld
     /// player-to-player donation, so also debit <c>sidFrom</c>.</summary>
     private void Apply(MoneyChange m)
     {
+        if (m.SidTo == MyShipId && (m.SidFrom == m.SidTo && m.DMoney <= 0 || m.SidFrom == Na && m.DMoney > 0))
+            OwnDonationSettled += Math.Abs((long)m.DMoney);
         AddMoney(m.SidTo, m.DMoney);
         if (m.SidTo != m.SidFrom && m.SidFrom != Na)
             AddMoney(m.SidFrom, -m.DMoney);   // player-to-player donation: debit the sender
@@ -5540,6 +5550,7 @@ public sealed partial class ClientWorld
         _researchProduction.Clear();
         _retiredResearchProduction.Clear();
         _initialTechsBySideId.Clear();
+        OwnWalletDebited = 0; OwnDonationSettled = 0;
         _moneyByShipId.Clear();
         _autoDonateTargetByShipId.Clear();
         _feedbackLines.Clear();

@@ -77,3 +77,12 @@ it does not apply a plan to a live mission. `receipts.py` succeeds on incomplete
 matches while keeping absent observations unknown; gaps/duplicates fail closed.
 Inputs from separate server lifetimes must remain separate files. The older
 `audit.py` retains its historical P999 worker/summary parser.
+
+
+P1001 coverage stages can be audited with
+`python3 tools/p999-civ-strategy/coverage_receipts.py --server server.log --worker worker.log --out coverage.json`.
+Use one server lifetime per invocation; repeat `--worker` for its workers. The audit
+keeps selections separate from grants, launches, firing, hits and completions,
+validates per-worker slot/resource bounds, and preserves explicit overflow and
+reachable catalogues. `[civ-mechanism]` request/repair/gunner edges supplement the
+bounded server completion windows; requests alone do not prove success.

@@ -16,6 +16,8 @@ internal sealed partial class ResearchCommander
 
     internal IReadOnlyList<Command> Tick(Snapshot world)
     {
+        if (world.Goals?.IsProsperityGame != true && Allegiance.Core.Strategy.CivExecutionPlan.TryRead(_plan, out _, out _))
+            return TickPortfolio(world);
         // Preserve the original controller, including its trace and telemetry,
         // byte for byte when this goal is absent (also before MISSIONDEF).
         if (world.Goals?.IsProsperityGame != true) return TickPlan(world);
@@ -106,7 +108,8 @@ internal sealed partial class ResearchCommander
 
     private IReadOnlyList<Command> TickReservedPlan(Snapshot world, int budget)
     {
-        var commands = TickPlan(world with { Wallet = budget });
+        var commands = Allegiance.Core.Strategy.CivExecutionPlan.TryRead(_plan, out _, out _)
+            ? TickPortfolio(world with { Wallet = budget }) : TickPlan(world with { Wallet = budget });
         // Restrict spending without reporting the budget as the real wallet.
         if (Telemetry is { } report) Telemetry = report with { Money = world.Wallet };
         return commands;

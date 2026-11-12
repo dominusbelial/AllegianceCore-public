@@ -2,6 +2,7 @@ using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
+using Allegiance.Core.Strategy;
 
 namespace Allegiance.Tools.McpSpawner;
 
@@ -39,7 +40,11 @@ internal sealed partial class BotManager
         }
     }
 
-    internal sealed record LoadoutShop(short Civ, short DockType, TechTreeBitMask Techs, long Budget, DataStationTypeIGC? Target = null, short Side = -1);
+    internal sealed record LoadoutShop(short Civ, short DockType, TechTreeBitMask Techs, long Budget, DataStationTypeIGC? Target = null, short Side = -1,
+        ResearchPlan? Plan = null, ResearchSettings? Settings = null, short[]? Opponents = null,
+        GlobalAttributeSet? Attributes = null, string Epoch = "", short Pilot = -1, uint Cookie = 0,
+        CivLoadoutPolicy.ObservedHull[]? ObservedTargets = null, GlobalAttributeSet? TargetAttributes = null,
+        int FleetSize = 0, bool FriendlyTurret = false, bool RemoteAnchor = false, bool Conquest = false);
 
     // Called under the purchasing client's gate, never from the probe's tech snapshot.
     internal static LoadoutShop? CurrentLoadoutShop(ConnectionSession cs, short side, short ship)
@@ -59,15 +64,33 @@ internal sealed partial class BotManager
         var target = w.Stations.Values.Where(s => s.SideId >= 0 && s.SideId != side && core.StationTypes.ContainsKey(s.StationTypeId))
             .OrderByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
             .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
-        return new(civ, dock.StationTypeId, techs, Math.Max(0, money), target, side);
+        var briefing = w.ResearchBriefing;
+        return new(civ, dock.StationTypeId, techs, Math.Max(0, money), target, side,
+            briefing?.Plan, briefing?.Settings,
+            w.SideRoster?.Sides.Where(s => s.SideId >= 0 && s.SideId != side).Select(s => s.CivId).ToArray(),
+            w.GlobalAttributesFor(side), briefing?.Epoch ?? "", ship, w.Mission?.Cookie ?? 0,
+            CivExecutionPlan.TryRead(briefing?.Plan, out _, out _) ? w.Ships.Values.Where(s => s.SideId >= 0 && s.SideId != side && !s.IsDead
+                    && core.HullTypes.TryGetValue(s.HullId, out var hull) && hull.MaxFixedWeapons > 0)
+                .DistinctBy(s => (s.SideId, s.HullId)).Select(s => new CivLoadoutPolicy.ObservedHull(s.HullId,
+                    w.SideRoster?.Sides.FirstOrDefault(r => r.SideId == s.SideId).CivId ?? (short)-1,
+                    w.GlobalAttributesFor(s.SideId))).ToArray() : null,
+            target is { } t && w.Stations.Values.FirstOrDefault(s => s.SideId != side && s.StationTypeId == t.StationTypeId) is { } enemy
+                ? w.GlobalAttributesFor(enemy.SideId) : null, FriendlyTurret: w.Ships.Values.Any(s => s.SideId == side && s.ShipId != ship
+                && core.HullTypes.TryGetValue(s.HullId, out var carrier) && carrier.MaxWeapons > carrier.MaxFixedWeapons),
+            RemoteAnchor: w.Stations.Values.Any(s => s.SideId == side && s.ClusterId != me.SectorId),
+            Conquest: w.MissionGoals.IsConquestGame);
     }
 
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
         DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
         bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed,
-        bool preferTurretBomber = false, bool boarding = false, bool alephFieldMines = false)
+        bool preferTurretBomber = false, bool boarding = false, bool alephFieldMines = false, bool preserveFinaleFit = false)
     {
         var core = Catalog.RepresentativeCore();
+        if (CivExecutionPlan.TryRead(shop.Plan, out double coverageShare, out _)
+            && !boarding && !medevacScout && !defensiveMines && !alephFieldMines
+            && !preserveFinaleFit
+            && PickCivLoadout(shop, role, target, coverageShare, support) is { } strategic) return strategic;
         // Native capture capability is acquired through the same legality and
         // purchase path as the fleet; a locked boarder temporarily flies fighter.
         if (boarding && TechLoadoutSelector.Select(core, shop.Civ, Showcase.HullRole.Fighter,
@@ -163,6 +186,7 @@ internal sealed partial class BotManager
         bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
         bot.MineDispenserPartId = FindMineDispenser(selected.Parts);
         bot.PendingTechLoadout = selected;
+        ApplyCivCoverageDuty(bot, selected.CoverageDuty);
     }
 
     private static bool RepickRelaunchLoadout(ActiveBot bot, ConnectionSession cs)
@@ -171,6 +195,9 @@ internal sealed partial class BotManager
         lock (cs.Gate)
         {
             if (CurrentLoadoutShop(cs, bot.Side, bot.ShipId) is not { } shop) return false;
+            if (bot.CivOriginalRole is { } original && !bot.FinaleBomberActive && !bot.FinaleBomberReserved)
+                ApplyCivCoverageDuty(bot, null);
+            shop = shop with { FleetSize = bot.CivFleetSize };
             TechLoadoutSelector.Selection? selected = null;
             if (bot.LoadoutRefused && bot.PreviousLegalLoadout is { } previous
                 && previous.Price <= shop.Budget && TechLoadoutSelector.Legal(Catalog.RepresentativeCore(), shop.Civ,
@@ -189,7 +216,8 @@ internal sealed partial class BotManager
                     defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout, alephFieldMines: bot.AlephFieldDuty,
                     varied: bot.Variety, varietySeed: bot.VarietySeed,
                     preferTurretBomber: role == Showcase.HullRole.Bomber && !bot.FinaleBomberActive,
-                    boarding: ConquestGame(cs) && bot.Role.Equals("boarder", StringComparison.OrdinalIgnoreCase));
+                    boarding: ConquestGame(cs) && bot.Role.Equals("boarder", StringComparison.OrdinalIgnoreCase),
+                    preserveFinaleFit: bot.FinaleBomberActive);
                 if (selected is null && bot.FinaleBomberActive && target is { } station
                     && (cs.World.ResearchBriefing?.TechMode == "research" || ConquestGame(cs)))
                 {

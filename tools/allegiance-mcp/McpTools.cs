@@ -716,6 +716,10 @@ internal static partial class McpTools
         for (int i = 2; i < participatingSides.Length; i++)
             fleets[sides[i]] = ResolveSideFleet(sideSpecs![i], args, core, showcase, i.ToString());
 
+        if (showcase)
+            foreach (short side in participatingSides)
+                fleets[side] = mgr.CivFleet(side, fleets[side].Sum(e => e.Count), fleets[side]).ToList();
+        fleetA = fleets[sideA]; fleetB = fleets[sideB];
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
         // P795 — march (home launch → alephs → staging → converge) is the only
@@ -795,7 +799,8 @@ internal static partial class McpTools
             var slot = slots[si];
             int ordinal = supportOrdinals.GetValueOrDefault(slot.Side);
             supportOrdinals[slot.Side] = ordinal + 1;
-            string pilotRole = BotManager.SupportSlot(ordinal, slots.Count(s => s.Side == slot.Side), supportConfig.Share)
+            string pilotRole = (mgr.CivSupportSlot(slot.Side, ordinal, slots.Count(s => s.Side == slot.Side), slot.Role)
+                ?? BotManager.SupportSlot(ordinal, slots.Count(s => s.Side == slot.Side), supportConfig.Share))
                 ? "support" : slot.Role.ToString();
             if (ordinal == 1 && mgr.Probe.World.Mission?.Goals.IsConquestGame == true) pilotRole = "boarder";
             // P637 — per-role target: a BOMBER's own objective is the ENEMY
@@ -825,10 +830,16 @@ internal static partial class McpTools
                 counts[routeIndex]++;
                 routePath = rs[routeIndex];
             }
-            spawnSlots.Add(new(si, slot.Side, slot.SourceHull, () => mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
-                slot.LauncherId, slot.LauncherName, useStaging: staging,
-                wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
-                role: pilotRole, reportFailure: false, loadoutVariety: variety)));
+            int sideCount = slots.Count(s => s.Side == slot.Side);
+            spawnSlots.Add(new(si, slot.Side, slot.SourceHull, () =>
+            {
+                var spawned = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
+                    slot.LauncherId, slot.LauncherName, useStaging: staging,
+                    wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
+                    role: pilotRole, reportFailure: false, loadoutVariety: variety);
+                mgr.RegisterCivSlot(spawned.Name, ordinal, sideCount);
+                return spawned;
+            }));
         }
         // Native lobby rank balance applies during a started showcase. Take
         // turns between fleets so a side's whole batch does not fill first.

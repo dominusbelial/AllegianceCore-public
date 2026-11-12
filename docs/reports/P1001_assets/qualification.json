@@ -1,0 +1,3439 @@
+{
+  "base": "16e166a1",
+  "isolated": [
+    {
+      "receipt": "BotFixRegressionTests.P1001-1",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "BotFixRegressionTests.P1001-2",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "BotFixRegressionTests.P1001-3",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1000CivStrategyLoopbackTests-1",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1000CivStrategyLoopbackTests-2",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1000CivStrategyLoopbackTests-3",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivCommanderTests-1",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivCommanderTests-2",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivCommanderTests-3",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivFleetTests-1",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivFleetTests-2",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivFleetTests-3",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivStrategyLiveTests-1",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivStrategyLiveTests-2",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "P1001CivStrategyLiveTests-3",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "neverParks": [
+    {
+      "receipt": "base-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base",
+      "showcase": [
+        {
+          "seconds": 351.7,
+          "samples": 3514,
+          "reached": 24,
+          "longestIdleSeconds": 1.309,
+          "shots": 3506,
+          "hits": 1302,
+          "kills": 8
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:05:55.8014889",
+          "showcase": "P700 local 15v15: 351.7s, samples=3514, reached=24/30, longest speed<1 with target=1.309s, shots=3506, hits=1302, kills=8"
+        }
+      ]
+    },
+    {
+      "receipt": "base-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base",
+      "showcase": [
+        {
+          "seconds": 368.6,
+          "samples": 3682,
+          "reached": 24,
+          "longestIdleSeconds": 0.401,
+          "shots": 2228,
+          "hits": 442,
+          "kills": 2
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:06:12.8037081",
+          "showcase": "P700 local 15v15: 368.6s, samples=3682, reached=24/30, longest speed<1 with target=0.401s, shots=2228, hits=442, kills=2"
+        }
+      ]
+    },
+    {
+      "receipt": "base-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base",
+      "showcase": [
+        {
+          "seconds": 181.3,
+          "samples": 1812,
+          "reached": 24,
+          "longestIdleSeconds": 2.003,
+          "shots": 7344,
+          "hits": 3330,
+          "kills": 18
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:05.5521493",
+          "showcase": "P700 local 15v15: 181.3s, samples=1812, reached=24/30, longest speed<1 with target=2.003s, shots=7344, hits=3330, kills=18"
+        }
+      ]
+    },
+    {
+      "receipt": "base-4",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base",
+      "showcase": [
+        {
+          "seconds": 176.1,
+          "samples": 1759,
+          "reached": 24,
+          "longestIdleSeconds": 1.912,
+          "shots": 6005,
+          "hits": 3118,
+          "kills": 20
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:00.5919686",
+          "showcase": "P700 local 15v15: 176.1s, samples=1759, reached=24/30, longest speed<1 with target=1.912s, shots=6005, hits=3118, kills=20"
+        }
+      ]
+    },
+    {
+      "receipt": "base-5",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base",
+      "showcase": [
+        {
+          "seconds": 148.7,
+          "samples": 1486,
+          "reached": 24,
+          "longestIdleSeconds": 2.004,
+          "shots": 5360,
+          "hits": 3160,
+          "kills": 20
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:02:33.1314310",
+          "showcase": "P700 local 15v15: 148.7s, samples=1486, reached=24/30, longest speed<1 with target=2.004s, shots=5360, hits=3160, kills=20"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-off-1",
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0,
+      "arm": "off",
+      "showcase": [
+        {
+          "seconds": 204.8,
+          "samples": 2047,
+          "reached": 24,
+          "longestIdleSeconds": 1.905,
+          "shots": 2900,
+          "hits": 1586,
+          "kills": 9
+        },
+        {
+          "seconds": 480.1,
+          "samples": 4796,
+          "reached": 20,
+          "longestIdleSeconds": 1.903,
+          "shots": 3416,
+          "hits": 1211,
+          "kills": 13
+        },
+        {
+          "seconds": 180.9,
+          "samples": 1808,
+          "reached": 24,
+          "longestIdleSeconds": 2.511,
+          "shots": 8237,
+          "hits": 4619,
+          "kills": 26
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:28.2685301",
+          "showcase": "P700 local 15v15: 204.8s, samples=2047, reached=24/30, longest speed<1 with target=1.905s, shots=2900, hits=1586, kills=9"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Failed",
+          "duration": "00:08:03.5859879",
+          "showcase": "P700 local 15v15: 480.1s, samples=4796, reached=20/30, longest speed<1 with target=1.903s, shots=3416, hits=1211, kills=13"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P994_seeded_batched_showcase_still_hits_and_kills",
+          "outcome": "Passed",
+          "duration": "00:03:04.9085935",
+          "showcase": "P700 local 15v15: 180.9s, samples=1808, reached=24/30, longest speed<1 with target=2.511s, shots=8237, hits=4619, kills=26"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-off-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "off",
+      "showcase": [
+        {
+          "seconds": 197.2,
+          "samples": 1971,
+          "reached": 25,
+          "longestIdleSeconds": 1.917,
+          "shots": 901,
+          "hits": 406,
+          "kills": 2
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:21.2584709",
+          "showcase": "P700 local 15v15: 197.2s, samples=1971, reached=25/30, longest speed<1 with target=1.917s, shots=901, hits=406, kills=2"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-off-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "off",
+      "showcase": [
+        {
+          "seconds": 210.8,
+          "samples": 2107,
+          "reached": 24,
+          "longestIdleSeconds": 2.012,
+          "shots": 6624,
+          "hits": 2990,
+          "kills": 20
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:34.8457365",
+          "showcase": "P700 local 15v15: 210.8s, samples=2107, reached=24/30, longest speed<1 with target=2.012s, shots=6624, hits=2990, kills=20"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-off-4",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "off",
+      "showcase": [
+        {
+          "seconds": 466.4,
+          "samples": 4660,
+          "reached": 24,
+          "longestIdleSeconds": 1.912,
+          "shots": 8383,
+          "hits": 3423,
+          "kills": 29
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:07:50.5296458",
+          "showcase": "P700 local 15v15: 466.4s, samples=4660, reached=24/30, longest speed<1 with target=1.912s, shots=8383, hits=3423, kills=29"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-off-5",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "off",
+      "showcase": [
+        {
+          "seconds": 344.7,
+          "samples": 3445,
+          "reached": 24,
+          "longestIdleSeconds": 1.112,
+          "shots": 2566,
+          "hits": 773,
+          "kills": 4
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:05:49.1225905",
+          "showcase": "P700 local 15v15: 344.7s, samples=3445, reached=24/30, longest speed<1 with target=1.112s, shots=2566, hits=773, kills=4"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-on-1",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "on",
+      "showcase": [
+        {
+          "seconds": 188.0,
+          "samples": 1878,
+          "reached": 24,
+          "longestIdleSeconds": 2.007,
+          "shots": 5895,
+          "hits": 1948,
+          "kills": 14
+        },
+        {
+          "seconds": 190.4,
+          "samples": 1902,
+          "reached": 24,
+          "longestIdleSeconds": 2.406,
+          "shots": 3473,
+          "hits": 1631,
+          "kills": 14
+        },
+        {
+          "seconds": 151.0,
+          "samples": 1509,
+          "reached": 24,
+          "longestIdleSeconds": 1.302,
+          "shots": 4314,
+          "hits": 1706,
+          "kills": 21
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P994_seeded_batched_showcase_still_hits_and_kills",
+          "outcome": "Passed",
+          "duration": "00:03:15.5681587",
+          "showcase": "P700 local 15v15: 188.0s, samples=1878, reached=24/30, longest speed<1 with target=2.007s, shots=5895, hits=1948, kills=14"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:15.7426804",
+          "showcase": "P700 local 15v15: 190.4s, samples=1902, reached=24/30, longest speed<1 with target=2.406s, shots=3473, hits=1631, kills=14"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:02:36.3217307",
+          "showcase": "P700 local 15v15: 151.0s, samples=1509, reached=24/30, longest speed<1 with target=1.302s, shots=4314, hits=1706, kills=21"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-on-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "on",
+      "showcase": [
+        {
+          "seconds": 187.5,
+          "samples": 1873,
+          "reached": 24,
+          "longestIdleSeconds": 1.904,
+          "shots": 4257,
+          "hits": 1793,
+          "kills": 18
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:14.9464825",
+          "showcase": "P700 local 15v15: 187.5s, samples=1873, reached=24/30, longest speed<1 with target=1.904s, shots=4257, hits=1793, kills=18"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-on-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "on",
+      "showcase": [
+        {
+          "seconds": 186.2,
+          "samples": 1860,
+          "reached": 24,
+          "longestIdleSeconds": 1.514,
+          "shots": 775,
+          "hits": 400,
+          "kills": 5
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:14.8083059",
+          "showcase": "P700 local 15v15: 186.2s, samples=1860, reached=24/30, longest speed<1 with target=1.514s, shots=775, hits=400, kills=5"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-on-4",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "on",
+      "showcase": [
+        {
+          "seconds": 179.4,
+          "samples": 1792,
+          "reached": 24,
+          "longestIdleSeconds": 2.012,
+          "shots": 3844,
+          "hits": 1358,
+          "kills": 10
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:06.8734998",
+          "showcase": "P700 local 15v15: 179.4s, samples=1792, reached=24/30, longest speed<1 with target=2.012s, shots=3844, hits=1358, kills=10"
+        }
+      ]
+    },
+    {
+      "receipt": "neverparks-on-5",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "on",
+      "showcase": [
+        {
+          "seconds": 180.2,
+          "samples": 1800,
+          "reached": 24,
+          "longestIdleSeconds": 2.003,
+          "shots": 4181,
+          "hits": 1287,
+          "kills": 14
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:07.9432638",
+          "showcase": "P700 local 15v15: 180.2s, samples=1800, reached=24/30, longest speed<1 with target=2.003s, shots=4181, hits=1287, kills=14"
+        }
+      ]
+    }
+  ],
+  "defaultShowcaseCounts": {
+    "base": {
+      "trials": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "off": {
+      "trials": 5,
+      "passed": 4,
+      "failed": 1,
+      "skipped": 0
+    },
+    "on": {
+      "trials": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 144,
+        "live": 6,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 55,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 5144,
+        "live": 139,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2444,
+        "live": 198,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6362,
+        "live": 110,
+        "perf": 70
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 560.2743946189948,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 144,
+            "outcomes": {
+              "Passed": 144
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 55,
+            "outcomes": {
+              "Passed": 55
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 5144,
+            "outcomes": {
+              "Passed": 5127,
+              "NotExecuted": 17
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2444,
+            "outcomes": {
+              "Passed": 2443,
+              "Failed": 1
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6362,
+            "outcomes": {
+              "Passed": 6354,
+              "Failed": 5,
+              "NotExecuted": 3
+            }
+          }
+        },
+        "calibration": {
+          "factor": 1.1516976127320955,
+          "referenceMs": 4.3419,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 11.516976127320955
+        },
+        "timingOffenders": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "outcome": "Failed",
+            "seconds": 37.7523066
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+            "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+            "outcome": "Passed",
+            "seconds": 13.5942486
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+            "outcome": "Passed",
+            "seconds": 13.0539483
+          },
+          {
+            "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+            "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+            "outcome": "Passed",
+            "seconds": 11.6414798
+          }
+        ],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed",
+          "4 Fast test executions exceeded the calibrated 10 second limit"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.07460093899862841,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.07460093899862841,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "build-solution-qualified": {
+    "succeeded": 1,
+    "warnings": 0,
+    "errors": 0,
+    "allTools": false
+  },
+  "build-tools-final": {
+    "succeeded": 135,
+    "warnings": 0,
+    "errors": 0,
+    "allTools": true
+  },
+  "preSupportMarchRegressionRepeats": [
+    {
+      "receipt": "march-review",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "march-review-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "march-review-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "parityAndGlossary": {
+    "glossaryDistinctPaths": 794,
+    "nativeGateRows": 6,
+    "newParityCredit": 0,
+    "registeredMatricesPassed": true
+  },
+  "swappedControls": [
+    {
+      "receipt": "swapped-base-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 206.6,
+          "samples": 2065,
+          "reached": 24,
+          "longestIdleSeconds": 1.403,
+          "shots": 2991,
+          "hits": 1717,
+          "kills": 10
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:30.7542166",
+          "showcase": "P700 local 15v15: 206.6s, samples=2065, reached=24/30, longest speed<1 with target=1.403s, shots=2991, hits=1717, kills=10"
+        }
+      ]
+    },
+    {
+      "receipt": "swapped-base-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 394.5,
+          "samples": 3942,
+          "reached": 24,
+          "longestIdleSeconds": 1.911,
+          "shots": 4571,
+          "hits": 1535,
+          "kills": 8
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:06:38.6203071",
+          "showcase": "P700 local 15v15: 394.5s, samples=3942, reached=24/30, longest speed<1 with target=1.911s, shots=4571, hits=1535, kills=8"
+        }
+      ]
+    },
+    {
+      "receipt": "swapped-base-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 226.8,
+          "samples": 2267,
+          "reached": 24,
+          "longestIdleSeconds": 1.209,
+          "shots": 1719,
+          "hits": 996,
+          "kills": 7
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:03:50.9812379",
+          "showcase": "P700 local 15v15: 226.8s, samples=2267, reached=24/30, longest speed<1 with target=1.209s, shots=1719, hits=996, kills=7"
+        }
+      ]
+    },
+    {
+      "receipt": "swapped-on-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 295.5,
+          "samples": 2951,
+          "reached": 24,
+          "longestIdleSeconds": 1.904,
+          "shots": 2113,
+          "hits": 770,
+          "kills": 8
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:05:03.4481302",
+          "showcase": "P700 local 15v15: 295.5s, samples=2951, reached=24/30, longest speed<1 with target=1.904s, shots=2113, hits=770, kills=8"
+        }
+      ]
+    },
+    {
+      "receipt": "swapped-on-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 427.9,
+          "samples": 4273,
+          "reached": 24,
+          "longestIdleSeconds": 2.002,
+          "shots": 4949,
+          "hits": 1943,
+          "kills": 19
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:07:15.7419491",
+          "showcase": "P700 local 15v15: 427.9s, samples=4273, reached=24/30, longest speed<1 with target=2.002s, shots=4949, hits=1943, kills=19"
+        }
+      ]
+    },
+    {
+      "receipt": "swapped-on-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "swapped-control",
+      "showcase": [
+        {
+          "seconds": 294.0,
+          "samples": 2936,
+          "reached": 24,
+          "longestIdleSeconds": 1.619,
+          "shots": 4204,
+          "hits": 1235,
+          "kills": 14
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:05:01.3294196",
+          "showcase": "P700 local 15v15: 294.0s, samples=2936, reached=24/30, longest speed<1 with target=1.619s, shots=4204, hits=1235, kills=14"
+        }
+      ]
+    }
+  ],
+  "pythonCoverageParserRuns": [
+    {
+      "receipt": "python-1",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "python-2",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "python-3",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "coverageAudits": [
+    {
+      "receipt": "P1001CivStrategyLiveTests-1",
+      "server": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "sequence": 11,
+          "final": true,
+          "stages": {
+            "0/granted/hull/13": 8,
+            "0/granted/hull/210": 10,
+            "0/granted/hull/237": 2,
+            "0/granted/hull/244": 31,
+            "0/launched/launched/210": 10,
+            "0/granted/part/21": 12,
+            "0/granted/part/22": 14,
+            "0/granted/part/33": 21,
+            "0/granted/part/59": 6,
+            "0/granted/part/80": 11,
+            "0/granted/part/81": 4,
+            "0/granted/part/91": 1,
+            "0/granted/part/150": 7,
+            "0/granted/part/153": 1,
+            "1/granted/hull/13": 7,
+            "1/granted/hull/77": 11,
+            "1/granted/hull/157": 2,
+            "1/granted/hull/187": 5,
+            "1/granted/hull/190": 7,
+            "1/launched/launched/187": 5,
+            "1/launched/launched/190": 7,
+            "1/granted/part/21": 12,
+            "1/granted/part/22": 15,
+            "1/granted/part/23": 7,
+            "1/granted/part/33": 13,
+            "1/granted/part/59": 1,
+            "1/granted/part/80": 14,
+            "1/granted/part/81": 5,
+            "1/granted/part/91": 1,
+            "1/granted/part/92": 7,
+            "1/granted/part/103": 3,
+            "1/granted/part/150": 5,
+            "1/granted/part/153": 2,
+            "2/granted/hull/13": 7,
+            "2/granted/hull/710": 5,
+            "2/granted/hull/715": 8,
+            "2/granted/hull/738": 2,
+            "2/granted/hull/744": 15,
+            "2/launched/launched/710": 5,
+            "2/launched/launched/715": 8,
+            "2/granted/part/21": 14,
+            "2/granted/part/22": 6,
+            "2/granted/part/23": 7,
+            "2/granted/part/33": 12,
+            "2/granted/part/59": 6,
+            "2/granted/part/80": 15,
+            "2/granted/part/81": 4,
+            "2/granted/part/91": 1,
+            "2/granted/part/92": 8,
+            "2/granted/part/150": 7,
+            "2/granted/part/153": 3,
+            "0/hit/Gun/33": 1333,
+            "0/hit/Missile/32": 8,
+            "1/hit/Gun/33": 3639,
+            "1/hit/Gun/92": 3071,
+            "1/hit/Missile/32": 4,
+            "2/hit/Gun/33": 2595,
+            "2/hit/Gun/92": 2309,
+            "2/hit/Missile/35": 2,
+            "2/hit/Missile/32": 6,
+            "0/fired/Guns/-1": 8964,
+            "0/fired/Missiles/-1": 44,
+            "0/fired/Mines/-1": 11,
+            "0/fired/Probes/-1": 5,
+            "0/fired/Chaff/-1": 17,
+            "0/completed/goal-kills/-1": 12,
+            "1/fired/Guns/-1": 16563,
+            "1/fired/Missiles/-1": 36,
+            "1/fired/Probes/-1": 4,
+            "1/fired/Chaff/-1": 7,
+            "1/completed/NaniteShip/-1": 73,
+            "1/completed/goal-kills/-1": 27,
+            "2/fired/Guns/-1": 10555,
+            "2/fired/Missiles/-1": 29,
+            "2/fired/Mines/-1": 8,
+            "2/fired/Probes/-1": 3,
+            "2/fired/Chaff/-1": 7,
+            "2/completed/NaniteShip/-1": 97,
+            "2/completed/goal-kills/-1": 23,
+            "0/granted/hull/204": 4,
+            "0/granted/hull/217": 5,
+            "0/launched/launched/204": 4,
+            "0/granted/part/157": 9,
+            "1/completed/completed:construction/68": 1,
+            "1/granted/hull/182": 6,
+            "1/granted/part/190": 1,
+            "2/granted/hull/719": 4,
+            "2/granted/part/103": 1,
+            "0/hit/Mine/11": 264,
+            "1/hit/Missile/58": 2,
+            "1/hit/Missile/35": 3,
+            "0/completed/Research/-1": 149,
+            "1/completed/DroneBuild/-1": 7,
+            "1/completed/Research/-1": 162,
+            "2/completed/Research/-1": 93,
+            "0/completed/completed:construction/12": 1,
+            "0/granted/hull/215": 1,
+            "0/granted/hull/218": 2,
+            "0/granted/hull/223": 1,
+            "0/granted/hull/248": 1,
+            "0/granted/hull/271": 7,
+            "0/launched/launched/215": 1,
+            "0/granted/part/28": 1,
+            "0/granted/part/43": 1,
+            "0/granted/part/57": 1,
+            "0/granted/part/85": 4,
+            "0/granted/part/86": 33,
+            "0/granted/part/92": 1,
+            "0/granted/part/105": 1,
+            "0/granted/part/190": 1,
+            "1/granted/hull/179": 3,
+            "1/granted/hull/185": 1,
+            "1/granted/hull/193": 2,
+            "1/granted/hull/223": 1,
+            "2/completed/completed:construction/711": 1,
+            "0/completed/DroneBuild/-1": 10,
+            "2/completed/DroneBuild/-1": 3,
+            "0/completed/completed:construction/2": 1,
+            "0/completed/completed:construction/11": 1,
+            "0/completed/completed:construction/47": 1,
+            "0/granted/hull/299": 15,
+            "0/launched/launched/299": 15,
+            "0/granted/part/5": 4,
+            "0/granted/part/44": 4,
+            "1/completed/completed:construction/64": 1,
+            "1/completed/completed:construction/71": 1,
+            "1/completed/completed:construction/72": 1,
+            "1/granted/hull/209": 1,
+            "1/granted/hull/219": 1,
+            "1/launched/launched/209": 1,
+            "1/launched/launched/219": 1,
+            "1/granted/part/5": 2,
+            "1/granted/part/35": 1,
+            "1/granted/part/46": 2,
+            "1/granted/part/54": 2,
+            "1/granted/part/86": 6,
+            "1/granted/part/87": 1,
+            "1/granted/part/142": 1,
+            "1/granted/part/191": 1,
+            "0/hit/Gun/92": 999,
+            "0/hit/Missile/60": 3,
+            "0/completed/NaniteShip/-1": 73,
+            "0/completed/completed:construction/14": 1,
+            "0/granted/hull/258": 1,
+            "0/granted/hull/289": 1,
+            "0/launched/launched/258": 1,
+            "0/launched/launched/289": 1,
+            "0/granted/part/16": 1,
+            "0/granted/part/42": 2,
+            "0/granted/part/72": 10,
+            "0/granted/part/94": 2,
+            "0/granted/part/152": 1,
+            "0/granted/part/158": 1,
+            "0/granted/part/174": 1,
+            "0/granted/part/601": 7,
+            "1/completed/completed:construction/73": 1,
+            "1/granted/hull/196": 2,
+            "1/launched/launched/196": 2,
+            "1/granted/part/44": 1,
+            "1/granted/part/130": 1,
+            "1/granted/part/157": 1,
+            "2/granted/hull/223": 1,
+            "2/granted/hull/718": 2,
+            "2/granted/hull/725": 1,
+            "1/hit/Gun/87": 318,
+            "2/hit/Missile/58": 3,
+            "2/completed/NaniteStation/-1": 46,
+            "0/completed/completed:construction/21": 1,
+            "0/completed/completed:construction/22": 1,
+            "1/completed/completed:construction/62": 1,
+            "1/completed/completed:construction/66": 1,
+            "1/granted/hull/229": 1,
+            "1/granted/hull/230": 1,
+            "1/granted/hull/240": 1,
+            "1/granted/hull/243": 1,
+            "1/granted/part/120": 1,
+            "2/granted/part/26": 1,
+            "2/granted/part/85": 2,
+            "2/granted/part/154": 1,
+            "0/hit/Gun/72": 1295,
+            "0/hit/Gun/94": 117,
+            "1/hit/Gun/142": 262,
+            "2/completed/PodRescue/-1": 2,
+            "0/completed/completed:construction/23": 1,
+            "0/granted/hull/127": 1,
+            "0/launched/launched/127": 1,
+            "0/granted/part/14": 1,
+            "0/granted/part/187": 1,
+            "1/granted/hull/241": 1,
+            "1/granted/hull/242": 1,
+            "1/granted/part/50": 1,
+            "2/completed/completed:construction/713": 1,
+            "2/granted/hull/720": 1,
+            "2/granted/hull/789": 7,
+            "2/launched/launched/13": 1,
+            "2/launched/launched/720": 1,
+            "2/launched/launched/789": 7,
+            "2/granted/part/5": 4,
+            "2/granted/part/34": 1,
+            "2/granted/part/44": 7,
+            "2/granted/part/52": 1,
+            "2/granted/part/86": 9,
+            "2/granted/part/212": 8,
+            "0/hit/Missile/34": 1,
+            "1/hit/Gun/50": 810,
+            "1/hit/Gun/120": 338,
+            "2/hit/Gun/212": 196,
+            "0/completed/completed:construction/3": 1,
+            "0/completed/completed:construction/13": 1,
+            "1/granted/part/197": 1,
+            "1/granted/part/601": 1,
+            "0/completed/NaniteStation/-1": 9,
+            "0/granted/hull/256": 1,
+            "0/launched/launched/256": 1,
+            "0/granted/part/30": 1,
+            "0/granted/part/34": 1,
+            "0/granted/part/61": 1,
+            "0/granted/part/114": 1,
+            "2/completed/completed:construction/712": 1,
+            "1/hit/None/-1": 243,
+            "2/hit/None/-1": 158,
+            "0/granted/hull/62": 1,
+            "0/granted/hull/251": 1,
+            "0/launched/launched/62": 1,
+            "0/launched/launched/251": 1,
+            "0/granted/part/17": 1,
+            "0/granted/part/53": 1,
+            "0/granted/part/101": 1,
+            "0/granted/part/122": 1,
+            "0/granted/part/130": 1,
+            "0/granted/part/160": 1,
+            "0/granted/part/224": 1,
+            "2/granted/part/57": 2,
+            "0/hit/Mine/68": 88,
+            "0/hit/None/-1": 85,
+            "0/hit/Gun/61": 105,
+            "1/completed/NaniteStation/-1": 54,
+            "0/hit/Gun/122": 151
+          },
+          "reachable": {
+            "0": {
+              "side": 0,
+              "hulls": [
+                210
+              ],
+              "parts": [
+                21,
+                22,
+                24,
+                25,
+                33,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                120,
+                125,
+                130,
+                150,
+                153,
+                155,
+                157,
+                176
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "1": {
+              "side": 1,
+              "hulls": [
+                187,
+                190
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                157,
+                191
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "2": {
+              "side": 2,
+              "hulls": [
+                710,
+                715
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                212,
+                218
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            }
+          },
+          "overflow": 0
+        }
+      ],
+      "workers": [
+        {
+          "source": "on.log",
+          "selected": 50,
+          "covered": 6
+        }
+      ]
+    },
+    {
+      "receipt": "P1001CivStrategyLiveTests-2",
+      "server": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "sequence": 11,
+          "final": true,
+          "stages": {
+            "0/granted/hull/13": 8,
+            "0/granted/hull/210": 9,
+            "0/granted/hull/237": 2,
+            "0/granted/hull/244": 31,
+            "0/launched/launched/210": 9,
+            "0/granted/part/21": 9,
+            "0/granted/part/22": 13,
+            "0/granted/part/33": 11,
+            "0/granted/part/59": 6,
+            "0/granted/part/80": 10,
+            "0/granted/part/81": 3,
+            "0/granted/part/91": 1,
+            "0/granted/part/150": 7,
+            "0/granted/part/153": 1,
+            "1/granted/hull/13": 7,
+            "1/granted/hull/77": 16,
+            "1/granted/hull/157": 2,
+            "1/granted/hull/187": 5,
+            "1/granted/hull/190": 6,
+            "1/launched/launched/187": 5,
+            "1/launched/launched/190": 6,
+            "1/granted/part/21": 12,
+            "1/granted/part/22": 12,
+            "1/granted/part/23": 6,
+            "1/granted/part/33": 13,
+            "1/granted/part/59": 1,
+            "1/granted/part/80": 11,
+            "1/granted/part/81": 5,
+            "1/granted/part/91": 1,
+            "1/granted/part/92": 6,
+            "1/granted/part/103": 3,
+            "1/granted/part/150": 5,
+            "2/granted/hull/13": 7,
+            "2/granted/hull/710": 6,
+            "2/granted/hull/715": 11,
+            "2/granted/hull/738": 2,
+            "2/granted/hull/744": 13,
+            "2/launched/launched/710": 6,
+            "2/launched/launched/715": 11,
+            "2/granted/part/21": 17,
+            "2/granted/part/22": 7,
+            "2/granted/part/23": 11,
+            "2/granted/part/33": 15,
+            "2/granted/part/59": 1,
+            "2/granted/part/80": 20,
+            "2/granted/part/81": 5,
+            "2/granted/part/91": 2,
+            "2/granted/part/92": 11,
+            "2/granted/part/103": 4,
+            "2/granted/part/150": 8,
+            "2/granted/part/153": 3,
+            "0/hit/Gun/33": 801,
+            "0/hit/Missile/32": 6,
+            "1/hit/Gun/33": 3214,
+            "1/hit/Gun/92": 2168,
+            "1/hit/Missile/32": 4,
+            "1/hit/Missile/58": 4,
+            "2/hit/Gun/33": 2669,
+            "2/hit/Gun/92": 5687,
+            "2/hit/Missile/58": 5,
+            "0/fired/Guns/-1": 9137,
+            "0/fired/Missiles/-1": 43,
+            "0/fired/Mines/-1": 10,
+            "0/fired/Probes/-1": 2,
+            "0/completed/NaniteShip/-1": 56,
+            "0/completed/goal-kills/-1": 15,
+            "1/fired/Guns/-1": 12888,
+            "1/fired/Missiles/-1": 32,
+            "1/fired/Mines/-1": 1,
+            "1/fired/Probes/-1": 2,
+            "1/fired/Chaff/-1": 13,
+            "1/completed/NaniteShip/-1": 137,
+            "1/completed/goal-kills/-1": 17,
+            "2/fired/Guns/-1": 14100,
+            "2/fired/Missiles/-1": 36,
+            "2/fired/Mines/-1": 3,
+            "2/fired/Probes/-1": 3,
+            "2/fired/Chaff/-1": 14,
+            "2/completed/NaniteShip/-1": 7,
+            "2/completed/goal-kills/-1": 33,
+            "0/granted/hull/217": 5,
+            "0/granted/hull/218": 2,
+            "0/granted/hull/223": 1,
+            "0/granted/hull/248": 1,
+            "0/granted/hull/271": 6,
+            "0/granted/hull/299": 20,
+            "0/launched/launched/299": 20,
+            "0/granted/part/5": 3,
+            "0/granted/part/44": 4,
+            "0/granted/part/86": 44,
+            "0/granted/part/157": 2,
+            "1/completed/completed:construction/68": 1,
+            "1/granted/hull/182": 5,
+            "1/granted/part/153": 1,
+            "1/granted/part/190": 2,
+            "2/granted/hull/719": 5,
+            "0/hit/Mine/11": 285,
+            "2/hit/Missile/32": 5,
+            "2/hit/Missile/35": 2,
+            "0/fired/Chaff/-1": 16,
+            "0/completed/Research/-1": 137,
+            "1/completed/PodRescue/-1": 6,
+            "1/completed/DroneBuild/-1": 7,
+            "1/completed/Research/-1": 143,
+            "2/completed/Research/-1": 112,
+            "0/completed/completed:construction/2": 1,
+            "0/completed/completed:construction/11": 1,
+            "0/completed/completed:construction/14": 1,
+            "0/completed/completed:construction/47": 1,
+            "0/granted/hull/85": 1,
+            "0/granted/hull/289": 1,
+            "0/launched/launched/85": 1,
+            "0/launched/launched/289": 1,
+            "0/granted/part/15": 1,
+            "0/granted/part/42": 5,
+            "0/granted/part/71": 2,
+            "0/granted/part/72": 19,
+            "0/granted/part/93": 1,
+            "0/granted/part/158": 2,
+            "0/granted/part/223": 1,
+            "1/granted/hull/179": 2,
+            "1/granted/hull/185": 1,
+            "1/granted/hull/193": 2,
+            "1/granted/hull/195": 1,
+            "1/granted/hull/196": 4,
+            "1/granted/hull/223": 1,
+            "1/launched/launched/195": 1,
+            "1/launched/launched/196": 4,
+            "1/granted/part/5": 2,
+            "1/granted/part/44": 3,
+            "1/granted/part/86": 12,
+            "1/granted/part/157": 1,
+            "2/completed/completed:construction/703": 1,
+            "1/hit/Missile/35": 2,
+            "0/completed/DroneBuild/-1": 9,
+            "2/completed/DroneBuild/-1": 4,
+            "0/completed/completed:construction/21": 1,
+            "0/completed/completed:construction/22": 1,
+            "0/granted/hull/258": 2,
+            "0/launched/launched/258": 2,
+            "0/granted/part/16": 2,
+            "0/granted/part/94": 2,
+            "0/granted/part/152": 2,
+            "0/granted/part/174": 2,
+            "1/completed/completed:construction/71": 1,
+            "1/granted/hull/197": 1,
+            "1/granted/hull/247": 1,
+            "1/launched/launched/197": 1,
+            "1/launched/launched/247": 1,
+            "1/granted/part/35": 1,
+            "1/granted/part/54": 2,
+            "1/granted/part/87": 2,
+            "1/granted/part/105": 1,
+            "1/granted/part/130": 1,
+            "1/granted/part/161": 1,
+            "0/hit/Gun/71": 25,
+            "0/hit/Gun/72": 1200,
+            "0/hit/Gun/94": 1238,
+            "0/hit/Missile/34": 4,
+            "0/completed/PodRescue/-1": 1,
+            "0/completed/completed:construction/12": 1,
+            "0/completed/completed:construction/23": 1,
+            "0/granted/hull/127": 1,
+            "0/launched/launched/127": 1,
+            "0/granted/part/14": 1,
+            "0/granted/part/187": 1,
+            "0/granted/part/601": 16,
+            "1/granted/hull/188": 1,
+            "1/launched/launched/188": 1,
+            "2/completed/NaniteStation/-1": 301,
+            "0/completed/completed:construction/13": 1,
+            "1/completed/completed:construction/62": 1,
+            "1/completed/completed:construction/72": 1,
+            "1/granted/hull/209": 1,
+            "1/launched/launched/209": 1,
+            "1/granted/part/46": 1,
+            "1/granted/part/191": 1,
+            "2/completed/completed:construction/712": 1,
+            "0/granted/hull/256": 1,
+            "0/launched/launched/256": 1,
+            "0/granted/part/30": 1,
+            "0/granted/part/34": 1,
+            "0/granted/part/61": 1,
+            "0/granted/part/114": 1,
+            "1/completed/completed:construction/73": 1,
+            "2/granted/hull/223": 1,
+            "2/granted/hull/718": 2,
+            "2/granted/hull/725": 1,
+            "1/hit/Gun/87": 555,
+            "0/completed/NaniteStation/-1": 118,
+            "0/granted/hull/220": 1,
+            "0/launched/launched/220": 1,
+            "0/granted/part/35": 1,
+            "0/granted/part/52": 1,
+            "1/completed/completed:construction/64": 1,
+            "1/granted/hull/229": 1,
+            "1/granted/hull/230": 1,
+            "1/granted/hull/240": 1,
+            "1/granted/hull/241": 1,
+            "1/granted/part/72": 3,
+            "1/granted/part/601": 3,
+            "0/hit/Gun/61": 517,
+            "0/hit/Mine/68": 335,
+            "0/hit/Missile/23": 3,
+            "1/hit/None/-1": 1,
+            "2/hit/None/-1": 1,
+            "1/granted/hull/243": 1,
+            "1/granted/hull/246": 2,
+            "1/launched/launched/246": 2,
+            "1/granted/part/89": 2,
+            "1/granted/part/120": 1,
+            "1/granted/part/189": 2,
+            "2/completed/completed:construction/713": 1,
+            "1/hit/Gun/120": 420,
+            "0/granted/hull/216": 1,
+            "2/completed/completed:construction/711": 1,
+            "2/granted/hull/789": 2,
+            "2/launched/launched/789": 2,
+            "2/granted/part/44": 2,
+            "2/granted/part/57": 2,
+            "2/granted/part/86": 2,
+            "2/granted/part/212": 1,
+            "1/hit/Gun/89": 572,
+            "1/completed/completed:construction/66": 1,
+            "2/granted/part/126": 1,
+            "2/granted/part/213": 1
+          },
+          "reachable": {
+            "0": {
+              "side": 0,
+              "hulls": [
+                210
+              ],
+              "parts": [
+                21,
+                22,
+                24,
+                25,
+                33,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                120,
+                125,
+                130,
+                150,
+                153,
+                155,
+                157,
+                176
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "1": {
+              "side": 1,
+              "hulls": [
+                187,
+                190
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                157,
+                191
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "2": {
+              "side": 2,
+              "hulls": [
+                710,
+                715
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                212,
+                218
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            }
+          },
+          "overflow": 0
+        }
+      ],
+      "workers": [
+        {
+          "source": "on.log",
+          "selected": 50,
+          "covered": 4
+        }
+      ]
+    },
+    {
+      "receipt": "P1001CivStrategyLiveTests-3",
+      "server": [
+        {
+          "match": 1,
+          "cookie": 1,
+          "sequence": 11,
+          "final": true,
+          "stages": {
+            "0/granted/hull/13": 8,
+            "0/granted/hull/210": 9,
+            "0/granted/hull/237": 2,
+            "0/granted/hull/244": 28,
+            "0/launched/launched/210": 9,
+            "0/granted/part/21": 11,
+            "0/granted/part/22": 15,
+            "0/granted/part/33": 26,
+            "0/granted/part/59": 5,
+            "0/granted/part/80": 20,
+            "0/granted/part/81": 6,
+            "0/granted/part/91": 2,
+            "0/granted/part/150": 7,
+            "0/granted/part/153": 2,
+            "1/granted/hull/13": 7,
+            "1/granted/hull/77": 8,
+            "1/granted/hull/157": 2,
+            "1/granted/hull/187": 5,
+            "1/granted/hull/190": 7,
+            "1/launched/launched/187": 5,
+            "1/launched/launched/190": 7,
+            "1/granted/part/21": 12,
+            "1/granted/part/22": 13,
+            "1/granted/part/23": 5,
+            "1/granted/part/33": 12,
+            "1/granted/part/59": 1,
+            "1/granted/part/80": 15,
+            "1/granted/part/81": 4,
+            "1/granted/part/91": 2,
+            "1/granted/part/92": 7,
+            "1/granted/part/103": 2,
+            "1/granted/part/150": 4,
+            "1/granted/part/153": 2,
+            "2/granted/hull/13": 7,
+            "2/granted/hull/710": 4,
+            "2/granted/hull/715": 7,
+            "2/granted/hull/738": 2,
+            "2/granted/hull/744": 17,
+            "2/launched/launched/710": 4,
+            "2/launched/launched/715": 7,
+            "2/granted/part/21": 16,
+            "2/granted/part/22": 8,
+            "2/granted/part/23": 8,
+            "2/granted/part/33": 11,
+            "2/granted/part/59": 4,
+            "2/granted/part/80": 14,
+            "2/granted/part/81": 8,
+            "2/granted/part/91": 1,
+            "2/granted/part/92": 8,
+            "2/granted/part/103": 3,
+            "2/granted/part/150": 7,
+            "0/hit/Gun/33": 1502,
+            "0/hit/Missile/32": 7,
+            "0/hit/Missile/35": 3,
+            "1/hit/Gun/33": 3101,
+            "1/hit/Gun/92": 3322,
+            "1/hit/Missile/58": 6,
+            "1/hit/Missile/35": 2,
+            "1/hit/Missile/32": 5,
+            "2/hit/Gun/33": 2089,
+            "2/hit/Gun/92": 1838,
+            "2/hit/Missile/58": 1,
+            "2/hit/Missile/32": 7,
+            "0/fired/Guns/-1": 7929,
+            "0/fired/Missiles/-1": 52,
+            "0/fired/Mines/-1": 4,
+            "0/fired/Probes/-1": 3,
+            "0/fired/Chaff/-1": 19,
+            "0/completed/NaniteShip/-1": 216,
+            "0/completed/goal-kills/-1": 14,
+            "1/fired/Guns/-1": 15924,
+            "1/fired/Missiles/-1": 45,
+            "1/fired/Mines/-1": 1,
+            "1/fired/Probes/-1": 2,
+            "1/fired/Chaff/-1": 11,
+            "1/completed/NaniteShip/-1": 113,
+            "1/completed/PodRescue/-1": 1,
+            "1/completed/goal-kills/-1": 16,
+            "2/fired/Guns/-1": 9768,
+            "2/fired/Missiles/-1": 31,
+            "2/fired/Mines/-1": 5,
+            "2/fired/Probes/-1": 4,
+            "2/fired/Chaff/-1": 21,
+            "2/completed/NaniteShip/-1": 50,
+            "2/completed/goal-kills/-1": 26,
+            "0/granted/hull/204": 6,
+            "0/granted/hull/217": 3,
+            "0/launched/launched/204": 6,
+            "0/granted/part/157": 18,
+            "1/completed/completed:construction/68": 1,
+            "1/granted/hull/182": 5,
+            "2/granted/hull/719": 4,
+            "0/hit/Missile/39": 1,
+            "0/completed/Research/-1": 137,
+            "1/completed/DroneBuild/-1": 6,
+            "1/completed/Research/-1": 162,
+            "2/completed/Research/-1": 120,
+            "0/completed/completed:construction/12": 1,
+            "0/granted/hull/215": 2,
+            "0/granted/hull/218": 2,
+            "0/granted/hull/223": 1,
+            "0/granted/hull/248": 1,
+            "0/granted/hull/271": 7,
+            "0/launched/launched/215": 2,
+            "0/granted/part/26": 1,
+            "0/granted/part/28": 1,
+            "0/granted/part/85": 2,
+            "0/granted/part/86": 28,
+            "0/granted/part/92": 3,
+            "1/granted/part/26": 2,
+            "1/granted/part/154": 2,
+            "2/completed/completed:construction/711": 1,
+            "2/granted/hull/714": 1,
+            "2/launched/launched/714": 1,
+            "2/granted/part/153": 1,
+            "0/hit/Gun/92": 733,
+            "0/completed/DroneBuild/-1": 9,
+            "2/completed/DroneBuild/-1": 5,
+            "0/completed/completed:construction/2": 1,
+            "0/completed/completed:construction/11": 1,
+            "0/granted/hull/289": 2,
+            "0/granted/hull/299": 13,
+            "0/launched/launched/289": 2,
+            "0/launched/launched/299": 13,
+            "0/granted/part/44": 4,
+            "0/granted/part/130": 2,
+            "1/completed/completed:construction/64": 1,
+            "1/granted/hull/179": 2,
+            "1/granted/hull/185": 1,
+            "1/granted/hull/193": 2,
+            "1/granted/hull/223": 1,
+            "1/granted/hull/227": 1,
+            "1/launched/launched/227": 1,
+            "1/granted/part/85": 1,
+            "1/granted/part/130": 1,
+            "1/granted/part/160": 1,
+            "1/granted/part/180": 1,
+            "2/completed/completed:construction/703": 1,
+            "2/granted/hull/223": 1,
+            "2/granted/hull/718": 2,
+            "2/granted/hull/725": 1,
+            "2/granted/hull/770": 2,
+            "0/completed/completed:construction/14": 1,
+            "0/completed/completed:construction/47": 1,
+            "0/granted/hull/258": 1,
+            "0/launched/launched/258": 1,
+            "0/granted/part/16": 1,
+            "0/granted/part/42": 1,
+            "0/granted/part/72": 2,
+            "0/granted/part/94": 1,
+            "0/granted/part/152": 1,
+            "0/granted/part/174": 1,
+            "1/completed/completed:construction/62": 1,
+            "2/completed/completed:construction/702": 1,
+            "2/completed/completed:construction/712": 1,
+            "2/granted/hull/704": 2,
+            "2/granted/hull/722": 1,
+            "2/granted/hull/785": 1,
+            "2/granted/hull/787": 1,
+            "2/granted/hull/788": 1,
+            "2/granted/hull/789": 1,
+            "2/granted/hull/792": 1,
+            "2/launched/launched/704": 2,
+            "2/launched/launched/722": 1,
+            "2/launched/launched/785": 1,
+            "2/launched/launched/787": 1,
+            "2/launched/launched/788": 1,
+            "2/launched/launched/789": 1,
+            "2/launched/launched/792": 1,
+            "2/granted/part/5": 2,
+            "2/granted/part/14": 1,
+            "2/granted/part/35": 1,
+            "2/granted/part/42": 1,
+            "2/granted/part/43": 2,
+            "2/granted/part/44": 2,
+            "2/granted/part/46": 3,
+            "2/granted/part/54": 3,
+            "2/granted/part/67": 1,
+            "2/granted/part/72": 1,
+            "2/granted/part/85": 6,
+            "2/granted/part/86": 7,
+            "2/granted/part/94": 1,
+            "2/granted/part/111": 1,
+            "2/granted/part/142": 1,
+            "2/granted/part/152": 1,
+            "2/granted/part/187": 1,
+            "2/granted/part/190": 1,
+            "2/granted/part/212": 1,
+            "2/granted/part/213": 2,
+            "2/granted/part/216": 1,
+            "0/hit/Gun/72": 673,
+            "0/hit/Gun/94": 397,
+            "2/hit/Gun/72": 81,
+            "2/hit/Gun/94": 107,
+            "2/hit/Gun/111": 117,
+            "2/hit/Gun/142": 419,
+            "0/completed/completed:construction/21": 1,
+            "0/completed/completed:construction/22": 1,
+            "0/granted/part/5": 2,
+            "0/granted/part/601": 1,
+            "1/completed/completed:construction/66": 1,
+            "1/granted/hull/247": 1,
+            "1/launched/launched/247": 1,
+            "1/granted/part/35": 1,
+            "1/granted/part/54": 1,
+            "1/granted/part/132": 1,
+            "1/granted/part/161": 1,
+            "0/hit/Missile/34": 1,
+            "1/hit/Missile/36": 1,
+            "2/hit/Gun/67": 675,
+            "2/completed/NaniteStation/-1": 132,
+            "0/completed/completed:construction/13": 1,
+            "0/granted/hull/251": 1,
+            "0/launched/launched/251": 1,
+            "0/granted/part/17": 1,
+            "0/granted/part/101": 1,
+            "0/granted/part/122": 1,
+            "0/granted/part/224": 1,
+            "1/completed/completed:construction/71": 1,
+            "2/completed/completed:construction/713": 1,
+            "2/granted/hull/736": 1,
+            "0/hit/Gun/101": 108,
+            "0/hit/Gun/122": 285,
+            "0/completed/NaniteStation/-1": 1,
+            "0/completed/completed:construction/23": 1,
+            "1/completed/completed:construction/73": 1,
+            "1/granted/hull/229": 1,
+            "1/granted/hull/230": 1,
+            "1/granted/hull/240": 1,
+            "1/granted/hull/241": 1,
+            "1/granted/hull/242": 1,
+            "1/granted/hull/243": 1,
+            "1/granted/part/50": 1,
+            "1/granted/part/120": 1,
+            "1/hit/Gun/120": 412,
+            "2/granted/hull/733": 3,
+            "2/launched/launched/733": 3,
+            "2/granted/part/223": 3,
+            "1/hit/Gun/50": 353,
+            "1/hit/None/-1": 8,
+            "2/hit/None/-1": 8
+          },
+          "reachable": {
+            "0": {
+              "side": 0,
+              "hulls": [
+                210
+              ],
+              "parts": [
+                21,
+                22,
+                24,
+                25,
+                33,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                120,
+                125,
+                130,
+                150,
+                153,
+                155,
+                157,
+                176
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "1": {
+              "side": 1,
+              "hulls": [
+                187,
+                190
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                157,
+                191
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            },
+            "2": {
+              "side": 2,
+              "hulls": [
+                710,
+                715
+              ],
+              "parts": [
+                21,
+                22,
+                23,
+                24,
+                25,
+                33,
+                38,
+                50,
+                59,
+                80,
+                81,
+                87,
+                91,
+                92,
+                103,
+                120,
+                125,
+                130,
+                140,
+                150,
+                153,
+                155,
+                212,
+                218
+              ],
+              "mechanisms": [
+                "hulls",
+                "weapons",
+                "missiles",
+                "mines",
+                "probes",
+                "chaff",
+                "repair",
+                "rescue",
+                "ripcord"
+              ]
+            }
+          },
+          "overflow": 0
+        }
+      ],
+      "workers": [
+        {
+          "source": "on.log",
+          "selected": 45,
+          "covered": 5
+        }
+      ]
+    }
+  ],
+  "fastReproductions": [
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.200476
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.1887906
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.1946129
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.1765086
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Passed",
+          "seconds": 1.5539192
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.1914825
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.3338644
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.4509201
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.4181642
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.4324684
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.5003724
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.430888
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.1631428
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.3291145
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.2031113
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.4418366
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.2196265
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.3203035
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.478298
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.2181432
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.1306447
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.2772886
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "project": "Allegiance.ClientCore.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 3.1327455
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 4.325572
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.557172
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5646056
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5470498
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5716793
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5621146
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5211515
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 1.0015385
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 0.9954499
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "seconds": 0.9851031
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Passed",
+          "seconds": 0.9584739
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 0.999276
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 0.9961789
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.4361058
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.4300781
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.4337511
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.4090883
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.442211
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.3512505
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.4733219
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2303195
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.1919841
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2565555
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.5097739
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.1748895
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.1266398
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2301358
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.5507767
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.5486901
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2487429
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2041328
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 1,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.5281632
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2266939
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2310748
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2776111
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2012469
+        },
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.5273003
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0993925
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4781631
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0840284
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0080915
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0321826
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4184694
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.015868
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0292469
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.084221
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0352941
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0049791
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0273394
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0153085
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0983821
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4816143
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4243575
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0307467
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4873118
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0122679
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0076798
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0872576
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0276442
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4743572
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.1008948
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0328452
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0146373
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.086101
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4817261
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0275409
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0054856
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.098556
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4135291
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0980302
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0073832
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0302169
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4681253
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0858661
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0274222
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.3944101
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.011281
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0311797
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0999875
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0126116
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4009405
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0282412
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0854862
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 1.4777513
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 100, indexed: True, coalesced: True)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 0.0151916
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.3065713
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 1,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.3041253
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.3048476
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 2,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.2951469
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "current",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.3121752
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "project": "Allegiance.Core.Tests",
+      "tree": "base",
+      "run": 3,
+      "exit": 0,
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.2950941
+        }
+      ]
+    }
+  ],
+  "fastSourceFingerprint": {
+    "files": [
+      "src/Allegiance.ClientCore/State/ClientWorld.cs",
+      "src/Allegiance.Core/Strategy/CivExecutionPlan.cs",
+      "src/Allegiance.Core/Strategy/CivPortfolio.cs",
+      "src/Allegiance.Server/BotsConfig.cs",
+      "src/Allegiance.Server/Server.CivCoverage.cs",
+      "src/Allegiance.Server/Server.CivStrategy.cs",
+      "src/Allegiance.Server/Server.Docking.cs",
+      "src/Allegiance.Server/Server.Lifecycle.cs",
+      "src/Allegiance.Server/Server.Research.cs",
+      "src/Allegiance.Server/Server.TeamCiv.cs",
+      "src/Allegiance.Server/StrategyReceiptJsonContext.cs",
+      "tests/Allegiance.ClientCore.Tests/P1000CivStrategyLoopbackTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivCommanderTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivFleetTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivLivenessTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivStrategyLiveTests.cs",
+      "tools/allegiance-mcp/BotManager.CivMechanisms.cs",
+      "tools/allegiance-mcp/BotManager.CivStrategy.cs",
+      "tools/allegiance-mcp/BotManager.Lifecycle.cs",
+      "tools/allegiance-mcp/BotManager.Medevac.cs",
+      "tools/allegiance-mcp/BotManager.Research.cs",
+      "tools/allegiance-mcp/BotManager.Support.cs",
+      "tools/allegiance-mcp/BotManager.TechLoadouts.cs",
+      "tools/allegiance-mcp/BotManager.TurretGunner.cs",
+      "tools/allegiance-mcp/BotManager.cs",
+      "tools/allegiance-mcp/CivCoverage.cs",
+      "tools/allegiance-mcp/CivLoadoutPolicy.cs",
+      "tools/allegiance-mcp/McpTools.cs",
+      "tools/allegiance-mcp/ResearchCommander.CivStrategy.cs",
+      "tools/allegiance-mcp/ResearchCommander.Prosperity.cs",
+      "tools/allegiance-mcp/ResearchCommander.cs",
+      "tools/allegiance-mcp/TechLoadoutSelector.cs",
+      "tools/allegiance-mcp/WeaponCoverage.cs",
+      "tools/p999-civ-strategy/coverage_receipts.py",
+      "tools/p999-civ-strategy/test_coverage.py"
+    ],
+    "digest": "5ab0c2cf8c541ced82ee9e85f11a44403734ac46dc4fdaae6eaf1bc8fcac801a"
+  },
+  "arrivalControls": [
+    {
+      "receipt": "arrival-base-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base-arrival",
+      "showcase": [
+        {
+          "seconds": 170.2,
+          "samples": 1701,
+          "reached": 24,
+          "longestIdleSeconds": 3.608,
+          "shots": 5333,
+          "hits": 3162,
+          "kills": 22
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:02:54.2601608",
+          "showcase": "P700 local 15v15: 170.2s, samples=1701, reached=24/30, longest speed<1 with target=3.608s, shots=5333, hits=3162, kills=22"
+        }
+      ]
+    },
+    {
+      "receipt": "arrival-base-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base-arrival",
+      "showcase": [
+        {
+          "seconds": 247.0,
+          "samples": 2468,
+          "reached": 24,
+          "longestIdleSeconds": 1.91,
+          "shots": 194,
+          "hits": 50,
+          "kills": 0
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:04:11.3757543",
+          "showcase": "P700 local 15v15: 247.0s, samples=2468, reached=24/30, longest speed<1 with target=1.910s, shots=194, hits=50, kills=0"
+        }
+      ]
+    },
+    {
+      "receipt": "arrival-base-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "arm": "base-arrival",
+      "showcase": [
+        {
+          "seconds": 161.8,
+          "samples": 1617,
+          "reached": 24,
+          "longestIdleSeconds": 2.003,
+          "shots": 5585,
+          "hits": 2615,
+          "kills": 19
+        }
+      ],
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+          "outcome": "Passed",
+          "duration": "00:02:45.9903432",
+          "showcase": "P700 local 15v15: 161.8s, samples=1617, reached=24/30, longest speed<1 with target=2.003s, shots=5585, hits=2615, kills=19"
+        }
+      ]
+    }
+  ],
+  "offParkingControls": [
+    {
+      "receipt": "off-parking-base-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "off-parking-base-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "off-parking-base-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "off-parking-current-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "off-parking-current-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "receipt": "off-parking-current-3",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    }
+  ],
+  "sourceFingerprint": {
+    "algorithm": "sha256(sorted changed/new .cs/.py paths and contents, NUL separated)",
+    "files": [
+      "src/Allegiance.ClientCore/State/ClientWorld.cs",
+      "src/Allegiance.Core/Strategy/CivExecutionPlan.cs",
+      "src/Allegiance.Core/Strategy/CivPortfolio.cs",
+      "src/Allegiance.Server/BotsConfig.cs",
+      "src/Allegiance.Server/Server.CivCoverage.cs",
+      "src/Allegiance.Server/Server.CivStrategy.cs",
+      "src/Allegiance.Server/Server.Docking.cs",
+      "src/Allegiance.Server/Server.Lifecycle.cs",
+      "src/Allegiance.Server/Server.Research.cs",
+      "src/Allegiance.Server/Server.TeamCiv.cs",
+      "src/Allegiance.Server/StrategyReceiptJsonContext.cs",
+      "tests/Allegiance.ClientCore.Tests/P1000CivStrategyLoopbackTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivCommanderTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivFleetTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivLivenessTests.cs",
+      "tests/Allegiance.ClientCore.Tests/P1001CivStrategyLiveTests.cs",
+      "tools/allegiance-mcp/BotManager.CivMechanisms.cs",
+      "tools/allegiance-mcp/BotManager.CivStrategy.cs",
+      "tools/allegiance-mcp/BotManager.Lifecycle.cs",
+      "tools/allegiance-mcp/BotManager.Medevac.cs",
+      "tools/allegiance-mcp/BotManager.Research.cs",
+      "tools/allegiance-mcp/BotManager.Support.cs",
+      "tools/allegiance-mcp/BotManager.TechLoadouts.cs",
+      "tools/allegiance-mcp/BotManager.TurretGunner.cs",
+      "tools/allegiance-mcp/BotManager.cs",
+      "tools/allegiance-mcp/CivCoverage.cs",
+      "tools/allegiance-mcp/CivLoadoutPolicy.cs",
+      "tools/allegiance-mcp/McpTools.cs",
+      "tools/allegiance-mcp/ResearchCommander.CivStrategy.cs",
+      "tools/allegiance-mcp/ResearchCommander.Prosperity.cs",
+      "tools/allegiance-mcp/ResearchCommander.cs",
+      "tools/allegiance-mcp/TechLoadoutSelector.cs",
+      "tools/allegiance-mcp/WeaponCoverage.cs",
+      "tools/p999-civ-strategy/coverage_receipts.py",
+      "tools/p999-civ-strategy/test_coverage.py"
+    ],
+    "digest": "5ab0c2cf8c541ced82ee9e85f11a44403734ac46dc4fdaae6eaf1bc8fcac801a"
+  },
+  "hygiene": {
+    "changedFiles": 45,
+    "contentIssues": [],
+    "newMedia": [],
+    "briefPresent": false,
+    "temporaryControlPresent": false
+  }
+}
