@@ -138,7 +138,9 @@ public sealed class P906TickOrderTests
         m.Sectors[0].Update(1);
         Assert.True(target.Velocity.X < 0);
         Assert.DoesNotContain(round, m.Sectors[0].Models);
-        Assert.Equal(new byte[] { 0, 3 }, site.Damage.Select(d => d.Type));
+        // Igc/igc.h:558-564: collision row 0 retains NoWarn/NoDebris/NoFlare
+        // until damage lookup; event observers receive the full damage type.
+        Assert.Equal(new byte[] { 0xe0, 3 }, site.Damage.Select(d => d.Type));
         Assert.Equal(.5, site.Damage[0].Time, 5);
         Assert.InRange(site.Damage[1].Time, .8, 1);
         Assert.InRange(target.Position.X, .7f, 1.3f);

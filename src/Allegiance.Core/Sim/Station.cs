@@ -438,11 +438,10 @@ public sealed class Station : IStationIgc, ISideVisible
     /// (<c>FedSrvSiteBase::DamageStationEvent</c>,
     /// <c>(g.timeNow - station-&gt;GetLastDamageReport()) &gt; 10.0f</c>,
     /// <c>FedSrv.CPP:12190</c>), mirroring <c>CstationIGC</c>'s
-    /// <c>m_lastDamageReport</c> (<c>stationIGC.h:142</c>). Initialized to
-    /// negative infinity so the <em>first</em> hit always passes the throttle
-    /// (native reaches this state because stations are created minutes into a
-    /// server's life, long after <c>g.timeNow</c> passed 10 s).</summary>
-    public double LastDamageReport { get; set; } = double.NegativeInfinity;
+    /// <c>m_timeLastDamageReport</c> (<c>stationIGC.h:558</c>). Placement seeds
+    /// it with creation time (<c>stationIGC.cpp:83</c>), so a newly created
+    /// station also waits strictly more than ten seconds before reporting.</summary>
+    public double LastDamageReport { get; set; }
 
     /// <summary>
     /// Port of <c>CstationIGC::ReceiveDamage</c> (<c>stationIGC.cpp:116-208</c>)
@@ -501,21 +500,6 @@ public sealed class Station : IStationIgc, ISideVisible
         if (Type.HasCapability(SabmPedestal))
             return DamageResult.NoDamage;
 
-        // P451 — raise the station-damage seam for every real damaging hit. Native
-        // nests the call inside the shield branch of CstationIGC::ReceiveDamage
-        // (stationIGC.cpp:168-169); we raise it for ANY non-repair, non-pedestal hit
-        // (reaching the site through the launcher's mission, the same bridge the
-        // sector uses for KillStationEvent) so BOTH the host's cross-side team alert
-        // AND its same-side "Watch your fire" branch are reachable — the same set of
-        // outcomes native produces (with friendly fire enabled) from this seam. The
-        // host applies every real gate (amount>=1, no c_dmgidNoWarn, per-station 10s
-        // throttle, cross/same-side) in FedSrvSiteBase::DamageStationEvent
-        // (FedSrv.CPP:12183-12233); the fraction it reads is this PRE-hit value
-        // because the raise precedes the shield/hull mutation below, exactly as
-        // native (line 169 before line 171).
-        if (amount >= 0.0f && launcher is Ship als && als.Mission is { } am)
-            am.Site.DamageStationEvent(this, launcher, type, amount);
-
         // Native stationIGC.cpp:128-130: repair bypasses friendly immunity.
         if (BlastDamage.Suppressed(Mission, SideId, launcher, amount))
             return DamageResult.NoDamage;
@@ -551,6 +535,12 @@ public sealed class Station : IStationIgc, ISideVisible
             if (dtmShield != 0.0f && HasShield)
             {
                 dr = DamageResult.ShieldDamage;                     // stationIGC.cpp:163
+
+                // P1007 — native stationIGC.cpp:126-169: immunity, repair and
+                // shield eligibility precede the callback; the host thresholds
+                // the experience-scaled amount. Keep pre-hit hull for the
+                // critical voice and use the damaged station's mission site.
+                Mission?.Site.DamageStationEvent(this, launcher!, type, amount);
 
                 float maxShield = EffectiveMaxShield();            // stationIGC.cpp:171 (GA-scaled)
                 float absorbed = amount * dtmShield / maxShield;    // stationIGC.cpp:172

@@ -2880,8 +2880,8 @@ public sealed partial class Sector : IClusterIgc
     /// the native <c>hp·d/(hp+d)</c> share (<c>shipIGC.cpp:949-956</c>). The
     /// damage type is the native <c>c_dmgidCollision</c> row — <c>0xE0</c> masked
     /// by <c>c_dmgidMask = 0x1f</c> selects matrix row 0
-    /// (<c>missionigc.h:148-156</c>), the same row this port's already-masked
-    /// <see cref="Ship.ReceiveDamage"/> indexes with <c>type = 0</c>. A lifepod
+    /// (<c>missionigc.h:148-156</c>). Retain the high flags until the damage
+    /// lookup: <c>NoWarn</c> suppresses attack alerts for impacts. A lifepod
     /// bounces but neither deals nor takes damage, matching native's
     /// <c>c_habmLifepod</c> gate (<c>shipIGC.cpp:956</c>). The client-side
     /// collision sound / FF / jiggle effects are out of scope (a separate task);
@@ -2927,7 +2927,7 @@ public sealed partial class Sector : IClusterIgc
 
     private const float CollisionElasticity = 0.75f;            // shipIGC.cpp:935 (cElasticity)
     private const float ImpactDamageCoefficient = 1.0f / 128.0f;// shipIGC.cpp:618 (c_impactDamageCoefficient)
-    private const byte CollisionDamageType = 0;                 // c_dmgidCollision (0xE0) & c_dmgidMask (0x1f) = row 0 (missionigc.h:155)
+    private const byte CollisionDamageType = 0xe0;              // Igc/igc.h:558-564: NoDebris | NoFlare | NoWarn; matrix row 0
     private const float ImpactJiggleCoefficient = 1.0f / 20.0f; // shipIGC.cpp:624 (c_impactJiggleCoefficient)
 
     private void ResolveShipAsteroidCollision(double now, CollisionEvent ev, Ship ship, Asteroid ast)
@@ -5844,7 +5844,7 @@ public sealed partial class Sector : IClusterIgc
             float radius = stationType.Radius + probe.ProbeType.Radius;
             if (distance2 != 0 && distance2 < radius * radius) probe.SetExpiration(now + 1);
         }
-        mission.PlaceStation(station, this);
+        mission.PlaceStation(station, this, now);
         // Resolve initial station knowledge from actual scanner geometry before deciding rock receipts.
         foreach (var other in mission.Sides)
         {

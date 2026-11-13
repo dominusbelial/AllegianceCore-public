@@ -99,7 +99,8 @@ public sealed class StationUnderAttackAlertLiveTests
         {
             Radius = 40,
             MaxArmorHitPoints = 100000f,
-            MaxShieldHitPoints = 0f,
+            MaxShieldHitPoints = 100000f,
+            ShieldRegeneration = 0,
         };
         var data = new DataStationIGC(
             Position: [StationSpot.X, StationSpot.Y, StationSpot.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
@@ -186,6 +187,9 @@ public sealed class StationUnderAttackAlertLiveTests
             seat.Attacker.Velocity = Vector3.Zero;
             seat.Defender.Velocity = Vector3.Zero;
             seat.Missile = Missile(core);
+            // Igc/stationIGC.cpp:83 initializes the report clock at creation.
+            // These impact tests exercise an established base after that window.
+            PumpUntil(seat.Server, () => seat.Server.SimNow - seat.Station.LastDamageReport > 10, 1000);
             return seat;
         }
         catch
@@ -260,9 +264,12 @@ public sealed class StationUnderAttackAlertLiveTests
         Assert.True(firstStamp > 0, "the alert must stamp the station's LastDamageReport");
 
         // A second hit a few ticks later is inside the 10 s window -> silent.
+        float firstShield = seat.Station.ShieldFraction;
         FireAtStation(seat);
-        PumpUntil(seat.Server, () => seat.Station.ArmorFraction < 1.0f, 3000);   // let the second missile land
+        int landed = PumpUntil(seat.Server, () => seat.Station.ShieldFraction < firstShield, 100);
+        Assert.True(landed < 100, "second missile must actually damage shields inside the report window");
         Assert.Single(seat.DefenderBot.Chats);
+        Assert.Equal(firstStamp, seat.Station.LastDamageReport);
         Console.WriteLine($"P451-THROTTLE: second in-window hit produced no new alert (still {seat.DefenderBot.Chats.Count})");
     }
 
@@ -344,5 +351,140 @@ public sealed class StationUnderAttackAlertLiveTests
         Assert.Equal(seat.Attacker.Id, warn.OidRecipient);
         Assert.Equal(-1, warn.SidSender);                 // the station is the sender (NA)
         Console.WriteLine($"P846-ALLY-BASE: '{alert.Message}' (ALLIES) + '{warn.Message}' to the allied launcher");
+    }
+
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void P1007_Friendly_immunity_precedes_alerts_and_does_not_consume_cooldown(bool allied, bool allow)
+    {
+        Require.Artwork();
+        using var seat = Seat();
+        var mission = seat.Server.Missions[0];
+        mission.AllowFriendlyFire = allow;
+        if (allied) foreach (var side in mission.Sides) side.AllyGroup = 1;
+        else seat.Attacker.SideId = seat.Station.SideId;
+        double before = seat.Station.LastDamageReport;
+        float shield = seat.Station.ShieldFraction;
+        seat.Station.ReceiveDamage(seat.Missile.DamageType, 100, seat.Server.SimNow,
+            StationSpot, StationSpot, seat.Attacker);
+        PumpUntil(seat.Server, () => seat.Server.SimNow > before + 12, 100);
+        Assert.Equal(allow, seat.Station.ShieldFraction < shield);
+        if (!allow)
+        {
+            Assert.Equal(before, seat.Station.LastDamageReport);
+            Assert.Empty(seat.DefenderBot.Chats);
+            Assert.Empty(seat.AttackerBot.Chats);
+        }
+        else
+        {
+            Assert.True(seat.Station.LastDamageReport > before);
+            Assert.Single(seat.AttackerBot.Chats, c => c.Message == "Watch your fire");
+            Assert.Equal(allied ? 1 : 0, seat.DefenderBot.Chats.Count(c => c.Message.Contains("under attack by")));
+        }
+    }
+
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData("shieldless")]
+    [InlineData("immune")]
+    [InlineData("scout-gun-on-garrison")]
+    [InlineData("pedestal")]
+    [InlineData("repair")]
+    [InlineData("subthreshold")]
+    [InlineData("no-warn")]
+    [InlineData("no-launcher")]
+    [InlineData("no-side")]
+    public void P1007_Ineligible_hits_leave_report_clock_and_audience_untouched(string kind)
+    {
+        Require.Artwork();
+        using var seat = Seat();
+        byte type = seat.Missile.DamageType;
+        float amount = 100;
+        Allegiance.Core.Sim.Model? launcher = seat.Attacker;
+        switch (kind)
+        {
+            case "shieldless": seat.Station.SetBaseStationType(seat.Station.Type with { MaxShieldHitPoints = 0 }); break;
+            case "immune":
+                var immune = seat.Core.Constants.DamageConstants.SelectMany((row, damage) =>
+                    row.Select((factor, def) => (factor, damage, def))).First(cell => cell.factor == 0);
+                type = (byte)immune.damage;
+                seat.Station.SetBaseStationType(seat.Station.Type with { DefenseTypeShield = (byte)immune.def });
+                break;
+            case "scout-gun-on-garrison":
+                // Exact P1007 default-skirmish receipt: Scout #114, damage 2,
+                // power 3.2, against the Iron Coalition's starting garrison.
+                seat.Station.SetBaseStationType(seat.Core.StationTypes[seat.Core.Civilizations[25].InitialStationTypeId]);
+                type = 2; amount = 3.2f;
+                Assert.Equal(0, seat.Core.Constants.DamageConstants[type][seat.Station.Type.DefenseTypeShield]);
+                Assert.Equal(0, seat.Core.Constants.DamageConstants[type][seat.Station.Type.DefenseTypeArmor]);
+                break;
+            case "pedestal": seat.Station.SetBaseStationType(seat.Station.Type with
+                { SabmCapabilities = (short)(seat.Station.Type.SabmCapabilities | Station.SabmPedestal) }); break;
+            case "repair": amount = -100; break;
+            case "subthreshold": amount = .99f; break;
+            case "no-warn": type |= DmgIdNoWarn; break;
+            case "no-launcher": launcher = null; break;
+            case "no-side": seat.Attacker.SideId = null; break;
+        }
+        double before = seat.Station.LastDamageReport;
+        seat.Station.ReceiveDamage(type, amount, seat.Server.SimNow, StationSpot, StationSpot, launcher);
+        PumpUntil(seat.Server, () => seat.Server.SimNow > before + 12, 100);
+        Assert.Equal(before, seat.Station.LastDamageReport);
+        Assert.Empty(seat.DefenderBot.Chats);
+        Assert.Empty(seat.AttackerBot.Chats);
+    }
+
+    [SkippableFact, Trait("Requires", "Artwork")]
+    public void P1007_Threshold_uses_experience_scaled_damage()
+    {
+        Require.Artwork();
+        using var seat = Seat();
+        double before = seat.Station.LastDamageReport;
+        void Hit() => seat.Station.ReceiveDamage(seat.Missile.DamageType, .95f, seat.Server.SimNow,
+            StationSpot, StationSpot, seat.Attacker);
+        Hit();
+        Assert.Equal(before, seat.Station.LastDamageReport);
+        seat.Attacker.AddKillBonus();
+        Assert.True(.95f * seat.Attacker.ExperienceMultiplier >= 1);
+        Hit();
+        Assert.Equal(seat.Server.SimNow, seat.Station.LastDamageReport);
+        PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count != 0, 100);
+        Assert.Single(seat.DefenderBot.Chats);
+    }
+
+    [SkippableFact, Trait("Requires", "Artwork")]
+    public void P1007_Cooldown_is_strict_non_sliding_and_per_station()
+    {
+        Require.Artwork();
+        using var seat = Seat();
+        void Hit(Station st) => st.ReceiveDamage(seat.Missile.DamageType, 100, seat.Server.SimNow,
+            StationSpot, StationSpot, seat.Attacker);
+        Hit(seat.Station);
+        double first = seat.Station.LastDamageReport;
+        PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 1, 100);
+        // Exact boundary without tick-rounding ambiguity.
+        seat.Station.LastDamageReport = seat.Server.SimNow - 10;
+        double boundary = seat.Station.LastDamageReport;
+        Hit(seat.Station);
+        Assert.Equal(boundary, seat.Station.LastDamageReport);
+        seat.Server.TickSim();
+        Hit(seat.Station);
+        double second = seat.Station.LastDamageReport;
+        Assert.True(second > boundary + 10);
+        var other = MakeStation(seat.Core, seat.Sector.Id, seat.Station.SideId, 8899);
+        seat.Server.Missions[0].PlaceStation(other, seat.Sector);
+        double created = other.LastDamageReport;
+        Hit(other);
+        Assert.Equal(created, other.LastDamageReport); // native initial 10 s quiet period
+        PumpUntil(seat.Server, () => seat.Server.SimNow > created + 10, 300);
+        Hit(other);
+        Assert.True(other.LastDamageReport > created + 10);
+        Assert.Equal(second, seat.Station.LastDamageReport); // independent station clocks
+        Assert.True(first > 0);
+        PumpUntil(seat.Server, () => seat.DefenderBot.Chats.Count == 3, 100);
+        Assert.Equal(3, seat.DefenderBot.Chats.Count);
+        Assert.Empty(seat.AttackerBot.Chats);
     }
 }

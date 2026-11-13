@@ -213,12 +213,16 @@ public sealed class ShipStationCollisionTests
     /// The pair is not a dock candidate (different side) and not a board candidate
     /// (shields up / not a board hull), so it bounces.</summary>
     [Trait("Requires", "Artwork")]
-    [SkippableFact]
-    public void Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Enemy_ship_rams_enemy_station_bounces_and_both_take_real_damage(bool nativeQueue)
     {
         Require.Artwork();
         var recording = new RecordingIgcSite();
         var mission = NewStartedMission(recording);
+        mission.NativeShipPhasesEnabled = nativeQueue;
+        mission.NativeCollisionQueueEnabled = nativeQueue;
         short sideA = mission.Sides[0].Id;
         short sideB = mission.Sides[1].Id;
         Assert.NotEqual(sideA, sideB);
@@ -245,6 +249,7 @@ public sealed class ShipStationCollisionTests
         station.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
         Assert.Equal(0f, station.ShieldFraction, 3);
         Assert.Equal(1f, station.ArmorFraction, 3);
+        recording.Reset();
 
         // Measured before.
         float preVelX = ship.Velocity.X;
@@ -299,6 +304,12 @@ public sealed class ShipStationCollisionTests
         Assert.True(MathF.Abs(actualArmorDrop - expectedArmorDrop) < 0.030f,
             $"station armor drop {actualArmorDrop:0.####} should match the computed native share {expectedArmorDrop:0.####}");
         Assert.True(postArmor > 0.5f, "station must survive a single ship ram");
+
+        // P1007: damage remains real, but impact is never an attack warning.
+        // Igc/shipIGC.cpp:817-821 passes c_dmgidCollision, whose high flags
+        // include c_dmgidNoWarn (Igc/igc.h:558-564), before matrix masking.
+        Assert.Contains(recording.Calls, c => c.StartsWith("DamageStationEvent(")
+            && c.Contains(", 224, "));
 
         Console.WriteLine($"P466-RAM: ship {preVelX:+#0.##;-0.##}→{postVelX:+#0.##;-0.##} m/s (elasticity {postVelX / ApproachSpeed:0.###}, ~0.75), " +
                           $"hull {preFrac:0.####}→{postFrac:0.####} (drop {actualShipDrop:0.####}, expected {expectedShipDrop:0.####}); " +

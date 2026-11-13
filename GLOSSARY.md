@@ -1405,6 +1405,15 @@ list in **reverse**.
   `tests/_shared/P936NatShim.cs`. Report: `NAT_TRAVERSAL_P936.md`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
   (`SkirmishHost.cs`, `SkirmishOptions.cs`), hosted from `Game1.Skirmish.cs`.
+- **Station attack alerts (P1007)** — `src/Allegiance.Core/Sim/Station.cs`
+  raises damage notifications after friendly immunity, experience scaling and
+  shield eligibility; `src/Allegiance.Server/Server.Combat.cs` sends the native
+  defending-team/allies chat and station voice, strictly more than ten seconds
+  after creation or the last report. Collision flags stay intact in
+  `src/Allegiance.Core/Model/Sector.cs`. Native: `Igc/stationIGC.cpp:83,126-169`,
+  `Igc/igc.h:558-564`, `FedSrv/FedSrv.CPP:12183-12233`.
+  The production-host audit is `tools/p1007-skirmish-proof/Program.cs`;
+  report: `docs/reports/SKIRMISH_GARRISON_ALERT_P1007.md`.
 - **Training** — the native training missions. `src/Allegiance.SinglePlayer/Training/`.
   P785 completion: the client joins its embedded host over loopback
   (`Game1.Training.cs`), the mission clock is `TrainingClock` (port of

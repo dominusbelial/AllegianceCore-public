@@ -1,0 +1,536 @@
+{
+  "runs": [
+    {
+      "run": "baseline-1007",
+      "seed": 1007,
+      "size": "Small",
+      "map": "m2xspiderw.igc",
+      "speed": "Normal",
+      "tech": "research",
+      "showMap": true,
+      "objectFog": true,
+      "playerSide": 0,
+      "matchSeconds": 600.05,
+      "wallSeconds": 609.367,
+      "stationAlerts": 2,
+      "playerStationChats": 2,
+      "damageCallbacks": 36,
+      "botsAlive": true,
+      "lastSampleMatchSeconds": 586.95,
+      "sides": [
+        {
+          "Id": 0,
+          "Money": 0,
+          "Kills": 5,
+          "Deaths": 2,
+          "buckets": 2
+        },
+        {
+          "Id": 1,
+          "Money": 1,
+          "Kills": 6,
+          "Deaths": 1,
+          "buckets": 2
+        }
+      ],
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 157,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.9479830148619957,
+          "StepProgressPercent": 5.833333333333333,
+          "Money": 0,
+          "EtaSeconds": 596.3668224299065,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 2.1731123388581954,
+          "StepProgressPercent": 93.33333333333333,
+          "Money": 0,
+          "EtaSeconds": 23.149070191431175,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "idleWithTargetMax": 0,
+      "idleBotsLastMinuteMax": 0,
+      "combat": {
+        "shotsFired": 2720,
+        "shipHits": 1941,
+        "kills": 14,
+        "hitRate": 0.7136029411764706,
+        "friendlyHits": 0,
+        "enemyShieldHits": 938,
+        "enemyHullHits": 1003,
+        "podsCreated": 10,
+        "podsDocked": 5,
+        "podsRestarted": 2,
+        "podsLingering": 3,
+        "timeToKill": {
+          "sideA": {
+            "samples": 13,
+            "meanSeconds": 34.13171624615384
+          },
+          "sideB": {
+            "samples": 10,
+            "meanSeconds": 34.79820749
+          }
+        }
+      },
+      "stationsAtLastSample": [
+        {
+          "StationId": 4328,
+          "SideId": 0,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        },
+        {
+          "StationId": 4329,
+          "SideId": 1,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        }
+      ]
+    },
+    {
+      "run": "baseline-1008-retry",
+      "seed": 1008,
+      "size": "Small",
+      "map": "m2xspiderw.igc",
+      "speed": "Normal",
+      "tech": "research",
+      "showMap": true,
+      "objectFog": true,
+      "playerSide": 0,
+      "matchSeconds": 600.05,
+      "wallSeconds": 608.103,
+      "stationAlerts": 0,
+      "playerStationChats": 0,
+      "damageCallbacks": 0,
+      "botsAlive": true,
+      "lastSampleMatchSeconds": 587.05,
+      "sides": [
+        {
+          "Id": 0,
+          "Money": 0,
+          "Kills": 4,
+          "Deaths": 3,
+          "buckets": 2
+        },
+        {
+          "Id": 1,
+          "Money": 4,
+          "Kills": 6,
+          "Deaths": 2,
+          "buckets": 2
+        }
+      ],
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 157,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.9479830148619957,
+          "StepProgressPercent": 5.833333333333333,
+          "Money": 0,
+          "EtaSeconds": 596.1922429906542,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.947513812154696,
+          "StepProgressPercent": 52.5,
+          "Money": 0,
+          "EtaSeconds": 203.27970891755467,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "idleWithTargetMax": 0,
+      "idleBotsLastMinuteMax": 0,
+      "combat": {
+        "shotsFired": 2356,
+        "shipHits": 1261,
+        "kills": 14,
+        "hitRate": 0.5352292020373515,
+        "friendlyHits": 0,
+        "enemyShieldHits": 607,
+        "enemyHullHits": 654,
+        "podsCreated": 11,
+        "podsDocked": 3,
+        "podsRestarted": 4,
+        "podsLingering": 4,
+        "timeToKill": {
+          "sideA": {
+            "samples": 14,
+            "meanSeconds": 12.978463571428566
+          },
+          "sideB": {
+            "samples": 10,
+            "meanSeconds": 35.71988097999999
+          }
+        }
+      },
+      "stationsAtLastSample": [
+        {
+          "StationId": 4328,
+          "SideId": 0,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        },
+        {
+          "StationId": 4329,
+          "SideId": 1,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        }
+      ]
+    },
+    {
+      "run": "fixed-1007",
+      "seed": 1007,
+      "size": "Small",
+      "map": "m2xspiderw.igc",
+      "speed": "Normal",
+      "tech": "research",
+      "showMap": true,
+      "objectFog": true,
+      "playerSide": 0,
+      "matchSeconds": 600.05,
+      "wallSeconds": 608.565,
+      "stationAlerts": 0,
+      "playerStationChats": 0,
+      "damageCallbacks": 0,
+      "botsAlive": true,
+      "lastSampleMatchSeconds": 587.0,
+      "sides": [
+        {
+          "Id": 0,
+          "Money": 0,
+          "Kills": 3,
+          "Deaths": 2,
+          "buckets": 2
+        },
+        {
+          "Id": 1,
+          "Money": 1,
+          "Kills": 4,
+          "Deaths": 2,
+          "buckets": 2
+        }
+      ],
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 157,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.9479830148619957,
+          "StepProgressPercent": 5.833333333333333,
+          "Money": 0,
+          "EtaSeconds": 596.3668224299065,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 4,
+          "TotalSteps": 181,
+          "Action": "develop",
+          "Name": "Retro Booster",
+          "Status": "waiting for money",
+          "ProgressPercent": 2.1731123388581954,
+          "StepProgressPercent": 93.33333333333333,
+          "Money": 0,
+          "EtaSeconds": 23.149070191431175,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "idleWithTargetMax": 0,
+      "idleBotsLastMinuteMax": 0,
+      "combat": {
+        "shotsFired": 3732,
+        "shipHits": 1601,
+        "kills": 11,
+        "hitRate": 0.4289924973204716,
+        "friendlyHits": 0,
+        "enemyShieldHits": 944,
+        "enemyHullHits": 657,
+        "podsCreated": 7,
+        "podsDocked": 2,
+        "podsRestarted": 4,
+        "podsLingering": 1,
+        "timeToKill": {
+          "sideA": {
+            "samples": 11,
+            "meanSeconds": 30.46325391818182
+          },
+          "sideB": {
+            "samples": 9,
+            "meanSeconds": 32.87723224444446
+          }
+        }
+      },
+      "stationsAtLastSample": [
+        {
+          "StationId": 4328,
+          "SideId": 0,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        },
+        {
+          "StationId": 4329,
+          "SideId": 1,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        }
+      ]
+    },
+    {
+      "run": "fixed-large-1009",
+      "seed": 1009,
+      "size": "Large",
+      "map": "m2xspiderw.igc",
+      "speed": "Normal",
+      "tech": "research",
+      "showMap": false,
+      "objectFog": true,
+      "playerSide": 0,
+      "matchSeconds": 600.05,
+      "wallSeconds": 598.933,
+      "stationAlerts": 0,
+      "playerStationChats": 0,
+      "damageCallbacks": 0,
+      "botsAlive": true,
+      "lastSampleMatchSeconds": 596.5,
+      "sides": [
+        {
+          "Id": 0,
+          "Money": 5,
+          "Kills": 26,
+          "Deaths": 31,
+          "buckets": 2
+        },
+        {
+          "Id": 1,
+          "Money": 10,
+          "Kills": 48,
+          "Deaths": 12,
+          "buckets": 2
+        }
+      ],
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 0.9978768577494692,
+          "StepProgressPercent": 56.666666666666664,
+          "Money": 0,
+          "EtaSeconds": 441.22435897435895,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 181,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.0128913443830572,
+          "StepProgressPercent": 83.33333333333334,
+          "Money": 0,
+          "EtaSeconds": 118.73410954063604,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "idleWithTargetMax": 0,
+      "idleBotsLastMinuteMax": 0,
+      "combat": {
+        "shotsFired": 26033,
+        "shipHits": 11862,
+        "kills": 116,
+        "hitRate": 0.4556524411324089,
+        "friendlyHits": 0,
+        "enemyShieldHits": 3295,
+        "enemyHullHits": 8567,
+        "podsCreated": 75,
+        "podsDocked": 17,
+        "podsRestarted": 42,
+        "podsLingering": 16,
+        "timeToKill": {
+          "sideA": {
+            "samples": 295,
+            "meanSeconds": 2.347573112881356
+          },
+          "sideB": {
+            "samples": 69,
+            "meanSeconds": 15.03186703768116
+          }
+        }
+      },
+      "stationsAtLastSample": [
+        {
+          "StationId": 4328,
+          "SideId": 0,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        },
+        {
+          "StationId": 4329,
+          "SideId": 1,
+          "ShieldFraction": 1,
+          "ArmorFraction": 1
+        }
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "run": "baseline-1007",
+      "matchSeconds": 328.55,
+      "simSeconds": 343.85,
+      "station": 4328,
+      "stationName": "Garrison",
+      "stationSide": 0,
+      "sector": 1050,
+      "attacker": 8103,
+      "attackerName": "mcp-w1-b005-5373",
+      "attackerSide": 1,
+      "pilotType": 10,
+      "hull": 114,
+      "hullName": "Scout",
+      "incomingAmount": 3.2,
+      "damageType": 2,
+      "shieldMultiplier": 0,
+      "armorMultiplier": 0,
+      "shieldBefore": 1,
+      "armorBefore": 1,
+      "reportGap": "",
+      "classification": "false: shield-ineligible damage"
+    },
+    {
+      "run": "baseline-1007",
+      "matchSeconds": 342.5,
+      "simSeconds": 357.8,
+      "station": 4328,
+      "stationName": "Garrison",
+      "stationSide": 0,
+      "sector": 1050,
+      "attacker": 8103,
+      "attackerName": "mcp-w1-b005-5373",
+      "attackerSide": 1,
+      "pilotType": 10,
+      "hull": 114,
+      "hullName": "Scout",
+      "incomingAmount": 3.2,
+      "damageType": 2,
+      "shieldMultiplier": 0,
+      "armorMultiplier": 0,
+      "shieldBefore": 1,
+      "armorBefore": 1,
+      "reportGap": 13.95,
+      "classification": "false: shield-ineligible damage"
+    }
+  ]
+}

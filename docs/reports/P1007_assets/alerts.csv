@@ -1,0 +1,3 @@
+run,matchSeconds,simSeconds,station,stationName,stationSide,sector,attacker,attackerName,attackerSide,pilotType,hull,hullName,incomingAmount,damageType,shieldMultiplier,armorMultiplier,shieldBefore,armorBefore,reportGap,classification
+baseline-1007,328.55,343.85,4328,Garrison,0,1050,8103,mcp-w1-b005-5373,1,10,114,Scout,3.2,2,0,0,1,1,,false: shield-ineligible damage
+baseline-1007,342.5,357.8,4328,Garrison,0,1050,8103,mcp-w1-b005-5373,1,10,114,Scout,3.2,2,0,0,1,1,13.95,false: shield-ineligible damage
