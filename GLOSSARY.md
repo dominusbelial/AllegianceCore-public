@@ -278,6 +278,15 @@ list in **reverse**.
 - **Asteroid** — ore-bearing rocks, mined for He3. `src/Allegiance.Core/Sim/Asteroid.cs`,
   `src/Allegiance.Core/Data/NativeAsteroidTypes.cs` (type table).
   *Native:* `asteroidigc.cpp`.
+- **Asteroid spin (P252/P1005)** — `DataAsteroidIGC.Rotation` is **axis (3 floats) +
+  an angular rate in radians/second** (native `Rotation`, `_Utility/Utility.h:515-562`;
+  ports decode it raw at byte offset 40, `src/Allegiance.Core/Data/DataAsteroidIGC.cs`).
+  The sim model turns by `angle·dt` each tick (`Igc/modelIGC.cpp:76-99`,
+  `src/Allegiance.Core/Sim/Asteroid.cs` `Update`) and the client mirrors it per rock in
+  `src/Allegiance.ClientCore.Game/Rendering/AsteroidSpin.cs`, stepped **once per frame
+  from the game clock** (TiDi-scaled, native mission-time equivalent, 0.25 s native step
+  clamp) by `src/Allegiance.ClientCore.Game/Rendering/AsteroidSpinClock.cs`.
+  Report `docs/reports/ASTEROID_SPIN_RATE_P1005.md`.
 - **Station / construction** — bases and their build queue.
   `src/Allegiance.Core/Sim/Station.cs`, `ConstructionPhase.cs`,
   `BuildingEffect.cs`. *Native:* `stationigc.cpp`, `construction.cpp`.

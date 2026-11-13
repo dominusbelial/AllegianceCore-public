@@ -416,9 +416,11 @@ public sealed partial class Game1
                 var myPos = PoseConverter.ToXna(myPose.Position);
                 var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
                 var aspect = GraphicsDevice.Viewport.AspectRatio;
-                // P252 — real wall-clock delta in seconds, used to advance each
-                // asteroid's client-side spin (WarpRenderer's accumulate-real-dt
-                // precedent, WarpRenderer.cs:158-165).
+                // Frame delta for the render-phase cameras (P508 chase easing,
+                // P252's flight jiggle). P1005 — the asteroid spin is NOT advanced
+                // from this: a Draw-time step is a render clock, and native rotates
+                // rocks inside its model update on the MISSION clock. The spin is
+                // stepped from _gameSeconds in PrepareSceneGeometry instead.
                 float dtSec = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
                 // P530 — the local sector's native bidirectional lighting for the
@@ -619,7 +621,7 @@ public sealed partial class Game1
                         foreach (var hit in _lightImpacts) _effectLights.Impact(hit, flashSector, lightNow, cameraEye);
                     }
                 }
-                PrepareSceneGeometry(me, cameraEye, dtSec);
+                PrepareSceneGeometry(me, cameraEye);
                 // P862b — one flare-occlusion frame stamp per rendered frame (the
                 // probe answers from the previous frame's depth and queues this
                 // frame's samples for the next readback).
@@ -2524,14 +2526,36 @@ public sealed partial class Game1
     /// before the color pass lets the depth pass render into its own target
     /// first and the color pass then draw into the (never-switched-away-from)
     /// color target, so ships/asteroids/stations survive the frame (P547's
-    /// mid-frame target switch wiped them). Per-object spins advance exactly
-    /// once here, so the linear-depth pass and the color pass share byte-
-    /// identical world matrices (the color loops below reuse the same
-    /// <see cref="_asteroidSpins"/> objects without re-advancing).
+    /// mid-frame target switch wiped them). The per-rock spins are stepped here
+    /// exactly once per frame from the <b>game clock</b> (P1005,
+    /// <see cref="Rendering.AsteroidSpinClock"/>), so the linear-depth pass, the
+    /// color pass and the HUD target preview all read byte-identical world
+    /// matrices — a second pass in the same frame gets a 0 step, never a second
+    /// advance of the same rocks.
     /// </summary>
-    private void PrepareSceneGeometry(short me, Vector3 cameraEye, float dtSec)
+    private void PrepareSceneGeometry(short me, Vector3 cameraEye)
     {
         var world = _session.World;
+
+        // P1005 — a new world is a new set of native models (reset nukes every
+        // cluster, Igc/missionigc.cpp:3804-3828), so each rock starts from its wire
+        // base orientation again instead of inheriting the retired match's phase
+        // (rotation reuses the same static map, hence the same AsteroidIds — P884).
+        if (_asteroidSpinGeneration != world.SectorGeneration)
+        {
+            _asteroidSpinGeneration = world.SectorGeneration;
+            _asteroidSpins.Clear();
+            _asteroidSpinClock.Reset();
+        }
+
+        // P1005 — the rocks' sim-second step for this frame: the delta of the game
+        // clock (TiDi-scaled, native's mission clock — see AsteroidSpinClock), so a
+        // render pass can never advance a rock twice and a slowed world slows the
+        // rocks with it. A recorded-wire replay stamps the world from its own frame
+        // counter (Game1.Draw), so the rocks ride the replay clock instead of wall
+        // time there.
+        double spinClockSeconds = _benchReplay is { } replay ? replay.Frame / 60.0 : _gameSeconds;
+        float spinDtSec = _asteroidSpinClock.Advance(spinClockSeconds);
 
         // Reset this frame's depth-gather lists (they were previously cleared
         // in the color pass header) so each frame re-collects exactly its own
@@ -2603,7 +2627,7 @@ public sealed partial class Game1
         }
         foreach (var (spin, rPos, rOri, rRadius, variant, _, modelStem, _) in _drawRooks)
         {
-            spin.Advance(dtSec);
+            spin.Advance(spinDtSec);
             var rXnaPos = PoseConverter.ToXna(rPos);
             if (OutsideRadialView(rXnaPos, cameraEye, rRadius)) continue;   // P979 — depth matches colour
             var rRot = PoseConverter.ToXnaRotation(rOri);

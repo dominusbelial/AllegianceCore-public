@@ -8402,3 +8402,35 @@ one case per invocation. Durations below are TRX test times, not process times.
 Follow-up total: **26 passed / 4 failed / 0 skipped**, 21 process invocations.
 This does not turn the Fast run green or clear the missile-lock/NPC failures.
 P1002 report: `docs/reports/GUNFIRE_FIXTURE_REBASELINE_P1002.md`.
+
+### 2026-11-13 — P1005 Fast qualification (client asteroid-spin clock)
+
+Two full Fast runs on the P1005 tree (base `a87b00f3`, client asteroid-spin clock
+change only — no server, sim, wire or HUD path):
+
+- run A (pre-final replay-clock line): **14,140 passed / 2 failed / 20 skipped**
+  of 14,162 cases, 536.962 s;
+- run B (final tree): **14,137 passed / 5 failed / 20 skipped**, 608.589 s.
+
+9/9 infrastructure checks and both quarantine lanes passed in both runs. The
+runner stays **FAIL**, on the ledgered families below and on timing offenders
+against the 11.535 s calibrated limit; host load average was 11–21 on the shared
+24-CPU host (run B peaked at 20.7). Every case run in isolation below used a
+fresh process, one case per invocation unless stated.
+
+| Case | Runs A / B signature | Isolated repetitions |
+|---|---|---|
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail — lock 1.000 without the required partial tip, 37.8 / 38.2 s | **1 pass / 2 fail** (38 s, 38 s, 1 s): the OPEN partial-tip receipt failure ledgered since P933/P935/P966, not load |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail — the 32 s auto-seat boundary signature | **1 pass / 5 fail** over 6 isolated runs at load 11–21; the ledgered auto-seat receipt/simulation-clock boundary family (42 prior entries, also `fail/fail/fail` cohorts) |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / fail | **1 pass / 2 fail** (~0.6 s); ledgered roster-stint recommendation intermittency |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | pass / fail | **2 pass / 1 fail** (~1 s, 3 cases each); ledgered floating upper-bound signature (ledger records 1/2/0 and 2/1/0 cohorts) |
+| `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate` | pass / fail (no rendering involved) | **pass / pass / pass** (~0.5 s) |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | fail / pass | **pass / pass / pass** (~5 s) — ledgered load-only asynchronous death-receipt intermittency |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | passed, 13.5 / 15.9 s | pass / pass / pass |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | passed, 12.1 / 14.5 s | pass / pass / pass |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed, 14.4 / 15.7 s | pass / pass / pass |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | passed, 19.6 / 25.6 s | pass / pass / pass (10 cases, 32–37 s per invocation) |
+
+No failed or slow case touches the asteroid spin path; the P1005 client change
+covers rendering only and its new tests are Fast (13 cases, 20–35 ms). Report:
+`docs/reports/ASTEROID_SPIN_RATE_P1005.md`.

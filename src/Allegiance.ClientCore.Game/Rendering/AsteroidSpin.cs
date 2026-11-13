@@ -67,8 +67,11 @@ public sealed class AsteroidSpin
 
     /// <summary>Accumulate <paramref name="deltaSeconds"/> of spin about
     /// <see cref="Axis"/> — the <c>angle × dt</c> term of native's per-tick
-    /// <c>PostRotate</c>. <paramref name="deltaSeconds"/> is real wall-clock
-    /// elapsed time (the WarpRenderer precedent), matching how a client animates
-    /// at its own frame rate.</summary>
+    /// <c>PostRotate</c>. <paramref name="deltaSeconds"/> is elapsed
+    /// <b>simulation</b> time: native's <c>dt</c> comes from the mission clock
+    /// (<c>Igc/modelIGC.cpp:76-80</c>, <c>zlib/ztime.h:172</c>), so the client
+    /// steps this from its game clock through <see cref="AsteroidSpinClock"/>
+    /// (P1005) — never from a Draw-time delta, which would keep the rock at full
+    /// speed while a time-dilated world slows around it.</summary>
     public void Advance(float deltaSeconds) => Angle += Rate * deltaSeconds;
 }

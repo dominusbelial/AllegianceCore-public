@@ -92,6 +92,11 @@ public sealed partial class Game1 : Game
     // rock rotates about its own wire axis at its own wire rate (real
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
     private readonly Dictionary<short, AsteroidSpin> _asteroidSpins = new();
+    // P1005 — the clock the rock spins are stepped on (the game clock, once per
+    // frame, ≤ native's 0.25 s step) and the world generation those spins belong
+    // to (cleared at every new world, like native's fresh model set).
+    private Rendering.AsteroidSpinClock _asteroidSpinClock;
+    private long _asteroidSpinGeneration = -1;
     private WarpRenderer _warpRenderer = null!;
     // P289 — the shared procedural station mesh (the P218/P227 pattern, hub+
     // ring silhouette). Built once here (no content-pipeline asset) and drawn
