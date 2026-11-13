@@ -28,7 +28,9 @@ if (args.Contains("--audio-only"))
             sound.Load(); music.Load(); sound.UpdateAudioFrame(1f / 60);
             sound.PlayWeaponFire(143); sound.StartWeaponBurst(0, 144); sound.StopAllWeaponBursts();
             sound.SetStationInteriorAmbient(380); sound.PlayError(); sound.StartSoundId(143);
-            sound.Update(1, 100, true, true, 1f / 60); music.Update(i % 2 == 0);
+            // P1003 — the afterburner bed takes the native loop state (mounted
+            // part + its own power ramp), never the booster button bit.
+            sound.Update(1, 100, true, new AfterburnerLoop(true, 1f, 680, 700), 1f / 60); music.Update(i % 2 == 0);
         }
         Console.WriteLine("P902_NO_DEVICE: SFX, music, repeated load/frame calls completed silently");
         return;

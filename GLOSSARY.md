@@ -1231,6 +1231,16 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Audio/SoundManager.cs`. Native:
   `WinTrek/soundinit.cpp`, `WinTrek/trekigc.cpp:930-951,4955-4983`,
   `WinTrek/WinTrek.cpp:11271-11280`, `WinTrek/trekmdl.cpp:452-478`.
+- **Own-ship afterburner loop (P1003)** — the boost bed is native's STATE loop,
+  not a button echo: `src/Allegiance.ClientCore.Game/Audio/AfterburnerLoop.cs`
+  holds the two conditions (`GetMountedPart(ET_Afterburner, 0) != NULL` and
+  `AfterburnerPower() > 0`) and the mounted part's own interior/exterior
+  `SoundID`s; `SoundManager.Update` maintains two `PlaySoundIf` slots and mutes
+  the wrong bus by camera view. The power is the local
+  `src/Allegiance.ClientCore/Flight/OwnShipSimulator.cs` `Power` ramp
+  (`CafterburnerIGC::m_power`), fed by
+  `src/Allegiance.ClientCore.Game/Game1.Prediction.cs` `ConfigureOwnBooster`. Native: `WinTrek/trekigc.cpp:820-825,1115-1130,
+  1320-1322,1344-1347`; report `docs/reports/BOOSTER_SOUND_GATE_P1003.md`.
 - **Sound templates and audio quality (P902)** — generic sample-aligned ASR
   (`src/Allegiance.ClientCore.Game/Audio/AsrSound.cs`), source/interval-cached
   repeating-fire PCM, multiplicative pitch and effect cones
