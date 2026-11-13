@@ -37,7 +37,8 @@ public sealed class P894ListingFieldsTests
     {
         string row = Listing().FormatRow();
 
-        Assert.DoesNotContain("[", row.Replace("[unverified]", ""));
+        Assert.Contains("[team slots open]", row);
+        Assert.DoesNotContain("[", row.Replace("[unverified]", "").Replace("[team slots open]", ""));
         Assert.DoesNotContain("games", row);
         Assert.DoesNotContain("load", row);
     }

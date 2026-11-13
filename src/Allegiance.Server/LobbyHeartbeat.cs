@@ -31,6 +31,7 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly string _enrollmentFile;
     private DeviceAuthorization? _authorization;
     private DateTimeOffset _nextEnrollmentPoll;
+    private TimeSpan _enrollmentRetryDelay = TimeSpan.FromMinutes(5);
     private ServerEnrollment? _enrollment;
     private readonly string _displayName;
     private readonly string _publicAddress;
@@ -223,19 +224,24 @@ public sealed class LobbyHeartbeat : IDisposable
             // Lobby binds case-insensitively). Kept local — no reference to the Web-SDK
             // Lobby assembly — so Allegiance.Server stays a plain (non-AspNetCore) app.
             var missions = LiveMissions?.Invoke();
+            var game = _liveGameParams?.Invoke();
             var req = new LobbyRegisterRequest(
                 _displayName,
                 _publicAddress,
                 _port,
                 (int?)playerCount,
-                0,                              // no player-cap concept in ServerConfig today — 0 signals unknown/unbounded
+                // Native publishes each mission's min(total cap, teams * team cap)
+                // (FedSrv/fsmission.cpp:4074-4076). The HTTP server row aggregates
+                // those current missions; expanded client rows use their own cap.
+                missions is not null ? missions.Sum(m => m.Game?.MaxPlayersPerGame ?? 0)
+                    : game?.MaxPlayersPerGame ?? 0,
                 _missionName,
                 _coreFile,
                 _version,
                 _livePlayerNames?.Invoke(),     // P761 — find-player data (opt-in only, P761b)
                 _publishPlayers,                // P761b — the per-server opt-in the directory honours
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
-                _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
+                game,                          // P806 — game settings for the server-list filters
                 _enrollment?.ServerId, _enrollment?.ServerSecret,
                 _minClientVersion, missions, missions?.Count ?? 0, MaxGames,
                 _location, Allegiance.Core.LobbyProtocol.Version, UdpPort,              // P894 — location + stated lobby protocol version
@@ -394,7 +400,12 @@ public sealed class LobbyHeartbeat : IDisposable
             using var poll = await _http.PostAsJsonAsync("/api/identity/device/poll", new DevicePollRequest(_authorization.DeviceCode), IdentityJsonContext.Default.DevicePollRequest).ConfigureAwait(false);
             poll.EnsureSuccessStatusCode();
             var result = await poll.Content.ReadFromJsonAsync(IdentityJsonContext.Default.DeviceResult).ConfigureAwait(false);
-            if (result?.Status == "expired") { _authorization = null; return; }
+            if (result?.Status == "expired")
+            {
+                _authorization = null;
+                DelayEnrollmentRetry("approval code expired; server continues unverified");
+                return;
+            }
             if (result is { Status: "approved", ServerId: not null, ServerSecret: not null })
             {
                 var enrollment = new ServerEnrollment(result.ServerId, result.ServerSecret);
@@ -410,7 +421,17 @@ public sealed class LobbyHeartbeat : IDisposable
             }
         }
         catch (Exception e) when (e is HttpRequestException or IOException or JsonException or TaskCanceledException)
-        { Console.WriteLine($"[lobby] enrollment unavailable: {e.Message}"); }
+        { DelayEnrollmentRetry($"enrollment unavailable: {e.Message}"); }
+    }
+
+    // P808a device grants expire after five minutes. Unattended servers must not
+    // create a fresh grant (or print a failure) every five seconds indefinitely.
+    // Credentials already loaded/approved bypass this path entirely.
+    private void DelayEnrollmentRetry(string reason)
+    {
+        _nextEnrollmentPoll = _clock.GetUtcNow() + _enrollmentRetryDelay;
+        Console.WriteLine($"[lobby] {reason}; enrollment retries in {_enrollmentRetryDelay.TotalMinutes:0} minutes.");
+        _enrollmentRetryDelay = TimeSpan.FromMinutes(Math.Min(60, _enrollmentRetryDelay.TotalMinutes * 2));
     }
 
     /// <summary>Alias for <see cref="Dispose"/>.</summary>

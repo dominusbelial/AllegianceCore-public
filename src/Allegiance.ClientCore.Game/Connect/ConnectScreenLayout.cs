@@ -25,7 +25,9 @@ public readonly record struct FRect(float X, float Y, float W, float H)
 public static class ConnectScreenLayout
 {
     public const float RowH = 30f;
-    public const float ListTop = 150f;
+    // Leave a full text line below the browser's banner at y=146, including
+    // when an error or unavailable-team message accompanies visible rows.
+    public const float ListTop = 174f;
     public const float RowX = 50f;
     public const float RowWidthFactor = 0.7f;
 

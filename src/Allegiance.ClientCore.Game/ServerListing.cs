@@ -88,6 +88,7 @@ public sealed record ServerListing(
         servers.SelectMany(s => s.Missions is { Count: > 0 } missions
             ? missions.Select(m => s with { MissionCookie = m.Cookie, MissionName = m.Name,
                 Name = m.Name, PlayerCount = m.PlayerCount, Game = m.Game, Missions = null,
+                MaxPlayers = m.Game is { MaxPlayersPerGame: > 0 } g ? g.MaxPlayersPerGame : s.MaxPlayers,
                 // P970 — the PER-GAME fact is authoritative for a mission row: a
                 // server-level "any of my games needs a password" must not mark an
                 // open game as guarded. (The server-level flag paints the server
@@ -150,6 +151,17 @@ public sealed record ServerListing(
     private string GamesText()
         => MaxGames > 0 ? $"  games {CurrentGames}/{MaxGames} load {PercentLoad}%" : "";
 
+    /// <summary>Native's status uses fAnySlotsAvailable, not the population
+    /// alone (WinTrek/gamescreen.cpp:1006-1021). Pre-P866 metadata has no mission
+    /// capacity/slot scan, so retain the count-based fallback for older hosts.
+    /// This is advisory: native still allows Join on a red row (:1299-1305).</summary>
+    public bool HasOpenTeamSlots => Game is { MaxPlayersPerGame: > 0 } g
+        ? g.AnySlotsAvailable : MaxPlayers <= 0 || PlayerCount < MaxPlayers;
+
+    public string SlotStatusText => Game is not { MaxPlayersPerGame: > 0 } && MaxPlayers <= 0 ? "[slots unknown]"
+        : HasOpenTeamSlots ? "[team slots open]"
+        : MaxPlayers > 0 && PlayerCount >= MaxPlayers ? "[full]" : "[no team slots]";
+
     /// <summary>A usable single server-row line: name, address:port, player
     /// count, mission — the columns the browser is asked to show. Lives here
     /// (rather than in a renderer) so it is pure string logic, unit-testable
@@ -167,7 +179,7 @@ public sealed record ServerListing(
         // ASCII 32..126 only (no padlock glyph), and the browser trims long rows, so
         // the marker must come before the columns that get cut.
         var guard = PasswordRequired ? "  [password required]" : "";
-        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}{guard}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
+        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}{guard} {SlotStatusText}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
     }
 
     /// <summary>

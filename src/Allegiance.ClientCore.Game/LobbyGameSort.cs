@@ -191,9 +191,7 @@ public sealed class LobbyGameSort
     private static long StatusKey(ServerListing listing)
     {
         // MissionStatusColor: green while any slot is available, else red.
-        // MaxPlayers == 0 means "unknown/unbounded" on this directory (every slot
-        // open), the same reading FindGames applies to a 0 cap.
-        int status = listing.MaxPlayers > 0 && listing.PlayerCount >= listing.MaxPlayers ? 1 : 0;
+        int status = listing.HasOpenTeamSlots ? 0 : 1;
         bool inProgress = listing.Game?.InProgress == true;
         bool objectModel = listing.Game?.ObjectModelCreated == true;
         // Native's final tie-break is (a.stage == STARTED) && (b.stage != STARTED):

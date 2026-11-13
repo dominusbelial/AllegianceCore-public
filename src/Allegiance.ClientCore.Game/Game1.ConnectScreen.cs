@@ -170,6 +170,12 @@ public sealed partial class Game1
             _lobbyError = $"Cannot join '{s.Name}' - it advertises no valid port.";
             return;
         }
+        if (s.PasswordRequired && _lanJoinPassword.Length == 0)
+        {
+            _editingLanPassword = true;
+            _lobbyError = "This game requires a password. Type it and press ENTER.";
+            return;
+        }
         _returnToLobbyOnFailure = true;
         Console.WriteLine($"[monogame] joining {s.Name} @ {s.Address}:{s.Port} ...");
         // P970 — a refused password returns to the browser with its banner line.

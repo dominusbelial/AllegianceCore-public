@@ -1,0 +1,201 @@
+{
+  "task": "P1004",
+  "newCases": 18,
+  "updatedExistingCases": 4,
+  "isolatedRepetitions": 3,
+  "isolatedRuns": [
+    {
+      "run": "qualified-core-1.trx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-core-2.trx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-core-3.trx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-fields-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-fields-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-fields-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-rebound-1.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-rebound-2.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-rebound-3.trx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-row-1.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-row-2.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-row-3.trx",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-ui-1.trx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-ui-2.trx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "qualified-ui-3.trx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "isolatedTotals": {
+    "passed": 66,
+    "failed": 0,
+    "skipped": 0
+  },
+  "relatedRegressionCases": {
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0
+  },
+  "fullFast": {
+    "invocations": 1,
+    "timeoutMinutes": 100,
+    "seconds": 561.9142229749996,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 144,
+        "outcomes": {
+          "Passed": 144
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5157,
+        "outcomes": {
+          "Passed": 5137,
+          "NotExecuted": 17,
+          "Failed": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2444,
+        "outcomes": {
+          "Passed": 2441,
+          "Failed": 3
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6367,
+        "outcomes": {
+          "Passed": 6362,
+          "Failed": 2,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 37.835387
+      },
+      {
+        "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+        "method": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+        "outcome": "Failed",
+        "seconds": 31.2738147
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+        "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+        "outcome": "Passed",
+        "seconds": 12.2605544
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+        "outcome": "Passed",
+        "seconds": 15.5026509
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "4 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03634378899005242,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "build": {
+    "solutionWarnings": 0,
+    "solutionErrors": 0,
+    "toolProjects": 136,
+    "toolWarnings": 0,
+    "toolErrors": 0
+  },
+  "screenshots": {
+    "produced": 0,
+    "reviewed": 0,
+    "status": "blocked: missing local graphics runtime"
+  }
+}

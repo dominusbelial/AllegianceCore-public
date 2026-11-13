@@ -1,0 +1,578 @@
+[
+  {
+    "tag": "gunfire",
+    "method": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 0.0086456,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0086456
+      }
+    ]
+  },
+  {
+    "tag": "gunfire",
+    "method": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+    "repeat": 2,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 0.0087263,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0087263
+      }
+    ]
+  },
+  {
+    "tag": "gunfire",
+    "method": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 0.0087518,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P994GunfireBatchTests.Record_build_has_no_steady_path_allocations",
+        "outcome": "Passed",
+        "seconds": 0.0087518
+      }
+    ]
+  },
+  {
+    "tag": "missile",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.490933,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Passed",
+        "seconds": 1.490933
+      }
+    ]
+  },
+  {
+    "tag": "missile",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "repeat": 2,
+    "exitCode": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "maxSeconds": 38.5750261,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 38.5750261
+      }
+    ]
+  },
+  {
+    "tag": "missile",
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.7670615,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Passed",
+        "seconds": 1.7670615
+      }
+    ]
+  },
+  {
+    "tag": "death",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.3161646,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.3161646
+      }
+    ]
+  },
+  {
+    "tag": "death",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 2,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.3088922,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.3088922
+      }
+    ]
+  },
+  {
+    "tag": "death",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.3494739,
+    "cases": [
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "outcome": "Passed",
+        "seconds": 1.3494739
+      }
+    ]
+  },
+  {
+    "tag": "miner",
+    "method": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 3.440999,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+        "outcome": "Passed",
+        "seconds": 3.440999
+      }
+    ]
+  },
+  {
+    "tag": "miner",
+    "method": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+    "repeat": 2,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 2.8266956,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+        "outcome": "Passed",
+        "seconds": 2.8266956
+      }
+    ]
+  },
+  {
+    "tag": "miner",
+    "method": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 3.430053,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+        "outcome": "Passed",
+        "seconds": 3.430053
+      }
+    ]
+  },
+  {
+    "tag": "profile",
+    "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.8339171,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 0.3986204
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 0.4227709
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 0.3155217
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 0.507865
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 0.4235165
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 0.4246239
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 0.4069872
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 1.8339171
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 0.3293099
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 0.3569123
+      }
+    ]
+  },
+  {
+    "tag": "profile",
+    "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+    "repeat": 2,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.8434192,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 0.4140781
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 1.8434192
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 0.428472
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 0.401368
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 0.4620918
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 0.4062657
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 0.3574069
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 0.4951603
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 0.335257
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 0.3102039
+      }
+    ]
+  },
+  {
+    "tag": "profile",
+    "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 1.8001969,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 0.303602
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 1.8001969
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 0.4026196
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 0.7814922
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 0.4216281
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 0.3504262
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 0.3957918
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 0.4829748
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 0.3338235
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 0.4083512
+      }
+    ]
+  },
+  {
+    "tag": "strategy",
+    "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+    "repeat": 1,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 4.4832857,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 4.138673
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 1.8718837
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 2.8895715
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 3.7698114
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 4.4832857
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 2.9128994
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 2.9648714
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 3.5180276
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 3.2946494
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 3.0739616
+      }
+    ]
+  },
+  {
+    "tag": "strategy",
+    "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+    "repeat": 2,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 4.4615061,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 4.0784834
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 3.2710409
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 2.8844343
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 3.5799976
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 2.910099
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 2.9203512
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 4.4615061
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 3.7608714
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 2.8625794
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 1.8909565
+      }
+    ]
+  },
+  {
+    "tag": "strategy",
+    "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+    "repeat": 3,
+    "exitCode": 0,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "maxSeconds": 4.4688231,
+    "cases": [
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+        "outcome": "Passed",
+        "seconds": 1.8625289
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+        "outcome": "Passed",
+        "seconds": 2.8507494
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+        "outcome": "Passed",
+        "seconds": 3.4854814
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+        "outcome": "Passed",
+        "seconds": 2.8950912
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+        "outcome": "Passed",
+        "seconds": 2.8494148
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+        "outcome": "Passed",
+        "seconds": 3.7362912
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+        "outcome": "Passed",
+        "seconds": 4.0637055
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+        "outcome": "Passed",
+        "seconds": 3.2508451
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+        "outcome": "Passed",
+        "seconds": 4.4688231
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "outcome": "Passed",
+        "seconds": 3.0596595
+      }
+    ]
+  }
+]

@@ -4,6 +4,43 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1004 lobby listing qualification — 2026-11-13 UTC
+
+The single full Fast sweep ran **14,167 cases in 561.9 s: 14,139 passed / 8 failed /
+20 skipped**. All 18 new P1004 cases and all nine infrastructure checks passed.
+Four existing browser cases had stale row expectations or incomplete
+constructor-bypass fixtures for the changed UI; these were corrected, and all
+**22 new/updated cases passed three isolated repetitions (66/0/0)**. Those four
+cases are task-related fixture updates, not flakes. The full sweep is retained
+as **FAIL** and was not repeated.
+
+The remaining four failures and two additional timing-only methods were each
+run **three times alone** on the final working tree. The calibrated Fast limit
+was **11.503 s**; theories below include all ten parameter cases per repetition.
+
+| Method | Sweep observation | Isolated Passed/Failed/Skipped, three runs | Longest case seconds per run |
+|---|---|---|---|
+| `P994GunfireBatchTests.Record_build_has_no_steady_path_allocations` | Expected zero allocated bytes; observed 3024. Not reproduced alone; cause unconfirmed. | **1/0/0; 1/0/0; 1/0/0** | 0.009 / 0.009 / 0.009 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Missing partial tip at lock 1.000; 37.835 s. Existing receipt family; fails again in one isolated run. | **1/0/0; 0/1/0; 1/0/0** | 1.491 / 38.575 / 1.767 |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never saw A's death/IsDead latch. Existing receipt family; not reproduced alone. | **1/0/0; 1/0/0; 1/0/0** | 1.316 / 1.309 / 1.349 |
+| `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | Ore remained zero after auto-undock; 31.274 s. Previously ledgered family; not reproduced alone. | **1/0/0; 1/0/0; 1/0/0** | 3.441 / 2.827 / 3.430 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed, but civ 3 took 12.261 s in the sweep. All ten theory cases run per isolated repetition. | **10/0/0; 10/0/0; 10/0/0** | 1.834 / 1.843 / 1.800 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Passed, but civ 5 took 15.503 s in the sweep. All ten theory cases run per isolated repetition. | **10/0/0; 10/0/0; 10/0/0** | 4.483 / 4.462 / 4.469 |
+
+Passing isolated repeats do not clear a failed sweep. No gunfire, missile-lock,
+remote-death, miner movement or strategy algorithm was changed for P1004.
+There is no baseline reproduction claim for the new gunfire allocation
+observation; its cause remains unconfirmed. The existing missile receipt failure
+still reproduces alone.
+
+Raw results: `.scratch/p1004/fast/`, `.scratch/p1004/tests/qualified-*.trx` and
+`.scratch/p1004/reproductions/`. Portable evidence:
+[qualification](reports/P1004_assets/qualification.json),
+[isolated unrelated methods](reports/P1004_assets/reproductions.json).
+The [P1004 report](reports/LOBBY_LISTING_SLOTS_P1004.md) also records that the
+required real-window captures are blocked by this lane's missing OpenGL/EGL
+runtime; this is not presented as a completed visual gate.
+
 ## P1001 commander/fleet Fast qualification — 2026-11-12 UTC
 
 The one full Fast sweep ran **14,149 cases in 560.3 s: 14,123 passed / 6 failed /
