@@ -8331,3 +8331,27 @@ original trials with no retries and zero parking-limit violations. Longest parke
 intervals: base 2.804s, OFF 2.005s, ON 4.007s, all below 5s. The randomized fixture
 is a base-rate check; the separately seeded P1000 replay pins exact wire bytes.
 Per-trial arrival/combat/time receipts are in the P1000 report.
+
+### 2026-11-12 — `P700ShowcaseLiveTests.P994_seeded_batched_showcase_still_hits_and_kills` (Live) — arrival miss on base
+
+Failed once in the v0.1.6 release sweep (`232a0c87`, lane-runner, 8 m 3 s): *"Most showcase ships must reach their
+objectives"* (`P700ShowcaseLiveTests.cs:135`). Three alternating isolated runs per tree on an idle 8-core lane:
+
+| Tree | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| `16e166a1` (before P1001) | Failed (arrival) | Failed (arrival) | Passed |
+| `232a0c87` (release candidate) | Passed | Passed | Passed |
+
+The miss reproduces on the pre-P1001 base (2/3), so it is an existing intermittent arrival outcome of the seeded batched
+showcase, not a P1001 regression; same family as P1001's ledgered OFF arrival observation. Kept as a known Live flake;
+a dedicated arrival-robustness task can pick it up.
+
+### 2026-11-12 — gunfire/broadcast fixtures failing since gunfire batching became the default
+
+`P992GunfireTrafficTests.Gunfire_fixture_measurement_from_environment`,
+`P992GunfireTrafficTests.Loopback_showcase_measures_gunfire_traffic_and_the_audience_radius` and
+`P990BroadcastLaneFixtureTests.Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick` fail on
+every host and tree since `broadcast.gunfireBatch` default ON (`1f1ebe3a`): the 2026-11-12 03:01 nightly on
+`67c950eb` (before P1000), the four-host benchmark the same day, and the v0.1.6 release sweep (`232a0c87`). Not caused by
+P1000/P1001. Likely the fixtures still expect the pre-batching traffic shape; a scoped task must update or re-baseline them
+(and confirm that is all it is) — tracked as an open item, not waived.
