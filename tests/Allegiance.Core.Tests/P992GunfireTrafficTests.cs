@@ -322,13 +322,17 @@ public sealed class P992GunfireTrafficTests
         long ShotPairs, long ShotPairsNear5900, long HitPairs, long HitPairsNear5900,
         long Msgs12, long Bytes12, long Msgs213, long Bytes213, long Msgs78, long Bytes78,
         long Msgs26, long Bytes26, long Msgs90, long Bytes90,
+        long DeliveredShots, long DeliveredHits, long Msgs221, long Bytes221, int MaxBatchRecords,
         long TotalBytes, long HeavyBytes, long KeyedBytes, long OtherBytes, long OtherMsgs,
         double WallSeconds, double SimSeconds);
 
     internal static Traffic Run(int peers, int firingShips, int ticks, bool aligned = true, int sectors = 1, float spacing = 150f, Action<string>? log = null)
     {
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(Config());
+        var config = Config();
+        bool batch = Srv.ResolveGunfireBatchFlag(config.Broadcast!.GunfireBatch,
+            Environment.GetEnvironmentVariable("ALLEGIANCE_BROADCAST_GUNFIRE_BATCH"));
+        server.Boot(config);
         var mission = server.TestMission!;
         mission.Stage = MissionStage.Started;
         var core = mission.Core;
@@ -376,9 +380,10 @@ public sealed class P992GunfireTrafficTests
 
         // Option (d) measurement: how many (shot, recipient) deliveries are even
         // within the client's own draw radius (ProjectileVisibility.VisibilityRadius,
-        // 5900 u) of the round's spawn point. Today every peer in the sector gets
-        // the frame regardless.
+        // 5900 u) of the round's spawn point. With fireAudienceCull off, every
+        // peer in the sector gets the record in either wire mode.
         long shotPairs = 0, shotPairsNear = 0, hitPairs = 0, hitPairsNear = 0;
+        long hits = 0;
         float nearSq = Allegiance.ClientCore.State.ProjectileVisibility.VisibilityRadiusSqr;
         if (mission.Site is ServerHost host)
         {
@@ -393,6 +398,7 @@ public sealed class P992GunfireTrafficTests
             };
             host.ProjectileHit += (p, impact, _, _, _, _, _) =>
             {
+                hits++;
                 foreach (var (_, viewer, _) in peerList)
                 {
                     if (!ReferenceEquals(viewer.Sector, p.OwnerSector)) continue;
@@ -401,6 +407,38 @@ public sealed class P992GunfireTrafficTests
                 }
             };
         }
+
+        // Count delivered records independently of both the sim events and the
+        // per-fmid frame telemetry. A batch is one ID-221 message containing
+        // several shots/hits, not an ID-12/213 message for each delivery.
+        long deliveredShots = 0, deliveredHits = 0, batchFrames = 0, batchBytes = 0;
+        int maxBatchRecords = 0;
+        server.TestPublicationCapture = (_, packet, key, guaranteed) =>
+        {
+            ushort fmid = FedMessageHeader.Read(packet).Fmid;
+            if (fmid is not (ProjectileInstance.Fmid or ProjectileHullHit.Fmid or GunfireBatch.Fmid)) return;
+            Assert.Equal(0, key);
+            Assert.True(guaranteed);
+            foreach (var message in FedPacket.Unpack(packet))
+            {
+                switch (FedMessageHeader.Read(message).Fmid)
+                {
+                    case ProjectileInstance.Fmid: deliveredShots++; break;
+                    case ProjectileHullHit.Fmid: deliveredHits++; break;
+                    case GunfireBatch.Fmid:
+                        var records = GunfireBatch.Decode(message).Records;
+                        batchFrames++;
+                        batchBytes += packet.Length;
+                        maxBatchRecords = Math.Max(maxBatchRecords, records.Length);
+                        foreach (var record in records)
+                        {
+                            if (record is ProjectileInstance) deliveredShots++;
+                            else if (record is ProjectileHullHit) deliveredHits++;
+                        }
+                        break;
+                }
+            }
+        };
 
         foreach (var s in ships) s.SetFraction(1f);
         for (int i = 0; i < firingShips && i < ships.Count; i++) ships[i].StateM = ShipControlState.AllWeapons;
@@ -422,27 +460,30 @@ public sealed class P992GunfireTrafficTests
                 s.Ammo = hull.MaxAmmo;
                 s.Energy = s.EffectiveMaxEnergy();
             }
-            mission.Update(now);
             telemetry.SimNowMs = now * 1000.0;
-            server.TestProjectRecordedTick(tick, snapshot: true);
+            // Match the production tick: open the snapshot/batch, simulate,
+            // seal gunfire, then project the ordinary pose suffix. Updating
+            // outside this scope exercises the singleton admin-send fallback.
+            server.TestProjectRecordedTick(tick, snapshot: true, surge: () => mission.Update(now));
             server.FlushBroadcastSnapshots();
         }
         double wall = telemetry.Clock() - startWall;
+        Assert.Equal(0, server.BroadcastPublishFailures);
         long shots = mission.Sides.Sum(s => mission.Skills!.Count(s.Id, ShowcaseSkill.Guns));
         string report = server.TakeBroadcastBudgetReport(1000, Math.Max(0.001, wall));
         log?.Invoke(report);
         long Msgs(int fmid) => telemetry.OrderedLaneWindowMessages(fmid, 1000);
         long Bytes(int fmid) => telemetry.OrderedLaneWindowBytes(fmid, 1000);
-        // P364 hit events are raised once per landed round; each one is fanned out
-        // to every peer in the sector, so hits = 213 messages / peers.
-        long fanout = Math.Max(1, peers / Math.Max(1, sectors));
-        long hits = Msgs(ProjectileHullHit.Fmid) / fanout;
+        Assert.Equal(batchFrames, Msgs(GunfireBatch.Fmid));
+        Assert.Equal(batchBytes, Bytes(GunfireBatch.Fmid));
+        Assert.Equal(batch && deliveredShots + deliveredHits > 0, batchFrames > 0);
         return new Traffic(peers, firingShips, ticks, shots, hits, shotPairs, shotPairsNear, hitPairs, hitPairsNear,
             Msgs(ProjectileInstance.Fmid), Bytes(ProjectileInstance.Fmid),
             Msgs(ProjectileHullHit.Fmid), Bytes(ProjectileHullHit.Fmid),
             Msgs(SingleShipUpdate.Fmid), Bytes(SingleShipUpdate.Fmid),
             Msgs(ExportShip.Fmid), Bytes(ExportShip.Fmid),
             Msgs(ShipStatusMessage.Fmid), Bytes(ShipStatusMessage.Fmid),
+            deliveredShots, deliveredHits, batchFrames, batchBytes, maxBatchRecords,
             telemetry.WindowTotal(1000),
             telemetry.WindowBytes(BroadcastCategory.HeavyShipUpdates, 1000),
             telemetry.WindowBytes(BroadcastCategory.ReliableKeyed, 1000),
@@ -458,6 +499,8 @@ public sealed class P992GunfireTrafficTests
             $"shotPairs={r.ShotPairs} near5900={r.ShotPairsNear5900} hitPairs={r.HitPairs} hitNear5900={r.HitPairsNear5900} " +
             $"m12={r.Msgs12} b12={r.Bytes12} m213={r.Msgs213} b213={r.Bytes213} m78={r.Msgs78} b78={r.Bytes78} " +
             $"m26={r.Msgs26} b26={r.Bytes26} m90={r.Msgs90} b90={r.Bytes90} " +
+            $"deliveredShots={r.DeliveredShots} deliveredHits={r.DeliveredHits} " +
+            $"m221={r.Msgs221} b221={r.Bytes221} maxBatchRecords={r.MaxBatchRecords} " +
             $"other={r.OtherBytes} omsgs={r.OtherMsgs} heavy={r.HeavyBytes} keyed={r.KeyedBytes} total={r.TotalBytes} wallS={r.WallSeconds:0.00}"));
     }
 
@@ -466,9 +509,10 @@ public sealed class P992GunfireTrafficTests
     /// (5 s at 20 Hz) of the real sim + the real broadcast suffix, P990 telemetry
     /// ON. It is <b>measurement only</b>: the same server, the same wire.
     /// <para>The identities this test pins are the calculator's inputs: every shot
-    /// is one PROJECTILE_INSTANCE frame per peer in the shooter's sector (58 B
-    /// framed), every landed round is one PROJECTILE_HULL_HIT frame per peer
-    /// (48 B framed), and the fire relay's own pose/export/status frames are the
+    /// and landed round is one delivered record per peer in the shooter's sector,
+    /// carried by legacy frames or compact batches. Legacy-equivalent bytes keep
+    /// the historical calculator pinned; actual bytes reconcile separately.
+    /// The fire relay's own pose/export/status frames are the
     /// difference between a firing and a non-firing fixture of the same shape.</para></summary>
     [SkippableFact]
     [Trait("Requires", "Artwork")]
@@ -484,17 +528,41 @@ public sealed class P992GunfireTrafficTests
 
         int fanout = peers / sectors;                       // every peer in the shooter's sector
         long shotDeliveries = firingRun.Shots * fanout;
-        // One frame per shot per recipient, exactly.
-        Assert.Equal(shotDeliveries, firingRun.Msgs12);
-        Assert.Equal(shotDeliveries * (ProjectileInstance.FixedSize + FedPacket.CrcWidth), firingRun.Bytes12);
-        // One frame per landed round per recipient; the events themselves come from
-        // the sim's own hit seam, so this also cross-checks the hit count.
+        Assert.Equal(shotDeliveries, firingRun.DeliveredShots);
+        Assert.Equal(firingRun.ShotPairs, firingRun.DeliveredShots);
+        // The sim's own hit seam is independent of delivered wire records.
         Assert.True(firingRun.Hits > 0, "the showcase landed no hits");
-        Assert.Equal(firingRun.Hits * fanout, firingRun.Msgs213);
-        Assert.Equal(firingRun.Hits * fanout * (ProjectileHullHit.FixedSize + FedPacket.CrcWidth), firingRun.Bytes213);
-        // The quiet fixture of the same shape sends none of either.
+        Assert.Equal(firingRun.Hits * fanout, firingRun.DeliveredHits);
+        Assert.Equal(firingRun.HitPairs, firingRun.DeliveredHits);
+        long legacyShotBytes = shotDeliveries * Frames.Projectile;
+        long legacyHitBytes = firingRun.DeliveredHits * Frames.HullHit;
+        if (firingRun.Msgs221 > 0)
+        {
+            Assert.Equal(0, firingRun.Msgs12);
+            Assert.Equal(0, firingRun.Msgs213);
+            Assert.Equal(0, firingRun.Bytes12);
+            Assert.Equal(0, firingRun.Bytes213);
+            Assert.True(firingRun.MaxBatchRecords > 1, "the fixture never combined records in a tick");
+            Assert.True(firingRun.Msgs221 < firingRun.DeliveredShots + firingRun.DeliveredHits);
+            // This stock weapon uses wide compact velocity (36 B/shot) and
+            // compact hits (25 B). Charge each batch's 16 B header + 4 B CRC.
+            Assert.Equal(firingRun.Msgs221 * (GunfireBatch.HeaderSize + FedPacket.CrcWidth)
+                + firingRun.DeliveredShots * 36 + firingRun.DeliveredHits * 25, firingRun.Bytes221);
+            Assert.True(firingRun.Bytes221 < legacyShotBytes + legacyHitBytes);
+        }
+        else
+        {
+            Assert.Equal(shotDeliveries, firingRun.Msgs12);
+            Assert.Equal(legacyShotBytes, firingRun.Bytes12);
+            Assert.Equal(firingRun.DeliveredHits, firingRun.Msgs213);
+            Assert.Equal(legacyHitBytes, firingRun.Bytes213);
+        }
+        // The quiet fixture of the same shape sends no gunfire.
         Assert.Equal(0, quietRun.Msgs12);
         Assert.Equal(0, quietRun.Msgs213);
+        Assert.Equal(0, quietRun.Msgs221);
+        Assert.Equal(0, quietRun.DeliveredShots);
+        Assert.Equal(0, quietRun.DeliveredHits);
 
         // The measured shape is the calculator's input (2 % tolerance).
         Assert.InRange(firingRun.Shots, 1764 * 0.98, 1764 * 1.02);
@@ -508,16 +576,19 @@ public sealed class P992GunfireTrafficTests
         long dependency = firingRun.Bytes78 - quietRun.Bytes78
                         + (firingRun.Bytes26 - quietRun.Bytes26)
                         + (firingRun.Bytes90 - quietRun.Bytes90);
-        long lanes = firingRun.Bytes12 + firingRun.Bytes213;
+        long lanes = firingRun.Bytes12 + firingRun.Bytes213 + firingRun.Bytes221;
         long delta = firingRun.TotalBytes - quietRun.TotalBytes;
-        Assert.Equal(13.4, 100.0 * dependency / (lanes + dependency), 1);  // 13.4 % of the stock gunfire cost
+        // Preserve the original 13.4 % stock baseline; compression changes its
+        // share of actual bytes without changing any pose dependency.
+        Assert.Equal(13.4, 100.0 * dependency / (legacyShotBytes + legacyHitBytes + dependency), 1);
         Assert.True(Math.Abs(delta - (lanes + dependency)) <= delta / 100,
-            $"the firing delta {delta} is not the two lanes {lanes} plus the dependency {dependency}");
+            $"the firing delta {delta} is not the gunfire bytes {lanes} plus the dependency {dependency}");
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"[p992-stock] shots={firingRun.Shots} hits={firingRun.Hits} fanout={fanout} " +
-            $"b12={firingRun.Bytes12} b213={firingRun.Bytes213} dep78={firingRun.Bytes78 - quietRun.Bytes78} " +
+            $"b12={firingRun.Bytes12} b213={firingRun.Bytes213} b221={firingRun.Bytes221} dep78={firingRun.Bytes78 - quietRun.Bytes78} " +
             $"dep26={firingRun.Bytes26 - quietRun.Bytes26} dep90={firingRun.Bytes90 - quietRun.Bytes90} " +
-            $"stock={lanes + dependency} delta={delta} quietTotal={quietRun.TotalBytes} fireTotal={firingRun.TotalBytes} " +
+            $"stock={legacyShotBytes + legacyHitBytes + dependency} actual={lanes + dependency} " +
+            $"delta={delta} quietTotal={quietRun.TotalBytes} fireTotal={firingRun.TotalBytes} " +
             $"near5900={firingRun.ShotPairsNear5900}/{firingRun.ShotPairs}"));
     }
 
@@ -541,6 +612,8 @@ public sealed class P992GunfireTrafficTests
         bool aligned = Environment.GetEnvironmentVariable("P992_ALIGNED") != "0";
         var r = Run(peers, firing, ticks, aligned, sectors, spacing);
         Print(r);
-        Assert.Equal(firing > 0, r.Msgs12 > 0);
+        Assert.Equal(firing > 0, r.DeliveredShots > 0);
+        Assert.Equal(r.ShotPairs, r.DeliveredShots);
+        Assert.Equal(r.HitPairs, r.DeliveredHits);
     }
 }

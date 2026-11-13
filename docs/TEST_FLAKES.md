@@ -8353,5 +8353,52 @@ a dedicated arrival-robustness task can pick it up.
 `P990BroadcastLaneFixtureTests.Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick` fail on
 every host and tree since `broadcast.gunfireBatch` default ON (`1f1ebe3a`): the 2026-11-12 03:01 nightly on
 `67c950eb` (before P1000), the four-host benchmark the same day, and the v0.1.6 release sweep (`232a0c87`). Not caused by
-P1000/P1001. Likely the fixtures still expect the pre-batching traffic shape; a scoped task must update or re-baseline them
-(and confirm that is all it is) — tracked as an open item, not waived.
+P1000/P1001.
+
+P1002 isolated controls on base `61a50173`: both P992 fixtures failed **3/3 ON**
+and passed **3/3 OFF**. Resolved by measuring delivered shot/hit records inside
+ID-221 batches separately from transport messages, and running the simulation
+inside the recorded tick (the old fixture exercised singleton admin sends).
+The original shot/hit, radius, legacy-stock dependency and reconciliation bounds
+are retained. No production behavior/default change. Corrected rig-shaped ON
+traffic: 241,668 shot + 197,280 hit deliveries in 36,579 batches, 14,363,628
+gunfire bytes versus 23,486,184 legacy bytes (−38.84%).
+
+**P990 remains open; not a batching re-baseline.** It failed **3/3 ON and 3/3
+OFF** before edits. ON per-call cost was 31.6/32.2/32.4 ns (p95 share
+4.783/4.224/4.759%); OFF was 33.7/33.2/32.3 ns (5.240/5.215/4.791%). Its timed
+49-call/peer workload contains status/export frames and pose stamps, no gunfire,
+and its preliminary projection uses unarmed ships. Both original bounds
+(30 ns/call, 3% of tick p95) remain unchanged. Disabling JIT tiering in an extra
+OFF diagnostic still failed the share bound (0.2116 ms, 4.242%); no production
+regression or safe small fix was established. Investigate stable warm-up and
+host/build comparability separately. Full evidence and final gate:
+`docs/reports/GUNFIRE_FIXTURE_REBASELINE_P1002.md`.
+
+### 2026-11-13 — P1002 Fast qualification (fixture-only changes)
+
+One full Fast run on `61a50173` plus P1002 test/documentation changes:
+**14,125 passed / 4 failed / 20 skipped**, 523.847 s. All 14,149 discovered
+cases ran; 9/9 infrastructure checks and both quarantine lanes passed.
+The runner remains **FAIL**, including four timing offenders against its
+11.497082 s calibrated limit. The changed P992 measurement methods are Live
+and P990 is Perf; neither runs in Fast. No production source changed.
+
+Every failed case and additional slow case was selected in a fresh process
+three times after the sweep. P660 ran its whole four-case method per invocation
+so the disabled/off case was covered each time. Other selections ran exactly
+one case per invocation. Durations below are TRX test times, not process times.
+
+| Case | Fast failure / timing signature | Three isolated repetitions |
+|---|---|---|
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (disabled/off) | 14.900000000054206 s against [14.94, 15.06], at line 134; recurring countdown receipt family | 4/0/0; 4/0/0; 4/0/0 (Passed/Failed/Skipped), all four cases per invocation |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without required partial tip, 37.849 s; also slow-Fast | **fail / fail / fail**, 38.652 / 38.593 / 38.587 s; existing OPEN partial-tip issue remains open |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | clearance assertion at line 258, minRockDist=70.2 | **pass / pass / fail**, 5.874 / 5.808 / 5.775 s; failed repeat minRockDist=68.6; clearance issue remains OPEN, not just suite load |
+| `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty subject treasure list; one weapon treasure (TreasureId=3, Amount=0) remained after empty-pack phase | **pass / pass / pass**, 0.453 / 0.453 / 0.451 s; receive/reset race suspected: phase one waits for observer/enemy treasure, but not the subject's own treasure before clearing its list (lines 254–261, 325, 340). No drop behavior changed |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 11.725 s | **pass / pass / pass**, 3.476 / 3.286 / 3.286 s, below the original limit |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, 11.637 s | **pass / pass / pass**, 3.032 / 3.004 / 2.987 s, below the original limit |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | assertions passed, 13.456 s | **pass / pass / pass**, 2.916 / 2.962 / 2.971 s, below the original limit |
+
+Follow-up total: **26 passed / 4 failed / 0 skipped**, 21 process invocations.
+This does not turn the Fast run green or clear the missile-lock/NPC failures.
+P1002 report: `docs/reports/GUNFIRE_FIXTURE_REBASELINE_P1002.md`.
