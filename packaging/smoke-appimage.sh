@@ -15,7 +15,8 @@ APPIMAGE_EXTRACT_AND_RUN=1 "$image" --check-assets
 "$image" --appimage-extract > extract.log
 payload="$work/squashfs-root/usr/lib/AllegianceCore"
 if [ -n "$expected_version" ]; then
-    actual_version=$(python3 -c "import json; print(json.load(open('$payload/autoupdate/installed.json'))['version'])")
+    # The smoke container has no Python: read the leading "version" key of the compact manifest with grep.
+    actual_version=$(grep -o '"version":"[^"]*"' "$payload/autoupdate/installed.json" | head -n 1 | cut -d'"' -f4)
     if [ "$actual_version" != "$expected_version" ]; then
         echo "Version mismatch: expected $expected_version, got $actual_version" >&2
         exit 1

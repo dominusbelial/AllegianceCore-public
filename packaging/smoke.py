@@ -65,7 +65,10 @@ def executable(bundle):
 
 
 def installed_version(bundle):
-    path = bundle / 'autoupdate' / 'installed.json'
+    # macOS wraps the whole payload into AllegianceCore.app/Contents/Resources (package.mac_app),
+    # which is also where the client resolves autoupdate/installed.json at runtime.
+    app = bundle / 'AllegianceCore.app' / 'Contents' / 'Resources'
+    path = (app if app.is_dir() else bundle) / 'autoupdate' / 'installed.json'
     if not path.is_file():
         raise ValueError('Missing autoupdate/installed.json')
     return json.loads(path.read_text())['version']
