@@ -178,8 +178,41 @@ public sealed partial class Game1
         Console.WriteLine($"[intro] remembered pilot '{_playerName}', server '{prefs.Server}:{prefs.Port}'");
     }
 
+    // Native excludes the splash from global Trek keys (WinTrek.cpp:9281);
+    // SplashScreen::OnKey owns skipping it (splashscreen.cpp:76-81). Intro
+    // subviews supply their own Back action, including the first-run suggestion
+    // popup (introscreen.cpp:1305-1324). Root intro still allows MainMenu.
+    private bool HandleIntroScreenInput(KeyboardState keys)
+    {
+        if (_state == ClientState.Splash)
+        {
+            _escWasDown = ActionDown(keys, "MainMenu");
+            UpdateSplash(keys);
+            return true;
+        }
+        if (_state == ClientState.Intro && _introView != IntroView.Main && !_mainMenuVisible
+            && !_helpVisible && !_keyBindVisible && !_creditsVisible)
+        {
+            _menuConsumedFrame = false;
+            _escWasDown = ActionDown(keys, "MainMenu");
+            UpdateIntro(keys);
+            return true;
+        }
+        return false;
+    }
+
     private void UpdateIntro(KeyboardState ks)
     {
+        // Native OpenPopup owns the keyboard over the retained UI screen
+        // (engine/popup.cpp:391-411; WinTrek.cpp:4229). Observe held keys so
+        // resuming cannot activate a hidden entry with the popup's Enter/arrow press.
+        if (_mainMenuVisible || _menuConsumedFrame)
+        {
+            _iUp = ks.IsKeyDown(XnaKeys.Up); _iDown = ks.IsKeyDown(XnaKeys.Down);
+            _iEnter = ks.IsKeyDown(XnaKeys.Enter); _iEsc = ks.IsKeyDown(XnaKeys.Escape);
+            _iTab = ks.IsKeyDown(XnaKeys.Tab);
+            return;
+        }
         StartPendingJoinLink();
         if (_introView == IntroView.JoinLink) { UpdateJoinLink(ks); return; }
         UpdateIdentity(ks);

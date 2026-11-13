@@ -28,8 +28,19 @@ public sealed partial class Game1
     /// <summary>P945 — whether the native hangar screen owns the window this
     /// frame: docked AND in the hangar view (native vmHangar). Native hides the
     /// flight HUD and sets the radar LOD to none there
-    /// (<c>WinTrek/WinTrek.cpp:6719</c>, <c>:6836</c>).</summary>
-    private bool _nativeHangarScreen => _dockedActive && _hangarOnly;
+    /// (<c>WinTrek/WinTrek.cpp:6714</c>, <c>:6836</c>).</summary>
+    private bool _nativeHangarScreen => _state == ClientState.Flying
+        && _dockedActive && _hangarOnly && !CommandCameraActive;
+
+    private bool DockedLoadoutView => _state == ClientState.Flying
+        && _dockedActive && !_hangarOnly && !CommandCameraActive && _shopModel is not null;
+
+    // WinTrek.cpp:6706-6740 replaces the screen (including its PaneImage) on
+    // vmCommand/vmLoadout. A docked ship alone does not make hangar controls live.
+    private bool HangarControlsActive => _nativeHangarScreen
+        && !_investActive && !_teleportActive && !_teamPaneVisible
+        && !_mainMenuVisible && !_helpVisible && !_keyBindVisible
+        && !_graphicsSettingsVisible && !_creditsVisible && !_playerPingsVisible;
 
     private Rendering.HangarScreenRenderer HangarScreenRendererRef =>
         _hangarScreenRenderer ??= new Rendering.HangarScreenRenderer(
@@ -186,14 +197,20 @@ public sealed partial class Game1
         // real-window proof; inert unless the flag was passed.
         StepHangarScript();
         var mouse = HangarScriptMouse ?? Mouse.GetState();
-        var vp = GraphicsDevice.Viewport;
         bool down = mouse.LeftButton == ButtonState.Pressed;
         bool click = down && !_hangarMouseDown;
         _hangarMouseDown = down;
-        bool allowed = !composing && !_mainMenuVisible && !_helpVisible && !_keyBindVisible;
-        _hangarHover = allowed
-            ? HangarControls.Hit(vp.Width, vp.Height, mouse.X, mouse.Y, HangarDevelopments)
-            : HangarAction.None;
+        bool allowed = !composing && HangarControlsActive;
+        // Observe the button even while hidden: a held click must not become
+        // a fresh press when the player returns to the hangar.
+        if (!allowed)
+        {
+            _hangarHover = HangarAction.None;
+            _hangarLaunchAnimation.Update(false, (float)(Environment.TickCount64 / 1000.0));
+            return _hangarQuitConfirm;
+        }
+        var vp = GraphicsDevice.Viewport;
+        _hangarHover = HangarControls.Hit(vp.Width, vp.Height, mouse.X, mouse.Y, HangarDevelopments);
         // P945 — the launch pane's FrameImage ramp (0.7 s in/out, no loop, no
         // finish; engine/frameimage.cpp:420-456). It runs on the wall clock so a
         // frame drop cannot stall the door half-open.
@@ -228,8 +245,7 @@ public sealed partial class Game1
     {
         // The native hangar screen IS the docked hangar view (vmHangar,
         // WinTrek.cpp:6706-6718); the loadout view (vmLoadout) has its own screen.
-        if (!_dockedActive || !_hangarOnly || _state != ClientState.Flying
-            || _cameraMode == CameraMode.Command) return;
+        if (!_nativeHangarScreen) return;
         var vp = GraphicsDevice.Viewport;
         // P945 — native hangar art (hangar.mdl) scaled uniformly into the
         // viewport; the same HangarScreen rectangles drive the pointer hit test

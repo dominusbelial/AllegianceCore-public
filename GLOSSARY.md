@@ -1198,6 +1198,17 @@ list in **reverse**.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,
   Game1.IntroScreen.cs, Game1.ConnectScreen.cs).
+- **Screen input ownership (P1006)** — shared hangar/loadout view and hit-test gates in
+  `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`; undock cleanup before modal
+  returns and briefing visibility from the mission stage in
+  `src/Allegiance.ClientCore.Game/Game1.Panes.cs`;
+  splash/intro Back routing and popup focus in
+  `src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs`. Native command replaces
+  the hangar/loadout screen (`WinTrek/WinTrek.cpp:6706-6740`); explicit inventory,
+  investment, team and chat actions remain available. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1006ScreenInputTests.cs`; real-client
+  capture harness: `tools/p1006-ui-proof/Program.cs`; report:
+  `docs/reports/COMMAND_SCREEN_INPUT_P1006.md`.
 - **Intro screen (P731/P946)** — the port's keyboard intro menu: the button set/commands and the pure key→focus
   mapping (arrows always move the selection, Tab toggles typed-text focus, Enter activates) in
   `src/Allegiance.ClientCore.Game/IntroScreenModel.cs`, resolution-adaptive menu geometry (short viewports compress

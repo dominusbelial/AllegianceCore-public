@@ -1639,6 +1639,7 @@ public sealed partial class Game1
     /// are filtered here to avoid double handling.</summary>
     private void OnTextInput(object? sender, TextInputEventArgs e)
     {
+        if (_mainMenuVisible || _menuConsumedFrame) return;
         char c = e.Character;
         if (c == '\r' || c == '\n' || c == '\b' || c == (char)27) // Enter / Back / Esc
             return;

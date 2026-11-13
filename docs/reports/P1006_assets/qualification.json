@@ -1,0 +1,527 @@
+{
+  "task": "P1006",
+  "date": "2026-11-13",
+  "baseCommit": "a87b00f3",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "seconds": 13.22
+  },
+  "toolsBuild": {
+    "projects": 136,
+    "warnings": 0,
+    "errors": 0
+  },
+  "newTests": [
+    {
+      "repeat": 1,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "total": 58,
+      "maxCaseSeconds": 0.0258034
+    },
+    {
+      "repeat": 2,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "total": 58,
+      "maxCaseSeconds": 0.0264875
+    },
+    {
+      "repeat": 3,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "total": 58,
+      "maxCaseSeconds": 0.0270409
+    }
+  ],
+  "fullFast": {
+    "tier": "fast",
+    "seconds": 543.9537183780049,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 144,
+        "outcomes": {
+          "Passed": 144
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5200,
+        "outcomes": {
+          "Passed": 5183,
+          "NotExecuted": 17
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2444,
+        "outcomes": {
+          "Passed": 2443,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6362,
+        "outcomes": {
+          "Passed": 6356,
+          "NotExecuted": 3,
+          "Failed": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1803713527851458,
+      "referenceMs": 4.45,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.803713527851459
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+        "outcome": "Failed",
+        "seconds": 37.8595266
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 11.9631304
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 11.8716131
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+        "outcome": "Passed",
+        "seconds": 11.8132675
+      },
+      {
+        "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+        "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+        "outcome": "Passed",
+        "seconds": 13.1198416
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "5 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03611906699370593,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "finalUiFast": {
+    "passed": 5185,
+    "failed": 0,
+    "skipped": 17,
+    "total": 5202,
+    "maxCaseSeconds": 3.0132711
+  },
+  "unrelatedMethods": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+      "sweep": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 37.8595266,
+          "error": "lock never reached full + partial tip in the client world (lock 1.000)"
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 1,
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "maxSeconds": 38.5368039
+        },
+        {
+          "repeat": 2,
+          "exitCode": 1,
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "maxSeconds": 38.5284627
+        },
+        {
+          "repeat": 3,
+          "exitCode": 1,
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "maxSeconds": 38.511997
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "sweep": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 11.9631304,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 3.2224546
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 3.282353
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 3.2836772
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "sweep": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 11.8716131,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.1372444
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.1837305
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.2037116
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 11.8132675,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.4037502
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.4321532
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 4.3887309
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 13.1198416,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.9109161
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.5975347
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.6078489
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Failed",
+          "seconds": 0.1768881,
+          "error": "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.05000019"
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.530851
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.5657542
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.5132532
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station",
+          "outcome": "Failed",
+          "seconds": 9.7382477,
+          "error": "NPC should have docked and sold within the tick budget"
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.9280721
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.9442999
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 0.9290755
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "sweep": [
+        {
+          "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "outcome": "Failed",
+          "seconds": 1.3966201,
+          "error": "Assert.Empty() Failure: Collection was not empty\nCollection: [AsteroidMined { AsteroidId = 249, BpOreFraction = 228, ClusterId = 1061 }]"
+        }
+      ],
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.7383641
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.7663599
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "maxSeconds": 1.7344968
+        }
+      ]
+    }
+  ],
+  "training": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 247,
+      "failed": 0,
+      "skipped": 47,
+      "total": 294,
+      "maxCaseSeconds": 385.3496469
+    },
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "maxCaseSeconds": 3.7871114
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 247,
+      "failed": 0,
+      "skipped": 47,
+      "total": 294,
+      "maxCaseSeconds": 385.7605616
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "maxCaseSeconds": 2.5053829
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 247,
+      "failed": 0,
+      "skipped": 47,
+      "total": 294,
+      "maxCaseSeconds": 383.9468548
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "maxCaseSeconds": 3.5714949
+    }
+  ],
+  "screenshots": {
+    "status": "blocked",
+    "reason": "No OpenGL/EGL runtime; Game1 fails before rendering its first frame.",
+    "images": []
+  },
+  "trainingQualificationNote": "Training ran before the final briefing visibility guard; final shared UI code was checked again by the complete affected UI Fast project and the 58-case fixture. Real window checks remain blocked by missing graphics.",
+  "archivedVisualReview": [
+    "docs/reports/P996_assets/hangar-after-pod-death-classic.png",
+    "docs/reports/P996_assets/hangar-after-pod-death-modern.png",
+    "docs/reports/P946_assets/p946-00-main-focus-classic.png",
+    "docs/reports/P946_assets/p946-00-main-focus-modern.png"
+  ],
+  "trainingNaniteCompletion": [
+    {
+      "repeat": 1,
+      "outcome": "Passed"
+    },
+    {
+      "repeat": 2,
+      "outcome": "Passed"
+    },
+    {
+      "repeat": 3,
+      "outcome": "Passed"
+    }
+  ]
+}
