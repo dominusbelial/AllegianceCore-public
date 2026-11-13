@@ -369,7 +369,11 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Game/Game1.Rendering.cs` / `Rendering/HullHitSparkParticles.cs` (the 5 900 u
   `ProjectileVisibility` radius) and `tools/allegiance-mcp/BotManager.cs` (own-hit credit from 213). Offline
   calculator + loopback fixture: `tests/Allegiance.Core.Tests/P992GunfireTrafficTests.cs`.
-  Report: `docs/reports/GUNFIRE_TRAFFIC_P992.md`.
+  Report: `docs/reports/GUNFIRE_TRAFFIC_P992.md`. P1002 measures delivered records
+  separately from legacy frames / compact batches, with simulation inside the
+  recorded tick; original stock calculator and audience bounds remain pinned.
+  Investigation and OFF-control exception for P990:
+  `docs/reports/GUNFIRE_FIXTURE_REBASELINE_P1002.md`.
 - **Fire-audience distance cull (P993)** — default-off `broadcast.fireAudienceCull` that relays a
   `PROJECTILE_INSTANCE(12)` (ship or probe round) only to viewers that can DRAW it: today's
   `EmissionVisible` audience **and** the recipient's own ship within the client's own 5 900 u projectile
