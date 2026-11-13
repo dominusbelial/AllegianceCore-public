@@ -4,6 +4,49 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1007 skirmish alert qualification — 2026-11-13 UTC
+
+Exactly one full Fast sweep: **14,140 Passed / 5 Failed / 20 Skipped**, 582.240 s;
+all nine infrastructure checks passed (0.059 s). The calibrated Fast limit was
+**14.562 s** (the runner's generic error text still says “10 second limit”).
+Four executions exceeded it: P796 varied fits civ 35 **18.319 s**, SC2 support
+civ 3 **18.181 s**, missile-lock tip **37.861 s**, P999 profile reachability
+civ 5 **26.995 s**. Original gate result remains **FAIL**.
+
+One failure was task-related fixture maintenance, not a flake:
+`P906TickOrderTests.Bounce_recalculates_tail_and_discovers_previously_absent_projectile_contact`
+expected collision type 0; native NoWarn/NoDebris/NoFlare now correctly reach
+the callback as 224. Only that expected byte changed; movement, event order,
+contact timing and projectile assertions remain. The entire corrected P906
+class passed **24/0/0 ×3**. Alert cases passed **19/0/0 ×3** and ship/station
+collision cases **5/0/0 ×3** (144 task case executions, zero failed/skipped).
+
+The four non-task failure signatures are the existing missing partial-lock tip
+at lock 1.000; remote death latch never arriving after 2500 ticks; warp-bomb
+deadline one ULP above the inclusive bound (`5.0000000000000009 > 5`); and
+silent-peer seating measured at 32.100 s outside [28,31]. Their lock, respawn,
+timer and seating implementations/fixtures are unchanged. Every distinct failed
+or slow non-task method was run three times alone, with all its theory cases:
+
+| Method | Isolated P/F/S, repeats 1–3 | Longest case seconds, repeats 1–3 |
+| --- | --- | --- |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | 1/0/0; 1/0/0; 1/0/0 | 1.334 / 1.343 / 1.303 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0; 1/0/0; 0/1/0 | 1.508 / 1.545 / 38.537 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0; 3/0/0; 3/0/0 | 5.582 / 5.528 / 5.461 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0; 2/0/0; 2/0/0 | 4.183 / 4.159 / 4.168 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 1.204 / 1.052 / 1.036 |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/0/0; 2/1/0; 3/0/0 | 0.971 / 0.936 / 0.918 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 10/0/0; 10/0/0; 10/0/0 | 5.653 / 4.611 / 4.627 |
+
+Missile-lock and the timer boundary remain intermittent in isolation. Seating
+failed all three isolated runs: 32.150000000000297, 31.000000000000309 and
+32.200000000000294 s against [28,31]. Respawn passed all three; the passing
+but slow sweep methods rechecked below the calibrated limit. This does not waive the original sweep failures or declare the full
+gate green. No second full Fast sweep was run. Details and compact evidence:
+[SKIRMISH_GARRISON_ALERT_P1007](reports/SKIRMISH_GARRISON_ALERT_P1007.md),
+[validation](reports/P1007_assets/validation.json). Raw logs/TRX are under
+ignored `.scratch/p1007/`.
+
 ## P1001 commander/fleet Fast qualification — 2026-11-12 UTC
 
 The one full Fast sweep ran **14,149 cases in 560.3 s: 14,123 passed / 6 failed /

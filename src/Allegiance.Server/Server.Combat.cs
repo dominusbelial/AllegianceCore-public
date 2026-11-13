@@ -1143,18 +1143,16 @@ public sealed partial class Server
     /// (or <c>"...critically damaged and under attack by %s"</c> once the PRE-hit
     /// hull fraction is below 0.30, <c>FedSrv.CPP:12199</c>), with <c>VoiceOver</c>
     /// set to the station type's <c>UnderAttackSound</c>/<c>CriticalSound</c>.
-    /// Alliances are absent in this port (no <c>CHAT_ALLIES</c>, no "(Ally)"
-    /// prefix — the "<c>%s</c>" ally slot is elided) and <c>ct</c> is therefore
-    /// always <c>CHAT_TEAM</c>.</item>
+    /// Allied damage with friendly fire enabled carries the "(Ally)" prefix;
+    /// a defending side with allies uses <c>CHAT_ALLIES</c>.</item>
     /// <item><b>Same-side "Watch your fire"</b> (<c>FedSrv.CPP:12221-12228</c>): when
     /// the launcher is on the station's own side and is a player, that pilot alone
     /// gets a private <c>"Watch your fire"</c> with <c>droneWatchFireSound</c>
-    /// (<c>= 1325</c>; igc.h:456-463 enum from 1000, sounds.h:377 is entry 325).
+    /// (<c>= 1324</c>; Igc/sounds.h:377).
     /// </item>
     /// </list>
-    /// <para>Scoped to the launcher's mission (the attacking ship's mission is the
-    /// mission whose sector the station sits in, the same bridge the sector uses for
-    /// KillStationEvent), so a peer on the defending side id in ANOTHER mission is
+    /// <para>Scoped to the damaged station's mission, so a peer on the defending
+    /// side id in ANOTHER mission is
     /// never alerted. Runs on the sim thread (same one that owns <c>_peerShips</c>),
     /// so no extra locking.</para>
     /// </summary>
@@ -1173,7 +1171,7 @@ public sealed partial class Server
         if (launcher is not Ship ls) return;
         if ((type & DmgIdNoWarn) != 0) return;
         if (ls.SideId is not { } launcherSide) return;     // unseated launcher -> no alert (FedSrv.CPP:12187-12188)
-        if (ls.Mission is not { } mission) return;         // scoping bridge: the attacking mission
+        if (station.Mission is not { } mission) return;   // native station->GetMyMission()->GetIgcSite()
 
         // Per-station 10 s throttle (FedSrv.CPP:12190). Only a report that passes the
         // window sends; native stamps LastDamageReport only after a passing block

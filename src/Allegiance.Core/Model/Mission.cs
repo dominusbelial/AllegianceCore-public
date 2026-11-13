@@ -1324,7 +1324,7 @@ public sealed partial class Mission : IMissionIgc
     /// own. Throws if the sector is not this mission's (same guard as
     /// <see cref="PlaceShip(Ship, Sector)"/>).
     /// </summary>
-    public void PlaceStation(Station station, Sector sector)
+    public void PlaceStation(Station station, Sector sector, double? creationTime = null)
     {
         ArgumentNullException.ThrowIfNull(station);
         ArgumentNullException.ThrowIfNull(sector);
@@ -1335,6 +1335,8 @@ public sealed partial class Mission : IMissionIgc
         sector.AttachStation(station);
         Sides.FirstOrDefault(s => s.Id == station.SideId)?.NotifyBuildingTechsChanged();
         Site.StationTypeChange(station); // Igc/stationIGC.cpp:72-75, after registration
+        // Igc/stationIGC.cpp:83: initialize even a late-built base's report clock.
+        station.LastDamageReport = creationTime ?? LastUpdate;
     }
 
     /// <summary>
