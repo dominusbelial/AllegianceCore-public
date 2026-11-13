@@ -1,0 +1,11 @@
+{
+  "task": "P1004",
+  "command": "SDL_VIDEODRIVER=offscreen ALSOFT_DRIVERS=null dotnet run --project tools/p1004-lobby-proof --no-build -- --out docs/reports/P1004_assets",
+  "exitCode": 134,
+  "capturesProduced": 0,
+  "reviewedCaptures": 0,
+  "status": "blocked",
+  "failure": "NoSuitableGraphicsDeviceException: Failed to create graphics device; GL.GetString could not load a graphics context.",
+  "environment": "No libGL, libEGL, libGLX, libOSMesa, Mesa DRI driver or Xvfb found in the container or local package caches.",
+  "constraint": "Brief forbids contacting public hosts. No graphics packages were downloaded. A local runtime/cache path was requested while other validation continued."
+}

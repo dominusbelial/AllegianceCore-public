@@ -1275,6 +1275,16 @@ list in **reverse**.
   the eleven game filters and the filter dialog (native `gamescreen.cpp`). Key:
   `src/Allegiance.ClientCore.Game/ServerListing.cs`, `LobbyGameSort.cs`,
   `LobbyGameMetadata.cs` (`GameParams`/`NativeGameTypes`), `Game1.Session.cs`.
+- **Lobby availability and enrollment retry (P1004)** — native running-game
+  joiner default, server aggregate/per-mission capacity, advisory team-slot status
+  and truthful HTTP/transport/empty/filter messages in
+  `src/Allegiance.Server/Server.MissionParams.cs`,
+  `src/Allegiance.Server/LobbyHeartbeat.cs`,
+  `src/Allegiance.ClientCore.Game/ServerListing.cs` and
+  `src/Allegiance.ClientCore.Game/LobbyBrowserStatus.cs`. P808a enrollment expiry
+  and failures back off to an hour; approved credentials retain their existing path.
+  Both-style browser capture harness: `tools/p1004-lobby-proof/`; report:
+  `docs/reports/LOBBY_LISTING_SLOTS_P1004.md`.
 - **Lobby URL precedence (P947)** — the lobby directory URL is resolved once at
   startup with the precedence explicit `--lobby` (this session) > saved connect
   profile / player.json preferences > `ServerListing.LobbyUrlDefault`, then read

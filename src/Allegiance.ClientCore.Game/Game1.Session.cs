@@ -821,7 +821,8 @@ public sealed partial class Game1
         try
         {
             data = await _http.GetFromJsonAsync<List<ServerListing>>(
-                "/api/servers", ServerListing.JsonOptions).ConfigureAwait(false);
+                "/api/servers", ServerListing.JsonOptions).ConfigureAwait(false)
+                ?? throw new System.Text.Json.JsonException("Expected a server list.");
             // P894 / LOB-0009 — the master core list the directory relays with
             // every server-list request in native (SERVERS_LIST's core array).
             // A lobby without the endpoint just yields no summary.
@@ -839,7 +840,8 @@ public sealed partial class Game1
         }
         catch (Exception ex)
         {
-            error = $"Lobby unreachable ({_lobbyUrl}): {ex.Message} - retrying...";
+            error = LobbyBrowserStatus.FetchFailure(ex);
+            Console.WriteLine($"[lobby] {_lobbyUrl}: {ex.Message}");
         }
 
         // Volatile write AFTER filling the data so the main thread's volatile
@@ -880,7 +882,7 @@ public sealed partial class Game1
             // P761b — a fixed one-line-each band above the list, so nothing
             // overprints: title (20) / polling state (52) / player line (74,
             // connect only) / sort-header bar (98) / filter-or-find line (122) /
-            // banner (146). Rows start at ConnectScreenLayout.ListTop (150).
+            // banner (146). Rows start at ConnectScreenLayout.ListTop (174).
             var title = "SERVER BROWSER";
             var tsz = _hudBig.MeasureString(title);
             _spriteBatch.DrawString(_hudBig, title, new Vector2((w - tsz.X) / 2f, 16f), titleCol);
@@ -919,15 +921,13 @@ public sealed partial class Game1
             }
             else if (connect && _savedServers.Count == 0 && !polling)
                 banner = "No saved servers yet - tap ADD to create one.";
-            else if (polling && _displayServers.Count == 0)
-                banner = "No servers found yet - waiting for registrations...";
-            else if (_filterActive && _visibleRows.Count == 0)
-            {
-                banner = $"No servers match '{_filterBuffer}'.";
-                bannerCol = new Color(1f, 0.6f, 0.4f);
-            }
+            else if (polling || _displayServers.Count > 0)
+                banner = _lobbyFetchInFlight && _displayServers.Count == 0
+                    ? "Loading lobby server list..."
+                    : LobbyBrowserStatus.ListingMessage(_displayServers, _visibleRows);
             if (banner is not null)
-                _spriteBatch.DrawString(_hudSmall, banner, new Vector2(60f, 146f), bannerCol);
+                _spriteBatch.DrawString(_hudSmall, Rendering.TeamPaneRenderer.Fit(banner, _hudSmall, w - 120f),
+                    new Vector2(60f, 146f), bannerCol);
 
             // P274 — the live filter/edit line. Drawn above the list so the
             // narrowed selection is read against it. '_' is a blinking cursor
@@ -1070,7 +1070,7 @@ public sealed partial class Game1
                     new Vector2(40, h - 96), new Color(1f, 0.62f, 0.35f));
             string lobbyPasswordLine = Rendering.JoinPasswordPrompt.EditLine(lobbyRequires,
                 KeyOf("LobbyPassword").Label + " game password", _lanJoinPassword.Length, _editingLanPassword)
-                + (_editingLanPassword ? "  (" + KeyOf("LobbyJoin").Label + " done)" : "");
+                + (_editingLanPassword ? "  (" + KeyOf("LobbyJoin").Label + (lobbyRequires ? " join)" : " done)") : "");
             _spriteBatch.DrawString(_hudSmall, lobbyPasswordLine, new Vector2(40, h - 66), dimCol);
             string lobbyKey = lobbySelected is null ? "" : JoinPasswordKey(_lobbyUrl, lobbySelected, lobbySelected.Address, lobbySelected.Port);
             _spriteBatch.DrawString(_hudSmall,

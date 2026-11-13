@@ -102,6 +102,10 @@ public sealed partial class Server
                 [MissionParamsMsg.BitAllowAlliedRip] = mission.AllowAlliedRip,
                 [MissionParamsMsg.BitAllowDevelopments] = mission.AllowDevelopments,
                 [MissionParamsMsg.BitScoresCount] = true,   // LobbyHeartbeat.cs:551 — native Reset default
+                // Native Reset permits joining a running game (Igc/igc.h:1251).
+                // A zeroed wire bit otherwise makes QueueLobbyMissionInfo claim
+                // every started mission has no slots, even with empty teams.
+                [MissionParamsMsg.BitAllowJoiners] = true,
             },
             NTems = (short)mission.Sides.Count,
             IMinRank = -1,                      // igc.h:1301 Reset default — the port has no rank window
@@ -604,19 +608,19 @@ public sealed partial class Server
     /// snapshot (<c>Server.Broadcast.cs</c>) and freezes the result into
     /// <see cref="LobbyGameParams"/> for the off-thread heartbeat.
     /// <list type="bullet">
-    /// <item><b>Player counts</b> (<c>:4041-4043</c>) — non-NPC players of this
+    /// <item><b>Player counts</b> (<c>:4040-4041</c>) — non-NPC players of this
     /// mission, and how many are still on <c>SIDE_TEAMLOBBY</c> (the port's
     /// unseated <c>null</c> / <c>SideTeamLobby</c> ships).</item>
-    /// <item><b>Slot availability</b> (<c>:4046-4073</c>) — native's scan of the
+    /// <item><b>Slot availability</b> (<c>:4044-4069</c>) — native's scan of the
     /// mission's sides: a joiner policy/stage/lobby-lock pre-gate, then per side
     /// <c>nMaxPlayersPerTeam - nNumPlayersOnSide</c>, plus the stage/base/active
     /// gate; the guaranteed bit when the side auto-accepts or is leaderless
     /// (<c>fAutoAcceptLeaders</c>, always on in this port — the same fold
     /// <c>RequestPosition</c>'s leaderless fast path makes).</item>
-    /// <item><b>The countdown</b> (<c>:4036-4037,4084-4086</c>) — the armed
+    /// <item><b>The countdown</b> (<c>:4035,4080-4081</c>) — the armed
     /// deadline as an offset from now, and whether the countdown has started.</item>
     /// <item><b>Team/side counts, caps, eject pods, invulnerable stations,
-    /// squad game, squad ids</b> (<c>:3995-4013,4076-4095</c>) — read from the
+    /// squad game, squad ids</b> (<c>:3990-4006,4071-4095</c>) — read from the
     /// mission's own <c>misparms</c> stand-in (<see cref="ParamsOf"/>) so a host
     /// edit is advertised, exactly like native's <c>m_misdef.misparms</c>.</item>
     /// </list>
@@ -640,10 +644,10 @@ public sealed partial class Server
         short teams = parms.NTems > 0 ? parms.NTems : (short)mission.Sides.Count;
         short maxPerTeam = parms.NMaxPlayersPerTeam;
         int maxPerGame = parms.NTotalMaxPlayersPerGame > 0
-            ? Math.Min(parms.NTotalMaxPlayersPerGame, teams * maxPerTeam)   // :4079-4081
+            ? Math.Min(parms.NTotalMaxPlayersPerGame, teams * maxPerTeam)   // :4074-4076
             : teams * maxPerTeam;
 
-        // :4047-4048 — pre-gate: joiners allowed (or the game has not started),
+        // :4044-4045 — pre-gate: joiners allowed (or the game has not started),
         // the lobby is not locked, and the game is not over.
         bool anySlots = false, guaranteedSlots = false;
         if ((parms[MissionParamsMsg.BitAllowJoiners] || mission.Stage == MissionStage.NotStarted)
@@ -653,14 +657,14 @@ public sealed partial class Server
             {
                 if (side.Id < 0 || side.Id >= teams) continue;   // native's live side list only has nTeams sides
                 int available = maxPerTeam - perSide.GetValueOrDefault(side.Id);
-                // :4055-4057 — a not-started game always qualifies; once running a
+                // :4055-4056 — a not-started game always qualifies; once running a
                 // side needs its restart base (GetBase) and to be active.
                 bool canTake = mission.Stage == MissionStage.NotStarted
                     || (side.Active && mission.Sectors.Any(sec => sec.StationRuntimes.Any(st =>
                         !st.Dead && st.SideId == side.Id && st.Type.HasCapability(DataStationTypeIGC.SabmRestart))));
                 if (!canTake || available == 0) continue;
                 anySlots = true;
-                // :4064-4072 — guaranteed when the side auto-accepts, or is
+                // :4062-4065 — guaranteed when the side auto-accepts, or is
                 // leaderless and the game auto-accepts leaders. The port folds
                 // fAutoAcceptLeaders to "a leaderless side accepts" (the same rule
                 // RequestPosition's fast path uses, Server.Dispatch.cs).
@@ -668,7 +672,7 @@ public sealed partial class Server
             }
         }
 
-        // :3995-4013 — the squads of sides that have ships (and are active once
+        // :3990-4006 — the squads of sides that have ships (and are active once
         // the game started). A squad id only exists on a squad game.
         List<string>? squadIds = null;
         if (mission.SquadGame)
@@ -681,7 +685,7 @@ public sealed partial class Server
                 (squadIds ??= []).Add(squad);
             }
 
-        // :4036-4037 — misparms.timeStart - now, milliseconds; :4084-4086 the
+        // :4035 — misparms.timeStart - now, milliseconds; :4080-4081 the
         // countdown-started bit (STARTING, or NOTSTARTED with bAutoRestart).
         uint startOffsetMs = 0;
         if (_startCountdownDeadline.TryGetValue(mission, out var deadline) && deadline > _simNow)

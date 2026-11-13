@@ -166,9 +166,17 @@ public sealed partial class Game1
         if (backspace && !_backWasDown && _lanJoinPassword.Length > 0) _lanJoinPassword.Length--;
         _backWasDown = backspace;
         bool done = ActionDown(keys, "LobbyJoin");
-        // Finishing text entry must not also join on the next held-key frame.
+        bool submit = done && !_enterWasDown;
+        // Release the Enter press that opened the prompt before submitting.
+        // Latch submissions so holding the key cannot start another handshake.
         _enterWasDown = done;
-        if (done) _editingLanPassword = false;
+        if (submit)
+        {
+            _editingLanPassword = false;
+            int selected = SelectedDisplayIndex();
+            if (selected >= 0 && _displayServers[selected].PasswordRequired)
+                TryJoinSelected(); // required password: ENTER is the dialog's OK
+        }
         return true;
     }
 

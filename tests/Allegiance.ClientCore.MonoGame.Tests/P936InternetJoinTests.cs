@@ -20,6 +20,7 @@ public sealed class P936InternetJoinTests
         void Set(string name, object value) => typeof(Game1).GetField(name, hidden)!.SetValue(game, value);
         T Get<T>(string name) => (T)typeof(Game1).GetField(name, hidden)!.GetValue(game)!;
         Set("_hudSettings", new HudSettings { Style = style }); Set("_lanJoinPassword", new System.Text.StringBuilder("abc"));
+        Set("_displayServers", new List<ServerListing>()); Set("_visibleRows", new List<int>());
         var map = KeyBindingStore.Instance.Map;
         var previous = map.BindingOf("LobbyPassword"); var previousJoin = map.BindingOf("LobbyJoin");
         try
