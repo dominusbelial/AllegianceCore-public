@@ -153,7 +153,14 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private AudioVoice? _engineCapital;     // accelcapital — capital main-thruster loop (SIM-0373/0379)
     private AudioVoice? _cockpitHum;        // sshipint — small interior hum (SIM-0372)
     private AudioVoice? _cockpitHumCapital; // lshipint — capital interior hum (SIM-0372)
-    private AudioVoice? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
+    // P1003 — the afterburner beds. Native keeps TWO loop instances (interior +
+    // exterior) and maintains each through PlaySoundIf with the mounted part's
+    // own SoundID; the camera view only mutes the wrong bus (SetInternalVolume/
+    // SetExternalVolume, trekigc.cpp:887-927,1359-1372). Slots = native's
+    // m_pAfterburnerInteriorSound / m_pAfterburnerExteriorSound
+    // (trekigc.cpp:755,762).
+    private readonly PlaySoundIfSlot _afterburnerInteriorSlot = new();
+    private readonly PlaySoundIfSlot _afterburnerExteriorSlot = new();
     private AudioVoice? _turnThrusterCapital; // accelsmall — capital turn bed (SIM-0374/0380)
     private AudioVoice? _sideThrustSmall;     // accelsmall — fighter sidethrust loop (SIM-0376/0382)
     private AudioVoice? _sideThrustCapital;   // accelcapital — capital sidethrust loop (SIM-0377/0383)
@@ -927,7 +934,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             _engineCapital = Loop($"Sounds/{ShipLoopBeds.CapitalMainThruster}");       // P721 — capital main-thruster bed
             _cockpitHum = Loop($"Sounds/{ShipLoopBeds.FighterInterior}");
             _cockpitHumCapital = Loop($"Sounds/{ShipLoopBeds.CapitalInterior}");       // P721 — capital interior bed
-            _afterburner = Loop($"Sounds/{ShipLoopBeds.Afterburner}");
+            // P1003 — no fixed afterburner bed any more: both beds are started on
+            // demand from the mounted part's own SoundID (AfterburnerLoop).
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
             _boundsWarning = Loop($"Sounds/{ShipWarningState.LoopSound}");
@@ -1117,10 +1125,13 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// (<see cref="Rendering.CameraMode.Cockpit"/>).</param>
     /// <param name="deltaSeconds">Real elapsed time since the last <see cref="Update"/>
     /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
-    /// <param name="afterburnerActive">True when <c>ShipControlState.AfterburnerButton</c>
-    /// is set on the local ship's <c>StateM</c> (P220 — TK_FireBooster/Shift).</param>
-    /// <param name="deltaSeconds">Real elapsed time since the last <see cref="Update"/>
-    /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
+    /// <param name="afterburner">P1003 — the native afterburner loop state: a
+    /// mounted <c>ET_Afterburner</c> part (with its own interior/exterior
+    /// SoundIDs) and that part's power ramp. Native starts the loop only while
+    /// <c>AfterburnerPower() &gt; 0.0f</c> and stops it otherwise
+    /// (<c>trekigc.cpp:1320-1322,1344-1347</c>); holding the booster button with
+    /// no part mounted (a pod), an empty tank or a still-mounting part is silent.
+    /// The <c>AfterburnerButton</c> bit itself is never the gate.</param>
     /// <param name="missileLocked">True when the local ship has FULL missile lock
     /// (P230) — the continuous <c>missilelock</c> beep plays only while locked
     /// (native <c>PlaySoundIf(m_pMissileToneSound, missileToneSound, ..., bIsPlayersShip
@@ -1137,7 +1148,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     /// interior bed (<c>pht-&gt;GetInteriorSound()</c>, trekigc.cpp:1311-1312) plays
     /// for the pilot only. A turret gunner keeps the engine/cockpit mix above but
     /// never the pilot's interior bed. Default true = pilot.</param>
-    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false, bool capitalHull = false, bool sidethrustActive = false, bool pilotInterior = true)
+    public void Update(float throttle, float speed, bool cockpitMode, AfterburnerLoop afterburner, float deltaSeconds, bool missileLocked = false, bool capitalHull = false, bool sidethrustActive = false, bool pilotInterior = true)
     {
         if (!IsLoaded) return;
 
@@ -1169,11 +1180,21 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             else if (h.State == SoundState.Playing) Safe(h.Stop);
         }
 
-        if (_afterburner is { } afterburner)
-        {
-            if (afterburnerActive) EnsurePlaying(afterburner);
-            else if (afterburner.State == SoundState.Playing) Safe(afterburner.Stop);
-        }
+        // P1003 — the afterburner beds, both maintained like native's two loop
+        // instances: PlaySoundIf with the MOUNTED part's own interior/exterior
+        // SoundID (GetAfterburnerSoundID, trekigc.cpp:1115-1130) while
+        // AfterburnerPower() > 0 (trekigc.cpp:1320-1322 interior, :1344-1347
+        // exterior). A pod, an empty tank or a still-mounting part holds no
+        // power, so nothing starts. The camera view gates only the volume bus:
+        // native silences the internal bus outside the cockpit and the external
+        // bus inside it (SetInternalVolume/SetExternalVolume at
+        // trekigc.cpp:887-927, camera switch :1359-1372), so both loops may keep
+        // running while the view switches — the audible bed is the one the view
+        // owns.
+        PlaySoundIf(_afterburnerInteriorSlot, afterburner.InteriorId, null, afterburner.Plays);
+        PlaySoundIf(_afterburnerExteriorSlot, afterburner.ExteriorId, null, afterburner.Plays);
+        SetSlotVolume(_afterburnerInteriorSlot, cockpitMode ? _masterVolume : 0f);
+        SetSlotVolume(_afterburnerExteriorSlot, cockpitMode ? 0f : _masterVolume);
 
         // P721 — the sidethrust loop bed (SIM-0376/0377/0382/0383): plays while a
         // lateral/backward thrust button is held (native PlaySidethrust(),
@@ -2892,6 +2913,15 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
     private static void SetLoopVolume(AudioVoice inst, float volume) =>
         Safe(() => inst.Volume = Math.Clamp(volume, 0f, 1f));
 
+    /// <summary>P1003 — set the gain of a <see cref="PlaySoundIfSlot"/>'s retained
+    /// instance (native's <c>ISoundTweakable::SetGain</c> on a
+    /// <c>PlaySoundIf</c>-held loop). A slot with no instance, or one whose start
+    /// yielded nothing, is a no-op.</summary>
+    private void SetSlotVolume(PlaySoundIfSlot slot, float volume)
+    {
+        if (_retainedInstances.TryGetValue(slot, out var inst)) SetLoopVolume(inst, volume);
+    }
+
     private static void EnsurePlaying(AudioVoice inst)
     {
         if (inst.State != SoundState.Playing) Safe(inst.Play);
@@ -2932,7 +2962,6 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             _cockpitHum?.Dispose();
             _cockpitHumCapital?.Dispose();       // P721
             _ambienceSlot.Clear();
-            _afterburner?.Dispose();
             _missileTone?.Dispose();
             _missileWarning?.Dispose();
             _boundsWarning?.Dispose();
@@ -2958,6 +2987,8 @@ public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
             foreach (var inst in _retainedInstances.Values) inst.Dispose(); // P871 PlaySoundIf
             _retainedInstances.Clear();
             _gunnerInteriorSlot.Reset();
+            _afterburnerInteriorSlot.Reset();   // P1003
+            _afterburnerExteriorSlot.Reset();   // P1003
             _turretTurn?.Dispose();                                       // P787b
             _stationInteriorAmbient?.Dispose();                           // P787b
             foreach (var inst in _asteroidAmbients.Values) inst.Dispose(); // P787b

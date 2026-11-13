@@ -8553,3 +8553,33 @@ fresh process, one case per invocation unless stated.
 No failed or slow case touches the asteroid spin path; the P1005 client change
 covers rendering only and its new tests are Fast (13 cases, 20–35 ms). Report:
 `docs/reports/ASTEROID_SPIN_RATE_P1005.md`.
+
+### 2026-11-13 — P1003 Fast qualification (own-ship afterburner sound gate)
+
+One full Fast run on the P1003 tree (base `a87b00f3`, client audio only — the
+own-ship afterburner loop's gate plus six bundled native boost waves; no server,
+sim, wire or HUD path): **14,179 passed / 8 failed / 20 skipped** of 14,207
+cases, 543.7 s. 9/9 infrastructure checks and both quarantine lanes passed; the
+runner stays **FAIL** on the ledgered families below and on four timing
+offenders against the 11.559 s calibrated limit (P744 factor 1.156). Host load
+average was 12.9–16.9 on the shared 24-CPU host during the run.
+
+Every failed case was then selected in a fresh process three times, one case per
+invocation. The new P1003 cases (11, Fast) pass 3× alone at 85–92 ms.
+
+| Case | Fast signature | Three isolated repetitions |
+|---|---|---|
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,576 B allocated for the current thread after warm-up (line 156), expected 0 | **pass / pass / pass**, 15–16 ms — allocation-counter flake under a loaded host; no `SoundManager` path in the case |
+| `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | ledgered side-seating race (lobby side -2 before 0, line 167) | **pass / pass / pass**, ~1 s |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | ledgered transit-receipt intermittency | **pass / pass / pass**, 304–336 ms |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | ledgered roster-stint recommendation family | **pass / pass / pass**, 652–703 ms |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | announcement-ordering under load | **pass / pass / pass**, 619–694 ms |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | ledgered miner-capacity receipt (12 prior entries) | **pass / pass / pass**, ~1 s |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5, 7) | `Assert.InRange` 7.0000000000000009 outside (6.9, 7] — the ledgered float upper-bound family (line 81) | **mixed**: delay 5 failed, then 3/3, then delay 5 + 7 failed; matches the ledger's 1/2/0 and 2/1/0 cohorts — pre-existing one-ULP boundary, no timer code changed |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 13.4 s | ledgered timing-only case (3.3 s isolated in earlier sweeps) |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, 14.2 s | ledgered timing-only case |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | assertions passed, 12.5 s | ledgered timing-only case |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | assertions passed, 14.3 s | ledgered timing-only case |
+
+No failed or slow case touches the afterburner sound path. Report:
+`docs/reports/BOOSTER_SOUND_GATE_P1003.md`.

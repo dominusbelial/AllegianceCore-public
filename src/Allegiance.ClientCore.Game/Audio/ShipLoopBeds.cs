@@ -41,7 +41,14 @@ public static class ShipLoopBeds
 
     // Hull exterior bed (same asset, capital pitches it 0.5; see :1020).
     public const string Exterior = "shipout";               // smallShipExteriorSound (:1013)
-    // Afterburner bed (interior and exterior; per-mounted-part sound, iafter default).
+    // Afterburner beds (P1003). Native resolves them PER MOUNTED PART, never by
+    // hull class: GetAfterburnerSoundID (trekigc.cpp:1115-1130) returns the
+    // mounted DataAfterburnerTypeIGC's InteriorSound (retail 680 =
+    // afterburner1InSound → iafter) or ExteriorSound (retail 700 =
+    // afterburner1OutSound → xafter). SoundManager.Update plays those ids
+    // through the numeric SoundID dispatch, so a custom core's own wave is
+    // honoured; this constant names the retail DEFAULT interior wave the
+    // sounddef template resolves to.
     public const string Afterburner = "iafter";
 
     public static string MainThruster(bool capital) => capital ? CapitalMainThruster : FighterMainThruster;

@@ -205,7 +205,9 @@ public sealed class P902SoundTemplateTests
         {
             sound.Load(); music.Load();
             sound.UpdateAudioFrame(.016f);
-            sound.Update(1, 100, true, true, .016f);
+            // P1003 — the afterburner bed now takes the native loop state
+            // (mounted part + its own power ramp), never the button bit.
+            sound.Update(1, 100, true, new AfterburnerLoop(true, 1f, 680, 700), .016f);
             sound.PlayWeaponFire(); sound.PlayWeaponFire(143);
             sound.StartWeaponBurst(0, 144); sound.StopAllWeaponBursts();
             sound.PlayError(); sound.PlayVoice("vo_sal_noammo"); sound.StartSoundId(143);

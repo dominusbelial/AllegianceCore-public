@@ -2906,11 +2906,27 @@ public sealed partial class Game1
                     // therefore still gets the engine/cockpit mix; only the
                     // pilot's interior bed is withheld.
                     var cockpitAudio = new Audio.CockpitAudio(_cameraMode == CameraMode.Cockpit, isGunner);
+                    // P1003 — the afterburner loop's native gate: the loop plays
+                    // ONLY while an ET_Afterburner part is mounted and its power
+                    // ramp is above zero (GetAfterburnerSoundID != NA &&
+                    // AfterburnerPower() > 0, trekigc.cpp:1115-1130,1320-1322,
+                    // 1344-1347). Pre-P1003 the port passed the
+                    // AfterburnerButton StateM bit, so a held Shift in a pod
+                    // (no parts since P998) or with an empty tank played a boost
+                    // that never happened. The power is the local own-ship
+                    // simulation's ramp (OwnShipSimulator.Power — the port of
+                    // CafterburnerIGC::m_power, same mount/on/off-rate/fuel
+                    // rules), NOT the wire's power byte.
+                    var afterburnerLoop = new Audio.AfterburnerLoop(
+                        Mounted: ownAfterburner,
+                        Power: _ownSim.Power,
+                        InteriorSoundId: _ownBoostType?.InteriorSound ?? Audio.AfterburnerLoop.NA,
+                        ExteriorSoundId: _ownBoostType?.ExteriorSound ?? Audio.AfterburnerLoop.NA);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
                         cockpitMode: cockpitAudio.EngineAudible,
-                        afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                        afterburner: afterburnerLoop,
                         deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds,
                         missileLocked: world.MissileLock.IsFullLock,   // P230 — lock beep at full lock
                         capitalHull: capitalHull,

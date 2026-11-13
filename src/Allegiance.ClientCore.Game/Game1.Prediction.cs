@@ -35,6 +35,13 @@ public sealed partial class Game1
 {
     private Allegiance.Core.Wire.ExpandedPartData? _ownBoostPart;
     private short _ownBoostHull = -1;
+    /// <summary>P1003 — the own ship's mounted afterburner PART TYPE, the source
+    /// of native's <c>GetAfterburnerSoundID</c> (its <c>InteriorSound</c> /
+    /// <c>ExteriorSound</c>, <c>WinTrek/trekigc.cpp:1115-1130</c>). Null when no
+    /// afterburner is mounted (a pod, a removed loadout) — the loop is then NA.
+    /// Refreshed by <see cref="ConfigureOwnBooster"/> every frame before the
+    /// sound pass reads it.</summary>
+    private DataPartTypeIGC.Afterburner? _ownBoostType;
 
     private void ConfigureOwnBooster(ShipEntity mine, ServerShipUpdate update)
     {
@@ -48,6 +55,7 @@ public sealed partial class Game1
         var constants = _shopCatalog?.Core?.Constants.FloatConstants;
         float rate = constants is { Length: > 10 } ? constants[10] : 1;
         var type = mounted is { } p ? ResolveFlightPart(p.PartId)?.Type as DataPartTypeIGC.Afterburner : null;
+        _ownBoostType = type;   // P1003 — the loop's per-mount interior/exterior SoundIDs
         _ownSim.SetAfterburner(type, mounted?.FractionMounted ?? 255, update.FuelFraction * (hull?.MaxFuel ?? 0), rate, mine.HasPendingReset ? update.Power : 0,
             thrustFactor: _session.World.GlobalAttributesFor(_session.World.MySideId ?? -1).Get(GlobalAttributeSet.Thrust));
     }
