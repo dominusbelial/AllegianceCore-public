@@ -68,8 +68,11 @@ public sealed partial class Game1
         }
         if (action == "ConModeInventory" && _dockedActive)
         {
-            var dockedView = ConsoleModeRules.DockedInventory(_hangarOnly,
-                _investActive || _teleportActive || _consolePanes.GameState || _teamPaneVisible);
+            // vmCommand always enters vmLoadout, even if the previous docked
+            // screen was loadout (WinTrek.cpp:10007-10009).
+            var dockedView = CommandCameraActive ? (HangarOnly: false, ClosePanes: true)
+                : ConsoleModeRules.DockedInventory(_hangarOnly,
+                    _investActive || _teleportActive || _consolePanes.GameState || _teamPaneVisible);
             _hangarOnly = dockedView.HangarOnly;
             if (dockedView.ClosePanes)
             {
@@ -265,11 +268,6 @@ public sealed partial class Game1
         {
             _teamPaneRenderer.Draw(GraphicsDevice.Viewport, PlayerPingPage());
             return;
-        }
-        if (_hangarOnly && _dockedActive && _cameraMode != CameraMode.Command)
-        {
-            lines.Add(new(TeamPaneLayout.LineKind.Title, "HANGAR"));
-            lines.Add(new(TeamPaneLayout.LineKind.Hint, $"{KeyOf("ShopLaunch").Label} Launch | {KeyOf("ConModeInventory").Label} Loadout | {KeyOf("ViewCommand").Label} Command"));
         }
         if (_consolePanes.GameState)
         {

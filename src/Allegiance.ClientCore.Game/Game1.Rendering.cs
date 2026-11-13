@@ -380,7 +380,9 @@ public sealed partial class Game1
         }
         else if (_state == ClientState.Intro)
         {
-            DrawIntro();   // P731 — the intro screen
+            // The native Escape popup is reachable from intro (WinTrek.cpp:9304-9320).
+            // Present one menu at a time; closing it reveals the retained intro view.
+            if (!_mainMenuVisible) DrawIntro();
         }
         else if (_state == ClientState.Connecting)
         {
@@ -1950,6 +1952,10 @@ public sealed partial class Game1
                 _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
         }
 
+        // The hangar is the backdrop; console panes and popups belong above
+        // it (native backdrop/console image layers, WinTrek.cpp:3224-3229).
+        DrawHangarControls();
+
         // P752c — the game-over result panel replaces the in-flight UI, so every
         // in-flight pane (scoreboard / pilot info / briefing / team pane) must be
         // hidden while it is up — their translucent panels otherwise show
@@ -2060,7 +2066,7 @@ public sealed partial class Game1
         // cockpit scene). Only present while the local ship is actually docked.
         // Its P273 sub-view is the teleport pane (board a teammate's turret /
         // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_investActive && _investDefs is not null)
+        if (_state == ClientState.Flying && _investActive && _investDefs is not null)
         {
             // P487 — the investment pane sub-view (native PurchasesPaneImpl),
             // drawn in the same docked-panel style as the teleport/hangar views.
@@ -2077,12 +2083,12 @@ public sealed partial class Game1
                 footerHeight: _dockedActive ? 84f : 0f, splitDetailPanels: true,
                 creditBox: _hudNativeTextures?.CreditBox, nativeMoneyPanel: true);
         }
-        else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
+        else if (_state == ClientState.Flying && _dockedActive && !CommandCameraActive && _teleportActive && _teleportModel is { } telPane)
         {
             var telRows = Rendering.TeleportLayout.Build(telPane);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney, footerHeight: 84f);
         }
-        else if (_dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is { } dockShop)
+        else if (DockedLoadoutView && _shopModel is { } dockShop)
         {
             // P519 — render the effective hull's real in-game model orbiting
             // behind the panes at native cmExternalOrbit rates; the translucent
@@ -2104,7 +2110,7 @@ public sealed partial class Game1
         // P945 — both artefacts belong to the LOADOUT screen (ofInLoadout); the
         // hangar screen shows only the native hangarinturretbmp badge, drawn by
         // HangarScreenRenderer at its authored point (hangar.mdl:74-80, :102).
-        if (_dockedActive && !_hangarOnly && LoadoutBoardState() is { } board)
+        if (DockedLoadoutView && LoadoutBoardState() is { } board)
         {
             var world0 = _session.World;
             var side = new Color(1f, 1f, 1f);
@@ -2119,7 +2125,6 @@ public sealed partial class Game1
         }
 
         DrawConsolePanes();
-        DrawHangarControls();
         // P639 — Ctrl+T Team Pane: the full-roster screen (every side's pilots
         // with rank name, ship status, kills/deaths, plus money / active-ballot
         // footer). Built from the same ScoreRoster + RankTable as the scoreboard

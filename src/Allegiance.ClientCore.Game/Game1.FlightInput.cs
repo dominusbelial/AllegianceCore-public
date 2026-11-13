@@ -389,6 +389,9 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] team lobby: local ship is on no side (-2) — team screen (pick a side)");
         }
         var ks = _benchmark is null ? ReadProofKeyboard() : new KeyboardState();
+        // Authoritative undock retires the hangar even when a modal pane
+        // consumes this frame before UpdateFlying reaches HandleDockedScreen.
+        ClearUndockedHangar();
         _hudSkinKeys = ks;
         _hudSkinKeysRead = true;
         // P948 — real-window proof of the persisted mouse options on the in-game
@@ -408,6 +411,12 @@ public sealed partial class Game1
                 if (IsTurretGunner()) UpdateTurretGunner(neutral, 0, (float)gameTime.ElapsedGameTime.TotalSeconds);
                 else _session.CommandControls(neutral);
             }
+            base.Update(gameTime);
+            return;
+        }
+
+        if (HandleIntroScreenInput(ks))
+        {
             base.Update(gameTime);
             return;
         }
@@ -529,7 +538,7 @@ public sealed partial class Game1
             // (load.cpp:1533-1536, SetViewMode(vmHangar) — the port's _hangarOnly hangar).
             bool investmentOpen = _investActive;
             bool teleportOpen = _teleportActive;
-            bool loadoutOpen = _dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is not null;
+            bool loadoutOpen = DockedLoadoutView;
             var cancel = MainMenuRules.Escape(IsBriefingVisible(out _),
                 // P784 — every live compose state owns Escape (native console
                 // VK_ESCAPE console.cpp:2375-2385; the mouse-command selection
@@ -751,9 +760,6 @@ public sealed partial class Game1
             else if (_state == ClientState.ConnectFailed) UpdateConnectFailed(ks);
             // P731 — the intro screen (no command-line args).
             else if (_state == ClientState.Intro) UpdateIntro(ks);
-            // P757 — the splash screen (native splashscreen.cpp): times out to
-            // the intro; any key/click skips straight there.
-            else if (_state == ClientState.Splash) UpdateSplash(ks);
             else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
             // P282 — pre-flight ready screen once seated, before the mission starts.
             else if (_state == ClientState.ReadyCheck)

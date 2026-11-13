@@ -4,6 +4,45 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1006 screen input qualification — 2026-11-13 UTC
+
+The one full Fast sweep ran **14,205 cases in 544.0 s: 14,181 passed / 4 failed /
+20 skipped**. All **56 then-present P1006 cases** and all **9 infrastructure checks** passed.
+Five executions exceeded the calibrated **11.804 s** limit. The full gate remains
+**FAIL**. After the final Escape/rendering and briefing-stage refinements, the affected
+MonoGame Fast project passed **5,185 / 0 / 17** and the final 58-case fixture passed
+**58 / 0 / 0** in each of three isolated runs. No simulation/receipt fixture or
+threshold was changed.
+
+Every distinct failed or slow method from the sweep was then run **three times
+alone**, serially, with artwork and the same writable task profile. Theory
+filters include all parameter cases. Counts are Passed / Failed / Skipped per
+repetition; durations are the longest case in each repetition.
+
+| Method | Sweep observation | Three isolated runs; longest case seconds |
+| --- | --- | --- |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: lock never reached full + partial tip in the client world (lock 1.000) | **0/1/0; 0/1/0; 0/1/0**; 38.537 / 38.528 / 38.512 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | PASS, over Fast limit (11.963 s) | **1/0/0; 1/0/0; 1/0/0**; 3.222 / 3.282 / 3.284 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | PASS, over Fast limit (11.872 s) | **2/0/0; 2/0/0; 2/0/0**; 4.137 / 4.184 / 4.204 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | PASS, over Fast limit (11.813 s) | **10/0/0; 10/0/0; 10/0/0**; 4.404 / 4.432 / 4.389 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | PASS, over Fast limit (13.120 s) | **10/0/0; 10/0/0; 10/0/0**; 1.911 / 1.598 / 1.608 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | FAIL: Assert.InRange() Failure: Value not in range | **1/0/0; 1/0/0; 1/0/0**; 0.531 / 0.566 / 0.513 |
+| `MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | FAIL: NPC should have docked and sold within the tick budget | **1/0/0; 1/0/0; 1/0/0**; 0.928 / 0.944 / 0.929 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | FAIL: Assert.Empty() Failure: Collection was not empty | **1/0/0; 1/0/0; 1/0/0**; 1.738 / 1.766 / 1.734 |
+
+The missile-lock scalar reached 1.000 without the expected partial tip in all
+three isolated runs, the same family already ledgered in P1001. The roster
+sweep measured **8.05000019** against [4,8]; mining failed its tick budget; the
+capacity receipt test observed an `ASTEROID_MINED` for asteroid 249 after the
+empty-receipt check. These three failures did not reproduce alone. Passing
+repeats and shorter isolated timings do not clear the sweep failures or timing
+overruns. P1006 changes are confined to shared client UI routing/rendering and
+its proof/tests; the tested core/server mechanisms were unchanged.
+
+Raw evidence: `.scratch/p1006/fast/`, `.scratch/p1006/reproductions/`, and
+`.scratch/p1006/reproductions.json`. Final task details and visual qualification
+limits: [P1006 report](reports/COMMAND_SCREEN_INPUT_P1006.md).
+
 ## P1001 commander/fleet Fast qualification — 2026-11-12 UTC
 
 The one full Fast sweep ran **14,149 cases in 560.3 s: 14,123 passed / 6 failed /

@@ -210,7 +210,7 @@ public sealed partial class Game1
             ReleaseTeleportOnBoardRefusal();   // P757 — EndLockDown equivalent
             if (UpdateHangarControls(ks, composing)) return true;
             if (HandleInvestmentScreen(ks, composing)) return true;
-            if (_cameraMode == CameraMode.Command) return false;
+            if (CommandCameraActive) return false;
 
             // P273 — T toggles the docked sub-view between the hangar loadout
             // shop and the teleport pane (edge-triggered like every toggle).
@@ -339,16 +339,25 @@ public sealed partial class Game1
             return true; // docked → consume the frame, no flight input
         }
 
-        if (_dockedActive) // the server undocked us → leave the hangar
-        {
-            _dockedActive = false;
-            _hangarLaunch.Cancel();
-            _shopModel = null;
-            _teleportModel = null;
-            _teleportActive = false;
-            Console.WriteLine("[monogame] undocked: leaving hangar");
-        }
+        ClearUndockedHangar();
         return HandleInvestmentScreen(ks, composing);
+    }
+
+    // Native station departure replaces the hangar with the launch view
+    // (trekigc.cpp:2917-2918), then vmCombat (WinTrek.cpp:6544-6546).
+    // Run this before modal input can return, including investment/command view.
+    private void ClearUndockedHangar()
+    {
+        var world = _session.World;
+        if (!_dockedActive || world.MyShipId is not { } me
+            || !world.Ships.TryGetValue(me, out var own) || own.StationId != -1) return;
+        _dockedActive = false;
+        _hangarLaunch.Cancel();
+        _shopModel = null;
+        _teleportModel = null;
+        _teleportActive = false;
+        _hangarHover = HangarAction.None;
+        Console.WriteLine("[monogame] undocked: leaving hangar");
     }
 
     /// <summary>P764 — the custom-loadout digit keys, the port of native
@@ -1135,7 +1144,7 @@ public sealed partial class Game1
     /// <summary>
     /// P271 — whether the mission-briefing popup should be shown this frame and,
     /// when the countdown is known, the integer seconds remaining. The popup is
-    /// visible once the server's SET_BRIEFING_TEXT(9) has arrived, until it is
+    /// visible during STAGE_STARTING once SET_BRIEFING_TEXT(9) has arrived, until it is
     /// dismissed (Enter/Esc, see <see cref="DismissBriefing"/>) or the briefing
     /// countdown expires (<c>remaining &lt;= 0</c> — the mission is going live,
     /// native MissionBriefPopup's stage-advances-and-closes behaviour,
@@ -1147,7 +1156,11 @@ public sealed partial class Game1
     {
         remainingSeconds = null;
         var world = _session.World;
-        if (string.IsNullOrEmpty(world.BriefingText) || _briefingDismissed)
+        // Native opens only during STAGE_STARTING and closes on every other
+        // stage (teamscreen.cpp:1673-1704). A late join to a started game has
+        // no local countdown to expire; text alone must not keep this pane up.
+        if (world.Mission?.Stage != (int)MissionStage.Starting
+            || string.IsNullOrEmpty(world.BriefingText) || _briefingDismissed)
             return false;
         if (world.CountdownStartLocalMs is { } cd)
         {
