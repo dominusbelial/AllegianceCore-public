@@ -345,6 +345,9 @@ list in **reverse**.
   `src/Allegiance.Server/Server.BroadcastTelemetry.cs` (`StaleReason`, `ClassifyStale`, `AddLaneReport`,
   `AddAgeReport`), `src/Allegiance.Server/Server.UpdateCadence.cs` (`TrackedShipIds`).
   Report: `docs/reports/BROADCAST_SLICE_D_P990.md`.
+  P1009's steady-state performance guard compares against frozen original P990
+  accounting in `tests/Allegiance.Core.Tests/Fixtures/P990BroadcastTelemetryBaseline.cs`;
+  same-host evidence and budget derivation: `docs/reports/P990_OVERHEAD_P1009.md`.
 - **SHIP_STATUS change gate (P991)** — `broadcast.shipStatusChangeGate` (default on since 2026-11-10, rig A/B b105/b106) that makes every
   `FM_S_SHIP_STATUS(90)` send edge-triggered on the wire content, native's per-frame rule
   (`FedSrv/FedSrv.CPP:3665-3719`: per side, per ship, `if (*pss != *pssOld)`), replacing the port's three

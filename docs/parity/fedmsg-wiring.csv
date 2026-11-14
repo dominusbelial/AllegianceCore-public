@@ -109,8 +109,8 @@ ACQUIRE_TREASURE,162,S,Server.Docking,ConnectionSession (real client),"Server.Do
 TREASURE_ACK,163,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Real client does NOT send TREASURE_ACK (bot-only),—,done
 ADD_PART,164,S,Server.ShipCommands,ConnectionSession (real client),"ClientWorld.FlightInterface.cs Apply(AddPart); native clintlib/appmsg.cpp:1384-1409, Igc/shipIGC.cpp:1567: merge matching socket or create with zero mount fraction; in-game unparented known ship/type. Authoritative self echo. P740FlightInterfaceTests: golden TCP, own/remote/cargo/merge/refusal.",appmsg.cpp:1384,done
 ENTER_LIFEPOD,166,S,Server.Combat,ConnectionSession (real client),own ship -> lifepod hull + 'You have entered a lifepod.' (appmsg.cpp:1945),appmsg.cpp:1945,done
-LIGHT_SHIPS_UPDATE,175,S,Server.Broadcast,ConnectionSession (real client),LightShipsUpdate pose refresh (visibility sync P347),appmsg.cpp:684,done
-HEAVY_SHIPS_UPDATE,176,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),HeavyShipsUpdate pose refresh (cross-side visibility P347/P375),appmsg.cpp:736,done
+LIGHT_SHIPS_UPDATE,175,S,Server.Broadcast,ConnectionSession (real client),LightShipsUpdate pose refresh (visibility sync P347); P1009 test-only accounting audit preserves wire behavior (docs/reports/P990_OVERHEAD_P1009.md),appmsg.cpp:684; FedSrv/FedSrv.CPP:4182-4189,done
+HEAVY_SHIPS_UPDATE,176,S,"Server.Broadcast, Server.Docking",ConnectionSession (real client),HeavyShipsUpdate pose refresh (cross-side visibility P347/P375); P1009 test-only accounting audit preserves wire behavior (docs/reports/P990_OVERHEAD_P1009.md),appmsg.cpp:736; FedSrv/FedSrv.CPP:4179-4194,done
 VIEW_CLUSTER,177,S,Server.ShipCommands,ConnectionSession (real client),Server-confirmed docked sector preview and command camera framing (P640),appmsg.cpp:443,done
 BOARD_NACK,178,S,"Server.Docking, Server.ShipCommands",ConnectionSession (real client),'Teleportation failed.' boarding-refusal line (appmsg.cpp:1899),appmsg.cpp:1899,done
 ASTEROIDS_UPDATE,179,S,Server.Broadcast,ConnectionSession (real client),AsteroidsUpdate live ore/health stored (P423),appmsg.cpp:607,done
