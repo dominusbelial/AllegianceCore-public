@@ -8660,3 +8660,33 @@ nine failures and four timing offenders are the already-ledgered families
 (P739 float bound, `LiveCombatWireTests` contention, warp-transit receipt,
 auto-seat boundary, miner capacity, NPC clearance, roster stint, `MissileLock`
 partial tip, `DeadLatch` receipt) and none repeats a drop/treasure signature.
+
+### 2026-11-14 — P1011 ShipStatSheet: one Fast sweep, ledgered families only
+
+One full Fast sweep of the P1011 tree (`tools/run-tests.sh --tier fast`) ran
+**14,280 cases in 670.4 s: 14,266 passed / 7 failed / 7 not executed**; the
+calibrated Fast limit was **13.233 s** (P744 factor 1.323). The 15 new P1011
+cases all passed in the sweep and **15/15 three times alone**. Host load average
+was 11.7–18.0 on the 16 logical CPUs (other lanes sweeping concurrently).
+
+Every failed case was then run three times alone, one method per invocation:
+
+| Case | Sweep signature | Three isolated repetitions |
+|---|---|---|
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | ledgered transit-receipt intermittency | **pass / pass / pass**, 384–391 ms |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 7) | ledgered one-ULP inclusive upper bound (`7.0000000000000009 > 7`) | **3 theory rows pass in each repetition**, ~1 s |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | ledgered earlier-destruction position signature | **pass / pass / pass**, 634–654 ms |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | ledgered roster-stint range | **pass / pass / pass**, 694–735 ms |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | ledgered receipt family, 36 s timeout | **pass / pass / pass**, 746–755 ms |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | ledgered receipt family | **pass / pass / pass**, ~1 s |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | ledgered missing-partial-tip receipt, 38 s timeout | **0/1/0; 0/1/0; 0/1/0** — the persistent-alone family already recorded above (clean-base failing control in the P966 row), not load and unrelated to this task |
+
+Timing-only offenders (assertions passed, over the calibrated limit under the
+sweep) are the same ledgered load-sensitive theory cases as before:
+`P814GunnerTests.P814b…` (15.8 s), `P796VariedLoadoutTests…(civ 35)` (14.1 s),
+`SC2NaniteSupportTests…(civ 25)` (16.7 s), `P999CivStrategyTests…(civ 5)`
+(17.5 s) and `P1000CivProfileTests…(civ 3)` (13.5 s); each passes alone well
+under the limit. The sweep is retained as **FAIL**; no stats, loadout or delta
+code is in any failing or slow path (the P1011 model is only consumed by its own
+unit tests until P1014 wires it). Report:
+`docs/reports/SHIP_STAT_SHEET_P1011.md`.
