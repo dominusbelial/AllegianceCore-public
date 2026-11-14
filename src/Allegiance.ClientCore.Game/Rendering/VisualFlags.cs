@@ -110,6 +110,10 @@ public static class VisualFlags
     /// (<c>Igc/buildingeffectigc.h:160-183,310-358</c>, <c>clintlib/appmsg.cpp:1692-1718</c>).</summary>
     public const string ConstructionHandoffKey = "constructionHandoff";
 
+    /// <summary>P1014 — three-column loadout presentation, sharing ShopModel.
+    /// Default OFF until the Loadout V2 epic receives visual approval.</summary>
+    public const string LoadoutV2Key = "hangar.loadoutV2";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -173,6 +177,11 @@ public static class VisualFlags
             "hide the build shell once the station exists",
             VisualFlagKind.Toggle,
             Hotkey: 'B'),
+        new VisualFlag(
+            LoadoutV2Key,
+            "Loadout V2",
+            "hulls, ship and inline equipment offers",
+            VisualFlagKind.Toggle),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>

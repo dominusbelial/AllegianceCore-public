@@ -53,10 +53,11 @@ public sealed class P979VisualsOptionsTests
         var rows = menu.Rows(State());
         // Six toggle rows + a numeric flag's value row and its two step rows,
         // then P984's two 3-D look toggles (space.hdrPipeline / space.hdrAces) and
-        // P989's sim palette (space.simPalette) and P997's construction hand-off.
-        Assert.Equal(13, rows.Count);
+        // P989's sim palette, P997's construction hand-off and P1014's Loadout V2.
+        Assert.Equal(14, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Contains(rows, r => r.Label == "Raise View range to 11000 m");
         Assert.Contains(rows, r => r.Label == "Lower View range to 9000 m");
@@ -139,9 +140,10 @@ public sealed class P979VisualsOptionsTests
         var state = State();
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
-        Assert.Equal(13, rows.Count);
+        Assert.Equal(14, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, state));
         Assert.Equal(VisualFlags.RemoteTimelineKey, menu.VisualKeyAt(1, state));
