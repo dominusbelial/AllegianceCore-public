@@ -4,6 +4,54 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+
+## P1019 screenshot-debt qualification — 2026-11-14 UTC
+
+Exactly one full Fast sweep ran **14,265 cases in 704.5 s: 14,255 passed /
+3 failed / 7 skipped**. Infrastructure passed **9/0/0**. The calibrated limit
+was **13.039 s**; eleven case executions exceeded it. Original gate result:
+**FAIL**. The solution and all 138 tools built with zero warnings/errors.
+The changed formatting fact passed **1/0/0 ×3**; the related UI/preset selection
+passed **103/0/0**. All P1004/P1006 cases in the full sweep passed.
+
+Every distinct failed or slow non-task method was then run **three times
+alone**, serially, including all theory cases. Counts are Passed/Failed/Skipped;
+maxima are the longest individual case in each isolated process.
+
+| Method | Sweep observation | Isolated P/F/S, runs 1–3 | Max case seconds, runs 1–3 |
+| --- | --- | --- | --- |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: partial tip missing at lock 1.000; 38.464 s | **0/1/0; 0/1/0; 0/1/0** | 39.009 / 38.796 / 38.855 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | FAIL: 31.500000000000313 outside [28,31] | **0/1/0; 0/1/0; 0/1/0** | 1.206 / 1.227 / 1.165 |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | FAIL: probe-broadcast receipt collection empty (ChaffTests.cs:692) | **1/0/0; 1/0/0; 1/0/0** | 0.511 / 0.495 / 0.523 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | PASS; timing 13.682 / 17.789 s | **3/0/0; 3/0/0; 3/0/0** | 7.782 / 7.811 / 7.861 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | PASS; timing 16.591 s | **1/0/0; 1/0/0; 1/0/0** | 4.471 / 4.562 / 4.513 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | PASS; timing 18.056 / 16.752 s | **2/0/0; 2/0/0; 2/0/0** | 5.970 / 6.040 / 6.021 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | PASS; timing 16.283 s | **10/0/0; 10/0/0; 10/0/0** | 6.611 / 6.639 / 6.507 |
+| `P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work` | PASS; timing 15.183 s | **8/0/0; 8/0/0; 8/0/0** | 1.860 / 1.955 / 1.910 |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path` | PASS; timing 13.234 s | **1/0/0; 1/0/0; 1/0/0** | 8.379 / 8.274 / 8.941 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | PASS; timing 16.094 s | **1/0/0; 1/0/0; 1/0/0** | 2.112 / 2.246 / 1.992 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | PASS; timing 14.050 s | **1/0/0; 1/0/0; 1/0/0** | 7.843 / 7.150 / 7.779 |
+
+These 33 isolated processes ran **90 cases: 84 passed / 6 failed / 0 skipped**.
+Missile partial-tip delivery and silent-peer seating each failed all three
+repetitions, matching previously ledgered failure families. The probe receipt
+failure did not reproduce alone; its cause is unconfirmed. All eight distinct
+passing timing-only methods passed every isolated repetition below 13.039 s.
+Passing repeats do not clear the failed sweep. No fixture range, timing limit,
+tier assignment, missile/seating/probe behavior or engine algorithm was changed.
+P1019's only product edit reorders the browser row's capacity text.
+
+Real-client qualification also ran 18 P1006 processes (**144/0/0** assertions)
+and three browser processes (**42/42 fixture states**). Forty screenshots were
+retained and individually reviewed; missing text runs and compact-viewport
+clipping remain visually qualified in the report, rather than hidden behind a
+missing-GL blocker.
+
+Report: [SCREENSHOT_DEBT_P1019.md](reports/SCREENSHOT_DEBT_P1019.md).
+Portable evidence: [qualification/media](reports/P1019_assets/qualification.json),
+[isolated results](reports/P1019_assets/reproductions.json). Raw logs and TRX:
+`.scratch/p1019/fast/`, `.scratch/p1019/tests/`, `.scratch/p1019/reproductions/`.
+
 ## P1004 lobby listing qualification — 2026-11-13 UTC
 
 The single full Fast sweep ran **14,167 cases in 561.9 s: 14,139 passed / 8 failed /

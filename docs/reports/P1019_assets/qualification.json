@@ -1,0 +1,922 @@
+{
+  "base": "874fd66a",
+  "date": "2026-11-14",
+  "reproduction": {
+    "scene": "classic flight",
+    "exit": -6,
+    "seconds": 12.174,
+    "failure": "F4 explicitly opens docked loadout",
+    "classification": "proof binding assumption"
+  },
+  "initialProofMatrix": [
+    {
+      "style": "classic",
+      "scene": "intro",
+      "layout": "Port",
+      "checks": [
+        {
+          "name": "fresh profile has no saved player or keymap",
+          "passed": true
+        },
+        {
+          "name": "fresh profile uses default pilot name",
+          "passed": true
+        },
+        {
+          "name": "fresh profile shows training suggestion",
+          "passed": true
+        },
+        {
+          "name": "Escape skips splash",
+          "passed": true
+        },
+        {
+          "name": "splash skip leaves no second menu",
+          "passed": true
+        },
+        {
+          "name": "first-run suggestion dismisses without a second menu",
+          "passed": true
+        },
+        {
+          "name": "popup owns Down; intro selection unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.902
+    },
+    {
+      "style": "modern",
+      "scene": "intro",
+      "layout": "Port",
+      "checks": [
+        {
+          "name": "fresh profile has no saved player or keymap",
+          "passed": true
+        },
+        {
+          "name": "fresh profile uses default pilot name",
+          "passed": true
+        },
+        {
+          "name": "fresh profile shows training suggestion",
+          "passed": true
+        },
+        {
+          "name": "Escape skips splash",
+          "passed": true
+        },
+        {
+          "name": "splash skip leaves no second menu",
+          "passed": true
+        },
+        {
+          "name": "first-run suggestion dismisses without a second menu",
+          "passed": true
+        },
+        {
+          "name": "popup owns Down; intro selection unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 12.248
+    },
+    {
+      "style": "classic",
+      "scene": "flight",
+      "layout": "Port",
+      "checks": [
+        {
+          "name": "late join to started game has no stale briefing",
+          "passed": true
+        },
+        {
+          "name": "F3 enters command",
+          "passed": true
+        },
+        {
+          "name": "hidden loadout click leaves command active",
+          "passed": true
+        },
+        {
+          "name": "hidden hull-cycle key does nothing",
+          "passed": true
+        },
+        {
+          "name": "inventory shortcut explicitly opens docked loadout",
+          "passed": true
+        },
+        {
+          "name": "launch retires hangar despite investment",
+          "passed": true
+        },
+        {
+          "name": "launch retires shop",
+          "passed": true
+        },
+        {
+          "name": "in-space click and shop-launch binding leave command/hangar state unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.305
+    },
+    {
+      "style": "modern",
+      "scene": "flight",
+      "layout": "Port",
+      "checks": [
+        {
+          "name": "late join to started game has no stale briefing",
+          "passed": true
+        },
+        {
+          "name": "F3 enters command",
+          "passed": true
+        },
+        {
+          "name": "hidden loadout click leaves command active",
+          "passed": true
+        },
+        {
+          "name": "hidden hull-cycle key does nothing",
+          "passed": true
+        },
+        {
+          "name": "inventory shortcut explicitly opens docked loadout",
+          "passed": true
+        },
+        {
+          "name": "launch retires hangar despite investment",
+          "passed": true
+        },
+        {
+          "name": "launch retires shop",
+          "passed": true
+        },
+        {
+          "name": "in-space click and shop-launch binding leave command/hangar state unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.274
+    },
+    {
+      "style": "classic",
+      "scene": "flight",
+      "layout": "Native",
+      "checks": [
+        {
+          "name": "native inventory shortcut is plain F4",
+          "passed": true
+        },
+        {
+          "name": "late join to started game has no stale briefing",
+          "passed": true
+        },
+        {
+          "name": "F3 enters command",
+          "passed": true
+        },
+        {
+          "name": "hidden loadout click leaves command active",
+          "passed": true
+        },
+        {
+          "name": "hidden hull-cycle key does nothing",
+          "passed": true
+        },
+        {
+          "name": "inventory shortcut explicitly opens docked loadout",
+          "passed": true
+        },
+        {
+          "name": "launch retires hangar despite investment",
+          "passed": true
+        },
+        {
+          "name": "launch retires shop",
+          "passed": true
+        },
+        {
+          "name": "in-space click and shop-launch binding leave command/hangar state unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.664
+    },
+    {
+      "style": "modern",
+      "scene": "flight",
+      "layout": "Native",
+      "checks": [
+        {
+          "name": "native inventory shortcut is plain F4",
+          "passed": true
+        },
+        {
+          "name": "late join to started game has no stale briefing",
+          "passed": true
+        },
+        {
+          "name": "F3 enters command",
+          "passed": true
+        },
+        {
+          "name": "hidden loadout click leaves command active",
+          "passed": true
+        },
+        {
+          "name": "hidden hull-cycle key does nothing",
+          "passed": true
+        },
+        {
+          "name": "inventory shortcut explicitly opens docked loadout",
+          "passed": true
+        },
+        {
+          "name": "launch retires hangar despite investment",
+          "passed": true
+        },
+        {
+          "name": "launch retires shop",
+          "passed": true
+        },
+        {
+          "name": "in-space click and shop-launch binding leave command/hangar state unchanged",
+          "passed": true
+        }
+      ],
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 20.143
+    }
+  ],
+  "browser": {
+    "states": 14,
+    "seconds": 28.825,
+    "backend": "Xvfb/X11, Mesa software GL",
+    "status": "all fixture states reached"
+  },
+  "media": [
+    {
+      "path": "P1004_assets/p1004_filtered_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 51600,
+      "sha256": "9acae335ab7fc06186be871c6decfdfcc9b1d9d07755029da4f59cbec4a8663b",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_filtered_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 51600,
+      "sha256": "9acae335ab7fc06186be871c6decfdfcc9b1d9d07755029da4f59cbec4a8663b",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_full_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 54435,
+      "sha256": "aea7105e3c3aa9d4a899cc609cf7c33cbedbf612713e1a5a91d0d092ad2fc91b",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_full_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 54435,
+      "sha256": "aea7105e3c3aa9d4a899cc609cf7c33cbedbf612713e1a5a91d0d092ad2fc91b",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_http-error_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 52612,
+      "sha256": "f3deb3aa96a8039dfce15da59448526fbf784b0e70f3c526bd494fb7a60c4253",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_http-error_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 52612,
+      "sha256": "f3deb3aa96a8039dfce15da59448526fbf784b0e70f3c526bd494fb7a60c4253",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_lobby-down_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 51736,
+      "sha256": "6450544135d831e184aa2c83c9d2c1ad208b1fac6d927f00e0f58465d4452eb2",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_lobby-down_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 51736,
+      "sha256": "6450544135d831e184aa2c83c9d2c1ad208b1fac6d927f00e0f58465d4452eb2",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_newer-client_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 52849,
+      "sha256": "c1c02bfc5e299d1b5c907cac60d7f875c315c26b80189c320f570c3c6dedd64d",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_newer-client_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 52849,
+      "sha256": "c1c02bfc5e299d1b5c907cac60d7f875c315c26b80189c320f570c3c6dedd64d",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_no-team-slots_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 57529,
+      "sha256": "ada6bd2e00ae8c61b4fa549c26a6b8be65486cc62f9f8854f375a27de5635e23",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_no-team-slots_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 57529,
+      "sha256": "ada6bd2e00ae8c61b4fa549c26a6b8be65486cc62f9f8854f375a27de5635e23",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_password-free_classic.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 57401,
+      "sha256": "e3255d58159f74649fc0aff1f5e0a453317e7191da2a2807bcbdbcd837a41221",
+      "reviewed": true
+    },
+    {
+      "path": "P1004_assets/p1004_password-free_modern.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 57401,
+      "sha256": "e3255d58159f74649fc0aff1f5e0a453317e7191da2a2807bcbdbcd837a41221",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-after-hidden-click-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 111402,
+      "sha256": "4126cf8364f33c0b9bcdc3953cec81e55eae7f42393a4d7db0747f021abae2c6",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-after-hidden-click-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 118274,
+      "sha256": "65a104d7808242126471283a9576acbd44b0442ea099b38054358eaac75591c5",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-docked-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 94133,
+      "sha256": "2036c14d1456c8cb13f1ca3ad7e948b3e8690527d24d8cdace8ec6520fa26d20",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-docked-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 99885,
+      "sha256": "7ea22bd6476abe91ccb67e2db40cd1c64c4fb88a1d8a70982e9895821415782d",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-in-space-after-input-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 152635,
+      "sha256": "a46ce1ff1b548431200d2bebf4076793459a4e5ccec78301f5ce18ee3d58ed4f",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-in-space-after-input-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 172554,
+      "sha256": "0c4e914079696b4a96b5bd16e1bc15eb2c93fdcf3bfb7eeafaed9671b3ed4f05",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-in-space-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 137922,
+      "sha256": "58fd9675dc67adb12838f0baf9c7bda0e639d7e82bb359672b78c557176d0cda",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/command-in-space-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 155428,
+      "sha256": "b7d1ead2571eb80eef73b883131acee12a8ee97bc7b5511de346d55d38947eee",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/explicit-loadout-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 62601,
+      "sha256": "9c23c05b24fa194c5e4faf7ef2ea8cf13613b0d6341f73c38b872b783c9f2896",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/explicit-loadout-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 62644,
+      "sha256": "783e6caac7e8e2be3fd41f64af51e5bf5da8ab4bb0cab67c605debf5960a5359",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/fresh-intro-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 30939,
+      "sha256": "6d41bdedaca55ee06443f7ea2819743c1930cc3dc99d2c277e150bbadb4d7f99",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/fresh-intro-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 30939,
+      "sha256": "6d41bdedaca55ee06443f7ea2819743c1930cc3dc99d2c277e150bbadb4d7f99",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/hangar-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 320692,
+      "sha256": "d5e0c0b3d4e868c6a9357befe6caa3942f3f6c674a649b2bf214a35b3c6182f2",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/hangar-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 320692,
+      "sha256": "d5e0c0b3d4e868c6a9357befe6caa3942f3f6c674a649b2bf214a35b3c6182f2",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-after-splash-escape-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 30939,
+      "sha256": "6d41bdedaca55ee06443f7ea2819743c1930cc3dc99d2c277e150bbadb4d7f99",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-after-splash-escape-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 30939,
+      "sha256": "6d41bdedaca55ee06443f7ea2819743c1930cc3dc99d2c277e150bbadb4d7f99",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-after-suggestion-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 28571,
+      "sha256": "ec4a4553c833f414a9755568de67e33cffcecee72805ba0534167af17f0535a9",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-after-suggestion-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 28571,
+      "sha256": "ec4a4553c833f414a9755568de67e33cffcecee72805ba0534167af17f0535a9",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-explicit-escape-menu-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 26388,
+      "sha256": "586cd9c0fdb26170f1e185632a946a2541949edb988a48dff445e96525897676",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/intro-explicit-escape-menu-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 26388,
+      "sha256": "586cd9c0fdb26170f1e185632a946a2541949edb988a48dff445e96525897676",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/launched-flight-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 143129,
+      "sha256": "1e0c49ca6f9c1c1873fec551e3731d4276278641bc2684ca859541f9873ae2a9",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/launched-flight-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 154959,
+      "sha256": "400c0a5faea3c088ecb262dad547cac77a6af831d93ffdc8a0dbb4a7a0f83e34",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/launched-with-investment-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 114818,
+      "sha256": "dc54600938ae1a03d3d4d5d034403ba3abea2c9785040e890afa400051cb5440",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/launched-with-investment-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 110508,
+      "sha256": "98629c5c6e8f0d27b06a60951c24e11806e2f63b1480968a4d09f86b890fdd6c",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/native-f4-loadout-classic.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 62574,
+      "sha256": "a72d3717a323e49ba66c27357006c20493410d91d3fe557b9a88f5ec3930450e",
+      "reviewed": true
+    },
+    {
+      "path": "P1006_assets/after/native-f4-loadout-modern.png",
+      "width": 800,
+      "height": 480,
+      "bytes": 62634,
+      "sha256": "218ae0b1ef8148342cbf7c1d5492607d07e48c5cee4d9d4160778fe3f9b39320",
+      "reviewed": true
+    }
+  ],
+  "mediaTotalBytes": 3447482,
+  "visualReview": {
+    "reviewed": 40,
+    "coverageComplete": true,
+    "defectFree": false,
+    "qualifications": [
+      "intermittent missing glyph runs, also visible in X11 window grabs; root cause unconfirmed",
+      "compact viewport hover tooltip, command bar clipping and Classic command label overlap"
+    ]
+  },
+  "gate": {
+    "solutionBuild": {
+      "passed": true,
+      "warnings": 0,
+      "errors": 0,
+      "seconds": 10.57
+    },
+    "toolsBuild": {
+      "passed": true,
+      "projects": 138,
+      "warnings": 0,
+      "errors": 0
+    },
+    "changedTestAlone": {
+      "repetitions": 3,
+      "passedPerRun": 1,
+      "failedPerRun": 0,
+      "skippedPerRun": 0
+    },
+    "relatedRegression": {
+      "passed": 103,
+      "failed": 0,
+      "skipped": 0
+    },
+    "proofRepetitions": {
+      "matrixRepetitions": 3,
+      "clientProcesses": 18,
+      "passed": 144,
+      "failed": 0,
+      "skipped": 0,
+      "browserProcesses": 3,
+      "browserFixtureStates": 42
+    },
+    "fullFast": {
+      "passed": false,
+      "testCount": 14265,
+      "counts": {
+        "passed": 14255,
+        "failed": 3,
+        "skipped": 7
+      },
+      "seconds": 704.4864820350194,
+      "outerBoundSeconds": 7200,
+      "fastLimitSeconds": 13.039257294429706,
+      "projects": {
+        "Allegiance.Lobby.Tests": {
+          "count": 144,
+          "outcomes": {
+            "Passed": 144
+          }
+        },
+        "Allegiance.Update.Tests": {
+          "count": 55,
+          "outcomes": {
+            "Passed": 55
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 5233,
+          "outcomes": {
+            "Passed": 5229,
+            "NotExecuted": 4
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 2444,
+          "outcomes": {
+            "Passed": 2443,
+            "Failed": 1
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 6389,
+          "outcomes": {
+            "Passed": 6384,
+            "Failed": 2,
+            "NotExecuted": 3
+          }
+        }
+      },
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.04553305997978896,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      },
+      "failedCases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.4635078,
+          "project": "Allegiance.ClientCore.Tests"
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+          "outcome": "Failed",
+          "seconds": 0.7608438,
+          "project": "Allegiance.Core.Tests"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+          "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+          "outcome": "Failed",
+          "seconds": 0.1185322,
+          "project": "Allegiance.Core.Tests"
+        }
+      ],
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+          "outcome": "Failed",
+          "seconds": 38.4635078
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 13.6817436
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 16.5905574
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 18.0561876
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 16.7519378
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 17.7890875
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+          "outcome": "Passed",
+          "seconds": 16.2827715
+        },
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+          "outcome": "Passed",
+          "seconds": 15.1831347
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path",
+          "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path",
+          "outcome": "Passed",
+          "seconds": 13.2342236
+        },
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 16.0944133
+        },
+        {
+          "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal",
+          "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal",
+          "outcome": "Passed",
+          "seconds": 14.0501128
+        }
+      ],
+      "reproductions": {
+        "file": "reproductions.json",
+        "methods": 11,
+        "processes": 33,
+        "cases": 90,
+        "passed": 84,
+        "failed": 6,
+        "skipped": 0
+      }
+    },
+    "hygiene": {
+      "glossaryLinks": 813,
+      "parityValid": true,
+      "diffCheckPassed": true,
+      "addedLinePublicHygienePassed": true,
+      "retainedMediaReviewed": 40
+    }
+  },
+  "nativeReferences": [
+    "WinTrek/WinTrek.cpp:10001-10021",
+    "Igc/igc.h:293",
+    "Artwork/defaultinputmap.mdl:38",
+    "WinTrek/WinTrek.cpp:6706-6740,9894-9933",
+    "WinTrek/introscreen.cpp:1298-1310",
+    "WinTrek/WinTrek.cpp:9281,9304-9320",
+    "engine/popup.cpp:391-411",
+    "WinTrek/teamscreen.cpp:1673-1704",
+    "FedSrv/fsmission.cpp:4038-4078",
+    "WinTrek/gamescreen.cpp:1006-1021,1299-1305"
+  ],
+  "proofRepeats": [
+    {
+      "name": "qualified-2-classic-intro",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 11.451
+    },
+    {
+      "name": "qualified-2-modern-intro",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 12.976
+    },
+    {
+      "name": "qualified-2-classic-flight",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.759
+    },
+    {
+      "name": "qualified-2-modern-flight",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.029
+    },
+    {
+      "name": "qualified-2-classic-flight-native",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.078
+    },
+    {
+      "name": "qualified-2-modern-flight-native",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.169
+    },
+    {
+      "name": "qualified-2-lobby",
+      "states": 14,
+      "exit": 0,
+      "seconds": 26.423
+    },
+    {
+      "name": "qualified-3-classic-intro",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 11.505
+    },
+    {
+      "name": "qualified-3-modern-intro",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 11.608
+    },
+    {
+      "name": "qualified-3-classic-flight",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.279
+    },
+    {
+      "name": "qualified-3-modern-flight",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.382
+    },
+    {
+      "name": "qualified-3-classic-flight-native",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.333
+    },
+    {
+      "name": "qualified-3-modern-flight-native",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 17.287
+    },
+    {
+      "name": "qualified-3-lobby",
+      "states": 14,
+      "exit": 0,
+      "seconds": 26.63
+    }
+  ],
+  "cleanup": {
+    "xvfbStopped": true,
+    "localAuditFeedStopped": true,
+    "briefInIgnoredScratch": true,
+    "commits": 0,
+    "pushes": 0
+  }
+}

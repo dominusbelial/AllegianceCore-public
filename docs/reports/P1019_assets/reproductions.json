@@ -1,0 +1,428 @@
+[
+  {
+    "method": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+    "project": "Allegiance.ClientCore.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 1,
+        "seconds": 40.4212285229878,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 39.0094887,
+        "failures": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+          }
+        ]
+      },
+      {
+        "repetition": 2,
+        "exitCode": 1,
+        "seconds": 40.179365424992284,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 38.796384,
+        "failures": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+          }
+        ]
+      },
+      {
+        "repetition": 3,
+        "exitCode": 1,
+        "seconds": 40.11144219301059,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 38.8549375,
+        "failures": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire",
+            "message": "lock never reached full + partial tip in the client world (lock 1.000)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 1,
+        "seconds": 2.8720542739902157,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 1.2061113,
+        "failures": [
+          {
+            "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+            "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.1000000000003"
+          }
+        ]
+      },
+      {
+        "repetition": 2,
+        "exitCode": 1,
+        "seconds": 2.924667357990984,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 1.2269656,
+        "failures": [
+          {
+            "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+            "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.150000000000297"
+          }
+        ]
+      },
+      {
+        "repetition": 3,
+        "exitCode": 1,
+        "seconds": 2.8221964509866666,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "longestCaseSeconds": 1.1651649,
+        "failures": [
+          {
+            "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+            "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.150000000000297"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 2.270503039006144,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 0.5105931,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 2.169769468018785,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 0.494662,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 2.1201423550082836,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 0.5229272,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+    "project": "Allegiance.ClientCore.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 19.96917469499749,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.7816379,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 20.27221138900495,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.8112357,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 20.373128631996224,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.8605049,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "project": "Allegiance.ClientCore.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 5.679459697013954,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 4.4713716,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 5.83208753800136,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 4.56174,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 5.830734318995383,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 4.5134171,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+    "project": "Allegiance.ClientCore.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 11.345256828994025,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 5.9698721,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 11.550622787995962,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 6.0402077,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 11.599088054994354,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 6.0212712,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 49.74824563600123,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 6.6112655,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 49.34959954797523,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 6.6390423,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 49.38885290399776,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 6.5072355,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 5.778283417021157,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 1.8596403,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 5.928042557003209,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 1.9553337,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 5.730508228996769,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 1.9104039,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 10.087729770981241,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 8.3787146,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 10.03720035898732,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 8.2736082,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 10.694492216018261,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 8.9405769,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 3.924931217014091,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 2.1121342,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 4.074831560981693,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 2.2460646,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 3.6220161800156347,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 1.9920947,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal",
+    "project": "Allegiance.Core.Tests",
+    "runs": [
+      {
+        "repetition": 1,
+        "exitCode": 0,
+        "seconds": 9.438255618995754,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.8429022,
+        "failures": []
+      },
+      {
+        "repetition": 2,
+        "exitCode": 0,
+        "seconds": 8.782369177002693,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.1502484,
+        "failures": []
+      },
+      {
+        "repetition": 3,
+        "exitCode": 0,
+        "seconds": 9.388415414025076,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "longestCaseSeconds": 7.778818,
+        "failures": []
+      }
+    ]
+  }
+]

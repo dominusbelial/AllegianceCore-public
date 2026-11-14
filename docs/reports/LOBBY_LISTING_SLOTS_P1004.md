@@ -1,8 +1,11 @@
 # P1004 — lobby listing capacity, browser states and enrollment retries
 
 Behavior changes are implemented on base `a87b00f3`. The report was drafted
-before the gate. Build and isolated qualification pass; the single full Fast
-sweep remains failing, and real-window captures are blocked as detailed below.
+before the gate. Its build and isolated qualification passed; its single full
+Fast sweep failed and captures were blocked by the original lane's missing GL.
+P1019 completed capture/review coverage in both styles; see
+[Real-window proof (P1019)](#real-window-proof-p1019) and the
+[P1019 report](SCREENSHOT_DEBT_P1019.md) for current gate and rendering qualifications.
 No commits, pushes, remote host operations or public lobby requests. Local corpus
 and in-process/loopback fixtures only. Validation results and capture status follow.
 
@@ -66,6 +69,35 @@ hosts. A local graphics-runtime/cache path was requested during validation.
 **Screenshots produced/reviewed: 0/0; this requirement remains blocked.** No
 synthetic image is substituted for a screenshot. Machine-readable evidence:
 [P1004 graphics blocker](P1004_assets/graphics-blocker.json).
+
+
+## Real-window proof (P1019)
+
+P1019 completed the seven browser fixtures in both HUD styles using real Game1
+windows on local Xvfb/Mesa. These captures supersede the missing-runtime
+limitation from the original lane below. [P1019 report](SCREENSHOT_DEBT_P1019.md)
+records visual qualifications, final gate, dimensions, timings and media bytes.
+
+| Browser fixture / observed production state | Classic | Modern |
+| --- | --- | --- |
+| Password/free: protected row, 0/200, inline password prompt | PASS | PASS |
+| Full teams: 200/200, `[full]`, request-entry/refresh guidance | PASS | PASS |
+| No open team slots: both unavailable rows remain listed; explanatory banner | PASS | PASS |
+| Connection refused: cannot reach lobby; retries offered | PASS | PASS |
+| HTTP 503: responding lobby's HTTP error; retries offered | PASS | PASS |
+| Filters hide all games: no matches; C resets filters | PASS | PASS |
+| Newer-client requirement: no compatible rows; update guidance | PASS | PASS |
+
+All fourteen backbuffers are under [P1004_assets/](P1004_assets/), named
+`p1004_<fixture>_<style>.png`. Visual review found the protected row's player
+count was hidden after the address, so P1019 moved capacity earlier in the
+shared row text. Long address/mission tails still use the existing ellipsis.
+Intermittent missing text in software-GL frames is separately qualified in the
+P1019 report; passing fixture state does not assert defect-free rendering.
+
+Use Xvfb for this tool's 1280×720 size. SDL offscreen initially allocates an
+800×480 surface on this lane and clips larger captures. The README now gives
+the Xvfb command. No public lobby or game host is contacted.
 
 ## Validation and gate
 
