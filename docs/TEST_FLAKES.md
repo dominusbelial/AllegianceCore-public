@@ -8500,7 +8500,8 @@ the original P990 `015019bf` and base `bcdcd8a0` both failed the original test
 production telemetry source is identical. With real projection warm-up and
 15 warmed accounting blocks, both medians become 27.9 ns, while the share is
 still 4.438/4.4725%, exceeding the original host's 3%. No later accounting
-regression or offending commit was found; a bisect has no passing baseline.
+regression or offending commit was found; a bisect has no stable passing
+baseline (one borderline historical run passes 30 ns, but still fails 3%).
 
 The renamed
 `Mixed_lane_overhead_stays_within_reference_budget_and_small_share_of_the_p95_tick`
@@ -8510,6 +8511,29 @@ original ~1.3 margin. Setup stays outside timing; GC-contaminated accounting
 pairs are rejected and measured allocations must be zero. Native wire behavior
 and production defaults are unchanged. Final qualification and every repeated
 measurement: `docs/reports/P990_OVERHEAD_P1009.md`.
+
+**P1009 Fast qualification (2026-11-14):** one full Fast run, **14,254 passed /
+4 failed / 7 skipped**, all 14,265 discovered cases, 563.018 s. Infrastructure
+**9/9** and both quarantine lanes (**19/0/0**) pass. The gate remains **FAIL**;
+four executions also exceed the calibrated 11.521485 s timing limit. No
+production source changed, and the modified P990 method is Perf. Every failed
+or slow method ran three times in a fresh process afterward, serially; theory
+selections retain every parameter case.
+
+| Case | Fast signature | Three isolated outcomes (test seconds) |
+|---|---|---|
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | own-status missing; only initial miner 8098 statuses received, line 146; ledgered receipt family | **pass / pass / pass**, .285 / .292 / .290 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without partial tip; 37.864 s, also timing offender | **fail / pass / pass**, 38.633 / 1.573 / 1.632; existing OPEN partial-tip issue remains open |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.650 simulated seconds outside [28,31], line 192; ledgered boundary family | **pass / pass / pass**, .958 / .951 / .956 |
+| `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty; TreasureId 3 / Amount 0 remained; same P1002 signature | **pass / pass / pass**, .409 / .438 / .419 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 12.879 s | **3/0/0 per invocation**, culprit case 3.430 / 3.435 / 3.433 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, 14.367 s | **2/0/0 per invocation**, culprit case 3.043 / 3.045 / 3.033 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | assertions passed, 12.363 s | **10/0/0 per invocation**, culprit case 3.099 / 3.064 / 4.036 s |
+
+Follow-up: **56 passed / 1 failed / 0 skipped**, 21 process invocations. No
+assertion, timeout or tier was changed, and isolation does not waive the failed
+Fast gate. Durable gate and per-case receipts:
+`docs/reports/P1009_assets/qualification.json`.
 
 ### 2026-11-13 — P1002 Fast qualification (fixture-only changes)
 

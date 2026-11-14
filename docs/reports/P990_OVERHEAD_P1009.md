@@ -23,8 +23,10 @@ work was not controlled. Raw receipts: `.scratch/p1009/original/`.
 The median accounting difference is 0.3%, inside overlapping spreads. Production
 `BroadcastTelemetry.cs` is identical at both revisions (Git blob
 `30b507464bffa98057b93386ff875fe577c094bc`). Only the test method's name changed.
-There is no passing historical per-call result to bisect. Gunfire batching is
-absent from the timed workload; P1002 already exercised its ON/OFF controls.
+There is no stable passing historical per-call baseline to bisect: nine old
+runs fail that assertion; old run 5 is just inside it (displayed as 30.0 ns)
+and instead fails the share assertion. Gunfire batching is absent from the
+timed workload; P1002 already exercised its ON/OFF controls.
 
 The main checkout's Git metadata is read-only in this lane. The historical
 worktree therefore belongs to a local shared scratch clone, with its own writable
@@ -48,7 +50,7 @@ this test-only investigation; their parity status does not change.
 Original root-cause locations in
 `tests/Allegiance.Core.Tests/P990BroadcastLaneTelemetryTests.cs`:
 
-- `:501-518`: 20 warm-up invocations followed by a single 50-repeat accounting
+- `:511-518`: 20 warm-up invocations followed by a single 50-repeat accounting
   block; no block distribution, allocation check or collection evidence.
 - `:715`: projection warm-up called `Advance()` only. That updates ship
   poses and flushes snapshots, but does not call `TestProjectRecordedTick`.
@@ -161,9 +163,84 @@ All 150 final accounting pairs report zero GC rejections and zero allocations.
 Historical per-call median [range]: 28.3 [27.8, 28.9] ns; base: 28.3 [27.8, 28.7]
 ns. Their share medians are 4.577% and 4.541%, respectively.
 
-Pending: slowdown/tiering controls, solution build (zero warnings/errors), all
-tool builds, one full Fast suite with a 110-minute allowance, filtered Perf
-tier, and three isolated repetitions of non-task failures if any occur.
+Guard controls: the existing `P744_SIMULATE_REGRESSION=2` test-only control
+fails the relative assertion as intended: measured 27.9 ns/call, ratio 1.000,
+guarded ratio 2.000 > 1.35 (**0/1/0**, expected failure). This scales the
+measurement; it does not introduce CPU load. With
+`DOTNET_TieredCompilation=0`, the unscaled test passes (**1/0/0**): 29.5 ns/call,
+29.47 ns reference, ratio 1.004, .2083 ms/tick, 4.582 ms OFF p95, 4.547% share.
+Both controls have zero accounting allocations and zero rejected pairs.
+
+The complete solution build passes with **0 warnings / 0 errors**, 50.55 s,
+using `--no-restore --disable-build-servers -nodeReuse:false
+-p:UseSharedCompilation=false`. A previous interrupted attempt exhausted disk;
+the completed build had 52 GB available. All build outputs are task-local.
+The first tool-build pass found missing restore assets for standalone projects.
+Their restore uses installed package archives and a loopback-only mirror of the
+cached official NuGet vulnerability database (2026-11-14 05:29:55 UTC), with
+audit enabled for all dependencies. A control restore of vulnerable Cbor 9.0.0
+fails with **NU1902**, proving that offline audit still rejects it. No public
+host is contacted for the resumed gates.
+
+`tools/build-tools.sh --drop-bins` passes: **all 138 tool projects**, each with
+**0 warnings / 0 errors**. `--drop-bins` is the existing CI disk-conservation
+mode; outputs referenced by tests or the solution are retained. The wrapper adds
+the build-server workaround, skips the completed offline restore and disables
+automatic MGCB tool restore (the tool is already installed).
+Glossary link validation passes (812 paths), parity-scorecard validation passes,
+and `git diff --check` passes.
+
+The filtered Perf invocation (`TEST_FILTER=FullyQualifiedName~P990
+tools/run-tests.sh --tier perf --no-build`) discovers both P990 Perf cases but
+refuses to measure: after its 60-second idle-check window, load/CPU is 1.73
+against the unchanged 0.80 limit. No Perf cases execute in this attempt. The
+five isolated benchmark qualifications above remain valid separate evidence;
+this refusal is not counted as a passing tier gate.
+
+The one full Fast suite completes in **563.018 s**, within its 110-minute
+allowance: **14,254 passed / 4 failed / 7 skipped**, all **14,265** discovered
+Fast cases accounted for. Infrastructure checks pass **9/9**; both quarantine
+lanes pass (**19/0/0**). The gate remains **FAIL**: missile-lock partial-tip,
+warp own-status, auto-seat simulated-time boundary, and empty-pack drop receipt
+failures, plus four timing offenders against the calibrated **11.521485 s**
+limit (missile lock and the successful varied-loadout, Nanite-support and P999
+profile cases). These match existing ledger signatures and execute no changed
+production path. P990's changed benchmark is Perf, so it is not part of Fast.
+
+All seven failed/slow methods then run **3 times alone** in fresh, serial
+processes, retaining every theory parameter: **56 passed / 1 failed / 0
+skipped**, 21 invocations. Missile lock is **fail / pass / pass** (38.633 /
+1.573 / 1.632 s), keeping the existing partial-tip issue open. Warp, auto-seat
+and drop-part pass all three. All varied-loadout (3 cases), Nanite-support (2)
+and P999 profile (10) cases pass every invocation, individually below the
+unchanged Fast limit. Exact names, durations and classification are recorded
+in the P1009 update to `docs/TEST_FLAKES.md`; full per-case receipts and gate
+summaries are retained in [qualification.json](P1009_assets/qualification.json).
+No failing assertion is relaxed and no second Fast suite is used to replace
+the failed one.
+
+After every isolation process ends, the filtered Perf gate passes its unchanged
+idle check (two samples at **0.444 load/CPU**) and runs **2 passed / 0 failed /
+0 skipped**, 19.1 s:
+
+- Mixed accounting: **32.5 ns/call**, reference **32.26 ns**, paired median
+  ratio **1.007**, **.2293 ms/tick**, OFF p95 **5.433 ms**, share **4.220%**.
+  Fifteen pairs, zero GC rejections, zero allocations. Individual projection
+  p95 blocks vary **4.283–9.811 ms**, illustrating residual host scheduling
+  noise even after the idle check; all block values are in qualification.json.
+- Unchanged 411-peer rig projection: OFF/ON median means **9.365 / 9.485 ms**,
+  delta **+.120 ms**, below the existing **1.5 ms** bound. Report cost **3.70
+  ms**; 55,896 pose stamps. This guard's implementation and assertions are
+  untouched.
+
+Final gate disposition: solution and all tools **PASS**, changed test **5/5
+per revision**, filtered Perf **PASS**; the one full Fast sweep remains
+**FAIL** on its ledgered non-task failures and timing offenders. Every required
+isolation is complete. `scripts/publish-guard.sh bcdcd8a0 HEAD` passes for the
+existing implementation commit; the final working-tree diff passes whitespace
+and public-content checks. No new production code, service, port, environment
+configuration, HUD or media is introduced. The brief is retained only in
+ignored scratch. No commit or push was made during this completion pass.
 
 ## Native intent
 
