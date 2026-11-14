@@ -58,6 +58,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// bot's keep-alive thread since connect.</summary>
     public long KeepAlivePingsSent { get { lock (_gate) return _keepAlivePingsSent; } }
 
+    /// <summary>P1008 test seam — invoked on the transport thread for every
+    /// inbound frame <b>before</b> it is recorded (and before <see cref="_gate"/>
+    /// is taken, so a hold never blocks the polled snapshots such as
+    /// <see cref="DropParts"/>). A test can hold one frame type to model a
+    /// delivery skew the server really produces — every peer's copy is queued
+    /// independently (<c>Server.Docking.cs:481-506</c>), so a peer's echo can
+    /// arrive after another peer's — deterministically instead of racing thread
+    /// scheduling. Null in every normal use (bot console, dev-stack bots).</summary>
+    public Action<ushort>? InboundFrameDelayHook { get; set; }
+
     /// <summary>
     /// P671 — start the native keep-alive thread up-front, in the constructor,
     /// NOT in <see cref="Connect"/>. The MCP harness (ObservedSession /
@@ -1893,6 +1903,17 @@ public sealed class Bot : ITransportSite, IDisposable
         byte[][] messages;
         try { messages = FedPacket.Unpack(data.ToArray()); }
         catch (FedCrcException) { return; }   // a bad frame is not ours to adjudicate
+
+        // P1008 test seam — a hold runs BEFORE the recording gate so the held
+        // frame does not block a snapshot someone is polling for other types.
+        if (InboundFrameDelayHook is { } delayHook)
+            foreach (var m in messages)
+            {
+                ushort held;
+                try { held = FedMessageHeader.Read(m).Fmid; }
+                catch { continue; }
+                delayHook(held);
+            }
 
         lock (_gate)
         {

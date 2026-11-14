@@ -249,16 +249,40 @@ public class DropPartTests
             float radius10 = 0.5f * Subj().HullType.Length + 10f;
 
             foreach (var b in bots) { b.ResetDropPartsReceived(); b.ResetTreasureSpawnsReceived(); }
+            // P1008 — turn the real per-peer delivery skew into a deterministic
+            // one: hold the subject's OWN TREASURE(28) echo 200 ms. Every peer's
+            // copy is queued independently (Server.Docking.cs:481-506), so in
+            // production the subject's echo can land after the observer's; the
+            // phase-one barrier below must therefore absorb it rather than race
+            // it. The hold stays installed for the whole fixture so that a
+            // wrongful phase-two treasure would also land inside the settle
+            // window below.
+            subBot.InboundFrameDelayHook = fmid =>
+            {
+                if (fmid == TreasureSpawn.Fmid) Thread.Sleep(200);
+            };
             subBot.SendDropPart(EquipmentType.Weapon, mount: 0);
 
-            PumpUntil(server,
+            int pumped = PumpUntil(server,
                 () => Subj().Parts.Count == 0
                    && obsBot.DropParts.Count >= 1
                    && eneBot.DropParts.Count >= 1
                    && subBot.DropParts.Any(d => d.ShipID == subjectId && d.Et == EquipmentType.Weapon && d.Mount == 0)
                    && obsBot.TreasureSpawns.Count >= 1
-                   && eneBot.TreasureSpawns.Count >= 1,
+                   && eneBot.TreasureSpawns.Count >= 1
+                   // P1008 — the SUBJECT's own TREASURE(28) copy belongs to phase
+                   // one too: native exports the created treasure to the dropping
+                   // side's whole group (FedSrv.CPP:10750-10778; treasures carry
+                   // c_mtSeenBySide|c_mtPredictable, treasureIGC.cpp:167-177) and
+                   // the sector-wide DROP_PART relay includes the requester
+                   // (FedSrv.CPP:6318-6319). Each peer's copy is queued
+                   // independently here (Server.Docking.cs:481-506), so it can
+                   // land after the observer's; waiting for it is what makes the
+                   // clear below a real phase boundary instead of a race.
+                   && subBot.TreasureSpawns.Any(t => t.Data.TreasureCode == TreasureCode.Part && t.Data.TreasureId == pidW),
                 4000);
+            Assert.True(pumped < 4000,
+                "phase one must deliver every sector-wide echo, including the subject's own TREASURE(28)");
 
             // (a) The part is really REMOVED from the ship's own loadout.
             Assert.Empty(Subj().Parts);
@@ -279,6 +303,11 @@ public class DropPartTests
             // (c) TREASURE(28): every sector peer saw the part treasure.
             var data = obsBot.TreasureSpawns.Single().Data;
             Assert.Single(eneBot.TreasureSpawns);
+            // P1008 — the requester's own copy lands too (same side group /
+            // requester-in-cluster audience as above); exactly one, never a
+            // duplicate (the P797 creation latch suppresses a second send,
+            // Server.Docking.cs:497-506 / Server.Treasure.cs:21-25).
+            Assert.Equal(data.ObjectId, Assert.Single(subBot.TreasureSpawns).Data.ObjectId);
             var dataEnemy = eneBot.TreasureSpawns.Single().Data;
             Assert.Equal(data.ObjectId, dataEnemy.ObjectId);
 
@@ -325,16 +354,31 @@ public class DropPartTests
             subBot.SendDropPart(EquipmentType.Pack, mount: 0);
 
             // DROP_PART still broadcasts sector-wide…
-            PumpUntil(server,
-                () => Subj().Parts.Count == 0 && obsBot.DropParts.Count >= 1 && eneBot.DropParts.Count >= 1,
+            int pumped2 = PumpUntil(server,
+                () => Subj().Parts.Count == 0
+                   && obsBot.DropParts.Count >= 1
+                   && eneBot.DropParts.Count >= 1
+                   // P1008 — the subject's own echo is this phase's completion
+                   // marker: the server queues one copy per sector peer in the
+                   // same tick (Server.Docking.cs:481-487, native
+                   // FedSrv.CPP:6318-6319), and an empty Pack produces no
+                   // treasure, so nothing of phase two can still be in flight.
+                   && subBot.DropParts.Any(d => d.ShipID == subjectId && d.Et == EquipmentType.Pack && d.Mount == 0),
                 4000);
+            Assert.True(pumped2 < 4000, "phase two must deliver its DROP_PART echo to every sector peer");
             Assert.Empty(Subj().Parts);
             Assert.Equal(subjectId, obsBot.DropParts.Single().ShipID);
             Assert.Equal(EquipmentType.Pack, obsBot.DropParts.Single().Et);
             Assert.Equal((byte)0, obsBot.DropParts.Single().Mount);
+            Assert.Equal(1, subBot.DropParts.Count(d => d.ShipID == subjectId && d.Et == EquipmentType.Pack && d.Mount == 0));
 
             // …but NO TREASURE follows (empty Pack is the native skip).
-            PumpUntil(server, () => false, 20);   // let any wrongful treasure arrive
+            // P1008 — the old 20-tick pump is only ~30 ms of wall time here, too
+            // short to cover the 200 ms echo hold above (and, before the fix, the
+            // late phase-one echo it exposes). Keep the same "let any wrongful
+            // treasure arrive" intent with a wall-clock window that does.
+            long settleUntil = Environment.TickCount64 + 400;
+            while (Environment.TickCount64 < settleUntil) { server.TickSim(); Thread.Sleep(1); }
             Assert.Empty(obsBot.TreasureSpawns);
             Assert.Empty(eneBot.TreasureSpawns);
             Assert.Empty(subBot.TreasureSpawns);

@@ -8513,7 +8513,7 @@ one case per invocation. Durations below are TRX test times, not process times.
 | `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (disabled/off) | 14.900000000054206 s against [14.94, 15.06], at line 134; recurring countdown receipt family | 4/0/0; 4/0/0; 4/0/0 (Passed/Failed/Skipped), all four cases per invocation |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without required partial tip, 37.849 s; also slow-Fast | **fail / fail / fail**, 38.652 / 38.593 / 38.587 s; existing OPEN partial-tip issue remains open |
 | `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | clearance assertion at line 258, minRockDist=70.2 | **pass / pass / fail**, 5.874 / 5.808 / 5.775 s; failed repeat minRockDist=68.6; clearance issue remains OPEN, not just suite load |
-| `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty subject treasure list; one weapon treasure (TreasureId=3, Amount=0) remained after empty-pack phase | **pass / pass / pass**, 0.453 / 0.453 / 0.451 s; receive/reset race suspected: phase one waits for observer/enemy treasure, but not the subject's own treasure before clearing its list (lines 254–261, 325, 340). No drop behavior changed |
+| `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty subject treasure list; one weapon treasure (TreasureId=3, Amount=0) remained after empty-pack phase | **pass / pass / pass**, 0.453 / 0.453 / 0.451 s; receive/reset race suspected: phase one waits for observer/enemy treasure, but not the subject's own treasure before clearing its list (lines 254–261, 325, 340). No drop behavior changed — **root-caused and fixed by P1008, see the 2026-11-14 entry below** |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 11.725 s | **pass / pass / pass**, 3.476 / 3.286 / 3.286 s, below the original limit |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, 11.637 s | **pass / pass / pass**, 3.032 / 3.004 / 2.987 s, below the original limit |
 | `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | assertions passed, 13.456 s | **pass / pass / pass**, 2.916 / 2.962 / 2.971 s, below the original limit |
@@ -8583,3 +8583,39 @@ invocation. The new P1003 cases (11, Fast) pass 3× alone at 85–92 ms.
 
 No failed or slow case touches the afterburner sound path. Report:
 `docs/reports/BOOSTER_SOUND_GATE_P1003.md`.
+
+### 2026-11-14 — P1008 DropPart fixture race: root-caused, fixed, not a flake
+
+`DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips`
+(the P1002 Fast failure at the empty-pack `Assert.Empty`) is a **fixture phase
+race**, not load and not a product defect. Native sends the created part
+treasure to the dropping side's group, which contains the dropping player
+(FedSrv.CPP:10750-10778, treasure attributes Igc/treasureIGC.cpp:167-177; the
+sector-flying relay includes the requester, FedSrv.CPP:6318-6319,
+FedSrv/fsship.cpp:1246-1249). The server queues every peer's copy independently
+(`Server.Docking.cs:481-506`, `Server.BroadcastSnapshot.cs:295-313`), so the
+subject's own `TREASURE(28)` can arrive after the observer's/enemy's; the old
+phase-one barrier waited for the latter two only and then cleared all lists, so a
+late subject echo broke the empty-pack phase.
+
+Reproduction (deterministic, new `Bot.InboundFrameDelayHook` test seam holding the
+subject's `TREASURE(28)` 200 ms; no busy loops, no added load): old barrier
+**0/5 passed** (all five at the empty-pack assert, `TreasureId = 3, Amount = 0`,
+the phase-one weapon treasure); fixed barrier **5/5 passed**. Without the hold
+the natural window is narrow — bounded-parallel 60 runs at P4 gave 60/60 before
+and after (load average 12.3 and 9.6). Fixed test: **20/20 alone** (972–1000 ms);
+the class 3/3 and the sibling drop tests (`TreasureDropLiveTests`,
+`P626InFlightUtilityLiveTests`, `P847MissionRulesCertifyTests`) 13/13 each, three
+times. No production behaviour, wire, default or HUD change; the empty-pack
+assertion is unchanged and two phase assertions were strengthened (requester's
+own `TREASURE` and phase-two `DROP_PART` echo). Report:
+`docs/reports/DROPPART_RACE_P1008.md`. Ledger: this entry closes the P1002
+suspicion; no retry classification is retained.
+
+Gate on the P1008 tree: solution build 0/0, `tools/build-tools.sh` 138/138, one
+Fast sweep **14,236 passed / 9 failed / 20 skipped** of 14,265 cases (573.0 s,
+Fast limit 11.523 s); the changed case passed in the sweep and 20/20 alone. The
+nine failures and four timing offenders are the already-ledgered families
+(P739 float bound, `LiveCombatWireTests` contention, warp-transit receipt,
+auto-seat boundary, miner capacity, NPC clearance, roster stint, `MissileLock`
+partial tip, `DeadLatch` receipt) and none repeats a drop/treasure signature.
