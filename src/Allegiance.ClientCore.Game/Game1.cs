@@ -2246,6 +2246,8 @@ public sealed partial class Game1 : Game
         _flightGc.Dispose();
         if (_hudSkins is not null) _hudSkins.Dispose();
         else _modernHudRenderer?.Dispose();
+        _loadoutV2Renderer?.Dispose();
+        _loadoutV2Renderer = null;
         _fsr?.Dispose();
         _post?.Dispose();
         _hdMaterials?.Dispose();

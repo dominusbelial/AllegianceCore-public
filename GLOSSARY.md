@@ -1271,6 +1271,16 @@ list in **reverse**.
   real-window proof: `tools/p1014-ui-proof/`. Native: `WinTrek/load.cpp:176-205,
   785-820,877-887,986-1054,1497-1531`; report:
   `docs/reports/LOADOUT_V2_RENDERER_P1014.md`.
+- **Loadout V2 hardpoint highlight (P1016)** — pure CVH frame projection and
+  convex-hull occlusion in `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Hardpoints.cs`,
+  using the preview's returned matrices and existing slot hover/focus. Both HUD
+  styles draw fixed-gun rings and turret aim guides with seated gunner names.
+  Missing frames and non-weapon sockets produce no marker. Native's cone is
+  commented out (`WinTrek/load.cpp:1321-1356`), as is `minDot` itself
+  (`Igc/igc.h:1698`); PCore001 guides explicitly claim no firing limit.
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1016HardpointTests.cs`;
+  proof: `tools/p1014-ui-proof/`; report:
+  `docs/reports/LOADOUT_V2_HARDPOINTS_P1016.md`.
 - **Ship stat sheet + stat deltas (P1011)** — the pure model behind the Loadout V2 stats bar:
   `src/Allegiance.ClientCore.Game/Rendering/ShipStatSheet.cs` turns a hull type + the mounted part
   types + the side's `GlobalAttributeSet` into the ship's stats, using native's loadout info-pane

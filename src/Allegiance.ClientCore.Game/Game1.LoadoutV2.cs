@@ -20,6 +20,8 @@ public partial class Game1
     // the rows the shipping renderer has drawn, without replacing any UI.
     private LoadoutV2Presentation? _loadoutV2Frame;
     private LoadoutV2Layout? _loadoutV2Layout;
+    private readonly Dictionary<short, LoadoutV2Hardpoints> _loadoutV2Hardpoints = new();
+    private LoadoutV2HardpointMarker? _loadoutV2Marker;
 
     private void DrawLoadoutV2(GameTime gameTime, ShopModel shop)
     {
@@ -44,6 +46,7 @@ public partial class Game1
             || !ReferenceEquals(_loadoutV2Local, local) || _loadoutV2Source != source
             || _loadoutV2Catalog != shop.Catalog)
         {
+            if (_loadoutV2Catalog?.Core != shop.Catalog.Core) _loadoutV2Hardpoints.Clear();
             var reachable = catalog.Core is { } core ? BucketCatalog.ReachableTechs(core, techs) : (TechTreeBitMask?)null;
             _loadoutV2Model = new LoadoutV2Model(shop, catalog.Hulls, reachable, local, techs,
                 mount =>
@@ -83,16 +86,40 @@ public partial class Game1
         // dedicated geo pane (WinTrek/load.cpp:785-790,877-887). Restore the
         // viewport even if model resolution fails, for every later HUD pass.
         var preview = _loadoutV2Layout.ShipPreview;
+        LoadoutV2PreviewCamera camera;
         try
         {
             GraphicsDevice.Viewport = new Viewport((int)preview.X, (int)preview.Y,
                 (int)preview.Width, (int)preview.Height);
-            DrawDockedHullPreview(gameTime, shop);
+            camera = DrawDockedHullPreview(gameTime, shop);
         }
         finally { GraphicsDevice.Viewport = viewport; }
         _loadoutV2Renderer ??= new LoadoutV2Renderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         var mouse = Mouse.GetState();
+        var hover = _loadoutV2Layout.HitTest(mouse.X, mouse.Y);
+        int selectedSlot = LoadoutV2Hardpoints.SelectedSlot(_loadoutV2Frame, hover);
+        _loadoutV2Marker = null;
+        var slots = _loadoutV2Model.SlotRows;
+        if (selectedSlot >= 0 && selectedSlot < slots.Count && _loadoutV2Model.EffectiveHull is { } previewHull)
+        {
+            if (!_loadoutV2Hardpoints.TryGetValue(previewHull.HullId, out var hardpoints))
+            {
+                Allegiance.Core.Collision.CvhFile? cvh = null;
+                try
+                {
+                    string path = previewHull.ModelName + ".cvh";
+                    if (_assets.Exists(path)) cvh = Allegiance.Core.Collision.CvhReader.Parse(Assets.AssetSources.ReadAllText(_assets, path));
+                }
+                catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException)
+                {
+                    Console.WriteLine($"[loadout-v2] hardpoint frames unavailable for hull {previewHull.HullId}: {e.Message}");
+                }
+                hardpoints = new LoadoutV2Hardpoints(previewHull, cvh);
+                _loadoutV2Hardpoints[previewHull.HullId] = hardpoints;
+            }
+            _loadoutV2Marker = hardpoints.Project(slots[selectedSlot], camera, preview);
+        }
         _loadoutV2Renderer.Draw(_loadoutV2Frame, _loadoutV2Layout, _hudSettings.Style,
-            _loadoutV2Layout.HitTest(mouse.X, mouse.Y));
+            hover, _loadoutV2Marker);
     }
 }

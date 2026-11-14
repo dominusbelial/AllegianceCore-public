@@ -9,7 +9,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// selection and semantic inks; layout owns all bounds and hover hit targets.
 /// Game1 draws the real P519 hull model in ShipPreview before this overlay.
 /// </summary>
-public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big)
+public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big) : IDisposable
 {
     // Existing ModernHudRenderer cyan/muted/orange; Classic docked screen gold,
     // pale blue and grey. Better/worse reuse the old loadout's fit/no-fit inks.
@@ -23,7 +23,7 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
     };
 
     public void Draw(LoadoutV2Presentation frame, LoadoutV2Layout layout, HudStyle style,
-        LoadoutV2Layout.Element? hover = null)
+        LoadoutV2Layout.Element? hover = null, LoadoutV2HardpointMarker? hardpoint = null)
     {
         var accent = ColorFor(LoadoutV2Ink.Accent, style);
         var background = new Color(.03f, .042f, .058f, .98f);
@@ -90,6 +90,69 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
             Overflow(layout.SlotList, layout.SlotScroll, layout.SlotCapacity - layout.OfferCapacity, frame.Slots.Count, style, layout.Scale);
         }
         finally { batch.End(); }
+        if (hardpoint is not null) DrawHardpoint(hardpoint, layout, style);
+    }
+
+    private readonly RasterizerState _previewClip = new() { CullMode = CullMode.None, ScissorTestEnable = true };
+
+    public void Dispose() => _previewClip.Dispose();
+
+    private void DrawHardpoint(LoadoutV2HardpointMarker marker, LoadoutV2Layout layout, HudStyle style)
+    {
+        var device = batch.GraphicsDevice;
+        var savedClip = device.ScissorRectangle;
+        var savedRasterizer = device.RasterizerState;
+        var preview = layout.ShipPreview;
+        device.ScissorRectangle = new Rectangle((int)preview.X + 1, (int)preview.Y + 1,
+            (int)preview.Width - 2, (int)preview.Height - 2);
+        var accent = ColorFor(LoadoutV2Ink.Accent, style) * (marker.Occluded ? .4f : 1f);
+        float scale = layout.Scale;
+        batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp,
+            DepthStencilState.None, _previewClip);
+        try
+        {
+            for (int i = 1; i < marker.Arc.Count; i++)
+            {
+                if (marker.Arc[i - 1] is { } a && marker.Arc[i] is { } b) Line(a, b, accent * .5f, scale);
+                if (i % 12 == 0 && marker.Arc[i] is { } rim) Line(marker.Point, rim, accent * .3f, scale);
+            }
+            if (marker.AxisEnd is { } end) Line(marker.Point, end, accent * .65f, scale);
+            float radius = 8 * scale;
+            for (int i = 0; i < 32; i++)
+            {
+                float a = MathHelper.TwoPi * i / 32, b = MathHelper.TwoPi * (i + 1) / 32;
+                Line(marker.Point + radius * new Vector2(MathF.Cos(a), MathF.Sin(a)),
+                    marker.Point + radius * new Vector2(MathF.Cos(b), MathF.Sin(b)), accent, 1.6f * scale);
+            }
+            Fill(new(marker.Point.X - 2 * scale, marker.Point.Y - 2 * scale, 4 * scale, 4 * scale), accent);
+            string label = ShopLayout.AsciiSafe(marker.Label + (marker.GunnerName is { Length: > 0 } name ? " / " + name : ""));
+            if (marker.Occluded) label += " (behind hull)";
+            float labelWidth = MathF.Min(preview.Width - 24 * scale, small.MeasureString(label).X * .8f * scale + 12 * scale);
+            float x = Math.Clamp(marker.Point.X + 14 * scale, preview.X + 8 * scale, preview.Right - labelWidth - 8 * scale);
+            float y = Math.Clamp(marker.Point.Y - 27 * scale, preview.Y + 8 * scale, preview.Bottom - 54 * scale);
+            var bounds = new TouchRect(x, y, labelWidth, 25 * scale);
+            Fill(bounds, new Color(8, 12, 16) * .85f);
+            Text(new(label, marker.Occluded ? LoadoutV2Ink.Muted : LoadoutV2Ink.Accent), bounds, style, .8f * scale);
+            if (marker.IsTurret)
+            {
+                string guide = marker.ArcLimitKnown ? "Firing arc" : "Aim guide / arc limit unavailable";
+                Text(new(guide, LoadoutV2Ink.Muted), new(preview.X + 10 * scale, preview.Bottom - 30 * scale,
+                    preview.Width - 20 * scale, 22 * scale), style, .75f * scale);
+            }
+        }
+        finally
+        {
+            batch.End();
+            device.ScissorRectangle = savedClip;
+            device.RasterizerState = savedRasterizer;
+        }
+    }
+
+    private void Line(Vector2 from, Vector2 to, Color color, float thickness)
+    {
+        var delta = to - from;
+        batch.Draw(white, from, null, color, MathF.Atan2(delta.Y, delta.X), new Vector2(0, .5f),
+            new Vector2(delta.Length(), thickness), SpriteEffects.None, 0);
     }
 
     private void Row(LoadoutV2DisplayRow row, LoadoutV2Layout.Element element, HudStyle style,
