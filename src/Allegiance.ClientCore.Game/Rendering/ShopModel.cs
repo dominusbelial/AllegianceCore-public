@@ -190,7 +190,7 @@ public sealed class ShopModel
     public bool CanAffordTotal => AffordabilityKnown && Cost <= MyMoney!.Value;
 
     /// <summary>
-    /// P759 — the native <c>OnButtonBuy</c> shortfall (<c>load.cpp:1503-1507</c>):
+    /// P759 — the native <c>OnButtonBuy</c> shortfall (<c>load.cpp:1513-1520</c>):
     /// <c>cost = new - (current + money)</c>, i.e. the amount the server must
     /// grant via <c>REQUEST_MONEY</c> before the buy can complete. 0 when the
     /// player can already afford the loadout (or money is unknown — then the
@@ -273,6 +273,33 @@ public sealed class ShopModel
     public DataHullTypeIGC? HullUnderCursor =>
         BuyableHulls.Count > 0 && _hullCursor < BuyableHulls.Count ? BuyableHulls[_hullCursor] : null;
 
+    /// <summary>
+    /// P1010 — pick a hull BY ID (the Loadout V2 hull column's click), the
+    /// targeted form of <see cref="SelectHullAtCursor"/>. Only a hull the
+    /// station offers is selectable (the gate is native <c>GetNextHullType</c>'s
+    /// <c>GroupID &gt;= 0 &amp;&amp; pstation-&gt;CanBuy(pht) &amp;&amp;
+    /// !pstation-&gt;IsObsolete(pht)</c>, <c>WinTrek/load.cpp:1603-1606</c>, which
+    /// <see cref="BuyableHulls"/> already encodes). Selecting the docked hull
+    /// de-picks it (keep the current hull, no loadout refresh) exactly as native
+    /// <c>NextHull</c> does when <c>pht == phtCurrent</c> (<c>load.cpp:1620-1625</c>,
+    /// hull menu <c>:1896-1898</c>); selecting another hull rebases the pending
+    /// loadout onto that hull's saved custom slot 0 / native default and raises
+    /// <see cref="HullChosen"/> for the hull-menu <c>mountSound</c>
+    /// (<c>load.cpp:1480-1487</c>).
+    /// </summary>
+    /// <returns>False when the hull is not offered at this station.</returns>
+    public bool SelectHull(short hullId)
+    {
+        if (!InHullCatalog(hullId)) return false;
+        HullCursor = IndexOfHull(hullId);
+        bool picked = hullId != CurrentHullId;   // re-picking the docked hull de-picks (keep current)
+        ChosenHullId = picked ? hullId : null;
+        RebaseForEffectiveHull();
+        BlockReason = null;
+        if (picked) HullChosen?.Invoke();
+        return true;
+    }
+
     // ── P519 slots (the PARTS tab) ─────────────────────────────────────────
 
     /// <summary>P519 — the effective hull's real equipment slots, in display
@@ -351,32 +378,45 @@ public sealed class ShopModel
     /// <summary>P519 — the compatible parts for the open slot, in a stable order.
     /// Only parts that fit this slot's type AND mount are ever listed (native
     /// BuyPartMenu: equipment-type equality + <c>CanMount(part, slotMount)</c>).</summary>
-    public IReadOnlyList<SlotPartOffer> OpenSlotParts
+    public IReadOnlyList<SlotPartOffer> OpenSlotParts =>
+        OpenSlot is { } slot ? SlotOffers(slot) : Array.Empty<SlotPartOffer>();
+
+    /// <summary>
+    /// P1010 — the compatible parts for ANY slot of the effective hull, without
+    /// opening it in the tab/page machinery (<see cref="OpenSlotParts"/> is this
+    /// same list for the opened slot). One predicate, so the Loadout V2 inline
+    /// pickers and the old screen's open-slot menu can never disagree: the part
+    /// must be the slot's equipment type and pass the per-mount mask test
+    /// <see cref="PartFitsSlot"/> (native <c>IhullTypeIGC::CanMount(part, mount)</c>,
+    /// <c>src/Igc/hullTypeIGC.h:163-176,199-213</c>, which is the term
+    /// <c>LoadoutImpl::BuyPartMenu</c> applies at <c>WinTrek/load.cpp:1734-1735</c>).
+    /// The catalogue is already the station's tech-filtered one
+    /// (<see cref="ShopCatalog.FilteredFor"/> = native <c>pstation-&gt;CanBuy</c>,
+    /// <c>Igc/stationIGC.h:383-391</c>), so every offer is something the side can
+    /// buy. Order is stable: price, then name, then id.
+    /// </summary>
+    public IReadOnlyList<SlotPartOffer> SlotOffers(SlotDef slot)
     {
-        get
+        var hull = EffectiveHull;
+        if (hull is null) return Array.Empty<SlotPartOffer>();
+        var list = new List<SlotPartOffer>();
+        foreach (var p in _cat.Parts)
+            if (PartFitsSlot(hull.Value, slot, p))
+                list.Add(new SlotPartOffer(p, DefaultAmount(p), false));
+        if (_launchers is { } ls)
+            foreach (var l in ls)
+                if (PartFitsSlot(hull.Value, slot, l.Part))
+                    list.Add(new SlotPartOffer(l.Part, l.Ammo, true));
+        // Stable, deterministic order: by price then name then id.
+        list.Sort((a, b) =>
         {
-            if (OpenSlot is not { } slot) return Array.Empty<SlotPartOffer>();
-            var hull = EffectiveHull;
-            if (hull is null) return Array.Empty<SlotPartOffer>();
-            var list = new List<SlotPartOffer>();
-            foreach (var p in _cat.Parts)
-                if (PartFitsSlot(hull.Value, slot, p))
-                    list.Add(new SlotPartOffer(p, DefaultAmount(p), false));
-            if (_launchers is { } ls)
-                foreach (var l in ls)
-                    if (PartFitsSlot(hull.Value, slot, l.Part))
-                        list.Add(new SlotPartOffer(l.Part, l.Ammo, true));
-            // Stable, deterministic order: by price then name then id.
-            list.Sort((a, b) =>
-            {
-                int c = a.Part.Price.CompareTo(b.Part.Price);
-                if (c != 0) return c;
-                c = string.CompareOrdinal(a.Part.Name, b.Part.Name);
-                if (c != 0) return c;
-                return a.Part.PartId.CompareTo(b.Part.PartId);
-            });
-            return list;
-        }
+            int c = a.Part.Price.CompareTo(b.Part.Price);
+            if (c != 0) return c;
+            c = string.CompareOrdinal(a.Part.Name, b.Part.Name);
+            if (c != 0) return c;
+            return a.Part.PartId.CompareTo(b.Part.PartId);
+        });
+        return list;
     }
 
     public int OpenSlotCursor
@@ -406,8 +446,7 @@ public sealed class ShopModel
         // Last row is the "(make slot empty)" clear action (native "-Make Slot Empty-").
         if (_partCursor >= OpenSlotParts.Count)
         {
-            ClearSlot(slot);
-            SlotPartChosen?.Invoke(false);   // native unmountSound, load.cpp:1889
+            ClearSlot(slot, notify: true);   // native unmountSound, load.cpp:1889
         }
         else
         {
@@ -431,13 +470,44 @@ public sealed class ShopModel
     }
 
     /// <summary>P519 — empty a slot (remove its part from the pending loadout).</summary>
-    public void ClearSlot(SlotDef slot)
+    /// <param name="notify">P1010 — raise <see cref="SlotPartChosen"/>(false) for the
+    /// native <c>unmountSound</c> (<c>WinTrek/load.cpp:1889</c>). The old screen's
+    /// open-slot menu passes <c>true</c> through
+    /// <see cref="ChoosePartInOpenSlot"/>; the Loadout V2 clear action does the
+    /// same. Default <c>false</c> keeps the pre-P1010 silent overload for every
+    /// existing caller.</param>
+    public void ClearSlot(SlotDef slot, bool notify = false)
     {
         if (slot.IsWeapon)
             _chosenParts.RemoveAll(p => (LookupPart(p.PartId) is { } pt && pt.EquipmentType == EquipmentType.Weapon) && p.MountId == slot.Mount);
         else
             _chosenParts.RemoveAll(p => LookupPart(p.PartId) is { } pt && pt.EquipmentType == slot.Type);
         NormalizeWeaponMounts();
+        if (notify) SlotPartChosen?.Invoke(false);
+    }
+
+    /// <summary>
+    /// P1010 — mount an offered part into an explicit slot (the Loadout V2
+    /// inline picker), instead of the tab/cursor walk of
+    /// <see cref="ChoosePartInOpenSlot"/>. Same rule and same effect: only an
+    /// offer from <see cref="SlotOffers"/>(<paramref name="slot"/>) is accepted
+    /// (native <c>BuyPartMenu</c>: equipment-type equality + <c>CanMount(part,
+    /// slotMount)</c>, <c>WinTrek/load.cpp:1734-1743</c>), the slot's existing
+    /// part is replaced, non-weapons are pinned to mount 0 (P437), and
+    /// <see cref="SlotPartChosen"/>(true) fires for the native
+    /// <c>mountSound</c> (<c>WinTrek/load.cpp:1887</c>).
+    /// </summary>
+    /// <returns>True when the part was mounted.</returns>
+    public bool MountInSlot(SlotDef slot, SlotPartOffer offer)
+    {
+        bool fits = false;
+        foreach (var o in SlotOffers(slot))
+            if (o.Part.PartId == offer.Part.PartId) { fits = true; break; }
+        if (!fits) return false;
+        FillSlot(slot, offer);
+        BlockReason = null;
+        SlotPartChosen?.Invoke(true);
+        return true;
     }
 
     /// <summary>P519 — leave the open-slot view, back to the slot list.</summary>
@@ -861,6 +931,35 @@ public sealed class ShopModel
         SaveCustomLoadout();
         BlockReason = null;
     }
+
+    /// <summary>
+    /// P1010 — the Loadout V2 "Revert" action: drop every pending edit and go
+    /// back to the docked ship's real loadout. This is the state the shop opens
+    /// in (<see cref="CurrentParts"/> seeded verbatim, the P394/P519 Bug-3 dock
+    /// sync) with no hull swap pending, i.e. the native end state of
+    /// <c>RestoreLoadout</c> for the ship's OWN cached loadout
+    /// (<c>clintlib.h:1824-1844</c> clones exactly the parts the hull can mount
+    /// from the cached list, and <c>BuyLoadout(pship, false)</c> re-sends it at
+    /// <c>:1883</c>). No new rule: it is the constructor's seeding applied again
+    /// after edits.
+    /// </summary>
+    public void RevertToCurrentLoadout()
+    {
+        ChosenHullId = null;
+        _chosenParts.Clear();
+        foreach (var p in CurrentParts)
+            _chosenParts.Add(p);
+        NormalizeWeaponMounts();
+        HullCursor = IndexOfHull(EffectiveHullId);
+        SwitchTab(Tab);          // keep the page consistent with the active tab
+        BlockReason = null;
+    }
+
+    /// <summary>P1010 — a part's core record as the shop knows it (the filtered
+    /// catalogue plus the real launcher table), or null when the station does not
+    /// offer it. The Loadout V2 rows/totals resolve part names and types through
+    /// this, never through a second catalogue copy.</summary>
+    public DataPartTypeIGC? PartById(short partId) => LookupPart(partId);
 
     /// <summary>P571 — the hull's NATIVE default loadout as a pending part list:
     /// walk <see cref="DataHullTypeIGC.PreferredPartsTypes"/> in order and mount

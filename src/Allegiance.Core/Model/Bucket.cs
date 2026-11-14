@@ -673,8 +673,14 @@ public static class BucketCatalog
     /// <c>PartTypes</c> is the port's analogue of native's single
     /// <c>GetPartTypes()</c> list. No native term is omitted; this is the
     /// faithful port.</para>
+    /// <para><b>P1010 — public.</b> The Loadout V2 view-model needs the same mask
+    /// to answer "which hulls could this side unlock?" (a hull whose required
+    /// techs are not in the current station+side mask but are inside the side's
+    /// reachable tree, <c>WinTrek/load.cpp:1603-1606</c>). Exposed rather than
+    /// re-derived so the client keeps one implementation of the native
+    /// ttbmLocalUltimate.</para>
     /// </summary>
-    private static TechTreeBitMask ReachableTechs(StaticCore core, TechTreeBitMask initialDevelopmentTechs)
+    public static TechTreeBitMask ReachableTechs(StaticCore core, TechTreeBitMask initialDevelopmentTechs)
     {
         // Native ttbmLocalUltimate starts as the OR of every station type's
         // local techs (sideigc.cpp:142).
