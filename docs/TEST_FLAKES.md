@@ -8995,3 +8995,33 @@ rejoin stints, `LiveSuicideShipDeleteTests` combat delete and `P590PodRescueTest
 `hullinfobmp.mdl` and `partinfo.mdl`; manifests regenerated (4 roots, 7 manifest lines) → 3/3 pass.
 `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (P763 server flag, default off)
 **fails 2/3 alone** — not touched by this batch (client-only), but no longer just a sweep flake: needs its own task.
+
+## 2026-11-14 — P1017 fast suite (Loadout V2 buy / launch flow, server buy rules)
+
+Two Fast sweeps on the P1017 tree (base `a4c68e09`, lane container, Fast limit 11.491 s).
+
+**Sweep 1: 14,503 passed / 5 failed / 7 not executed** of 14,515 (554.1 s; main and quarantine groups).
+`Allegiance.ClientCore.MonoGame.Tests` 5,463 passed, 0 failed. One failure was caused by P1017 and is
+fixed; four are ledgered families:
+
+| Test | Alone ×3 | Note |
+|---|---|---|
+| `LiveTeleportDockTests.Teleport_with_non_buyable_hull_refunds_strips_and_swaps_to_lifepod` | pass / pass / pass **after the test was adapted** | **P1017, not a flake.** The test bought the spawn gun's own part type and expected to be charged $25; a free spawn part the ship keeps now stays free. The test sells the spawn gun first (refund 0), then buys. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore) | pass / pass / pass | `DeadLatch` receipt |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | auto-seat boundary (32.65 s against [28, 31]); no buy in this test |
+| `P994GunfireBatchTests.Record_build_has_no_steady_path_allocations` | pass / pass / pass | 5,280 bytes allocated in the sweep only |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | pass / pass / pass | warp-transit receipt |
+
+**Sweep 2 (after the adaptation): 14,506 passed / 2 failed / 7 not executed** of 14,515 (550.6 s);
+MonoGame again 5,463 / 0. Both failures are ledgered families and differ from sweep 1's:
+
+| Test | Alone ×3 | Note |
+|---|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | pass / pass / pass | one queued `AsteroidMined` arrived |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (enabled: False, dilation off) | pass / pass / pass (all four cases) | countdown outside [14.94, 15.06] under load |
+
+Slow Fast cases (5 and 6): the usual varied-loadout, nanite-support, gunner-preference, publisher-backlog,
+civ-profile and showcase-rock cases; none is in the buy path. Both sweeps are retained as **FAIL**.
+The Live training gate was not run (the story's gate is the light one). Report:
+`docs/reports/LOADOUT_V2_BUY_FLOW_P1017.md`.
+

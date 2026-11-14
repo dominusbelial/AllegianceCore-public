@@ -31,6 +31,10 @@ public sealed class LoadoutV2Presentation
     public required IReadOnlyList<LoadoutV2Text> Price { get; init; }
     public required LoadoutV2Text Buy { get; init; }
     public required LoadoutV2Text Launch { get; init; }
+    /// <summary>P1017: the status line — why Buy or Launch is refused, or what
+    /// the server answered. Native wording (<see cref="ShopModel.StateText"/>,
+    /// <see cref="ShopModel.PartsUnavailableText"/>).</summary>
+    public LoadoutV2Text Status { get; init; } = new("");
     public int OpenSlot { get; init; } = -1;
     public int HullFocus { get; init; } = -1;
     public int SlotFocus { get; init; } = -1;
@@ -112,6 +116,9 @@ public sealed class LoadoutV2Presentation
             }
         }
         bool shortfall = shop.BuyShortfall > 0;
+        // P1017: native button state (UpdateButtons, WinTrek/load.cpp:2139-2190).
+        var state = shop.State;
+        bool buyEnabled = shop.BuyEnabled, launchEnabled = shop.LaunchEnabled;
         return new()
         {
             Title = "LOADOUT / " + (model.EffectiveHull?.Name ?? "No hull"),
@@ -123,10 +130,14 @@ public sealed class LoadoutV2Presentation
             Price = [new("Loadout " + Dollars(shop.NewLoadoutValue)),
                 new("Refund " + Dollars(shop.CurrentShipValue), LoadoutV2Ink.Muted),
                 new("Net " + Dollars(shop.Cost), shortfall ? LoadoutV2Ink.Worse : LoadoutV2Ink.Normal),
-                new(shortfall ? "Shortfall " + Dollars(shop.BuyShortfall) : shop.BlockReason ?? "Ready",
-                    shortfall || shop.BlockReason is not null ? LoadoutV2Ink.Worse : LoadoutV2Ink.Muted)],
-            Buy = new(shortfall ? "Need " + Dollars(shop.BuyShortfall) : "Buy", shortfall ? LoadoutV2Ink.Worse : LoadoutV2Ink.Accent),
-            Launch = new("Launch", shortfall ? LoadoutV2Ink.Muted : LoadoutV2Ink.Accent),
+                new(shortfall ? "Shortfall " + Dollars(shop.BuyShortfall) : state == ShopModel.ShipState.Current ? "Owned" : "Ready",
+                    shortfall ? LoadoutV2Ink.Worse : LoadoutV2Ink.Muted)],
+            // A refusal (ShopModel.BlockReason) wins over the standing state text.
+            Status = new(shop.BlockReason ?? ShopModel.StateText(state),
+                shop.BlockReason is not null || state == ShopModel.ShipState.Unaffordable ? LoadoutV2Ink.Worse : LoadoutV2Ink.Muted),
+            Buy = new(shortfall ? "Need " + Dollars(shop.BuyShortfall) : shop.BuyIsConfirmChange ? "Confirm change" : "Buy",
+                !buyEnabled ? LoadoutV2Ink.Muted : shortfall ? LoadoutV2Ink.Worse : LoadoutV2Ink.Accent),
+            Launch = new("Launch", launchEnabled ? LoadoutV2Ink.Accent : LoadoutV2Ink.Muted),
         };
     }
 
