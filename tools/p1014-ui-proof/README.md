@@ -37,3 +37,18 @@ No production input is changed. Native Enter opens chat, so the proof uses the
 existing Space select binding; the pointer is parked outside legacy hover bands
 while verifying keyboard selection. The proof has a 120-second watchdog and
 always cancels/joins its server ticker when Game1 exits.
+
+P1016 adds `--hardpoints=fighter`, `--hardpoints=bomber` and
+`--hardpoints=capital`. Each opens the actual V2 renderer on the authentic
+PCore001 Fighter, Bomber or Cruiser, using a display-only ShopModel fixture
+with native default parts. Fighter uses the existing slot keyboard focus;
+Bomber/Cruiser place the actual mouse over a turret row using layout bounds.
+The latter inject a named passenger through production EXPORT and
+LOADOUT_CHANGE handlers and assert that the marker receives the seated name.
+These fixtures inspect hulls without buying them or relaxing production rules.
+
+Use the same Xvfb recipe, dimensions and HUD styles as above. One PNG is written
+per run. `--extras` also captures an opposite orbit and a shield hover (asserting
+that no marker exists for the shield). PCore001 has no `minDot` in its native
+hardpoint format: the faint turret decoration is labelled as an aim guide with
+the arc limit unavailable. It is not an invented gameplay restriction.

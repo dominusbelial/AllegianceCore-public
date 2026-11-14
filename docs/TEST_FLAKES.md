@@ -4,6 +4,48 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1016 hardpoint highlight qualification — 2026-11-14 UTC
+
+The single full Fast sweep ran **14,385 cases in 560.1 s: 14,370 passed / 8 failed /
+7 skipped**, with a 7,200-second outer bound. It remains **FAIL**, also recording
+two over-time cases against the calibrated **11.497 s** limit. All **12 P1016**
+and **13 P1014** cases passed; the nine infrastructure checks passed.
+The final 26 loadout/disposal cases passed three isolated repetitions (**78/0/0**).
+
+Seven sweep failures were a **lane setup error, not product flakes**: the
+public-network blocking HTTP proxy also intercepted loopback traffic because
+localhost was not exempted. These were six UpdateClientLoopbackTests methods
+and BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview.
+With both NO_PROXY and no_proxy set to `127.0.0.1,localhost,::1`, all seven methods
+passed **three times alone**, while the external proxy remained blocked. No
+updater, HTTP transport or application code was changed to get those passes.
+Future isolated/runtime checks should exempt loopback from this build proxy.
+
+The remaining assertion is the existing auto-seat receipt/simulation-clock
+boundary: sweep **31.95** against [28,31]; isolated values **32.40 / 31.70 / 32.45**.
+It failed all three repetitions, with no side-select, server, test range or clock
+change. Both slow methods passed their complete theory rows below the limit.
+Every failed or over-time method was run three times alone: **10 methods,
+30 processes, 36/3/0** total. The sweep was not repeated or relabelled green.
+
+| Method | Sweep trigger | Each isolated run (P/F/S) | Maximum isolated case |
+| --- | --- | --- | --- |
+| `BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview` | assertion | **1/0/0 ×3** | 0.069 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | timing | **3/0/0 ×3** | 6.566 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | timing | **2/0/0 ×3** | 5.601 s |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | assertion | **0/1/0 ×3** | 1.015 s |
+| `UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check` | assertion | **1/0/0 ×3** | 0.266 s |
+| `UpdateClientLoopbackTests.A_tampered_manifest_is_refused` | assertion | **1/0/0 ×3** | 0.094 s |
+| `UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged` | assertion | **1/0/0 ×3** | 0.135 s |
+| `UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one` | assertion | **1/0/0 ×3** | 0.610 s |
+| `UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing` | assertion | **1/0/0 ×3** | 0.046 s |
+| `UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart` | assertion | **1/0/0 ×3** | 0.427 s |
+
+Portable original failures, sweep summary and all isolated case outcomes:
+[qualification.json](reports/P1016_assets/qualification.json). Implementation,
+media review, native evidence and gate:
+[LOADOUT_V2_HARDPOINTS_P1016.md](reports/LOADOUT_V2_HARDPOINTS_P1016.md).
+
 ## P1014 loadout renderer qualification — 2026-11-14 UTC
 
 The single full Fast sweep ran **14,356 cases in 665.0 s: 14,341 passed / 8 failed /

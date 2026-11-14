@@ -25,6 +25,7 @@ public class RendererDisposalGuardTests
     {
         "_nativeAsteroidRenderer",
         "_modernHudRenderer",        // HUD-2: owned distance-font raster caches
+        "_loadoutV2Renderer",        // P1016: preview scissor state belongs to this renderer/device
         "_nativeStationRenderer",
         "_nativeShipRenderer",        // P646 — was never disposed
         "_nativeTreasureRenderer",    // P646 — was never disposed

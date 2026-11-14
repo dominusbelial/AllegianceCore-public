@@ -5396,7 +5396,7 @@ public sealed partial class Game1
     /// stays readable over the moving preview. No space scene — one model + one
     /// light.
     /// </summary>
-    private void DrawDockedHullPreview(GameTime gameTime, Rendering.ShopModel shop)
+    private Rendering.LoadoutV2PreviewCamera DrawDockedHullPreview(GameTime gameTime, Rendering.ShopModel shop)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _hullPreviewSpin = Rendering.DockedHullOrbit.Advance(_hullPreviewSpin, dt);
@@ -5445,7 +5445,7 @@ public sealed partial class Game1
                         Rendering.DockedHullPreviewFraming.NativeZClipNear,
                         Rendering.DockedHullPreviewFraming.NativeZClipFar);
                     _nativeShipRenderer.Draw(ngeo, ntex, nworld, nview, nproj, 1f, nref.NativeScale, null, nref.ModelStem, nref.TextureStem);
-                    return;
+                    return new(hullId, nworld, nview, nproj);
                 }
             }
         }
@@ -5469,6 +5469,10 @@ public sealed partial class Game1
             GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
 
         _shipRenderer.Draw(model, world, view, proj, 1f, scale, tex);
+        // Hardpoints already use game hull units; the Meshy fallback preview
+        // normalises its rendered hull to radius one.
+        float hullRadius = _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == hullId).Length * .5f ?? 0;
+        return new(hullId, Matrix.CreateScale(hullRadius > 0 ? 1f / hullRadius : 1f) * world, view, proj);
     }
 
     /// <summary>P544 — the cached per-type native visual (model / directional /

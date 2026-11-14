@@ -1,0 +1,876 @@
+{
+  "fullSweep": {
+    "tier": "fast",
+    "seconds": 560.126895917987,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 144,
+        "outcomes": {
+          "Passed": 144
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 49,
+          "Failed": 6
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5353,
+        "outcomes": {
+          "Passed": 5349,
+          "NotExecuted": 4
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2444,
+        "outcomes": {
+          "Passed": 2443,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6389,
+        "outcomes": {
+          "Passed": 6385,
+          "Failed": 1,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1497347480106102,
+      "referenceMs": 4.3345,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.497347480106102
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 13.8644914
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 12.2169536
+      }
+    ],
+    "errors": [
+      "Allegiance.Update.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed",
+      "2 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03408130697789602,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "originalFailures": [
+    {
+      "method": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "name": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "outcome": "Failed",
+      "seconds": 5.0261504,
+      "message": "System.TimeoutException : The operation has timed out."
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+      "outcome": "Failed",
+      "seconds": 0.0028149,
+      "message": "Assert.Equal() Failure: Values differ\nExpected: Pending\nActual:   Failed"
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+      "outcome": "Failed",
+      "seconds": 0.0497876,
+      "message": "Assert.Contains() Failure: Sub-string not found\nString:    \"Connection refused (127.0.0.1:9)\"\nNot found: \"SHA-256\""
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+      "outcome": "Failed",
+      "seconds": 0.003232,
+      "message": "Assert.Contains() Failure: Sub-string not found\nString:    \"Connection refused (127.0.0.1:9)\"\nNot found: \"signature\""
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+      "outcome": "Failed",
+      "seconds": 0.0041708,
+      "message": "Assert.Equal() Failure: Values differ\nExpected: Pending\nActual:   Failed"
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+      "outcome": "Failed",
+      "seconds": 0.0027345,
+      "message": "Assert.Equal() Failure: Values differ\nExpected: UpToDate\nActual:   Failed"
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+      "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+      "outcome": "Failed",
+      "seconds": 0.0098105,
+      "message": "Assert.Equal() Failure: Values differ\nExpected: Pending\nActual:   Failed"
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "outcome": "Failed",
+      "seconds": 0.7028733,
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.950000000000315"
+    }
+  ],
+  "reproductions": [
+    {
+      "method": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.958,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0686813,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "name": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "outcome": "Passed",
+              "seconds": 0.0686813,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.951,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0682219,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "name": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "outcome": "Passed",
+              "seconds": 0.0682219,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.951,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0665777,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "name": "Allegiance.ClientCore.Tests.BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+              "outcome": "Passed",
+              "seconds": 0.0665777,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "triggers": [
+        "timing"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 17.001,
+          "outcomes": {
+            "Passed": 3
+          },
+          "maxSeconds": 6.5656774,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 6.5656774,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 6.2192283,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+              "outcome": "Passed",
+              "seconds": 3.3806641,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 17.259,
+          "outcomes": {
+            "Passed": 3
+          },
+          "maxSeconds": 6.2809964,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 6.2809964,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 5.2860435,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+              "outcome": "Passed",
+              "seconds": 4.766058,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 14.479,
+          "outcomes": {
+            "Passed": 3
+          },
+          "maxSeconds": 5.5500308,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 4.5747629,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 5.5500308,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+              "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+              "outcome": "Passed",
+              "seconds": 3.4932998,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "triggers": [
+        "timing"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 8.165,
+          "outcomes": {
+            "Passed": 2
+          },
+          "maxSeconds": 4.2153271,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 3.1114695,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 4.2153271,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 9.805,
+          "outcomes": {
+            "Passed": 2
+          },
+          "maxSeconds": 5.6007273,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 3.3430808,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 5.6007273,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 8.546,
+          "outcomes": {
+            "Passed": 2
+          },
+          "maxSeconds": 4.4365279,
+          "cases": [
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+              "outcome": "Passed",
+              "seconds": 3.2241793,
+              "message": null
+            },
+            {
+              "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+              "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+              "outcome": "Passed",
+              "seconds": 4.4365279,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 1,
+          "wallSeconds": 2.221,
+          "outcomes": {
+            "Failed": 1
+          },
+          "maxSeconds": 1.0146386,
+          "cases": [
+            {
+              "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "outcome": "Failed",
+              "seconds": 1.0146386,
+              "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.400000000000283"
+            }
+          ]
+        },
+        {
+          "exitCode": 1,
+          "wallSeconds": 2.227,
+          "outcomes": {
+            "Failed": 1
+          },
+          "maxSeconds": 1.0071955,
+          "cases": [
+            {
+              "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "outcome": "Failed",
+              "seconds": 1.0071955,
+              "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 31.700000000000319"
+            }
+          ]
+        },
+        {
+          "exitCode": 1,
+          "wallSeconds": 2.244,
+          "outcomes": {
+            "Failed": 1
+          },
+          "maxSeconds": 1.0121613,
+          "cases": [
+            {
+              "method": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "name": "Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds",
+              "outcome": "Failed",
+              "seconds": 1.0121613,
+              "message": "Assert.InRange() Failure: Value not in range\nRange:  (28 - 31)\nActual: 32.45000000000028"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.019,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.262423,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "outcome": "Passed",
+              "seconds": 0.262423,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.009,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.2659831,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "outcome": "Passed",
+              "seconds": 0.2659831,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.022,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.2649395,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check",
+              "outcome": "Passed",
+              "seconds": 0.2649395,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.821,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0890929,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "outcome": "Passed",
+              "seconds": 0.0890929,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.842,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0943562,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "outcome": "Passed",
+              "seconds": 0.0943562,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.822,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0903782,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_manifest_is_refused",
+              "outcome": "Passed",
+              "seconds": 0.0903782,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.873,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.1345078,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "outcome": "Passed",
+              "seconds": 0.1345078,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.9,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.1352296,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "outcome": "Passed",
+              "seconds": 0.1352296,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.865,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.1353887,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged",
+              "outcome": "Passed",
+              "seconds": 0.1353887,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.333,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.6027924,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "outcome": "Passed",
+              "seconds": 0.6027924,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.314,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.605214,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "outcome": "Passed",
+              "seconds": 0.605214,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.33,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.6100127,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.A_version_that_fails_the_apply_cap_is_not_staged_again_until_a_newer_one",
+              "outcome": "Passed",
+              "seconds": 0.6100127,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.761,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0463989,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "outcome": "Passed",
+              "seconds": 0.0463989,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.757,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0451432,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "outcome": "Passed",
+              "seconds": 0.0451432,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 0.769,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.0458893,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.Same_version_is_up_to_date_and_touches_nothing",
+              "outcome": "Passed",
+              "seconds": 0.0458893,
+              "message": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+      "triggers": [
+        "assertion"
+      ],
+      "runs": [
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.165,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.4217926,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "outcome": "Passed",
+              "seconds": 0.4217926,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.342,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.4242622,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "outcome": "Passed",
+              "seconds": 0.4242622,
+              "message": null
+            }
+          ]
+        },
+        {
+          "exitCode": 0,
+          "wallSeconds": 1.457,
+          "outcomes": {
+            "Passed": 1
+          },
+          "maxSeconds": 0.4273835,
+          "cases": [
+            {
+              "method": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "name": "Allegiance.Update.Tests.UpdateClientLoopbackTests.V1_to_v2_detects_downloads_deltas_verifies_and_applies_on_restart",
+              "outcome": "Passed",
+              "seconds": 0.4273835,
+              "message": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "environmentNote": "Full sweep used a public-network blocking proxy without localhost exemption; standalone repetitions exempt 127.0.0.1/localhost/::1. No second full sweep.",
+  "finalLoadoutAndDisposalTests": [
+    {
+      "repetition": 1,
+      "counters": {
+        "total": "26",
+        "executed": "26",
+        "passed": "26",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "repetition": 2,
+      "counters": {
+        "total": "26",
+        "executed": "26",
+        "passed": "26",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "repetition": 3,
+      "counters": {
+        "total": "26",
+        "executed": "26",
+        "passed": "26",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "finalWindowProof": [
+    {
+      "style": "classic",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "cleanShutdown": true,
+      "sha256": "19f27061d073834293bcb442eec97900a68c4236b8ec6bb3d936ddec45cdf698",
+      "matchesRetained": true
+    },
+    {
+      "style": "modern",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "cleanShutdown": true,
+      "sha256": "85cdf54eb0a21f466a99bc0992822e0e2fe69eb1d907a8799bf4101c4d73cc03",
+      "matchesRetained": true
+    }
+  ]
+}
