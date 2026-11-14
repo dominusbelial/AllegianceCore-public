@@ -4,6 +4,25 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1015 loadout input qualification — 2026-11-14 UTC
+
+The single full Fast sweep ran **14,469 cases in 545.4 s: 14,459 passed / 3 failed /
+7 not executed**; it remains **FAIL**. All **96 new P1015 cases passed** in the sweep
+with no timing violation, and passed three isolated repetitions (**288/0/0**). No
+failure or slow case is in loadout, input or key-table code. Calibrated case limit:
+**11.503 s**. Every non-task method was run three times alone; all are already
+ledgered with the same signatures. Nothing outside the task was changed.
+
+| Method | Sweep trigger | Isolated ×3 |
+| --- | --- | --- |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,592 bytes allocated, expected 0 (ledgered allocation intermittency) | **pass / pass / pass**, 13–14 ms |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | terminal travel 924.28 m versus full-lifespan 1848.56 m (ledgered earlier-destruction signature) | **pass / pass / pass**, 0.50–0.52 s |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without the partial tip; 37.8 s | **fail / fail / fail**, 38 s — fails alone, as ledgered under P1014 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow (14.127 s) | **pass ×3**, about 4 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | slow (civ 35: 13.069 s) | **pass ×3**, 4–5 s per case |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow (civ 3 / 25: 12.082 / 14.143 s) | **pass ×3**, about 4 s per case |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | slow (civ 5: 18.455 s) | **pass ×3**, 3–4 s per case |
+
 ## P1014 loadout renderer qualification — 2026-11-14 UTC
 
 The single full Fast sweep ran **14,356 cases in 665.0 s: 14,341 passed / 8 failed /

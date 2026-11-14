@@ -238,6 +238,9 @@ public sealed partial class Game1
             // cursor onto it and cues mouseoverSound when the hovered row
             // changed. Mouse-only: no-ops without a real pointer position.
             HandleShopMouseHover();
+            // P1015 — the Loadout V2 router: live only while that screen is shown
+            // and ungated; otherwise it just tracks held keys/buttons.
+            UpdateLoadoutV2Input(ks, nav, composing, mySe);
 
             if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
             {
@@ -269,6 +272,14 @@ public sealed partial class Game1
                 // P572 — --auto-launch + the dock-preview sweep, before the keys
                 // so an automated run never contends with (or needs) a keypress.
                 ApplyAutoProofDocked(shop);
+
+                // P1015 — with the V2 screen shown its router owns the shop
+                // verbs; the old cursor/tab/select keys below are off.
+                if (LoadoutV2Shown)
+                {
+                    HandleLoadoutV2DockedKeys(shop, ks, nav);
+                    return true;
+                }
 
                 // P499/P519 — merge the pad's DPAD/face/shoulder buttons into the
                 // shop keys: DPAD Up/Down = cursor, A = select, Y = launch, B =
@@ -400,7 +411,9 @@ public sealed partial class Game1
                 UiSounds?.PlayPositiveClick();
                 Console.WriteLine($"[monogame] custom loadout {d} saved for hull {shop.EffectiveHullId} (positiveButtonClickSound)");
             }
-            else if (!shift && !alt)
+            // P1015 — on the Loadout V2 screen a plain digit bound to a column-focus
+            // verb (default 1 and 2) is that verb, not a restore.
+            else if (!shift && !alt && !(LoadoutV2Shown && LoadoutV2FocusDigit(key)))
             {
                 // Native load.cpp:2236-2247 — restore (an empty slot restores an
                 // empty pending loadout, exactly like RefreshLoadout) and cue
@@ -738,8 +751,9 @@ public sealed partial class Game1
     /// and native's loadout list only exists in the loadout view).</summary>
     private void HandleShopMouseHover()
     {
+        // P1015 — the V2 screen has its own hit targets; the old row bands are off.
         if (_hangarOnly || _investActive || _teleportActive || _launchSent
-            || _chatActive || _qcMenuOpen || _helpVisible || _shopModel is null)
+            || _chatActive || _qcMenuOpen || _helpVisible || _shopModel is null || LoadoutV2Shown)
         {
             RunShopHover(null);
             return;
@@ -828,6 +842,12 @@ public sealed partial class Game1
                 if (idx < 0) continue;
                 tel.MoveCursor(idx - tel.Cursor);
                 ActivateTeleport(tel, mySe);
+                return;
+            }
+            if (active && LoadoutV2Shown)
+            {
+                // P1015 — only the V2 screen's drawn rectangles are tap targets.
+                LoadoutV2Tap(tx, ty, mySe);
                 return;
             }
             if (active && !_investActive && !_teleportActive && _shopModel is { } shop)

@@ -1222,7 +1222,7 @@ list in **reverse**.
   identical for Classic and Modern and reserves the docked 84-pixel footer.
   Native context: `WinTrek/load.cpp:785-790,797-820,2010-2043`; purchase/mount
   rules remain in `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs`.
-  Not yet wired into production (P1014/P1015 own renderer/flag/input).
+  Wired by P1014 (renderer, flag) and P1015 (input: hit targets and scroll offsets).
   Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/LoadoutV2LayoutTests.cs`;
   debug capture: `tools/p1013-layout-proof/Program.cs`;
   report: `docs/reports/LOADOUT_V2_LAYOUT_P1013.md`.
@@ -1260,11 +1260,29 @@ list in **reverse**.
   The pure `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Presentation.cs`
   builds hull/slot/inline-offer rows, native-first stats, signed deltas and shared
   ShopModel prices; the P519 real hull preview uses the V2 layout's centre rect.
-  The original panes remain the off path; existing shop keys still own selection.
+  The original panes remain the off path; input is P1015 (next entry).
   Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1014LoadoutRendererTests.cs`;
   real-window proof: `tools/p1014-ui-proof/`. Native: `WinTrek/load.cpp:176-205,
   785-820,877-887,986-1054,1497-1531`; report:
   `docs/reports/LOADOUT_V2_RENDERER_P1014.md`.
+- **Loadout V2 input (P1015)** — the pure router
+  `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Input.cs`: mouse (hover,
+  click, wheel per column), key-table verbs and pad buttons in, `LoadoutV2Model`
+  actions out; it owns only the **focus column** (hulls / slots / buttons), the
+  focused rows and the three scroll offsets, and returns Buy / Launch / Leave
+  **requests** that `src/Allegiance.ClientCore.Game/Game1.LoadoutV2Input.cs`
+  forwards to the old screen's own `BuyFromHangar` / `LaunchFromHangar` /
+  hangar paths. `LoadoutV2Shown` switches the old loadout's hover bands, touch
+  rows and shop keys off while the V2 screen is drawn; `LoadoutV2InputLive` is
+  the P1006 gate (command screen, chat entry, popups, pending launch). Key-table
+  actions `LoadoutFocusHulls` (1), `LoadoutFocusSlots` (2), `LoadoutDefault` (D)
+  in `src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs`; the footer
+  hint is `LoadoutV2Input.Hint` over the live table. Native:
+  `WinTrek/load.cpp:233-252,1380-1384,1498-1538,1568-1648,1863-1903,2219-2255`.
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1015LoadoutInputTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1015LoadoutScreenRoutingTests.cs`;
+  parity `docs/parity/p1015-loadout-input.csv`; real-window proof
+  `tools/p1014-ui-proof/`; report `docs/reports/LOADOUT_V2_INPUT_P1015.md`.
 - **Ship stat sheet + stat deltas (P1011)** — the pure model behind the Loadout V2 stats bar:
   `src/Allegiance.ClientCore.Game/Rendering/ShipStatSheet.cs` turns a hull type + the mounted part
   types + the side's `GlobalAttributeSet` into the ship's stats, using native's loadout info-pane

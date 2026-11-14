@@ -74,10 +74,12 @@ public partial class Game1
             return ShipStatSheet.Build(hull, mounted, ga, lookup);
         }
         _loadoutV2Frame = LoadoutV2Presentation.Build(_loadoutV2Model,
-            Sheet(shop.CurrentHullId, shop.CurrentParts), Sheet(shop.EffectiveHullId, shop.ChosenParts));
+            Sheet(shop.CurrentHullId, shop.CurrentParts), Sheet(shop.EffectiveHullId, shop.ChosenParts),
+            LoadoutV2InputRouter, LoadoutV2Input.Hint(action => KeyOf(action).Label));
         var viewport = GraphicsDevice.Viewport;
+        // P1015: the router's scroll offsets (wheel/focus), clamped by the layout.
         _loadoutV2Layout = _loadoutV2Frame.Layout(viewport.Width, viewport.Height,
-            ModernHudScale.Core(_displayScale, _hudSettings.Size, viewport.Height));
+            ModernHudScale.Core(_displayScale, _hudSettings.Size, viewport.Height), LoadoutV2InputRouter);
 
         // The same P519 preview, native orbit and native framing, in the layout's
         // dedicated geo pane (WinTrek/load.cpp:785-790,877-887). Restore the
@@ -91,8 +93,8 @@ public partial class Game1
         }
         finally { GraphicsDevice.Viewport = viewport; }
         _loadoutV2Renderer ??= new LoadoutV2Renderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
-        var mouse = Mouse.GetState();
+        // P1015: hover comes from the gated router (none under a popup/chat).
         _loadoutV2Renderer.Draw(_loadoutV2Frame, _loadoutV2Layout, _hudSettings.Style,
-            _loadoutV2Layout.HitTest(mouse.X, mouse.Y));
+            LoadoutV2InputRouter.HoverIn(_loadoutV2Layout));
     }
 }

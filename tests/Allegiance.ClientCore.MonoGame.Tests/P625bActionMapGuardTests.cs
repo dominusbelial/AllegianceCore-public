@@ -45,6 +45,7 @@ public class P625bActionMapGuardTests
         "Game1.TargetCommands.cs",
         "Game1.ConsoleModes.cs",
         "Game1.Targeting.cs",
+        "Game1.LoadoutV2Input.cs",
     };
 
     // Allow-list entries: (fileName, enclosingMethodName, keyLiteral).
@@ -66,6 +67,10 @@ public class P625bActionMapGuardTests
         ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.RightShift"),
         ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.LeftAlt"),
         ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.RightAlt"),
+        // P1015 — the same Ctrl hardware flag on the Loadout V2 screen: Ctrl+digit
+        // is the custom-loadout save, so the plain focus/default verbs stand down.
+        ("Game1.LoadoutV2Input.cs", "UpdateLoadoutV2Input", "Keys.LeftControl"),
+        ("Game1.LoadoutV2Input.cs", "UpdateLoadoutV2Input", "Keys.RightControl"),
     };
 
     private static readonly Regex RawLiteral = new(

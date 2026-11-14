@@ -12,8 +12,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Srv = Allegiance.Server.Server;
 
-// Real Game1 + loopback server. No replacement UI. --off uses the same fixture
-// captured by the pre-implementation harness/binaries for the baseline pair.
+// Real Game1 + loopback server. No replacement UI. Flag on: the P1015 script
+// plays the Loadout V2 screen with the scripted pointer, the wheel and real key
+// states. --off: the old loadout, driven by its own unchanged keys.
 string output = Path.GetFullPath(args[0]), style = args[1];
 int width = int.Parse(args[2]), height = int.Parse(args[3]);
 bool off = args.Contains("--off");
@@ -60,16 +61,36 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch watch = Stopwatch.StartNew();
+    private readonly List<Func<bool>> steps = [];
     private int step;
     private double next;
+    private int wheel;
+    private short dockedHull;
+    private ExpandedPartSnapshot docked = new([]);
+    private SlotDef slot;
+    private short pickedPart;
     public bool Passed { get; private set; }
+
+    private sealed record ExpandedPartSnapshot(IReadOnlyList<(short Part, byte Mount, short Amount)> Parts)
+    {
+        public static ExpandedPartSnapshot Of(ShopModel shop) =>
+            new(shop.ChosenParts.Select(p => (p.PartId, p.MountId, p.Amount)).ToArray());
+        public bool Same(ShopModel shop) => Parts.SequenceEqual(Of(shop).Parts);
+    }
+
     private T Get<T>(string name) => (T)typeof(Game1).GetField(name, Hidden)!.GetValue(game)!;
+    private object? Raw(string name) => typeof(Game1).GetField(name, Hidden)!.GetValue(game);
     private void Set(string name, object? value) => typeof(Game1).GetField(name, Hidden)!.SetValue(game, value);
-    private object? Call(string name, params object[] args) => typeof(Game1).GetMethod(name, Hidden)!.Invoke(game, args);
     private void Keys(params Keys[] keys) => Set("_introProofKeys", keys);
+    private ShopModel Shop => Get<ShopModel>("_shopModel");
+    private LoadoutV2Model Model => Get<LoadoutV2Model>("_loadoutV2Model");
+    private LoadoutV2Layout Layout => Get<LoadoutV2Layout>("_loadoutV2Layout");
+    private LoadoutV2Input Router => Get<LoadoutV2Input>("_loadoutV2InputState");
+    private LoadoutV2Presentation Frame => Get<LoadoutV2Presentation>("_loadoutV2Frame");
+
     private static void Require(bool condition, string message)
     {
-        Console.WriteLine($"P1014_CHECK {message}: {condition}");
+        Console.WriteLine($"P1015_CHECK {message}: {condition}");
         if (!condition) throw new InvalidOperationException(message);
     }
     private void Shot(string name)
@@ -78,121 +99,217 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Set("_autoShotName", $"{style}-{width}x{height}-{name}");
         Set("_autoShotScheduled", true);
     }
-    private void Advance() { step++; next = watch.Elapsed.TotalSeconds + .5; }
-    public override void Update(GameTime gameTime)
+    // The scripted pointer is the same seam the hangar proof uses; Game1 reads
+    // it exactly where it would read the real mouse.
+    private void Pointer(float x, float y, bool pressed = false, int notches = 0)
     {
-        if (watch.Elapsed.TotalSeconds > 120) throw new TimeoutException("P1014 proof");
-        Get<HudSettings>("_hudSettings").Style = style == "classic" ? HudStyle.Classic : HudStyle.Modern;
-        if (!off)
-        {
-            // Keep the pointer outside the old screen's hover bands while
-            // testing its unchanged keyboard path (V2 input is P1015).
-            Mouse.SetPosition(2, 2);
-            Set("_hangarScriptMouse", new MouseState(2, 2, 0, ButtonState.Released,
-                ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released));
-        }
-        // Fix only the proof's orbit angle for reproducible before/after pixels.
-        Set("_hullPreviewSpin", (off ? 0 : .8f) - DockedHullOrbit.Advance(0, gameTime.ElapsedGameTime.TotalSeconds));
-        if (watch.Elapsed.TotalSeconds < next) return;
-        lock (gate)
+        wheel += notches * 120;
+        Mouse.SetPosition((int)x, (int)y);
+        Set("_hangarScriptMouse", new MouseState((int)x, (int)y, wheel,
+            pressed ? ButtonState.Pressed : ButtonState.Released, ButtonState.Released,
+            ButtonState.Released, ButtonState.Released, ButtonState.Released));
+    }
+    private LoadoutV2Layout.Element Element(LoadoutV2Layout.Kind kind, int index = -1) =>
+        Layout.Elements.First(e => e.Kind == kind && (index < 0 || e.Index == index));
+    private void Hover(Func<LoadoutV2Layout.Element> target) => Do(() =>
+    {
+        var e = target();
+        Pointer(e.Bounds.CenterX, e.Bounds.CenterY);
+    });
+    private void Click(Func<LoadoutV2Layout.Element> target)
+    {
+        Hover(target);
+        // Release where the press landed: the target row may be gone by then.
+        (float X, float Y) at = default;
+        Do(() => { var e = target(); at = (e.Bounds.CenterX, e.Bounds.CenterY); Pointer(at.X, at.Y, pressed: true); });
+        Do(() => Pointer(at.X, at.Y));
+    }
+    private void Do(Action action) => steps.Add(() => { action(); return true; });
+    private void Press(params Keys[] keys) { Do(() => Keys(keys)); Do(() => Keys()); }
+    private void Check(Func<bool> condition, string message) => Do(() => Require(condition(), message));
+
+    public override void Initialize()
+    {
+        base.Initialize();
+        steps.Add(() =>
         {
             var session = Get<ConnectionSession>("_session");
-            var shop = Get<ShopModel?>("_shopModel");
-            switch (step)
-            {
-                case 0:
-                    if (!Get<bool>("_dockedActive") || shop is null || string.IsNullOrEmpty(session.World.BriefingText)) return;
-                    Require(game.GraphicsDevice.Viewport.Width == width && game.GraphicsDevice.Viewport.Height == height,
-                        "real viewport matches requested dimensions");
-                    if (!off)
-                    {
-                        Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", true);
-                        // The server's advanced starting scout is not sold by
-                        // this fresh station. Choose its real stock scout so
-                        // the unchanged legacy slot keys have an offered hull.
-                        shop.SelectHull(shop.BuyableHulls.First().HullId);
-                        shop.ApplyDefaultLoadout();
-                    }
-                    Keys(Microsoft.Xna.Framework.Input.Keys.F4); Advance(); break;
-                case 1:
-                    Keys();
-                    Require(!Get<bool>("_hangarOnly"), "native F4 opens loadout");
-                    Require(shop is not null, "shared shop exists");
-                    if (!off)
-                    {
-                        var model = Get<LoadoutV2Model>("_loadoutV2Model");
-                        var layout = Get<LoadoutV2Layout>("_loadoutV2Layout");
-                        Require(layout.Elements.Any(e => e.Kind == LoadoutV2Layout.Kind.Hull
-                            && !model.HullRows[e.Index].IsBuyable), "a locked hull is visibly laid out");
-                        Require(Get<LoadoutV2Presentation>("_loadoutV2Frame").Title.Contains(shop!.EffectiveHull!.Value.Name),
-                            "V2 renderer reads the chosen real hull");
-                    }
-                    else
-                        Require(typeof(Game1).GetField("_loadoutV2Frame", Hidden)?.GetValue(game) is null,
-                            "flag off never builds a V2 frame");
-                    Shot(off ? "off" : "default"); Advance(); break;
-                case 2:
-                    if (off) { Finish(); break; }
-                    // Existing keyboard navigation opens a weapon picker.
-                    Keys(Microsoft.Xna.Framework.Input.Keys.Tab); Advance(); break;
-                case 3:
-                    Keys(); Advance(); break;
-                case 4:
-                    Keys(Microsoft.Xna.Framework.Input.Keys.Space); Advance(); break;
-                case 5:
-                    Keys();
-                    Require(shop!.SlotOpen && shop.OpenSlot?.Type == EquipmentType.Weapon,
-                        "existing keys open weapon offers on shared shop");
-                    Require(Get<LoadoutV2Layout>("_loadoutV2Layout").Elements.Any(e => e.Kind == LoadoutV2Layout.Kind.Offer),
-                        "open weapon offers are visible inline");
-                    Shot("offers"); Advance(); break;
-                case 6:
-                    // Move the old parts cursor using its production key path.
-                    Keys(Microsoft.Xna.Framework.Input.Keys.Down); Advance(); break;
-                case 7:
-                    Keys();
-                    Require(Get<LoadoutV2Presentation>("_loadoutV2Frame").OfferFocus == shop!.Cursor && shop.Cursor > 0,
-                        "existing arrow key moves V2 offer focus");
-                    Advance(); break;
-                case 8:
-                    // A later research state, using the same real core and
-                    // station filters, supplies a priced hull. Base stock parts
-                    // and the two starting hulls in PCore001 are all free.
-                    shop!.Back();
-                    var catalog = Get<ShopCatalog>("_shopCatalog");
-                    var core = catalog.Core!;
-                    var side = session.World.MySideId!.Value;
-                    var techs = BucketCatalog.ReachableTechs(core, session.World.DevelopmentTechsFor(side)!.Value);
-                    var liveTechs = (Dictionary<short, TechTreeBitMask>)session.World.GetType()
-                        .GetField("_developmentTechsBySideId", Hidden)!.GetValue(session.World)!;
-                    liveTechs[side] = techs;
-                    var own = session.World.Ships[session.World.MyShipId!.Value];
-                    var station = session.World.Stations[own.StationId];
-                    var local = catalog.StationTypes![station.StationTypeId].TtbmLocal;
-                    shop.RefreshOffers(catalog.FilteredFor(local, techs), 0);
-                    var expensive = shop.BuyableHulls.OrderByDescending(h => h.Price).First();
-                    shop.SelectHull(expensive.HullId);
-                    // Freeze the client wallet fixture, including refresh input.
-                    var wallets = (Dictionary<short, int>)session.World.GetType()
-                        .GetField("_moneyByShipId", Hidden)!.GetValue(session.World)!;
-                    wallets[session.World.MyShipId!.Value] = 0;
-                    shop.RefreshMoney(0);
-                    Require(shop.BuyShortfall > 0, "real loadout is unaffordable");
-                    Advance(); break;
-                case 9:
-                    Require(Get<LoadoutV2Presentation>("_loadoutV2Frame").Buy.Text.StartsWith("Need $"),
-                        "V2 buy button displays shared shop shortfall");
-                    // Allow the real newly selected model/texture to finish its
-                    // first draw before reading back the photographed frame.
-                    Shot("need"); Advance(); break;
-                default: Finish(); break;
-            }
-        }
+            if (!Get<bool>("_dockedActive") || Raw("_shopModel") is null
+                || string.IsNullOrEmpty(session.World.BriefingText)) return false;
+            Require(game.GraphicsDevice.Viewport.Width == width && game.GraphicsDevice.Viewport.Height == height,
+                "real viewport matches requested dimensions");
+            Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", !off);
+            // The server's advanced starting scout is not sold by this fresh
+            // station; start from its real stock scout and native default.
+            Shop.SelectHull(Shop.BuyableHulls.First().HullId);
+            Shop.ApplyDefaultLoadout();
+            dockedHull = Shop.EffectiveHullId;
+            Pointer(2, 2);
+            Keys(Microsoft.Xna.Framework.Input.Keys.F4);
+            return true;
+        });
+        Do(() => Keys());
+        Check(() => !Get<bool>("_hangarOnly"), "native F4 opens loadout");
+        if (off) OldScreen(); else V2Screen();
+        Do(() =>
+        {
+            Passed = true;
+            Console.WriteLine($"P1015_PASS {style} {width}x{height} off={off}");
+            game.Exit();
+        });
     }
-    private void Finish()
+
+    /// <summary>Flag off: today's keys still drive today's three-page shop and
+    /// nothing of V2 is ever built.</summary>
+    private void OldScreen()
     {
-        Passed = true;
-        Console.WriteLine($"P1014_PASS {style} {width}x{height} off={off}");
-        game.Exit();
+        Check(() => Raw("_loadoutV2Frame") is null && Raw("_loadoutV2InputState") is null,
+            "flag off builds no V2 frame and no V2 input router");
+        Press(Microsoft.Xna.Framework.Input.Keys.Down);
+        Check(() => Shop.Page == ShopModel.ShopPage.HullList && Shop.Cursor == 1, "old Down moves the old hull cursor");
+        Press(Microsoft.Xna.Framework.Input.Keys.Tab);
+        Check(() => Shop.Tab == ShopTab.Parts, "old Tab switches to the PARTS tab");
+        Press(Microsoft.Xna.Framework.Input.Keys.Space);
+        Check(() => Shop.SlotOpen, "old Space opens the old slot page");
+        Press(Microsoft.Xna.Framework.Input.Keys.B);
+        Check(() => !Shop.SlotOpen && Shop.Page == ShopModel.ShopPage.SlotList, "old B goes back a page");
+        // V2-only keys do nothing on the old screen.
+        Press(Microsoft.Xna.Framework.Input.Keys.D);
+        Check(() => Raw("_loadoutV2InputState") is null && Shop.Tab == ShopTab.Parts, "V2 keys are inert with the flag off");
+    }
+
+    private void V2Screen()
+    {
+        Check(() => Raw("_loadoutV2Frame") is not null && Raw("_loadoutV2InputState") is not null,
+            "flag on builds the V2 frame and its input router");
+        Check(() => Frame.Hint!.Contains("hulls/slots") && Frame.Hint.Contains("default"),
+            "footer hint comes from the key table");
+
+        // ── mouse: hull row ─────────────────────────────────────────────────
+        int hullRow = -1;
+        Do(() => hullRow = Enumerable.Range(0, Model.HullRows.Count).First(i =>
+            Model.HullRows[i].IsBuyable && !Model.HullRows[i].IsChosen
+            && Layout.Elements.Any(e => e.Kind == LoadoutV2Layout.Kind.Hull && e.Index == i)));
+        Click(() => Element(LoadoutV2Layout.Kind.Hull, hullRow));
+        Check(() => Shop.EffectiveHullId == Model.HullRows[hullRow].HullId, "clicking a hull row selects that hull");
+        Check(() => Shop.Page == ShopModel.ShopPage.HullList && !Shop.SlotOpen, "old shop pages are not driven");
+        // Back to the stock scout for the part work.
+        Click(() => Element(LoadoutV2Layout.Kind.Hull,
+            Enumerable.Range(0, Model.HullRows.Count).First(i => Model.HullRows[i].HullId == dockedHull)));
+        Do(() => docked = ExpandedPartSnapshot.Of(Shop));
+
+        // ── mouse: slot → inline picker → offer ─────────────────────────────
+        int slotRow = -1, offerRow = -1;
+        Do(() =>
+        {
+            slotRow = Enumerable.Range(0, Model.SlotRows.Count)
+                .First(i => Model.OffersFor(Model.SlotRows[i].Slot).Count > 1);
+            slot = Model.SlotRows[slotRow].Slot;
+        });
+        Click(() => Element(LoadoutV2Layout.Kind.Slot, slotRow));
+        Check(() => Model.OpenSlot == slot && Layout.ExpandedSlot == slotRow, "clicking a slot opens its inline picker");
+        Click(() => Element(LoadoutV2Layout.Kind.Slot, slotRow));
+        Check(() => Model.OpenSlot is null, "clicking the open slot again closes the picker");
+        Click(() => Element(LoadoutV2Layout.Kind.Slot, slotRow));
+        Do(() =>
+        {
+            var offers = Model.Offers;
+            int pick = Enumerable.Range(0, offers.Count).First(i => !offers[i].IsChosen);
+            pickedPart = offers[pick].PartId;
+            offerRow = pick + 1;
+        });
+        Hover(() => Element(LoadoutV2Layout.Kind.Offer, offerRow));
+        Check(() => Router.Hover is { Kind: LoadoutV2Layout.Kind.Offer } h && h.Index == offerRow,
+            "the hovered offer is the router's hover");
+        Do(() => Shot("1-click-slot-picker"));
+        Click(() => Element(LoadoutV2Layout.Kind.Offer, offerRow));
+        Check(() => Shop.PartInSlot(slot)?.PartId == pickedPart && Model.OpenSlot is null,
+            "clicking an offer mounts it and closes the picker");
+
+        // ── wheel ───────────────────────────────────────────────────────────
+        int maxHull = 0;
+        Do(() => { maxHull = Layout.MaxHullScroll; Pointer(Layout.HullList.CenterX, Layout.HullList.CenterY); });
+        Do(() => Pointer(Layout.HullList.CenterX, Layout.HullList.CenterY, notches: -3));
+        Check(() => Layout.HullScroll == Math.Min(3, maxHull) && Layout.SlotScroll == 0,
+            "the wheel scrolls the hull column under the pointer only");
+        Do(() => Pointer(Layout.HullList.CenterX, Layout.HullList.CenterY, notches: -200));
+        Check(() => Layout.HullScroll == maxHull && Router.HullScroll == maxHull, "wheel stops at the end of the list");
+        Do(() => Shot("2-offer-mounted-wheel-scrolled"));
+        Do(() => Pointer(Layout.HullList.CenterX, Layout.HullList.CenterY, notches: 200));
+        Check(() => Layout.HullScroll == 0, "wheel scrolls back to the top");
+        Do(() => Pointer(2, 2));
+
+        // ── keyboard ────────────────────────────────────────────────────────
+        Press(Microsoft.Xna.Framework.Input.Keys.D2);
+        Check(() => Router.Column == LoadoutV2Column.Slots, "2 focuses the slot column");
+        Press(Microsoft.Xna.Framework.Input.Keys.Down);
+        Check(() => Router.SlotFocus == 1 && Frame.Slots[1].Focused, "Down moves the slot focus");
+        Press(Microsoft.Xna.Framework.Input.Keys.Up);
+        Press(Microsoft.Xna.Framework.Input.Keys.Space);
+        Check(() => Model.OpenSlot == Model.SlotRows[0].Slot, "Space opens the focused slot's picker");
+        Press(Microsoft.Xna.Framework.Input.Keys.Up);
+        Check(() => Frame.OfferFocus == Router.OfferFocus && Frame.Offers[Router.OfferFocus].Focused,
+            "arrows move the picker focus");
+        Do(() => Shot("3-keys-picker-focus"));
+        Press(Microsoft.Xna.Framework.Input.Keys.Escape);
+        Check(() => Model.OpenSlot is null && !Get<bool>("_hangarOnly") && !Get<bool>("_mainMenuVisible"),
+            "Esc closes the picker and stays on the loadout");
+        short before = 0;
+        Do(() => before = Shop.EffectiveHullId);
+        Press(Microsoft.Xna.Framework.Input.Keys.Right);
+        Check(() => Shop.EffectiveHullId != before, "Right selects the next hull (native GetNextHullType)");
+        Press(Microsoft.Xna.Framework.Input.Keys.Left);
+        Check(() => Shop.EffectiveHullId == before, "Left selects the previous hull");
+        Press(Microsoft.Xna.Framework.Input.Keys.D1);
+        Check(() => Router.Column == LoadoutV2Column.Hulls, "1 focuses the hull column");
+
+        // ── Default / Revert ────────────────────────────────────────────────
+        ExpandedPartSnapshot expected = new([]);
+        Do(() =>
+        {
+            Model.ClearSlot(slot);
+            var twin = new ShopModel(Shop.Catalog, Shop.CurrentHullId, Shop.CurrentParts.ToArray(), 0);
+            twin.SelectHull(Shop.EffectiveHullId);
+            twin.ApplyDefaultLoadout();
+            expected = ExpandedPartSnapshot.Of(twin);
+        });
+        Check(() => !expected.Same(Shop), "the edited loadout differs from the default");
+        Press(Microsoft.Xna.Framework.Input.Keys.D);
+        Check(() => expected.Same(Shop), "D applies the native default loadout");
+        Click(() => Element(LoadoutV2Layout.Kind.Slot, slotRow));
+        Click(() => Element(LoadoutV2Layout.Kind.Offer, 0));
+        Check(() => Shop.PartInSlot(slot) is null, "the empty row empties the slot");
+        Click(() => Element(LoadoutV2Layout.Kind.Default));
+        Check(() => expected.Same(Shop), "the Default button applies the native default loadout");
+        Check(() => Router.Column == LoadoutV2Column.Actions && Frame.ActionFocus == LoadoutV2Layout.Kind.Default,
+            "a clicked button takes the focus");
+        Do(() => Shot("4-default-button"));
+        Do(() => Pointer(2, 2));
+        Press(Microsoft.Xna.Framework.Input.Keys.Right);
+        Check(() => Frame.ActionFocus == LoadoutV2Layout.Kind.Revert, "arrows walk the button row");
+        Press(Microsoft.Xna.Framework.Input.Keys.Space);
+        Check(() => Shop.EffectiveHullId == Shop.CurrentHullId
+            && Shop.ChosenParts.Select(p => (p.PartId, p.MountId)).SequenceEqual(
+                Shop.CurrentParts.Select(p => (p.PartId, p.MountId))),
+            "Revert restores the docked ship's loadout");
+        Press(Microsoft.Xna.Framework.Input.Keys.Tab);
+        Check(() => Router.Column == LoadoutV2Column.Hulls && Frame.ActionFocus is null,
+            "Tab steps the focus ring past the buttons");
+        Check(() => !Get<bool>("_launchSent"), "nothing was bought or launched by the script");
+
+        // ── leaving ─────────────────────────────────────────────────────────
+        Press(Microsoft.Xna.Framework.Input.Keys.Escape);
+        Check(() => Get<bool>("_hangarOnly"), "Esc with no picker open leaves to the hangar as before");
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        if (watch.Elapsed.TotalSeconds > 150) throw new TimeoutException("P1015 proof");
+        Get<HudSettings>("_hudSettings").Style = style == "classic" ? HudStyle.Classic : HudStyle.Modern;
+        // Fix only the proof's orbit angle for reproducible pixels.
+        Set("_hullPreviewSpin", .8f - DockedHullOrbit.Advance(0, gameTime.ElapsedGameTime.TotalSeconds));
+        if (watch.Elapsed.TotalSeconds < next || step >= steps.Count) return;
+        lock (gate)
+            if (steps[step]()) { step++; next = watch.Elapsed.TotalSeconds + .4; }
     }
 }
