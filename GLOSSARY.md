@@ -1234,6 +1234,22 @@ list in **reverse**.
   `tools/p946-intro-keys-proof/`; tests `tests/Allegiance.ClientCore.MonoGame.Tests/P946IntroKeysTests.cs` and
   `tests/Allegiance.ClientCore.MonoGame.Tests/IntroLayoutTests.cs`. Native is mouse-driven ButtonPanes with no key
   handler: `WinTrek/introscreen.cpp:1212-1228`.
+- **Loadout screens / shop model (P519/P759/P571)** — the docked loadout's pure model:
+  `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs` (slots per hull, part offers filtered by the
+  native `CanMount` masks, prices/`GetValue`, Default/Revert/custom loadouts), rendered by
+  `src/Allegiance.ClientCore.Game/Rendering/ShopLayout.cs` and driven from
+  `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`. *Native:* `WinTrek/load.cpp`.
+- **Ship stat sheet + stat deltas (P1011)** — the pure model behind the Loadout V2 stats bar:
+  `src/Allegiance.ClientCore.Game/Rendering/ShipStatSheet.cs` turns a hull type + the mounted part
+  types + the side's `GlobalAttributeSet` into the ship's stats, using native's loadout info-pane
+  field set and labels (hull pane `WinTrek/load.cpp:986-1054`, part pane `:1065-1245`; labels decoded
+  from `hullinfobmp.mdl`/`partInfo*bmp.mdl`). Every number cites its `Igc/igc.h` `Data*TypeIGC`
+  field, and the GA factors reuse the sim's `Ship.Effective*` rules (`Igc/shipIGC.cpp:4529-4580`).
+  `src/Allegiance.ClientCore.Game/Rendering/ShipStatDelta.cs` pairs two sheets per stat
+  (`StatDelta.Between`, same-slot keys so a hovered offer yields a real delta) with absolute values,
+  signed difference and a higher/lower-is-better verdict. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1011ShipStatSheetTests.cs`; parity
+  `docs/parity/p1011-loadout-stats.csv`; report `docs/reports/SHIP_STAT_SHEET_P1011.md`.
 - **Native hangar screen (P945)** — the docked hangar view is the native
   `hangar.mdl` screen: `src/Allegiance.ClientCore.Game/Rendering/HangarScreen.cs`
   is the single geometry/string source (800×600 panes at their authored points,
