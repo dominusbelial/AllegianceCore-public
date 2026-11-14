@@ -18,6 +18,7 @@ using Srv = Allegiance.Server.Server;
 string output = Path.GetFullPath(args[0]), style = args[1];
 int width = int.Parse(args[2]), height = int.Parse(args[3]);
 bool off = args.Contains("--off");
+bool buy = args.Contains("--buy");   // P1017: the refused-buy script
 Directory.CreateDirectory(output);
 string content = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
 string localContent = Path.Combine(AppContext.BaseDirectory, "Content");
@@ -50,14 +51,14 @@ var ticker = new Thread(() =>
     }
 });
 ticker.Start();
-var proof = new Proof(game, output, style, width, height, off, simGate);
+var proof = new Proof(game, output, style, width, height, off, simGate, buy ? server : null);
 game.Components.Add(proof);
 try { game.Run(); }
 finally { stop.Cancel(); ticker.Join(); }
 return proof.Passed ? 0 : 1;
 
 sealed class Proof(Game1 game, string output, string style, int width, int height,
-    bool off, object gate) : GameComponent(game)
+    bool off, object gate, Srv? buyServer = null) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch watch = Stopwatch.StartNew();
@@ -150,8 +151,11 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
             Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", !off);
             // The server's advanced starting scout is not sold by this fresh
             // station; start from its real stock scout and native default.
-            Shop.SelectHull(Shop.BuyableHulls.First().HullId);
-            Shop.ApplyDefaultLoadout();
+            if (buyServer is null)
+            {
+                Shop.SelectHull(Shop.BuyableHulls.First().HullId);
+                Shop.ApplyDefaultLoadout();
+            }
             dockedHull = Shop.EffectiveHullId;
             Pointer(2, 2);
             Keys(Microsoft.Xna.Framework.Input.Keys.F4);
@@ -159,11 +163,11 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         });
         Do(() => Keys());
         Check(() => !Get<bool>("_hangarOnly"), "native F4 opens loadout");
-        if (off) OldScreen(); else V2Screen();
+        if (buyServer is not null) BuyFlow(buyServer); else if (off) OldScreen(); else V2Screen();
         Do(() =>
         {
             Passed = true;
-            Console.WriteLine($"P1015_PASS {style} {width}x{height} off={off}");
+            Console.WriteLine($"{(buyServer is null ? "P1015" : "P1017")}_PASS {style} {width}x{height} off={off}");
             game.Exit();
         });
     }
@@ -311,9 +315,122 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Check(() => Get<bool>("_hangarOnly"), "Esc with no picker open leaves to the hangar as before");
     }
 
+    // ── P1017: Buy / Launch refusals on the V2 screen ───────────────────────
+
+    private static object? Call(Srv server, string name, params object?[] args) =>
+        typeof(Srv).GetMethod(name, Hidden)!.Invoke(server, args);
+
+    private static (Ship Ship, object Wallet) Peer(Srv server)
+    {
+        var peers = (System.Collections.IDictionary)typeof(Srv).GetField("_peerShips", Hidden)!.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in peers)
+            return ((Ship)e.Value!.GetType().GetProperty("Ship")!.GetValue(e.Value)!,
+                e.Value.GetType().GetProperty("Wallet")!.GetValue(e.Value)!);
+        throw new InvalidOperationException("no peer ship");
+    }
+
+    private static int ServerMoney(Srv server)
+    {
+        var wallet = Peer(server).Wallet;
+        return (int)wallet.GetType().GetProperty("Money")!.GetValue(wallet)!;
+    }
+
+    /// <summary>Move the wallet the way the server does: the wallet and the
+    /// side-wide MONEY_CHANGE, so the client follows.</summary>
+    private void SetMoney(Srv server, int amount)
+    {
+        var (ship, wallet) = Peer(server);
+        int now = ServerMoney(server);
+        wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+        Call(server, "BroadcastMoneyChangeSideWide", ship.Mission!, ship.SideId!.Value, amount - now, ship.Id);
+    }
+
+    private void Wait(Func<bool> condition) => steps.Add(condition);
+
+    private void BuyFlow(Srv server)
+    {
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+        var none = TechTreeBitMask.Empty;
+        short priced = 0;
+        long need = 0;
+        int rich = 0;
+        Side SideOf() => server.Missions[0].Sides.First(s => s.Id == Peer(server).Ship.SideId);
+
+        // A fully developed side with $100: priced hulls are on offer and out of reach.
+        Do(() =>
+        {
+            var side = SideOf();
+            side.DevelopmentTechs = all;
+            Call(server, "BroadcastSideTechChange", server.Missions[0], side);
+            SetMoney(server, 100);
+        });
+        Wait(() => Shop.MyMoney == 100 && Shop.BuyableHulls.Any(h => h.Price > 100));
+        Do(() =>
+        {
+            priced = Shop.BuyableHulls.Where(h => h.Price > 100).OrderBy(h => h.Price).First().HullId;
+            dockedHull = Shop.CurrentHullId;
+        });
+        Check(() => Frame.Status.Text == "This is your current loadout." && Frame.Buy.Ink == LoadoutV2Ink.Muted,
+            "the docked ship: native 'current loadout' line, Buy disabled");
+
+        // ── short of money ──────────────────────────────────────────────────
+        // The hull column is long with every tech; pick through the view-model
+        // (the row click itself is P1015's proof), then use the real buttons.
+        Do(() => Model.SelectHull(priced));
+        Do(() => need = Shop.BuyShortfall);
+        Check(() => Shop.EffectiveHullId == priced && need > 0, "a hull the wallet cannot cover is pending");
+        Check(() => Frame.Status.Text == "You can't afford this loadout." && Frame.Status.Ink == LoadoutV2Ink.Worse,
+            "status line: native 'can't afford' text");
+        Check(() => Frame.Buy.Text == $"Need ${need:N0}" && Frame.Launch.Ink == LoadoutV2Ink.Muted,
+            "Buy reads Need $X, Launch is disabled");
+        Click(() => Element(LoadoutV2Layout.Kind.Launch));
+        Check(() => !Get<bool>("_launchSent") && Shop.BlockReason!.StartsWith("You can't afford this loadout."),
+            "Launch sends nothing when unaffordable");
+        Click(() => Element(LoadoutV2Layout.Kind.Buy));
+        Check(() => Frame.Status.Text == $"You can't afford this loadout. Asked your team for ${need:N0}.",
+            "Buy asks the team for the shortfall and says so");
+        Check(() => Peer(server).Ship.HullType.HullId == dockedHull && ServerMoney(server) == 100,
+            "the server ship and wallet are untouched");
+        Do(() => Pointer(2, 2));
+        Do(() => Shot("p1017-1-cannot-afford"));
+
+        // ── the server refuses: the side lost the tech while the buy was on its way ──
+        Do(() => { rich = 1_000_000; SetMoney(server, rich); });
+        Wait(() => Shop.MyMoney == rich);
+        Check(() => Frame.Buy.Text == "Buy" && Frame.Status.Text == "Press 'buy' to purchase this loadout.",
+            "the money arrives: Need $X becomes Buy");
+        Do(() => SideOf().DevelopmentTechs = none);
+        Click(() => Element(LoadoutV2Layout.Kind.Buy));
+        Wait(() => Shop.BlockReason == ShopModel.PartsUnavailableText);
+        Check(() => Frame.Status.Text == "Some of the parts you requested are no longer available"
+            && Frame.Status.Ink == LoadoutV2Ink.Worse, "status line: native refusal text from the server's answer");
+        Check(() => Shop.EffectiveHullId == dockedHull && Shop.CurrentHullId == dockedHull && Shop.AlreadyOwn,
+            "the pending loadout went back to the ship the server says we have");
+        Check(() => Peer(server).Ship.HullType.HullId == dockedHull && ServerMoney(server) == rich,
+            "the server changed nothing and took nothing");
+        Do(() => Pointer(2, 2));
+        Do(() => Shot("p1017-2-server-refused"));
+
+        // ── and a buy that goes through ─────────────────────────────────────
+        long cost = 0;
+        Do(() => SideOf().DevelopmentTechs = all);
+        Do(() => Model.SelectHull(priced));
+        Do(() => cost = Shop.Cost);
+        Click(() => Element(LoadoutV2Layout.Kind.Buy));
+        Wait(() => Shop.CurrentHullId == priced && Shop.MyMoney == rich - cost);
+        Check(() => Peer(server).Ship.HullType.HullId == priced && ServerMoney(server) == rich - cost,
+            "the server charged exactly the shown cost");
+        Check(() => Frame.Status.Text == "This is your current loadout." && Shop.AlreadyOwn && !Get<bool>("_launchSent"),
+            "bought, not launched: the screen shows the new ship as current");
+        Check(() => Peer(server).Ship.Parts.All(p => p.MountedFraction >= 1f), "every bought part is armed on the server");
+        Do(() => Pointer(2, 2));
+        Do(() => Shot("p1017-3-bought"));
+    }
+
     public override void Update(GameTime gameTime)
     {
         if (watch.Elapsed.TotalSeconds > 150) throw new TimeoutException("P1015 proof");
+        if (buyServer is not null) Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", true);
         Get<HudSettings>("_hudSettings").Style = style == "classic" ? HudStyle.Classic : HudStyle.Modern;
         // Fix only the proof's orbit angle for reproducible pixels.
         Set("_hullPreviewSpin", .8f - DockedHullOrbit.Advance(0, gameTime.ElapsedGameTime.TotalSeconds));

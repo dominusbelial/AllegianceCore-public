@@ -88,19 +88,28 @@ public sealed class ShopModel
     /// every part including cargo (<c>shipIGC.h:396-406</c>), and the server refunds
     /// that whole value before pricing the new loadout (<c>FedSrv.CPP:6183-6193</c>).
     /// The shop does not edit cargo (the existing shop gap).</summary>
-    public IReadOnlyList<ExpandedPartData> CurrentCargo { get; }
+    public IReadOnlyList<ExpandedPartData> CurrentCargo { get; private set; }
+
+    /// <summary>P1017 — false when the docked ship's hull was never paid for (the
+    /// spawn hull): the server refunds nothing for it and charges nothing to keep
+    /// it (<c>Ship.RefundableHullValue</c>).</summary>
+    public bool CurrentHullPaid { get; private set; } = true;
+
+    /// <summary>P1017 — the docked ship's parts that were never paid for (the
+    /// spawn kit), by type and amount. See <see cref="FreeHardware"/>.</summary>
+    public IReadOnlyList<FreeHardware.Unit> CurrentFreeParts { get; private set; } = [];
 
     /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
     /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
     private IReadOnlyList<LauncherOffer> _launchers;
 
     /// <summary>The ship's currently-mounted hull id (from SHIP_STATUS).</summary>
-    public short CurrentHullId { get; }
+    public short CurrentHullId { get; private set; }
 
     /// <summary>The ship's currently-mounted parts (the P519 dock-sync
     /// BUY_LOADOUT_ACK tail). Kept as a separate read-only snapshot; the shop
     /// never mutates it.</summary>
-    public IReadOnlyList<ExpandedPartData> CurrentParts { get; }
+    public IReadOnlyList<ExpandedPartData> CurrentParts { get; private set; }
 
     /// <summary>The hull the player picked (null = keep the current hull).</summary>
     public short? ChosenHullId { get; private set; }
@@ -220,11 +229,125 @@ public sealed class ShopModel
 
     /// <summary>The docked ship's refundable value: mounted parts AND the cargo
     /// hold (P1012 — the server refunds both, <c>FedSrv.CPP:6183</c>).</summary>
-    public long CurrentShipValue => ValueOf(CurrentHullId, CurrentParts) + PartsValue(CurrentCargo);
+    /// <para>P1017 — hardware the player never paid for is left out: the server
+    /// refunds nothing for a free hull or a free part (<see cref="FreeHardware"/>),
+    /// so this is the refund the server will really give.</para>
+    public long CurrentShipValue
+    {
+        get
+        {
+            long value = (CurrentHullPaid ? HullValue(CurrentHullId) : 0) + PartsValue(CurrentParts) + PartsValue(CurrentCargo);
+            foreach (var free in CurrentFreeParts)
+                if (LookupPart(free.PartId) is { } part) value -= PartInstancePrice(part, free.Amount);
+            return value;
+        }
+    }
 
-    public long NewLoadoutValue => ValueOf(EffectiveHullId, _chosenParts);
+    /// <summary>What the server will price the pending ship at: the full native
+    /// value (<see cref="ValueOf"/>) less the free hardware it keeps — the free
+    /// hull when the hull does not change, and each free part that is still in
+    /// the loadout (<see cref="FreeHardware.Kept"/>).</summary>
+    public long NewLoadoutValue
+    {
+        get
+        {
+            long value = ValueOf(EffectiveHullId, _chosenParts);
+            if (!CurrentHullPaid && EffectiveHullId == CurrentHullId) value -= HullValue(CurrentHullId);
+            if (CurrentFreeParts.Count == 0) return value;
+            bool[] kept = FreeHardware.Kept(CurrentFreeParts, Units(_chosenParts));
+            for (int i = 0; i < kept.Length; i++)
+                if (kept[i] && LookupPart(_chosenParts[i].PartId) is { } part)
+                    value -= PartInstancePrice(part, _chosenParts[i].Amount);
+            return value;
+        }
+    }
+
+    private static FreeHardware.Unit[] Units(IReadOnlyList<ExpandedPartData> parts)
+    {
+        var units = new FreeHardware.Unit[parts.Count];
+        for (int i = 0; i < units.Length; i++) units[i] = new(parts[i].PartId, parts[i].Amount);
+        return units;
+    }
 
     public long Cost => NewLoadoutValue - CurrentShipValue;
+
+    // ── P1017: native button state (UpdateButtons, load.cpp:2139-2190) ─────────
+
+    /// <summary>Native <c>loadoutShipState</c> (<c>load.cpp:2171-2178</c>).</summary>
+    public enum ShipState
+    {
+        /// <summary>0 — the pending ship is the docked ship (<c>EquivalentShip</c>).</summary>
+        Current,
+        /// <summary>1 — the pending ship is worth nothing (<c>cost &lt;= 0</c>).</summary>
+        Free,
+        /// <summary>2 — affordable.</summary>
+        Affordable,
+        /// <summary>3 — not affordable.</summary>
+        Unaffordable,
+    }
+
+    /// <summary>The four texts <c>loadoutpane.mdl</c> carries for
+    /// <c>loadoutShipState</c> (its <c>stateString</c>, lines 48-57). The shipped
+    /// file has that block commented out, so native draws none of them; they are
+    /// still native's own wording for these four states.</summary>
+    public static string StateText(ShipState state) => state switch
+    {
+        ShipState.Current => "This is your current loadout.",
+        ShipState.Free => "Press 'confirm change' to select this loadout.",
+        ShipState.Affordable => "Press 'buy' to purchase this loadout.",
+        _ => "You can't afford this loadout.",
+    };
+
+    /// <summary>Native's message box after a buy the server could not complete
+    /// (<c>OnPurchaseCompleted(false)</c>, <c>load.cpp:2195-2199</c>).</summary>
+    public const string PartsUnavailableText = "Some of the parts you requested are no longer available";
+
+    /// <summary>Native <c>EquivalentShip</c> as the buttons use it
+    /// (<c>load.cpp:2148</c>): same hull, same parts at the same mounts with the
+    /// same amounts.</summary>
+    public bool AlreadyOwn
+    {
+        get
+        {
+            if (EffectiveHullId != CurrentHullId || _chosenParts.Count != CurrentParts.Count) return false;
+            var mine = new List<ExpandedPartData>(CurrentParts);
+            foreach (var p in _chosenParts)
+            {
+                int at = mine.FindIndex(c => c.PartId == p.PartId && c.MountId == p.MountId && c.Amount == p.Amount);
+                if (at < 0) return false;
+                mine.RemoveAt(at);
+            }
+            return true;
+        }
+    }
+
+    public ShipState State => AlreadyOwn ? ShipState.Current
+        : ValueOf(EffectiveHullId, _chosenParts) <= 0 ? ShipState.Free
+        : BuyShortfall > 0 ? ShipState.Unaffordable : ShipState.Affordable;
+
+    /// <summary>Native <c>m_pbuttonLaunch-&gt;SetEnabled(bAlreadyOwn || bCanAfford)</c>
+    /// (<c>load.cpp:2180</c>). Launch buys and launches in one message when it is
+    /// affordable and does nothing otherwise (<c>OnButtonLaunch</c>,
+    /// <c>load.cpp:1498-1509</c>); it never asks the team for money.</summary>
+    public bool LaunchEnabled => AlreadyOwn || BuyShortfall <= 0;
+
+    /// <summary>The richest teammate's money, or null when not known. Native's
+    /// "can anyone on the team afford it" (<c>load.cpp:2152-2166</c>).</summary>
+    public long? RichestTeammate { get; private set; }
+
+    public void RefreshTeamMoney(long? richestTeammate) => RichestTeammate = richestTeammate;
+
+    /// <summary>Native <c>m_pbuttonBuy-&gt;SetEnabled(!bAlreadyOwn &amp;&amp; bCanBuy)</c>
+    /// (<c>load.cpp:2181</c>): a short buyer may still press Buy while a teammate
+    /// holds at least the shortfall — the press asks for it
+    /// (<c>load.cpp:1513-1520</c>). With the team's money unknown the button
+    /// stays live and the server decides.</summary>
+    public bool BuyEnabled => !AlreadyOwn
+        && (BuyShortfall <= 0 || RichestTeammate is not { } best || best >= BuyShortfall);
+
+    /// <summary>Native swaps the Buy button for "Confirm change" when the pending
+    /// ship is worth nothing (<c>load.cpp:2184-2190</c>).</summary>
+    public bool BuyIsConfirmChange => ValueOf(EffectiveHullId, _chosenParts) == 0;
 
     public bool CanAffordTotal => AffordabilityKnown && Cost <= MyMoney!.Value;
 
@@ -244,7 +367,9 @@ public sealed class ShopModel
     {
         if (AffordabilityKnown && Cost > MyMoney!.Value)
         {
-            BlockReason = $"cannot afford: loadout cost ${Cost} > money ${MyMoney.Value}";
+            // Native text (StateText) first; the numbers are the port's detail.
+            BlockReason = $"{StateText(ShipState.Unaffordable)} (cannot afford: loadout cost ${Cost} > money ${MyMoney.Value})";
+            _blockedForMoney = true;
             return false;
         }
         BlockReason = null;
@@ -675,8 +800,11 @@ public sealed class ShopModel
     /// <see cref="CurrentShipValue"/> only.</param>
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
         int? money = null, ShopCustomLoadouts? customLoadouts = null,
-        IReadOnlyList<ExpandedPartData>? currentCargo = null)
+        IReadOnlyList<ExpandedPartData>? currentCargo = null,
+        bool currentHullPaid = true, IReadOnlyList<FreeHardware.Unit>? currentFreeParts = null)
     {
+        CurrentHullPaid = currentHullPaid;
+        CurrentFreeParts = currentFreeParts ?? [];
         _cat = catalog;
         _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
         _customLoadouts = (customLoadouts ?? new ShopCustomLoadouts()).Slots;
@@ -701,6 +829,63 @@ public sealed class ShopModel
     }
 
     public ShopCatalog Catalog => _cat;
+
+    /// <summary>
+    /// P1017 — the server answered with the ship it really has now
+    /// (<c>FM_S_BUY_LOADOUT_ACK</c>). Native applies the acknowledged loadout to
+    /// the real ship and then tells the loadout screen
+    /// (<c>clintlib/appmsg.cpp:3183-3187</c> → <c>OnPurchaseCompleted</c>,
+    /// <c>WinTrek/load.cpp:2193-2210</c>):
+    /// <list type="bullet">
+    /// <item>always: the old-ship cost and the buttons are recomputed from the
+    /// real ship (<c>load.cpp:2207-2209</c>) — here the docked-ship snapshot is
+    /// replaced, so cost, refund and <see cref="AlreadyOwn"/> follow it;</item>
+    /// <item>when the buy was not complete: the message
+    /// <see cref="PartsUnavailableText"/> and the pending ship becomes a copy of
+    /// the real one (<c>load.cpp:2195-2205</c>). A buy the server refused for
+    /// money leaves the real ship as it was, so the same copy is the revert; the
+    /// text is then native's "can't afford" state text.</item>
+    /// </list>
+    /// A pending loadout the player had not edited keeps following the ship (an
+    /// unsolicited dock sync that arrives after the screen opened).
+    /// </summary>
+    /// <param name="complete">False when the server did not grant everything
+    /// that was asked for. Pass true for an acknowledgement that answers no
+    /// request of ours.</param>
+    /// <param name="refusedForMoney">The server left the ship unchanged and the
+    /// request cost more than the wallet held.</param>
+    public void PurchaseCompleted(short hullId, IReadOnlyList<ExpandedPartData> parts,
+        IReadOnlyList<ExpandedPartData>? cargo, bool complete, bool refusedForMoney = false,
+        bool hullPaid = true, IReadOnlyList<FreeHardware.Unit>? freeParts = null)
+    {
+        bool follow = !complete || AlreadyOwn;
+        bool same = hullId == CurrentHullId && parts.SequenceEqual(CurrentParts);
+        // The pending hull is "whatever the ship has" only while it follows it.
+        if (!follow) ChosenHullId ??= CurrentHullId;
+        CurrentHullId = hullId;
+        CurrentParts = parts.ToArray();
+        CurrentCargo = cargo?.ToArray() ?? [];
+        CurrentHullPaid = hullPaid;
+        CurrentFreeParts = freeParts ?? [];
+        if (ChosenHullId == hullId) ChosenHullId = null;
+        if (!follow || (complete && same)) return;
+        RevertToCurrentLoadout();     // m_pship = CopyCurrentShip(), load.cpp:2201-2204
+        if (!complete)
+        {
+            BlockReason = refusedForMoney ? StateText(ShipState.Unaffordable) : PartsUnavailableText;
+            _blockedForMoney = false;     // this line is the server's answer: it stays until the next edit
+        }
+    }
+
+    /// <summary>P1017 — Buy was pressed while short: the shortfall was requested
+    /// from the team (native sends <c>REQUEST_MONEY</c> and shows nothing,
+    /// <c>load.cpp:1513-1520</c>). The line pairs native's state text with what
+    /// was done about it.</summary>
+    public void NoteMoneyRequested(long amount)
+    {
+        BlockReason = $"{StateText(ShipState.Unaffordable)} Asked your team for ${amount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)}.";
+        _blockedForMoney = true;
+    }
 
     /// <summary>
     /// P996 — the native client's <c>RestoreLoadout(station)</c> for a hangar
@@ -869,7 +1054,18 @@ public sealed class ShopModel
         SlotCursor = _slotCursor;
     }
 
-    public void RefreshMoney(int? money) => MyMoney = money;
+    public void RefreshMoney(int? money)
+    {
+        MyMoney = money;
+        // P1017 — a "can't afford" line goes away when the money arrives.
+        if (_blockedForMoney && BuyShortfall <= 0)
+        {
+            _blockedForMoney = false;
+            BlockReason = null;
+        }
+    }
+
+    private bool _blockedForMoney;
 
     private void NormalizeWeaponMounts()
     {

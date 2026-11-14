@@ -26,6 +26,14 @@ Four backbuffer PNGs are written per run.
 (Down, Tab, Space, B) and checks that no V2 frame or V2 input router is ever
 built.
 
+**`--buy`** (P1017) plays the Buy / Launch refusals on the V2 screen against
+the same loopback server: a fully developed side with $100 picks a hull it
+cannot afford (status line, `Need $X`, Launch and Buy pressed with the real
+buttons), then gets the money while the side loses the tech (the server refuses
+the buy; the screen shows native's message and goes back to the real ship), then
+buys for real. The server's ship and wallet are checked at every step. It ends
+with `P1017_PASS` and writes three PNGs.
+
 From the repo root, build this project, set `ALLEGIANCE_ARTWORK_PATH` to the
 local corpus, then run with a fresh profile:
 

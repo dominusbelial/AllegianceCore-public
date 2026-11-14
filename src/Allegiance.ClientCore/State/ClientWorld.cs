@@ -2313,6 +2313,7 @@ public sealed partial class ClientWorld
         // next purchase ACK, so a pod death in the NEW game cannot restore the
         // previous game's ship.
         OwnSavedLoadout = null;
+        OwnHardware.Reset();
         OwnMissionDeparture = null;
         _mutedPilots.Clear();
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
@@ -4487,7 +4488,14 @@ public sealed partial class ClientWorld
     /// ship: apply it to <see cref="MyShipId"/>, adopting the granted
     /// <c>HullId</c> and mounting the ack's part tail.</summary>
     private void Apply(BuyLoadoutAck ack)
-        => ApplyPurchasedLoadout(ack.HullId, ack.Parts);
+    {
+        if (MyShipId is not null) OwnHardware.Acknowledged(ack);   // P1017
+        ApplyPurchasedLoadout(ack.HullId, ack.Parts);
+    }
+
+    /// <summary>P1017 — which of our ship's hardware the server will refund, and
+    /// the last answer to a buy of ours.</summary>
+    public OwnHardwareLedger OwnHardware { get; } = new();
 
     /// <summary>The shared loadout projection used by a server acknowledgement
     /// and an immediate local training purchase (clintlib.cpp:1736-1737).</summary>

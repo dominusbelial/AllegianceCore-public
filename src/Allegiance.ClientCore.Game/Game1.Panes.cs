@@ -176,7 +176,12 @@ public sealed partial class Game1
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
                     world.MyMoney,
                     _shopCustomLoadouts,
-                    mySe.Cargo);
+                    mySe.Cargo,
+                    // P1017 — value the docked ship as the server will refund it.
+                    // Local training has no wallet and no free-hardware rule.
+                    currentHullPaid: _embeddedHost is not null || world.OwnHardware.HullPaid(mySe.HullId),
+                    currentFreeParts: _embeddedHost is not null ? null : world.OwnHardware.FreeParts.ToArray());
+                BuyFlow.Attach(world.OwnHardware);
                 // P996 — BERTHED IN A LIFEPOD: the ship's current hull is the pod,
                 // which the station does not offer, so without this the hangar
                 // shows/launches the pod (the P996 loop: BUY_LOADOUT(pod hull,
@@ -208,6 +213,7 @@ public sealed partial class Game1
             }
 
             RefreshDockedOffers(world, mySe);
+            SyncShopWithServer(world, mySe);   // P1017
             ContinueHangarLaunch(mySe);
             ReleaseTeleportOnBoardRefusal();   // P757 — EndLockDown equivalent
             if (UpdateHangarControls(ks, composing)) return true;

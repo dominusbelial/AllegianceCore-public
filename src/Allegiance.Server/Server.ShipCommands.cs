@@ -2794,8 +2794,24 @@ public sealed partial class Server
                 projectedSkipped++;
                 continue;
             }
-            toMount.Add((partType, Ship.ClampPartAmount(grantedHull, mission.Core, partType, p.Amount), p.MountId, p.FractionMounted));
+            // P1017 — every part a purchase puts on the ship is ARMED: native
+            // CreateAndAddPart + ppart->Arm() for a bought part
+            // (Igc/shipIGC.h:1039-1040) and SetShip + Arm() for a re-used one
+            // (:1051-1052); Arm() sets m_mountedFraction = 1.0f
+            // (Igc/weaponIGC.h:149-153). The client's fractionMounted byte is
+            // not consulted — a hostile client could otherwise ask for, and a
+            // stale client could be left with, a half-mounted part in the hangar.
+            toMount.Add((partType, Ship.ClampPartAmount(grantedHull, mission.Core, partType, p.Amount), p.MountId, ExpandedPartData.FullyMounted));
         }
+
+        // P1017 — spawn hardware the ship keeps stays free (FreeHardware): it
+        // refunded nothing in oldShipValue, so it must cost nothing here, or a
+        // player would be charged for the kit the server gave them and a
+        // penniless one could not launch it. Everything else is paid for.
+        var freeHeld = ship.Parts.Concat(ship.CargoHold.OfType<MountedPart>())
+            .Where(part => part.FreeSpawn).Select(part => new FreeHardware.Unit(part.PartId, part.Amount)).ToArray();
+        bool[] keptFree = FreeHardware.Kept(freeHeld,
+            toMount.Select(x => new FreeHardware.Unit(x.Type.PartId, x.Amount)).ToArray());
 
         // P441 — PRICING, the way native does: cost = ShipValue(after) -
         // ShipValue(before) (FedSrv.CPP:6182-6207; GetValue = hull price + Σ part
@@ -2805,7 +2821,7 @@ public sealed partial class Server
         // takes the expendable's launcherDef.price — DataMissileTypeIGC.Price &
         // friends), not 0.
         long newHullValue = grantedHullChanged ? Math.Max(0, grantedHull.Price) : ship.RefundableHullValue;
-        long cost = newHullValue + toMount.Sum(x => PartValue(x.Type, x.Amount)) - oldShipValue;
+        long cost = newHullValue + toMount.Select((x, i) => keptFree[i] ? 0L : PartValue(x.Type, x.Amount)).Sum() - oldShipValue;
 
         // P441 — FUNDS gate. Native TrapHackBoot disconnects here; the port's
         // soft-fail convention is log-and-refuse: ship unchanged, ack shows the
@@ -2823,6 +2839,7 @@ public sealed partial class Server
         // ship untouched.
         // ------------------------------------------------------------------
         using var loadoutUpdate = ship.BeginLoadoutUpdate();
+        var oldHull = ship.HullType;
         if (grantedHullChanged)
         {
             // P334 — real server-side hull swap, mirroring native's actual
@@ -2870,15 +2887,14 @@ public sealed partial class Server
         // rebuild (shipIGC.h:901-921).
         ship.ClearLoadout();
         int granted = 0, skipped = projectedSkipped;
-        foreach (var (partType, amount, mountId, fraction) in toMount)
+        for (int i = 0; i < toMount.Count; i++)
         {
+            var (partType, amount, mountId, fraction) = toMount[i];
             // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
             // ship is at the wire's 255-part ceiling; log and count it skipped
             // instead of letting a 256th part crash ExportShip.Encode later.
-            int mount = unchecked((sbyte)mountId);
-            bool mounted = mount < 0
-                ? ship.TryMountCargoPart(partType, amount, mount, fraction)
-                : ship.MountPart(partType, amount, mountId, fraction) is not null;
+            // MountPart validates a cargo (negative) mount itself.
+            bool mounted = ship.MountPart(partType, amount, mountId, fraction, keptFree[i]) is not null;
             if (!mounted)
             {
                 ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {partType.PartId} at mount {mountId} — ship already at the 255-part wire ceiling; counted as skipped");
@@ -2919,6 +2935,9 @@ public sealed partial class Server
         {
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: cost 0 — no money movement");
         }
+
+        // P1017 — who may stay aboard the new ship (FedSrv.CPP:6211-6245).
+        BootPassengersAfterPurchase(ship, oldHull, grantedHullChanged);
 
         // The ACK's tail reflects the ship's REAL inventory after the apply:
         // equipped parts then the cargo hold (native's ProcessShipLoadout mixes
@@ -2972,6 +2991,68 @@ public sealed partial class Server
         }
     }
 
+
+    /// <summary>
+    /// P1017 — the passenger half of native <c>FM_C_BUY_LOADOUT</c>, run after the
+    /// new ship is built and paid for and before the acknowledgement.
+    /// <list type="bullet">
+    /// <item><b>Hull changed.</b> <c>SetBaseHullType</c> first re-seats the
+    /// gunners: a turret keeps its number counted from the first turret, and a
+    /// gunner whose turret the new hull does not have becomes an observer
+    /// (<c>Igc/shipIGC.cpp:1379-1399</c>). The handler then makes every observer
+    /// leave (<c>FedSrv/FedSrv.CPP:6214-6224</c>). Gunners that still have a
+    /// turret stay, gun or no gun.</item>
+    /// <item><b>Same hull, with turrets.</b> Every passenger whose turret mount
+    /// holds no part leaves (<c>FedSrv/FedSrv.CPP:6225-6245</c>). Native compares
+    /// the passenger's turret id with every part's mount id, cargo included, and
+    /// an observer's id is NA (-1) — the first cargo mount — so an observer stays
+    /// only while that cargo slot is filled. Ported as written.</item>
+    /// </list>
+    /// Leaving is the ordinary <see cref="PerformLeave"/> (native <c>LeaveShip</c>,
+    /// <c>FedSrv/FedSrv.CPP:2277-2320</c>): lifepod hull, docked, side-wide
+    /// <c>LEAVE_SHIP</c>.
+    /// </summary>
+    private void BootPassengersAfterPurchase(Ship ship, DataHullTypeIGC oldHull, bool hullChanged)
+    {
+        if (ship.ChildShips.Count == 0) return;
+        var hull = ship.HullType;
+        if (hullChanged)
+        {
+            int oldFixed = oldHull.MaxFixedWeapons, newFixed = hull.MaxFixedWeapons;
+            int maxTurrets = hull.MaxWeapons - newFixed;
+            foreach (var child in ship.ChildShips.ToArray())
+            {
+                if (child.TurretId is { } seat)
+                {
+                    int turret = seat - oldFixed;
+                    short? reseated = turret >= maxTurrets ? null : (short)(turret + newFixed);
+                    if (reseated != seat)
+                    {
+                        // SetTurretID: the old weapon lets go, the new one takes hold
+                        // (Igc/shipIGC.h:1405-1437). The old weapons are already gone.
+                        ship.Weapons.FirstOrDefault(w => w.Gunner == child)?.SetGunner(null);
+                        child.TurretId = reseated;
+                        if (reseated is { } now)
+                            ship.Weapons.FirstOrDefault(w => w.MountId == now)?.SetGunner(child);
+                    }
+                }
+                if (child.TurretId is null && PerformLeave(child, ship))
+                    Console.WriteLine($"[loadout] ship {ship.Id}: hull changed — observer {child.Id} left the ship (FedSrv.CPP:6214-6224)");
+            }
+        }
+        else if (hull.MaxWeapons > hull.MaxFixedWeapons)
+        {
+            foreach (var child in ship.ChildShips.ToArray())
+            {
+                int seat = child.TurretId ?? -1;   // NA
+                bool held = seat < 0
+                    ? -seat - 1 < ship.CargoHold.Count && ship.CargoHold[-seat - 1] is not null
+                    : ship.Parts.Any(part => part.MountId == seat);
+                if (!held && PerformLeave(child, ship))
+                    Console.WriteLine($"[loadout] ship {ship.Id}: no part at mount {seat} — passenger {child.Id} left the ship (FedSrv.CPP:6225-6245)");
+            }
+        }
+    }
 
     /// <summary>The real engine's <c>CanMount</c> subset test
     /// (<c>src/Igc/hullTypeIGC.h:199-213</c>, <c>partType.PartMask &amp;

@@ -87,6 +87,9 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
             var footer = layout.Footer;
             Text(new(frame.Hint ?? "Q/E hull  |  Tab hulls/parts  |  Arrows select  |  Space choose  |  B back  |  L launch",
                 LoadoutV2Ink.Muted), new(16, footer.Y + 5, footer.Width - 32, 20), style, .85f * layout.Scale);
+            // P1017: the status line, under the key hint in the footer band.
+            if (frame.Status.Text.Length > 0)
+                Text(frame.Status, new(16, footer.Y + 28, footer.Width - 32, 22), style, .95f * layout.Scale);
             Overflow(layout.HullList, layout.HullScroll, layout.HullCapacity, frame.Hulls.Count, style, layout.Scale);
             Overflow(layout.SlotList, layout.SlotScroll, layout.SlotCapacity - layout.OfferCapacity, frame.Slots.Count, style, layout.Scale);
         }

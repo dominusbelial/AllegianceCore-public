@@ -741,6 +741,11 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     public void SendBuyLoadout(short hullId, bool fLaunch, IReadOnlyList<ExpandedPartData>? parts = null)
     {
         var msg = new BuyLoadoutRequest { HullId = hullId, FLaunch = fLaunch, Parts = parts ?? [] };
+        // P1017 — the answer to this request is told apart from an unsolicited
+        // loadout sync by the ledger, which also needs the hull we ask from.
+        lock (_gate)
+            if (_world.MyShipId is { } me && _world.Ships.TryGetValue(me, out var own))
+                _world.OwnHardware.RequestSent(own.HullId);
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 

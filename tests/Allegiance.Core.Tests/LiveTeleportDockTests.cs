@@ -287,6 +287,12 @@ public class LiveTeleportDockTests
         var acquired = live.Mission!.Core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon) with { Price = 25, PartMask = 0 };
         acquired = EconomyLoadoutTestSetup.Sell(live.Mission, acquired);
         owner.Wallet.Money = 1000;
+        // P1017: a free spawn part the ship keeps through a buy stays free
+        // (FreeHardware), and `acquired` is the spawn gun's own part type. Sell
+        // the spawn gun first — it refunds nothing — so the next gun is bought.
+        bot.SendBuyLoadout(live.HullType.HullId, false, []);
+        Assert.True(PumpUntil(server, () => live.Parts.Count == 0, 4000) < 4000);
+        Assert.Equal(1000, owner.Wallet.Money);
         bot.ResetBuyLoadoutAcks();
         bot.SendBuyLoadout(live.HullType.HullId, false, [new ExpandedPartData(acquired.PartId, 1, 0, 255)]);
         // A late join-burst ACK can already name the free spawn gun. Wait

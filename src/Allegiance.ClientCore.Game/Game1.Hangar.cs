@@ -56,8 +56,8 @@ public sealed partial class Game1
             _session.SendBoardShip(-1);
             return;
         }
-        if (_shopModel is not { } shop || !shop.TryLaunch()) return;
-        PurchaseHangarLoadout(shop.EffectiveHullId, shop.ChosenParts, launch: true);
+        if (_shopModel is not { } shop || BuyFlow.Launch(shop) is not { Step: LoadoutBuyFlow.Step.Purchase } order) return;
+        PurchaseHangarLoadout(order.HullId, order.Parts, launch: true);
         _launchSent = true;
         _throttle = Flight.FlightInput.DefaultThrottle;
     }
@@ -102,16 +102,47 @@ public sealed partial class Game1
             return;
         }
         if (_shopModel is not { } shop) return;
-        long shortfall = shop.BuyShortfall;
-        if (shortfall > 0)
+        // P1017 — one flow for both screens. Only V2 has native's disabled Buy.
+        var order = BuyFlow.Buy(shop, nativeGate: LoadoutV2Shown);
+        switch (order.Step)
         {
-            _session.SendMoneyRequest((int)Math.Min(shortfall, int.MaxValue), shop.EffectiveHullId);
-            Console.WriteLine($"[monogame] BUY short ${shortfall} -> REQUEST_MONEY hull {shop.EffectiveHullId}");
-            return;
+            case LoadoutBuyFlow.Step.RequestMoney:
+                _session.SendMoneyRequest(order.Amount, order.HullId);
+                Console.WriteLine($"[monogame] BUY short ${order.Amount} -> REQUEST_MONEY hull {order.HullId}");
+                break;
+            case LoadoutBuyFlow.Step.Purchase:
+                PurchaseHangarLoadout(order.HullId, order.Parts, launch: false);
+                Console.WriteLine($"[monogame] purchase hull {order.HullId} + {order.Parts.Count} part(s)");
+                break;
         }
-        shop.SaveCustomLoadout();
-        PurchaseHangarLoadout(shop.EffectiveHullId, shop.ChosenParts, launch: false);
-        Console.WriteLine($"[monogame] purchase hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+    }
+
+    /// <summary>P1017 — the shared Buy / Launch flow and its reconciliation with
+    /// the server's answer (<see cref="LoadoutBuyFlow"/>).</summary>
+    // Lazy: headless tests build Game1 without running field initialisers.
+    private LoadoutBuyFlow? _loadoutBuyFlowState;
+    private LoadoutBuyFlow BuyFlow => _loadoutBuyFlowState ??= new LoadoutBuyFlow();
+
+    /// <summary>Every docked frame: when the server acknowledged a loadout, the
+    /// shop takes the ship it really has now. A launch the server did not
+    /// perform releases the launch latch, as native ends its lock-down
+    /// (<c>clintlib/appmsg.cpp:3180-3181</c>).</summary>
+    private void SyncShopWithServer(ClientWorld world, ShipEntity own)
+    {
+        if (_shopModel is not { } shop) return;
+        long? richest = null;
+        foreach (var (shipId, money) in world.WalletByShipId)
+            if (shipId != own.ShipId && (richest is not { } best || money > best)) richest = money;
+        var outcome = BuyFlow.Sync(shop, own, world.OwnHardware, world.MyMoney,
+            trackFreeHardware: _embeddedHost is null, richestTeammate: richest);
+        if (!outcome.Changed) return;
+        if (outcome.LaunchRefused && _launchSent && own.StationId >= 0)
+        {
+            _launchSent = false;
+            Console.WriteLine("[monogame] launch not performed by the server -> loadout screen released");
+        }
+        if (outcome.Answered && !outcome.Complete)
+            Console.WriteLine($"[monogame] purchase not completed: {shop.BlockReason}");
     }
 
     private void PurchaseHangarLoadout(short hullId, IReadOnlyList<ExpandedPartData> parts, bool launch)

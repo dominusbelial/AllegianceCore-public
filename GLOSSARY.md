@@ -1281,6 +1281,29 @@ list in **reverse**.
   Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1016HardpointTests.cs`;
   proof: `tools/p1014-ui-proof/`; report:
   `docs/reports/LOADOUT_V2_HARDPOINTS_P1016.md`.
+- **Loadout buy / launch flow (P1017)** — one pure flow for the old loadout and Loadout V2,
+  `src/Allegiance.ClientCore.Game/Rendering/LoadoutBuyFlow.cs`: Launch buys and launches when affordable
+  and sends nothing otherwise; Buy asks the team for the shortfall or buys without launch; `Sync` (every
+  docked frame, `Game1.Hangar.cs` `SyncShopWithServer`) feeds the wallet and the server's
+  `BUY_LOADOUT_ACK` back into `ShopModel.PurchaseCompleted` — the docked-ship snapshot becomes the real
+  ship, and an incomplete or refused buy shows native's text and resets the pending loadout. Native
+  button states and wording live in `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs`
+  (`State`, `StateText`, `AlreadyOwn`, `LaunchEnabled`, `BuyEnabled`); V2 draws them as the **status
+  line** (`LoadoutV2Presentation.Status`). No wire change. *Native:* `WinTrek/load.cpp`
+  (`OnButtonLaunch`, `OnButtonBuy`, `UpdateButtons`, `OnPurchaseCompleted`).
+  **Free hardware** — the spawn hull and spawn kit were never paid for: they refund nothing and cost
+  nothing to keep. One rule, `src/Allegiance.Core/Sim/FreeHardware.cs`, used by the server
+  (`src/Allegiance.Server/Server.ShipCommands.cs` `ApplyLoadout`, `MountedPart.FreeSpawn`) and by the
+  client's record of its own ship, `src/Allegiance.ClientCore/State/OwnHardwareLedger.cs`
+  (`ClientWorld.OwnHardware`), so the shown refund is the applied one.
+  **Server buy rules (P1017)** — `ApplyLoadout` arms every bought part and, after a buy, sends
+  passengers away as native does (`BootPassengersAfterPurchase`).
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1017BuyFlowTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1017BuyFlowLiveTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P1017OwnHardwareLedgerTests.cs`,
+  `tests/Allegiance.Core.Tests/P1017LoadoutBuyServerTests.cs`; parity
+  `docs/parity/p1017-buy-flow.csv`; real-window proof `tools/p1014-ui-proof/Program.cs` (`--buy`);
+  report `docs/reports/LOADOUT_V2_BUY_FLOW_P1017.md`.
 - **Loadout V2 input (P1015)** — the pure router
   `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Input.cs`: mouse (hover,
   click, wheel per column), key-table verbs and pad buttons in, `LoadoutV2Model`
