@@ -161,9 +161,13 @@ public class P571DefaultLoadoutTests
         var m = OpenAdvScout();
         Assert.True(m.TryLaunch());
         Assert.True(m.ChosenParts.Count > 0);
-        // The launcher default (MRM Seeker 1) carries its real ammo reserve.
+        // P1012 — the launcher default (MRM Seeker 1) carries what the Adv Scout
+        // holds: magazine capacity 15 / expendable size 5 = 3 (native
+        // launchertypeigc.h:130-142), not the launcher's stock amount of 10.
         var mrm = m.ChosenParts.First(p => p.PartId == 153);
-        Assert.Equal(LauncherAmmo(153), mrm.Amount);
+        Assert.Equal(15, Hull(285).CapacityMagazine);
+        Assert.Equal(10, LauncherAmmo(153));
+        Assert.Equal(3, mrm.Amount);
         Assert.True(mrm.Amount > 0, "a default launcher must carry real ammo");
     }
 

@@ -212,7 +212,9 @@ public sealed class ShopLauncherBuyLiveTests
         // and its real ammo reserve are in the pending loadout to be launched.
         var bought = shop.ChosenParts.First(p => p.PartId == lo.Part.PartId);
         Assert.Equal(lo.Part.PartId, bought.PartId);      // the real launcher id
-        Assert.Equal(lo.Ammo, bought.Amount);             // the real ammo reserve
+        // P1012 — the amount the pending hull holds (native launchertypeigc.h:130-142).
+        short nativeAmount = P1012Native.LauncherAmount(Catalog.Core!, mountHull, lo.Part);
+        Assert.Equal(nativeAmount, bought.Amount);
 
         // L — launch with the pending loadout, exactly Game1.Panes:162.
         session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
@@ -226,7 +228,7 @@ public sealed class ShopLauncherBuyLiveTests
         Assert.NotNull(granted);
         var launcherEntry = granted!.FirstOrDefault(p => p.PartId == lo.Part.PartId);
         Assert.NotEqual(default(ExpandedPartData), launcherEntry);
-        Assert.Equal(lo.Ammo, launcherEntry.Amount);
+        Assert.Equal(nativeAmount, launcherEntry.Amount);
         Assert.Equal(ExpandedPartData.FullyMounted, launcherEntry.FractionMounted);
     }
 }

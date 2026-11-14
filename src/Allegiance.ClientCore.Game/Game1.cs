@@ -1041,6 +1041,9 @@ public sealed partial class Game1 : Game
     // dock never forcibly undocks a player (native docked players stay docked).
     private Rendering.ShopCatalog? _shopCatalog;
     private Rendering.ShopModel? _shopModel;
+    // P1012 — native m_customLoadouts lives on the client, not on the loadout
+    // screen (clintlib.h:826, clintlib.cpp:1155): one store for every dock.
+    private readonly Rendering.ShopCustomLoadouts _shopCustomLoadouts = new();
     // P787b — the docked loadout list's last mouse-hovered row (native
     // m_nLastHoverIndex, loadout.cpp:1186); -1 = pointer off the list. Reset
     // whenever the shop model is rebuilt (a fresh dock).

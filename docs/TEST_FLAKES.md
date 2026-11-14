@@ -8660,3 +8660,32 @@ nine failures and four timing offenders are the already-ledgered families
 (P739 float bound, `LiveCombatWireTests` contention, warp-transit receipt,
 auto-seat boundary, miner capacity, NPC clearance, roster stint, `MissileLock`
 partial tip, `DeadLatch` receipt) and none repeats a drop/treasure signature.
+
+## 2026-11-14 — P1012 fast suite and training gate (hull-switch carry-over)
+
+One Fast sweep on the P1012 tree (base `874fd66a`, lane container): **14,269 passed / 6 failed / 7 not
+executed** of 14,282 (662.1 s, Fast limit 14.532 s). P1012 changes only `ShopModel` and its tests
+(`Allegiance.ClientCore.MonoGame.Tests`: 5,246 passed, 0 failed). The six failures are in projects that
+do not use the shop model; all are already-ledgered families:
+
+| Test | Alone ×3 | Note |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore) | pass / pass / pass | `DeadLatch` receipt |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | roster stint |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | auto-seat boundary; `Allegiance.Core.Tests` does not reference the client game project |
+| `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | pass / pass / pass | NPC clearance (63 s in the sweep) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/3, 2/3, 1/3 theory cases | P739 float bound |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | pass / pass / pass | warp-transit receipt |
+
+Eight Fast cases exceeded the time limit (the usual loadout-sweep, civ-profile and NPC miner cases).
+`ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` failed once
+inside a filtered shop run (empty `ExpandedPartData` at line 252, the ledgered launcher-receipt signature)
+and passed 3/3 alone and in the sweep.
+
+Training gate (`tools/run-training-tests.sh --no-build --repeat 3`): **not completed** — stopped by the
+lane's 2-hour background limit during repeat 1. Headless half: 126/126. Real-window half: two failures
+before the stop, `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
+(`Classic` and `Modern`, policy `reminders`), both `M2 9.2: native prompts missing or out of order`. They
+fail the same way alone (2/2, 8 m 51 s each) **and on an untouched checkout of the base commit** (1/1,
+same message), so this is a lane/base condition, not P1012. Not retried further.
+
