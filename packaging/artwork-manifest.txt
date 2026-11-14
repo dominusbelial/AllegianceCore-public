@@ -533,6 +533,7 @@ cc_faristexp.mdl
 centerhudleftbmp.mdl
 centerhudrightbmp.mdl
 centeroutbmp.mdl
+chaffbmp.mdl
 charinfoscreenbmp.mdl
 chatcommandbmp.mdl
 chatmousebmp.mdl
@@ -622,6 +623,7 @@ debris.cvh
 debris.mdl
 debris1bmp.mdl
 defaultinputmap.mdl
+defaultloadout.mdl
 defaultwatermark.png
 defaultwatermarkbmp.mdl
 defendbmp.mdl
@@ -1357,6 +1359,7 @@ hotrockbmp.mdl
 hudKillsbmp.mdl
 hullgauge2bmp.mdl
 hullgaugeredbmp.mdl
+hullinfo.mdl
 hullinfobmp.mdl
 hvycannon.ogg
 iafter.ogg
@@ -1487,6 +1490,7 @@ loadout8.mdl
 loadoutapc.mdl
 loadoutassaultfighter.mdl
 loadoutfrigate.mdl
+loadoutgaugebmp.mdl
 loadoutinclude.mdl
 loadoutlightfighter.mdl
 loadoutpanebmp.mdl
@@ -1694,6 +1698,8 @@ p1_ambient9.ogg
 p1_hyperi.ogg
 p1_hypero.ogg
 panel.ogg
+partinfo.mdl
+partinfodefaultbmp.mdl
 payday.ogg
 pickupbmp.mdl
 pkicon.png
@@ -1722,6 +1728,7 @@ pointer.mdl
 powerupdevelopment.ogg
 powerupshield.ogg
 probe.ogg
+probebmp.mdl
 proxexpl.cvh
 proxexpl.mdl
 proxexplbmp.mdl

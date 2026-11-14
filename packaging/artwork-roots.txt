@@ -327,6 +327,7 @@ debris.cvh
 debris.mdl
 debris1bmp.mdl
 defaultinputmap.mdl
+defaultloadout.mdl
 defendbmp.mdl
 dgarr.cvh
 dgarr.mdl
@@ -716,6 +717,8 @@ hotrockbmp.mdl
 hudKillsbmp.mdl
 hullgauge2bmp.mdl
 hullgaugeredbmp.mdl
+hullinfo.mdl
+hullinfobmp.mdl
 hvycannon.ogg
 iafter.ogg
 icfig.cvh
@@ -930,6 +933,7 @@ p1_ambient9.ogg
 p1_hyperi.ogg
 p1_hypero.ogg
 panel.ogg
+partinfo.mdl
 payday.ogg
 pickupbmp.mdl
 plasmaac1.ogg

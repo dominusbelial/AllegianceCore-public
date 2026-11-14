@@ -8984,3 +8984,14 @@ before the stop, `P912TrainingWindowTests.Basic_flight_completes_with_muted_miss
 fail the same way alone (2/2, 8 m 51 s each) **and on an untouched checkout of the base commit** (1/1,
 same message), so this is a lane/base condition, not P1012. Not retried further.
 
+
+### 2026-11-14 — Claude Fast qualification after merging P1020 + P1016 + P1015 (57a9d7e8)
+
+One full Fast run: **14,483 tests, 641.3 s, FAIL** (Core 6 failed; ClientCore 1 failed; MonoGame clean), 6 slow
+executions (SC2Nanite civ 25, P999 civ 5, asteroid missile, P1000 civ 3, P750 rocks, P777 wobble). Repeated alone ×3:
+`DeadLatchRespawnLiveTests` remote respawn, `AsteroidCombatLiveTests` cross-side missile, `GameOverPlayersWireTests`
+rejoin stints, `LiveSuicideShipDeleteTests` combat delete and `P590PodRescueTests` proactive diverter all **3/3 pass**.
+`PackagingManifestTests` failed because P1010/P1011 doc comments name `defaultloadout.mdl`, `hullinfo.mdl`,
+`hullinfobmp.mdl` and `partinfo.mdl`; manifests regenerated (4 roots, 7 manifest lines) → 3/3 pass.
+`LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (P763 server flag, default off)
+**fails 2/3 alone** — not touched by this batch (client-only), but no longer just a sweep flake: needs its own task.
