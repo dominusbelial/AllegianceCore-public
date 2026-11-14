@@ -4,6 +4,50 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1021 side-select auto-seat test — RESOLVED — 2026-11-14 UTC
+
+`LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` is **closed**; every row below
+that names it is annotated "Resolved by P1021". It was not a load flake and not a product defect: the test measured
+the wrong clock. Report: `docs/reports/AUTO_SEAT_TEST_P1021.md`.
+
+- **Cause.** The test read `server.SimNow` when the bot's receive thread surfaced `SET_CLUSTER`, and called that the
+  seat time. Its pump runs one fixed 50 ms sim tick per ~1.2 ms of wall-clock (about 40 sim-seconds per second), so
+  the 9–60 ms it takes the join burst to reach and be decoded by the client read as 0.35–2.65 extra "seconds".
+  Measured on the dispatch base, 10 runs alone: the server seated at **exactly 30.000 sim-seconds after logon every
+  time**; the old `elapsed` was 30.10–32.45 (4 of 10 over the [28, 31] window; a separate 10-run cohort failed 4/10
+  at 31.25–32.40). The window's lower slack (28) covered a second error: `start` was taken 0.20–0.30 sim-seconds
+  after the logon the deadline is measured from.
+- **Which side.** The test. `AdvanceSideSelection` (`src/Allegiance.Server/Server.Lobby.cs`) seats on the first tick
+  with `now - ConnectSimTime >= SideSelectAutoSeatSeconds`; the fixed-step sim clock and the lobby stage are not
+  involved in the error. Flag off (default) is still native: no timer, only a recorded `C POSITIONREQ` seats
+  (`FedSrv.CPP:6658-6691`, `fsmission.cpp:4729-4774`).
+- **Fix.** The test steps the server alone and judges the deadline on the server's clock from the pending peer's
+  recorded logon time (new read-only seam `Server.TestPendingSideSelectConnectSimTime`): the tick before the seat is
+  short of 30 s, the seating tick is at or past it, and the two are one tick apart — i.e. seated in
+  [30, 30 + one tick), against the old [28, 31]. Client receipt of the join burst is then checked as delivery
+  (right ship id), bounded in wall-clock time. Shifting the server deadline one tick either way makes it fail
+  ("seated early" / "seated late"). No timing limit, tier or seating behaviour changed.
+- **Result.** **10/10 alone** (0.33–0.79 s each; was about 1 s) and **passed in the full Fast sweep** (0.038 s).
+- **If it fails again** it is a new defect (the timer moved, or the join burst was not delivered within 10 s), not
+  this family.
+
+The single full Fast sweep ran **14,483 cases in 607.3 s: 14,473 passed / 3 failed / 7 not executed**, 7,200-second
+outer bound, calibrated case limit **11.804 s**. It remains **FAIL** on three non-task assertion failures and six
+timing exceedances, none on the side-select path. Each method was run **three times alone** (every theory case); all
+passed. Causes not investigated. No test range, tier or timing limit was changed.
+
+| Method | Sweep trigger | Three isolated runs | Isolated time |
+| --- | --- | --- | --- |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | assertion failure: "near-direct line into the dock", maxLineDeviation=283.0, 0.28 s | **pass / pass / pass** | about 0.8 s |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")` | assertion failure: 14.900000000054206 outside [14.94, 15.06], 1.9 s | **pass / pass / pass**, all 4 cases | 14–17 s for the 4 cases |
+| `P941InputLayoutTests.Keymap_store_picks_the_layout_from_the_file` | assertion failure: expected Native, actual Port, 34 ms | **pass / pass / pass** | under 0.1 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | slow-Fast 13.719 s (civ 35) | **pass / pass / pass**, all 3 cases | 21 s for the 3 cases |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow-Fast 15.526 s (civ 25) | **pass / pass / pass**, both cases | 11–13 s for the 2 cases |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow-Fast 14.835 s | **pass / pass / pass** | 5 s |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | slow-Fast 15.807 s (civ 3) | **pass / pass / pass**, all 10 cases | 6–8 s for the 10 cases |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | slow-Fast 12.601 s | **pass / pass / pass** | 1–2 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | slow-Fast 16.418 s (civ 5) | **pass / pass / pass**, all 10 cases | 39–42 s for the 10 cases |
+
 ## P1020 missile-lock partial-tip test — RESOLVED — 2026-11-14 UTC
 
 `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` is **closed**; every row below
@@ -62,7 +106,7 @@ Future isolated/runtime checks should exempt loopback from this build proxy.
 The remaining assertion is the existing auto-seat receipt/simulation-clock
 boundary: sweep **31.95** against [28,31]; isolated values **32.40 / 31.70 / 32.45**.
 It failed all three repetitions, with no side-select, server, test range or clock
-change. Both slow methods passed their complete theory rows below the limit.
+change. (**Resolved by P1021**: see the P1021 section at the top.) Both slow methods passed their complete theory rows below the limit.
 Every failed or over-time method was run three times alone: **10 methods,
 30 processes, 36/3/0** total. The sweep was not repeated or relabelled green.
 
@@ -71,7 +115,7 @@ Every failed or over-time method was run three times alone: **10 methods,
 | `BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview` | assertion | **1/0/0 ×3** | 0.069 s |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | timing | **3/0/0 ×3** | 6.566 s |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | timing | **2/0/0 ×3** | 5.601 s |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | assertion | **0/1/0 ×3** | 1.015 s |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | assertion | **0/1/0 ×3** | 1.015 s **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `UpdateClientLoopbackTests.A_stale_pending_update_survives_a_failed_later_check` | assertion | **1/0/0 ×3** | 0.266 s |
 | `UpdateClientLoopbackTests.A_tampered_manifest_is_refused` | assertion | **1/0/0 ×3** | 0.094 s |
 | `UpdateClientLoopbackTests.A_tampered_package_is_refused_and_nothing_is_staged` | assertion | **1/0/0 ×3** | 0.135 s |
@@ -171,7 +215,7 @@ ledgered; their underlying causes remain outside this story.
 | `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` | Skirmish/native sustained aim drift; 0.300 s. All four theory cases run per repeat. | **4/0/0; 4/0/0; 4/0/0** | 0.507 / 0.514 / 0.521 |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed; civ 3/25 took 16.827/15.907 s. | **2/0/0; 2/0/0; 2/0/0** | 4.227 / 4.277 / 4.470 |
 | `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | Enemy damage fraction stayed 1.0000; 33.485 s, also over time. | **1/0/0; 1/0/0; 1/0/0** | 0.593 / 0.597 / 0.617 |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.10 against [28,31]; 0.687 s. Isolated failures are the same boundary, 31.70 and 31.85. | **1/0/0; 0/1/0; 0/1/0** | 0.978 / 0.997 / 0.998 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.10 against [28,31]; 0.687 s. Isolated failures are the same boundary, 31.70 and 31.85. | **1/0/0; 0/1/0; 0/1/0** | 0.978 / 0.997 / 0.998 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Target identity assertion at line 285; 1.048 s. | **1/0/0; 1/0/0; 1/0/0** | 0.768 / 0.746 / 0.738 |
 | `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed; civ 3 took 13.558 s. | **10/0/0; 10/0/0; 10/0/0** | 2.017 / 2.026 / 1.896 |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | Delay 7 computed 7.0000000000000009 > 7; 0.201 s. Delay 5/7 floating upper-bound failures recur alone. | **1/2/0; 3/0/0; 2/1/0** | 0.410 / 0.598 / 0.737 |
@@ -204,7 +248,7 @@ maxima are the longest individual case in each isolated process.
 | Method | Sweep observation | Isolated P/F/S, runs 1–3 | Max case seconds, runs 1–3 |
 | --- | --- | --- | --- |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: partial tip missing at lock 1.000; 38.464 s | **0/1/0; 0/1/0; 0/1/0** | 39.009 / 38.796 / 38.855 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | FAIL: 31.500000000000313 outside [28,31] | **0/1/0; 0/1/0; 0/1/0** | 1.206 / 1.227 / 1.165 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | FAIL: 31.500000000000313 outside [28,31] | **0/1/0; 0/1/0; 0/1/0** | 1.206 / 1.227 / 1.165 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | FAIL: probe-broadcast receipt collection empty (ChaffTests.cs:692) | **1/0/0; 1/0/0; 1/0/0** | 0.511 / 0.495 / 0.523 |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | PASS; timing 13.682 / 17.789 s | **3/0/0; 3/0/0; 3/0/0** | 7.782 / 7.811 / 7.861 |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | PASS; timing 16.591 s | **1/0/0; 1/0/0; 1/0/0** | 4.471 / 4.562 / 4.513 |
@@ -302,7 +346,7 @@ or slow non-task method was run three times alone, with all its theory cases:
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0; 1/0/0; 0/1/0 | 1.508 / 1.545 / 38.537 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0; 3/0/0; 3/0/0 | 5.582 / 5.528 / 5.461 |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0; 2/0/0; 2/0/0 | 4.183 / 4.159 / 4.168 |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 1.204 / 1.052 / 1.036 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 1.204 / 1.052 / 1.036 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/0/0; 2/1/0; 3/0/0 | 0.971 / 0.936 / 0.918 |
 | `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 10/0/0; 10/0/0; 10/0/0 | 5.653 / 4.611 / 4.627 |
 
@@ -370,7 +414,7 @@ per repetition, followed by the longest case duration per repetition.
 | P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats | **1/0/0; 1/0/0; 1/0/0**; max s: 3.334 / 3.418 / 3.500 | **1/0/0; 1/0/0; 1/0/0**; max s: 3.451 / 3.432 / 3.431 |
 | SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts | **2/0/0; 2/0/0; 2/0/0**; max s: 4.329 / 4.320 / 4.277 | **2/0/0; 2/0/0; 2/0/0**; max s: 4.442 / 4.478 / 4.326 |
 | GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster | **1/0/0; 1/0/0; 1/0/0**; max s: 0.557 / 0.547 / 0.562 | **1/0/0; 1/0/0; 1/0/0**; max s: 0.565 / 0.572 / 0.521 |
-| LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds | **0/1/0; 1/0/0; 0/1/0**; max s: 1.002 / 0.985 / 0.999 | **0/1/0; 1/0/0; 0/1/0**; max s: 0.995 / 0.958 / 0.996 |
+| LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds | **0/1/0; 1/0/0; 0/1/0**; max s: 1.002 / 0.985 / 0.999 | **0/1/0; 1/0/0; 0/1/0**; max s: 0.995 / 0.958 / 0.996 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge | **1/0/0; 1/0/0; 1/0/0**; max s: 1.436 / 1.434 / 1.442 | **1/0/0; 1/0/0; 1/0/0**; max s: 1.430 / 1.409 / 1.351 |
 | P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission | **1/2/0; 2/1/0; 2/1/0**; max s: 0.473 / 0.551 / 0.528 | **3/0/0; 3/0/0; 3/0/0**; max s: 0.510 / 0.549 / 0.527 |
 | P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work | **8/0/0; 8/0/0; 8/0/0**; max s: 1.478 / 1.487 / 1.468 | **8/0/0; 8/0/0; 8/0/0**; max s: 1.482 / 1.482 / 1.478 |
@@ -686,7 +730,7 @@ attempts; the completed gate used the runner's task-local lock override.
 |---|---|---|
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0/3/0**, same ~38 s timeout | Existing missing partial-tip receipt; the P966 entry below includes a failing clean-base control. It also accounts for the 38.468 s slow-Fast execution. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | **3/0/0** | Existing quit-receipt race (`Assert.Contains` over an empty list), already recorded in this ledger. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **2/1/0**; isolated failure 31.60 s, sweep 31.75 s, fixture range [28,31] | Existing server-deadline/client-receipt clock boundary; P966 has clean-base controls. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **2/1/0**; isolated failure 31.60 s, sweep 31.75 s, fixture range [28,31] | Existing server-deadline/client-receipt clock boundary; P966 has clean-base controls. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (assertions passed; sweep 11.264 s > 10 s) | **3/0/0**, 9.394/9.424/9.452 s | Existing timing family, also recorded by P966. |
 
 An earlier, incomplete sweep saw
@@ -725,7 +769,7 @@ per run). The other four failures received three isolated exact-method runs:
 |---|---|---|
 | `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` (1,208 B over 10,000 frames in the sweep) | **pass / pass / pass**, 15 ms each | Existing load-sensitive allocation measurement; no HUD code changed. |
 | `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` (54.167 s sweep timeout; also SLOW FAST) | **pass / pass / pass**, 3–4 s each | Existing miner receipt/timing family; no NPC/miner/sim code changed. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (32.35 s against [28,31]) | **fail / fail / fail**, same 32.x boundary signature | Already-ledgered auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967 entries); still failing alone and not cleared by P977. No side-select/auto-seat code changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (32.35 s against [28,31]) | **fail / fail / fail**, same 32.x boundary signature | Already-ledgered auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967 entries); still failing alone and not cleared by P977. No side-select/auto-seat code changed. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` (missing kill receipt in the sweep) | **pass / pass / pass**, 0.4–0.5 s each | Load-sensitive kill receipt; no combat/projectile code changed. |
 
 The sweep's other SLOW FAST entries were P750 native asteroid types (11.706 s),
@@ -755,7 +799,7 @@ server-wire/NPC case and belongs to an already-ledgered family:
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (sweep 1) | pass, 10.6 s (over the limit; ledgered timing family since P966) | **3/3 pass** |
 | `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (both sweeps) | pass, 11.1 s / 11.4 s (over the limit) | **pass** (1 s) alone |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (sweep 2) | fail 38.4 s (`lock never reached full + partial tip (lock 1.000)`) — the ledgered 38.7–38.8 s timeout signature | **1 pass / 2 fail** (pass 1 s, fails 38 s), i.e. the recorded **clean-base** rate (P966 row: 1 pass / 2 fail) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (sweep 2) | `31.05` against the fixture's [28, 31] — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) | **2 pass / 3 fail** over the mixed cohorts, same one-second signature |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (sweep 2) | `31.05` against the fixture's [28, 31] — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) | **2 pass / 3 fail** over the mixed cohorts, same one-second signature **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` (sweep 2) | fail (`target shield never dropped below 0.74 (ended 1)`) | **3/3 pass** (3 s each, load 2.8–4.0) |
 
 No task test failed: the P979 files (`Allegiance.ClientCore.MonoGame.Tests`
@@ -830,7 +874,7 @@ no P966 source is on either path.
 
 | Sweep failure / timing family | Changed tree, standalone | Clean base `1f6e1250`, standalone | Classification |
 |---|---|---|---|
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **3 pass / 4 fail** over 7 runs (values 32.15–32.40 against the fixture's [28, 31]; 1 s each) | **2 pass / 3 fail** over 5 runs, same 32.x signature | Existing receipt/simulation-clock boundary (also P945/P948/P953/P967 entries): the auto-seat fires at the 30 s deadline but the test's `elapsed` is measured when the FltBot receive thread surfaces `ShipAssignment`, which lags by 1–2 sim-seconds under host load (load avg 0.9–2.9 during validation). No side-select/auto-seat source changed by P966. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **3 pass / 4 fail** over 7 runs (values 32.15–32.40 against the fixture's [28, 31]; 1 s each) | **2 pass / 3 fail** over 5 runs, same 32.x signature | Existing receipt/simulation-clock boundary (also P945/P948/P953/P967 entries): the auto-seat fires at the 30 s deadline but the test's `elapsed` is measured when the FltBot receive thread surfaces `ShipAssignment`, which lags by 1–2 sim-seconds under host load (load avg 0.9–2.9 during validation). No side-select/auto-seat source changed by P966. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0 pass / 3 fail** (38 s each — the timeout signature) | **1 pass / 2 fail** (pass 1 s; fails 38 s) | Known missing partial-tip receipt (ledgered since P935-era; same 38.7–38.8 s durations). No missile-lock/lock-tip source changed by P966. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `MissileLockLiveTests` (SLOW FAST 38.299 s) and `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (SLOW FAST 10.246 s vs the 10.000 s limit) | — | — | Timing exceedances of the same two led families under the shared-host load; assertions pass when the box is quieter. |
 
@@ -1094,7 +1138,7 @@ two test files); each ran three times alone:
 | --- | --- | --- | --- |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 1 | 7.0000000000000009 > 7 | 3/3 pass (also the one failure of the pre-fix full run) |
 | `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | 1 | "NPC diverter did not reach and rescue the pod" | 3/3 pass |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 1 | 31.65 outside (28,31) | 3/3 pass |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 1 | 31.65 outside (28,31) | 3/3 pass **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it` | 1 | empty receipt collection | 3/3 pass |
 | `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | 1 | one AsteroidMined arrived | 3/3 pass |
 | `LiveP388DebugNoGameOverTests.Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling` | 2 | 0 cycles in 240,000 ticks | 3/3 pass |
@@ -1122,7 +1166,7 @@ families and each passed three isolated invocations:
 | --- | --- | --- |
 | `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | "proactively-assigned diverter did not rescue the pod", 7 s | 3/3 pass (0.86/0.92/0.91 s) — existing rescue-tick-budget family |
 | `MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure` | client queue held `IsMining=True, AsteroidId=0` when the assert ran, 837 ms | 3/3 pass (0.54/0.56/0.54 s) — first ledger entry for this method: bounded 400-tick observation window, mining/placement path unchanged |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 simulated s against the fixture's [28, 31] window | 3/3 pass (1 s each) — existing receipt/simulation-clock boundary |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 simulated s against the fixture's [28, 31] window | 3/3 pass (1 s each) — existing receipt/simulation-clock boundary **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 The P967 work changes no mining, seating, rescue or tick path, and the three isolated
 rechecks reproduce the already-recorded signatures. A discarded earlier sweep of the
@@ -1170,7 +1214,7 @@ methods pass three isolated rechecks below this sweep's 10-second limit.
 | `Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | failed | 0/1/0, 1/0/0, 0/1/0 | 1.064/1.874/1.076 |
 | `Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow | 1/0/0, 1/0/0, 1/0/0 | 3.625/3.657/3.712 |
 | `Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow | 2/0/0, 2/0/0, 2/0/0 | 4.542/4.482/4.680 |
-| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | 1/0/0, 1/0/0, 1/0/0 | 1.051/0.994/1.026 |
+| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | 1/0/0, 1/0/0, 1/0/0 | 1.051/0.994/1.026 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | failed | 3/0/0, 3/0/0, 3/0/0 | 0.479/0.500/0.520 |
 | `Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | slow | 1/0/0, 1/0/0, 1/0/0 | 9.847/9.846/9.791 |
 
@@ -1445,7 +1489,7 @@ processes after all other test processes from this lane had finished:
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass/pass/pass | 3.245/3.193/3.283 s |
 | `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | pass/pass/pass | 1.656/1.620/1.663 s |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass/pass/pass | 4.192/4.146/4.131 s |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass | 1.021/1.116/1.046 s |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass | 1.021/1.116/1.046 s **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail | 1.239/1.186/1.236 s |
 | `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | pass/pass/pass | 1.722/1.675/1.812 s |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass | 9.389/9.340/9.525 s |
@@ -1637,7 +1681,7 @@ assertion, timeout or tier was relaxed.
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **pass/pass/pass**, 0.057/0.055/0.066 s, with scratch `XDG_CONFIG_HOME` | Existing sandbox obstruction: sweep cannot restore the read-only real user profile. The writable-profile control changes no product or fixture code. |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | All three delay rows **pass/pass/pass** | Existing floating upper-bound signature on delay 7 in the sweep. Timer/warp-bomb code unchanged. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.267/1.209/1.263 s; unmodified base also **fail/fail/fail** | Existing null-target assertion. Baseline archive is `bf1978d7d5c7b8602bfd581478d5e77b0c1b08f0`; no NPC/flight policy change. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/fail/fail**, 1.048/1.032/1.063 s; unmodified base **fail/pass/fail** | Existing simulated-clock/receipt boundary against [28,31]; first isolated value 31.85. No seating policy or limit changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/fail/fail**, 1.048/1.032/1.063 s; unmodified base **fail/pass/fail** | Existing simulated-clock/receipt boundary against [28,31]; first isolated value 31.85. No seating policy or limit changed. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanAttackLiveTests.Wingman_engages_nearest_enemy_closes_distance_and_deals_damage` | **pass/pass/pass**, 1.099/0.665/0.734 s | Existing sweep-only damage/timing signature; NPC, damage and flight code unchanged. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed but 10.892 s) | **pass/pass/pass**, 9.024/9.184/9.154 s | Existing timing-only Fast offender; no limit relaxed. |
 
@@ -1666,7 +1710,7 @@ implementation, timeout, tier or assertion was changed.
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/pass**, 0.344/0.332/0.335 s | Existing join-status receipt race: sweep expected flying=3, saw docked=2. Previously recorded with baseline controls in P928. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.252/1.248/1.255 s | Existing persistent null-target assertion, including prior unmodified-source P928 controls. P932 changes no NPC/flight policy or server simulation code. |
 | `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | **pass/pass/pass**, 0.491/0.489/0.441 s | Existing earlier-destruction signature: sweep ended about 1062.9 m from launch against the fixture's approximately 1848.6 m full-lifespan expectation. The same signature is already recorded below; no missile code changed. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/pass**, 1.068/0.992/1.000 s | Existing simulated-clock/receipt boundary against [28,31]. It remains intermittent alone; no seating policy changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/pass**, 1.068/0.992/1.000 s | Existing simulated-clock/receipt boundary against [28,31]. It remains intermittent alone; no seating policy changed. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed but 10.519 s) | **pass/pass/pass**, 9.212/9.345/9.302 s | Timing-only Fast guard failure, below ten seconds in all isolated runs. No limit or tier was relaxed. |
 
 Raw receipts remain in `.scratch/p932/fast/` and
@@ -1712,7 +1756,7 @@ are not classified as unrelated flakes.
 | `P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame` | **pass/pass/pass**; 625/663/595 ns per solve | Sweep's allocation assertion passed; its **20,313 ns** measurement exceeded the unchanged 20,000 ns time budget. Lead implementation unchanged. Timing flake under the overlapping real training windows. |
 | Five `PlayerBundlePathsTests` cases (executable Artwork fallback; missing Artwork/NativeSource defaults; local config; native subdirectory guessing) | Each **fail/fail/fail**; two selected SkyPack companions pass 3/3 | Same mandated in-worktree TMPDIR / ancestor `local.env` signature documented in P928/P924; resolver unchanged. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**; 0.875/0.853/0.859 s | Same existing null target/reference assertion and prior dispatch-base controls documented in P928; NPC code unchanged. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass**; 0.711/0.709/0.728 s | Sweep observed **31.35** against [28,31]; existing receipt/clock boundary, also recorded in P928. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass**; 0.711/0.709/0.728 s | Sweep observed **31.35** against [28,31]; existing receipt/clock boundary, also recorded in P928. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **pass/pass/pass**; 9.590/9.609/9.401 s | Sweep passed its assertions in **10.747 s**, above the calibrated **10.180 s** Fast guard. Warp implementation unchanged. |
 | `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (existing quarantine) | **pass/pass/pass**; 0.058/0.057/0.162 s | Sweep's `Assert.Single` saw the expected part plus a random powerup. The runner's existing one-case retry also passed. Pickup/world code unchanged. |
 
@@ -1774,7 +1818,7 @@ All optimized sources/tests were restored afterward and requalified.
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail** | **fail/fail/fail** | Existing null target assertion; same dispatch-base behavior. |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **fail/fail/fail** | **fail/fail/fail** | Existing expected flying=3 / observed docked=2 history. |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail** | **pass/fail/pass** | Existing partial-tip receipt failure with final lock 1.000, sensitive to receipt timing. Not classified as cleared or solely load-induced. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass** | **pass/fail/fail** | Sweep observed 31.2 simulated seconds against [28,31]; existing clock/receipt boundary. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass** | **pass/fail/fail** | Sweep observed 31.2 simulated seconds against [28,31]; existing clock/receipt boundary. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **pass/pass/fail** | **pass/pass/pass** | Existing mining receipt family (also ledgered in P903/P926): sweep saw one queued report after the asserted drain. Intermittent here; this small control sample does not establish its cause or clear the failure. |
 
 The required normal-home showcase never-parks case passes **5/5**. The additional
@@ -1806,7 +1850,7 @@ asteroid, class-selection or parity test failed).
 |---|---|---|
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.3 s, also over the 10 s guard) | **pass / fail / pass** | Existing ledgered partial-tip receipt timing failure (P928: optimized fail/fail/fail, dispatch base pass/fail/pass). Intermittent; unrelated to map generation. Not cleared. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail** | Existing baseline defect recorded by P928 (pristine dispatch-base tree also fail/fail/fail): null target where the test expects the chasing ship. Not P939's to fix; unchanged by this task. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass / pass / pass** | Load/timing flake — the sweep saw 31.1 simulated seconds against the [28, 31] window (P928 already lists the clock/receipt boundary). |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass / pass / pass** | Load/timing flake — the sweep saw 31.1 simulated seconds against the [28, 31] window (P928 already lists the clock/receipt boundary). **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 Slow-but-passing Fast executions (over the calibrated 10 s limit) beyond the
 missile-lock case: `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured`
@@ -1969,7 +2013,7 @@ preserved the existing bundle fixtures' outside-repository lexical temp path.
 | `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | **pass/pass/pass**, 0.599/0.612/0.621 s | Sweep saw no enemy damage and took 40.018 s; same load/receipt family already ledgered under P887. Passes alone. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.266/1.232/1.176 s | Same null DefendTarget at line 179 as P908/P907/P906/P904; persistent existing failure, remains open. |
 | `NpcWingmanAttackLiveTests.Wingman_with_no_enemy_in_sector_stands_by` | **pass/pass/pass**, 2.272/2.385/2.263 s | Sweep-only standby displacement 252.377; this exact method is newly itemized here. All three fresh processes pass. NPC/flight/collision rules unchanged. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/fail**, 0.989/1.002/1.047 s | Known receipt/simulation-clock boundary; sweep 31.85 against [28,31]. Still intermittent alone, remains open. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail/pass/fail**, 0.989/1.002/1.047 s | Known receipt/simulation-clock boundary; sweep 31.85 against [28,31]. Still intermittent alone, remains open. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/pass**, 0.327/0.328/0.310 s | Known join-burst flying=3 versus docked=2 receipt signature; passes alone. |
 | `AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission` | **pass/pass/pass**, 0.429/0.436/0.428 s | Sweep-only lethal-hit receipt failure (18.953 s); all three fresh processes pass. Damage/collision rules unchanged. |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, 3.819/4.343/4.041 s | Timing only: sweep 10.955 s; renderer unchanged. |
@@ -2113,7 +2157,7 @@ assertion was changed.
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 6/6 pass across three method runs; 2.998–4.036 s/case | Fast timing for civ 25 (11.948 s); previously ledgered. |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 9/9 pass across three method runs; 3.412–5.433 s/case | Fast timing for civ 35 (10.116 s); purchase assertions pass alone. |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass/pass/pass; 0.588/0.601/0.581 s | Known stale dock-status receipt (expected -1, actual 1051), matching P904. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail/fail/fail; 0.994/1.043/1.062 s | Existing receipt/simulation-clock boundary: 31.000000000000309, 31.30 and 32.20 against [28,31]. The same family has unmodified-HEAD failures documented below. Remains open. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail/fail/fail; 0.994/1.043/1.062 s | Existing receipt/simulation-clock boundary: 31.000000000000309, 31.30 and 32.20 against [28,31]. The same family has unmodified-HEAD failures documented below. Remains open. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail; 1.191/1.247/1.251 s | Existing null DefendTarget signature, matching P904/P901 and their base controls. Remains open. |
 | `P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod` | pass/pass/pass; 0.344/0.412/0.350 s | Sweep missed the rescue tick budget; assertions pass alone. |
 | `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | pass/pass/pass; 0.804/0.906/0.928 s | Same rescue-budget family already recorded below; no default rescue/Goto policy change. |
@@ -2215,7 +2259,7 @@ All remaining failing methods and timing offenders were repeated three times:
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **3/3 pass** with writable scratch `XDG_CONFIG_HOME` | Sweep tried to restore the read-only real user profile. Same sandbox obstruction recorded in P898/P899. |
 | `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` | **3/3 pass**, 1.842 / 1.853 / 1.875 s | Sweep's victim never died in 4,800 ticks; isolated gameplay succeeds. No combat/spectator translation code changed. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail**, 1.188 / 1.186 / 1.170 s | Persistent pre-existing null `DefendTarget` assertion at line 179; identical unmodified-HEAD evidence and 3/3 failures are already recorded under P899/P898/P895/P892c. No wingman/simulation code changed; remains open. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail / fail / pass** | Failed samples reached sim time 32.2 outside the fixture's [28,31] window. Existing asynchronous receipt/clock sensitivity; LAN hosts use explicit POSITIONREQ, with auto-seat disabled. No auto-seat policy change. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **fail / fail / pass** | Failed samples reached sim time 32.2 outside the fixture's [28,31] window. Existing asynchronous receipt/clock sensitivity; LAN hosts use explicit POSITIONREQ, with auto-seat disabled. No auto-seat policy change. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | **pass / fail / fail** across three complete theory runs (3 / 2 / 2 cases passed) | Failures are inclusive-upper-bound floating-point assertions: 7.0000000000000009 > 7 and 5.0000000000000009 > 5. No timer/warp-bomb source changed; remains open. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | **3/3 pass**, 9.346 / 9.247 / 9.343 s | Sweep passed at 10.882 s, exceeding the Fast time budget. Timing offender only. |
 | `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | **3/3 pass**, 1.597 / 1.600 / 1.596 s | Sweep passed at 10.624 s, exceeding the Fast time budget. Timing offender only. |
@@ -2256,7 +2300,7 @@ other tests. Receipts: `docs/reports/P900_assets/fast-summary.json` and
 | `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository(Artwork)`, `MissingDirectoryHasNoDefault(Artwork/NativeSource)`, `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory` (five cases) | Each affected case fails 3/3; unaffected theory rows pass | Same existing worktree-local `TMPDIR` / checkout `local.env` discovery obstruction recorded under P899/P898. No resolver or path fixture changed. |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail; pass / pass / pass with scratch `XDG_CONFIG_HOME` | Same read-only default user-profile obstruction. No profile/UI source changed. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail (1.210 / 1.259 / 1.259 s) | Existing null `DefendTarget` assertion at line 179, also 0/3 under P899. Remains open; no native NPC/sim logic changed. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing receipt/tick boundary: sweep observed 32.5 against upper bound 31. The auto-seat implementation/fixture is unchanged. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing receipt/tick boundary: sweep observed 32.5 against upper bound 31. The auto-seat implementation/fixture is unchanged. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | All delay rows pass / delay 7 fails / all delay rows pass | Same floating boundary as P899/P898: `7.0000000000000009` exceeds 7. No timer source changed. |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail (38.461 / 38.492 / 38.487 s) | Existing missing partial-tip receipt with final lock 1.000. Previously ledgered with 0/3 and intermittent results; remains open, not attributed solely to load. Also a Fast timing offender. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` (passing timing offender) | pass / pass / pass (3.890 / 3.852 / 4.000 s) | Sweep passed in 11.375 s; below limit alone. Existing sweep timing sensitivity; renderer unchanged. |
@@ -2484,7 +2528,7 @@ the ClientCore P894 logon/wire/listing cases are Fast-tier and passed). Fast rec
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Already ledgered status-roster fixture intermittency (P872/P890); dock path untouched. |
 | `P803TurretGunnerLoopbackLiveTests.Live_boarded_gunner_huds_name_the_right_turret_on_both_clients` | pass / pass / pass | Already ledgered receipt/timing intermittency; unchanged fixture and renderer. |
 | `LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire` | pass / pass / pass (0.4 s each) | Contention only: 31.8 s in the parallel sweep, 0.4 s alone. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | observed fail / pass / pass, then 0/8 failures on retry | New to this ledger: the failing assert is the elapsed-time range (`Assert.InRange(elapsed, 28.0, 31.0)`) after a `29 s` sim jump, i.e. a tick-count/timing boundary under load. P894 only adds a per-LOGONREQ string comparison (inactive when no minimum is configured) and the client-version extension (absent in this test's `LogonRequest`); no side-select, auto-seat or tick path changed. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | observed fail / pass / pass, then 0/8 failures on retry | New to this ledger: the failing assert is the elapsed-time range (`Assert.InRange(elapsed, 28.0, 31.0)`) after a `29 s` sim jump, i.e. a tick-count/timing boundary under load. P894 only adds a per-LOGONREQ string comparison (inactive when no minimum is configured) and the client-version extension (absent in this test's `LogonRequest`); no side-select, auto-seat or tick path changed. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 Limit offenders (>10 s, all *passed*; standalone timings): `LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire`
 31.8 s sweep / 0.4 s alone; `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 11.0 s sweep /
@@ -2503,7 +2547,7 @@ production fixes were used. Receipts:
 | Failure / timing offender | Three isolated outcomes | Baseline evidence / disposition |
 |---|---|---|
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same null `DefendTarget` assertion fails 3/3 on unmodified HEAD `b567ee1f`; persistent baseline failure already ledgered by P872/P887/P888/P890. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / fail | Bounds are 28–31 simulated seconds; failures were 32.15 and 31.90. Unmodified HEAD gives fail / fail / pass too. TCP receipt/tick timing; unchanged production seating logic. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / fail | Bounds are 28–31 simulated seconds; failures were 32.15 and 31.90. Unmodified HEAD gives fail / fail / pass too. TCP receipt/tick timing; unchanged production seating logic. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | pass / pass / fail | Extra current block: fail / pass / pass. Unmodified HEAD initially passes 9/9 with driver-first intake. HEAD production with only the fixture's connection/logon initiation reordered B/driver/C fails 3/3 with the identical missing same-side relay assertion. This exposes a roster/intake-order fixture dependency; its watcher reads only SINGLE_SHIP_UPDATE while the native baseline uses the heavy/light stream. No product/HUD behavior changed. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass | 9.590 / 9.701 / 9.590 s alone, all below the 10 s limit; full-sweep timing offender, not a UDP path. |
 
@@ -6674,7 +6718,7 @@ Fast tier `tiers-20261030T030304.330748Z`: 11,765 tests, 5 failures, none caused
 - `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` — 3/3 pass alone (0.45 s).
 - `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` — 2/3 fail, then
   3/3 pass on the class and 3/3 on the method immediately after (host had just finished the 25 min training
-  sweep). Load flake.
+  sweep). Load flake. **Resolved by P1021** (not load: see the P1021 section at the top).
 - `BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)`
   — SLOW FAST 17.694 s (calibrated 10 s limit); 3/3 pass alone in 5 s. Same load-flake class as
   `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.444 s in the same sweep, passed).
@@ -6805,7 +6849,7 @@ These were fixed assertions, not classified as flakes.
 | `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | pass / fail / pass | Existing intermittent chat-receipt ordering: ChatTarget 0 rather than -2, same assertion in isolation. No chat code changed. |
 | `P813cReconnectGraceTests.Grace_expiry_runs_the_native_removal` | pass / pass / pass | Missing removal receipt under sweep load; all existing UDP/reconnect suites also passed 46/46 three times. |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | all three delay cases pass / pass / pass | Existing floating boundary: delay 5 observed `5.0000000000000009` against upper bound 5. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Existing receipt/simulation-clock timing flake: sweep saw 32.1 seconds against 28–31. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Existing receipt/simulation-clock timing flake: sweep saw 32.1 seconds against 28–31. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Previously ledgered deterministic null target at line 179; NPC defend/flight code untouched. Remains open. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass / pass / pass at 9.742 / 9.738 / 9.719 s | Passed in the sweep but took 10.597 s, exceeding the calibrated 10 s Fast limit. Existing timing class. |
 
@@ -7009,7 +7053,7 @@ failures below was isolated this batch, so this sweep does not clear P908 or P90
 |---|---|---|
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | sweep fail, pass 3/3 alone | Already ledgered intermittent. |
 | `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | sweep fail, pass 3/3 alone | Already ledgered as sweep-only. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.1 s against a 31 s limit, pass 3/3 alone | Already ledgered timing margin. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.1 s against a 31 s limit, pass 3/3 alone | Already ledgered timing margin. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `MissileLockLiveTests`, `NpcWingmanDefendLiveTests` | sweep fail | See the P910 section. |
 | `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` | Expected 5, Actual 6 again | Second sweep in a row. Still open, cause not established. |
 | `SC2SupportPhase`, `SC4`, `P745`, `P798` | sweep fail, not rerun | Already ledgered showcase outcomes. |
@@ -7097,7 +7141,7 @@ Perf 73 pass; Fast 12,860 FAIL; Live 266 FAIL. Rerun alone on master `9816dfa4`,
 | `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` | no KILL_SHIP within budget | pass / pass / pass |
 | `MissileTrackWarningLiveTests.Warning_routes_by_the_source_ship_for_pilot_and_gunner` | gunner not warned | pass / pass / pass |
 | `MusicLoadingTests.Missing_beds_stay_silent_even_when_music_is_enabled_and_ship_docks` | empty load list | pass / pass / pass |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.65 s, limit 31 | pass / pass / pass |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.65 s, limit 31 | pass / pass / pass **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 Causes not established; all fail only under the full parallel sweep. `P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers`
 passed this sweep after failing the previous two, so it is intermittent, cause unknown. `DockDocking`, `MissileLock`, `NpcWingmanDefend`,
@@ -7155,7 +7199,7 @@ chat/profile behavior changed.
 | Five `PlayerBundlePathsTests` executions: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, and sky config precedence | Each failing case fails 3/3; companion SkyPack cases pass 3/3 | Existing in-checkout `TMPDIR` obstruction: ancestor `local.env` is visible to the simulated bundle. Same fixture assumption as P909–P912. |
 | `P761StartChatComposeTests.HeldEnter_DoesNotReFire` | pass / pass / pass | Sweep-only chat-state assertion; cause not established. Chat source unchanged. |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail with default profile; pass / pass / pass with writable task `XDG_CONFIG_HOME` | Existing sandbox obstruction: the fixture's `finally` restoration at line 237 attempts to write the read-only default player profile. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / pass | Existing intermittent timeout boundary: sweep measured 31.10 s against the 31 s maximum; first isolation measured 32.15 s. Remains intermittent. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / pass | Existing intermittent timeout boundary: sweep measured 31.10 s against the 31 s maximum; first isolation measured 32.15 s. Remains intermittent. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent expected-charge / actual-null defend-target assertion, already ledgered before P916. |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | fail / fail / pass | Intermittent join-burst state: sweep expected 3, got 2. First two isolated invocations also fail; no transport or join logic changed. |
 | `SideEliminationLiveTests.Destroying_last_restart_station_eliminates_side_and_declares_winner` | pass / pass / pass; 0.504 / 0.538 / 0.540 s | Sweep's lethal-hit assertion timed out at 20.926 s, also exceeding the Fast limit. Not reproduced in isolation. |
@@ -7255,7 +7299,7 @@ the paths below were changed.
 | `P761StartChatComposeTests.HeldEnter_DoesNotReFire` | pass / pass / pass | Sweep-only chat-state assertion; cause not established. Also observed in P916. |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail with default profile; pass / pass / pass with writable task `XDG_CONFIG_HOME` | Existing sandbox obstruction: fixture cleanup tries to restore a read-only default player profile. |
 | `LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire` | pass at 1.510 / 1.466 / 1.487 s | Sweep timed out waiting for the shooter's decoded kill credit at 33.197 s, also above the Fast limit. Cause not established; not reproduced in isolation. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / pass | Existing intermittent timeout boundary: sweep observed 32.15 s against a 31 s maximum. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail / pass | Existing intermittent timeout boundary: sweep observed 32.15 s against a 31 s maximum. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent expected-charge / actual-null defend-target assertion, ledgered before P921. |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/3 pass, 3/3 pass, 2/3 pass | Sweep delays 5 and 7 exceeded the integer upper bound by one float step (`5.0000000000000009`, `7.0000000000000009`). Existing P912 floating-boundary family; intermittent in isolation. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass at 9.584 / 9.506 / 9.511 s | Sweep assertion passed at 11.192 s, above the calibrated 10 s limit. Existing near-limit timing family; no tier change. |
@@ -7268,7 +7312,7 @@ Exactly one Fast-tier run; rendering-only production changes. Isolated filters w
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Writes the default user `player.json` outside the writable sandbox | fail / fail / fail under the original environment; pass / pass / pass with `XDG_CONFIG_HOME` set to task-local scratch. Environment restriction, not a rendering regression. |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | Floating-point boundary: `7.0000000000000009` exceeds upper bound `7` | pass / pass / pass (all three delay cases in each isolated filter). Cause of sweep-only boundary exposure not established. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Phase-one `AttackTarget` is null at line 179 | fail / fail / fail, same assertion. Previously seen in runner sweeps; remains open, not cleared as a load flake. P922 changes no simulation/server code. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | Observed 31.45 simulated seconds, allowed 28–31 | pass / pass / pass. Sweep-only; cause not established. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | Observed 31.45 simulated seconds, allowed 28–31 | pass / pass / pass. Sweep-only; cause not established. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Observer never latches victim death after 2,500 ticks | pass / pass / pass. Sweep-only; cause not established. |
 
 P922's two new Live GPU cases (pack present and absent, each covering 24 kind/style/mode combinations) pass 3/3 each with 0 skipped. The optional Meshy pack is unconfigured; the Fast skip count and final cohort totals are in `docs/reports/P922_REPORT.md`.
@@ -7672,7 +7716,7 @@ per method (39 invocations, including theory companions):
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail/fail/fail (38.525/38.336/38.394 s); **dispatch Core control also fails 3/3** | Lock reaches 1.000 but expected partial-lock tip is absent, line 150. The same assertion reproduces with the four changed Core files replaced at compile time by HEAD originals and the new training helper excluded, using separate artifacts without altering the working tree. Existing missile feedback failure, not introduced by training. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | pass/pass/pass (1.563/1.489/1.479 s) | Sweep timed out; warning/transport code unchanged. |
 | `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | pass/pass/pass (1.714/1.618/1.697 s) | Sweep read lobby side -2 before expected side 0 at line 167; existing side-seating race. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass (1.003/0.999/0.996 s) | Existing auto-seat timing fixture; no side-selection change. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass (1.003/0.999/0.996 s) | Existing auto-seat timing fixture; no side-selection change. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | pass/pass/pass (3.443/3.437/3.271 s) | Sweep waited 36 s; ordinary NPC auto-launch unchanged. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | pass/pass/pass (9.458/9.311/9.196 s) | Timing-only violation in the sweep; isolated case durations stay below 10 s. |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass/pass/pass with task-local `XDG_CONFIG_HOME` | The sweep attempted to restore an existing read-only home profile. Existing sandbox/profile fixture; the sole sweep did not redirect XDG. No profile code changed. |
@@ -8034,7 +8078,7 @@ bot, discovery, bundle resolver or profile implementation changed in P950.
 | Five `PlayerBundlePathsTests` executions: Artwork executable fallback; Artwork/NativeSource missing defaults; native install-subdirectory guessing; local sky-config precedence | Every failing case fails 3/3; included companion theory cases pass | Same failures 3/3 on dispatch. Mandated scratch-local TMPDIR lets simulated outside-repository installs discover the ancestor `local.env`; same fixture obstruction ledgered in earlier lanes |
 | `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy` | pass / pass / pass | Existing shared-state/load signature; no flight/AI rule changed |
 | `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate` | pass / pass / pass | Existing live receipt/timing signature |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Sweep observed 31.4 simulated seconds versus the unchanged 28–31 assertion |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / pass / pass | Sweep observed 31.4 simulated seconds versus the unchanged 28–31 assertion **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | pass / pass / pass with writable task-local XDG | Sweep tried to restore the existing read-only default profile; same sandbox fixture signature as earlier lanes |
 | `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | pass / pass / pass with a task-local absent-CLI stub | The null-returning status callback falls back to the real local CLI. Its unexpected non-loopback discovery stays only in private scratch logs; no remote proof was requested or intentionally run |
 
@@ -8097,7 +8141,7 @@ tests; each was re-run 3× alone per the ledger rule. No product code changed
   isolation 2026-11-07" (also reproduced on the pristine tree there).
 - `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds`:
   pass / pass / fail — the known intermittent receipt/clock boundary [28,31]
-  (recorded in P928/P931 sections).
+  (recorded in P928/P931 sections). **Resolved by P1021** (see the P1021 section at the top).
 - `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over`:
   pass / pass / pass alone — the known receipt-ordering intermittency
   (line ~5043 above); it failed only inside the parallel sweep.
@@ -8203,7 +8247,7 @@ passed 3/3 isolated runs and are clean in the sweep. Raw logs:
 | Test | Sweep | 3x alone | Ledger |
 | --- | --- | --- | --- |
 | `Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Verbose_gate_silences_and_reenables_routed_diag_lines` | failed (process-global gate under load) | **pass/pass/pass** | existing `ConsoleLogNonBlockingTests` family |
-| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | **pass/pass/pass** | existing clock/receipt boundary vs [28,31] |
+| `Allegiance.Core.Tests.LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | failed | **pass/pass/pass** | existing clock/receipt boundary vs [28,31] **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass/pass/pass** | existing ballot-receipt family; unmodified base fails it too |
 
 ## 2026-11-08 — P960 P807 handoff investigation
@@ -8247,7 +8291,7 @@ executions: **36 passed / 6 failed / 0 skipped**).
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | pass / pass / pass | Existing launcher-grant receipt flake. |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / fail | Existing final lock 1.000 without the expected partial-tip receipt; still intermittent alone. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / fail / fail | Existing state-3/state-2 join receipt intermittency; not cleared. Wire constants are flying=3, docked=2. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | Existing auto-seat clock/receipt boundary; one isolation saw 32.0, another missed the ready receipt. |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | Existing auto-seat clock/receipt boundary; one isolation saw 32.0, another missed the ready receipt. **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it` | pass / pass / pass | **New exact-method entry**: empty receipt collection in sweep; existing ballot family. No ballot code changed. |
 
 All seven Fast timing-offender methods also ran three times alone. `P796VariedLoadoutTests`
@@ -8442,7 +8486,7 @@ zero-allocation pins still pass, so none of these is on the P990 path.
 |---|---|---|
 | `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` | Fast sweep missed `KILL_SHIP` inside its observation budget | **pass / pass / pass** (in the batch with the P739/LiveSideSelect filters, 2 s total) — the ledgered receipt timeout |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | one-ULP upper bound `7.0000000000000009 > 7` | **pass / pass / pass** — the ledgered floating deadline-boundary family |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `31.x` outside the fixture's [28, 31] window | **pass / fail / pass** — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `31.x` outside the fixture's [28, 31] window | **pass / fail / pass** — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38 s (also a slow-Fast offender) | **pass / fail (38 s) / pass** — the long-ledgered OPEN partial-tip receipt family (clean-base rate 1 pass / 2 fail, same 38 s signature) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, 10.264 s), `P814GunnerTests.P814b_…` (10.104 s), `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (11.313 s), `P942ResearchOrderingTests.Generated_research_never_waits_…` (10.029 s), `P750NativeAsteroidTypesTests.Research_showcase_rocks_…` (13.438 s) | slow-Fast executions, assertions passed | the same ledgered near-limit families the P989/P987 cohorts carry (isolated runs below 10 s in those cohorts) |
 
@@ -8488,7 +8532,7 @@ non-doc change on the flag-off path is that the status encoders now build from o
 |---|---|---|
 | `ProbeCombatLiveTests.Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer` | 17.064 s (slow-Fast offender) and the destroy-broadcast receipt missing | **3/3 pass** (1 s each) — load-sensitive receipt family |
 | `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | 37.396 s (slow-Fast offender) and the ammo/damage receipt missing | **3/3 pass** (1 s each) — same receipt family |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 824 ms; the ledgered receipt/simulation-clock boundary (clean-base rate 2 pass / 3 fail) | **1 pass / 2 fail** alone — the long-ledgered auto-seat row above, no side-select/auto-seat code changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 824 ms; the ledgered receipt/simulation-clock boundary (clean-base rate 2 pass / 3 fail) | **1 pass / 2 fail** alone — the long-ledgered auto-seat row above, no side-select/auto-seat code changed **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim(training: False, model: "native")` | 324 ms; aim/turn receipt | **3/3 pass** (4 cases each) — load flake |
 | slow-Fast: `P750NativeAsteroidTypesTests…` 11.173 s, `ArmedProbeLiveTests…` 37.396 s, `P777WarpExitWobbleTests…` 10.106 s, `ProbeCombatLiveTests…` 17.064 s | assertions passed in the isolated re-runs | the ledgered near-limit families |
 
@@ -8512,7 +8556,7 @@ The two-match 2-side showcase `P730ShowcaseLiveTests.Two_local_showcase_matches_
 | Test | 3x alone | Classification |
 |---|---|---|
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 3/0, 1/2, 3/0 (theory cases) | Existing floating deadline-boundary family (entries above); timer code unchanged, gate off in this fixture. |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing auto-seat receipt/simulation-clock boundary (clean-base 2 pass / 3 fail recorded above). **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy`, `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 3/3 pass each | Load-only in a sweep that shared the host with the tools build; none touches SHIP_STATUS with the gate on (all default off, wire pinned byte-identical). |
 
 ### P996 sweep (Core + ClientCore + MonoGame Fast tiers, one run each, shared host)
@@ -8523,7 +8567,7 @@ non-task; each re-run alone 3×:
 | Test | Sweep signature | 3× alone | Classification |
 |---|---|---|---|
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 38.4 s, and a SLOW FAST offender | **0 pass / 3 fail**, 38 s each — the ledgered partial-tip receipt (clean base 1 pass / 2 fail, P966 row) | Existing, no missile/lock/tip source on the P996 path **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 802 ms; `32.1000000000003` against the fixture's [28, 31] | **0 pass / 3 fail**, same 32.1 s one-second boundary (clean base 2 pass / 3 fail, P966/P991 rows) | Existing auto-seat receipt/simulation-clock boundary; no side-select/auto-seat source changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 802 ms; `32.1000000000003` against the fixture's [28, 31] | **0 pass / 3 fail**, same 32.1 s one-second boundary (clean base 2 pass / 3 fail, P966/P991 rows) | Existing auto-seat receipt/simulation-clock boundary; no side-select/auto-seat source changed **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `P832aMissionRulesInventoryTests.Every_native_mission_body_handler_and_local_rule_helper_has_a_matrix_row` | "stale bodies: [CshipIGC::SetBaseHullType …, CshipIGC::PurchaseShipLoadout …]" | **task failure, fixed**: the two new parity rows were in the audited `FedSrv mission rules` family with prose `native_body` values; SIM-0859 moved to the `updates` family with its real body key and SIM-0860 moved to `p977-eject-rescue.csv`. Re-checked: `p832a-mission-rules-audit.py --check` clean, the test passes 1/1 | mine |
 
 SLOW FAST offenders of the same led families: `MissileLockLiveTests` (38.369 s) and
@@ -8536,7 +8580,7 @@ timing offender, and no P996 test failed in the sweep.
 | Test | Sweep signature | 3× alone | Classification |
 |---|---|---|---|
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | `Assert.Equal` 0 vs **1 264** allocated bytes | **3/3 pass** (11-14 ms each) | Ledgered allocation intermittency (two earlier entries, both 3/3 pass alone); no sound/mix code on the P996 path |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 s against the fixture's [28, 31] | **0/3** at 32.1 s (sweep 1 cohort) | Same long-ledgered auto-seat receipt/simulation-clock boundary as sweep 1 above |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.45 s against the fixture's [28, 31] | **0/3** at 32.1 s (sweep 1 cohort) | Same long-ledgered auto-seat receipt/simulation-clock boundary as sweep 1 above **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 `MissileLockLiveTests` passed in this sweep (1 s); the only slow-Fast offender was
 `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.477 s vs 10.000 s). No P996 test failed in either
@@ -8558,7 +8602,7 @@ isolated processes:
 |---|---|---|
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Default profile restoration hits the sandbox's read-only home config | **pass / pass / pass**, with writable task-local `XDG_CONFIG_HOME`; existing sandbox fixture signature, no profile code changed |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 with no partial tip, 39.126 s | **fail / fail / fail**, 38.380 / 38.342 / 38.309 s; existing OPEN receipt family, no missile/lock code changed **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.55 sim seconds versus [28,31] bound | **fail / fail / fail**; existing OPEN auto-seat boundary family, no side-select code changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.55 sim seconds versus [28,31] bound | **fail / fail / fail**; existing OPEN auto-seat boundary family, no side-select code changed **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | travelled 83.531 units | **pass / pass / pass**, 2.383 / 2.313 / 2.300 s; existing load-sensitive idle-NPC family |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 8.04999924 versus upper bound 8 | **pass / pass / pass**, 0.610 / 0.561 / 0.638 s; existing stint-timing family, no scoring code changed |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Body passes; 10.408 s exceeds calibrated 10 s | **pass / pass / pass**, 9.131 / 9.186 / 9.170 s, all below the unchanged limit |
@@ -8584,7 +8628,7 @@ One full Fast tier (`tools/run-tests.sh --tier fast --no-build`, 13 969 tests, 5
 |---|---|---|---|---|
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s, `lock never reached full + partial tip (lock 1.000)`) | fail | **0 pass / 3 fail**, 38 s each | **pristine base commit (`git archive bdbf8423`, same test file): 0 pass / 2 fail, 38 s each** | the ledgered P933/P935/P966 partial-tip receipt family (clean-base 1/2 recorded above); no missile/lock/tip source on the P993 path and the flag is off in the sweep **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5,7)` | fail | **0/4 theory cases pass** on the widest run, values `5.0000000000000009` / `7.0000000000000009` against the inclusive `(delay−0.1, delay]` bound | base commit 4/4 pass in one run, the same one-ULP boundary is recorded in the entries above | the existing floating upper-bound family (P966/P977 rows: `5.0000000000000009 > 5`); no timer/Core code from P993 is on the deadline path |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.5 s vs `[28,31]`) | 3 runs alone: 32.15–32.60 s, the ledgered receipt/clock boundary | base commit: same failure (32.45 s) in one of two runs | the existing auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967/P977 entries); no side-select/auto-seat source changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.5 s vs `[28,31]`) | 3 runs alone: 32.15–32.60 s, the ledgered receipt/clock boundary | base commit: same failure (32.45 s) in one of two runs | the existing auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967/P977 entries); no side-select/auto-seat source changed **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `SLOW FAST` 38.149 s `MissileLock…`, 10.357 s `P777WarpExitWobbleTests…`, 10.012 s `P942ResearchOrderingTests…(civ 201)` | 3 executions over the calibrated 10 s limit | the missile-lock one is the ledgered family above; the P777/P942 near-limit rows are already ledgered (P750 cohort) | — | the shared sweep runner was the only load (other lanes idle); re-running the whole tier is the only way past the fixed 10 s limit — these are the ledgered near-limit families, all < 1 s alone |
 
 Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
@@ -8602,7 +8646,7 @@ both arms log the same bot hits/kills, the same `[proj-diag]` shape and zero par
 
 | Test | Result | Isolation |
 |---|---|---|
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.3 s against [28,31], also when co-run with `MissileBroadcastTests`/`P994GunfireBatchTests` | passes alone with batching on and off; server log seats at 30 s — the ledgered FltBot receipt/simulation-clock boundary under co-running load |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.3 s against [28,31], also when co-run with `MissileBroadcastTests`/`P994GunfireBatchTests` | passes alone with batching on and off; server log seats at 30 s — the ledgered FltBot receipt/simulation-clock boundary under co-running load **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed, 38 s | already ledgered by P997 (fails alone on the clean base) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`, `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | failed once in the sweep | 3/3 pass alone with batching default ON |
 
@@ -8617,7 +8661,7 @@ on this tree:
 |---|---|---|---|
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (5 s, "B never saw A's death (IsDead never latched on B)") | fail | **3 pass / 0 fail**, ~1 s each | the long-ledgered asynchronous remote death-receipt intermittency (P892c/P896/P899/P903/P996 rows); the fixture kills immediately after seating and allows only a 2,500-tick window (`DeadLatchRespawnLiveTests.cs:432-440`), and P998 does not touch the death latch, KILL_SHIP or EXPORT paths |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | fail (`5.0000000000000009` vs the inclusive `(4.9, 5]` bound) | **2 runs 3/3 pass, 1 run 2/3** (same delay:5 one-ULP value) | the existing floating upper-bound family (P966/P977/P993 rows); no timer/constant code on the P998 path |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.4 s vs `[28,31]`) | **1 pass / 2 fail**, 32.15 / 32.20 s — the exact ledgered boundary | the existing auto-seat receipt/simulation-clock boundary (P945…P997 rows); no side-select/auto-seat code changed |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.4 s vs `[28,31]`) | **1 pass / 2 fail**, 32.15 / 32.20 s — the exact ledgered boundary | the existing auto-seat receipt/simulation-clock boundary (P945…P997 rows); no side-select/auto-seat code changed **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.2 s) | fail | **0 pass / 3 fail**, 38 s each | the ledgered persistent partial-tip receipt family (P933/P935/P966/P993/P997 rows: fails alone on the clean base too); it is also one of the two `SLOW FAST` executions (38.178 s), the other being the ledgered near-limit `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.566 s) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 
 Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`) on this
@@ -8648,7 +8692,7 @@ tree, with artwork and the new flag OFF. Each cell below lists all three runs as
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 0/1/0; 0/1/0; 1/0/0 | 0/1/0; 1/0/0; 0/1/0 |
 | `MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
 | `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 1/0/0; 0/1/0 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 1/0/0; 0/1/0 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0; 2/0/0; 2/0/0 | 2/0/0; 2/0/0; 2/0/0 |
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
 | `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
@@ -8755,7 +8799,7 @@ selections retain every parameter case.
 |---|---|---|
 | `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | own-status missing; only initial miner 8098 statuses received, line 146; ledgered receipt family | **pass / pass / pass**, .285 / .292 / .290 |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without partial tip; 37.864 s, also timing offender | **fail / pass / pass**, 38.633 / 1.573 / 1.632; existing OPEN partial-tip issue remains open **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.650 simulated seconds outside [28,31], line 192; ledgered boundary family | **pass / pass / pass**, .958 / .951 / .956 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.650 simulated seconds outside [28,31], line 192; ledgered boundary family | **pass / pass / pass**, .958 / .951 / .956 **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty; TreasureId 3 / Amount 0 remained; same P1002 signature | **pass / pass / pass**, .409 / .438 / .419 |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 12.879 s | **3/0/0 per invocation**, culprit case 3.430 / 3.435 / 3.433 s |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, 14.367 s | **2/0/0 per invocation**, culprit case 3.043 / 3.045 / 3.033 s |
@@ -8812,7 +8856,7 @@ fresh process, one case per invocation unless stated.
 | Case | Runs A / B signature | Isolated repetitions |
 |---|---|---|
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail — lock 1.000 without the required partial tip, 37.8 / 38.2 s | **1 pass / 2 fail** (38 s, 38 s, 1 s): the OPEN partial-tip receipt failure ledgered since P933/P935/P966, not load **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail — the 32 s auto-seat boundary signature | **1 pass / 5 fail** over 6 isolated runs at load 11–21; the ledgered auto-seat receipt/simulation-clock boundary family (42 prior entries, also `fail/fail/fail` cohorts) |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail — the 32 s auto-seat boundary signature | **1 pass / 5 fail** over 6 isolated runs at load 11–21; the ledgered auto-seat receipt/simulation-clock boundary family (42 prior entries, also `fail/fail/fail` cohorts) **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / fail | **1 pass / 2 fail** (~0.6 s); ledgered roster-stint recommendation intermittency |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | pass / fail | **2 pass / 1 fail** (~1 s, 3 cases each); ledgered floating upper-bound signature (ledger records 1/2/0 and 2/1/0 cohorts) |
 | `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate` | pass / fail (no rendering involved) | **pass / pass / pass** (~0.5 s) |
@@ -8912,7 +8956,7 @@ Every failed case was then selected in a fresh process three times.
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | remote death latch missed in the sweep | **pass / pass / pass** |
 | `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | ledgered transit-receipt intermittency | **pass / pass / pass** |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5, 7) | `Assert.InRange` 7.0000000000000009 outside (6.9, 7] — the ledgered float upper-bound family | **pass / pass / pass** (all three cases per run) |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `Assert.InRange` 31.9 s outside [28, 31] — the ledgered clock-boundary family | **fail / pass / pass**, ~1 s |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `Assert.InRange` 31.9 s outside [28, 31] — the ledgered clock-boundary family | **fail / pass / pass**, ~1 s **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 
 No failed, slow or repeated case exercises the shop, loadout or tech-mask code.
 Timing-only offenders (assertions passed, sweep seconds): `P814GunnerTests.P814b`
@@ -8967,7 +9011,7 @@ do not use the shop model; all are already-ledgered families:
 |---|---|---|
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore) | pass / pass / pass | `DeadLatch` receipt |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | roster stint |
-| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | auto-seat boundary; `Allegiance.Core.Tests` does not reference the client game project |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | auto-seat boundary; `Allegiance.Core.Tests` does not reference the client game project **Resolved by P1021** (the test timed the client's receive thread against the fast-pumped sim clock; the server seats at exactly 30 s: see the P1021 section at the top). |
 | `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | pass / pass / pass | NPC clearance (63 s in the sweep) |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | 3/3, 2/3, 1/3 theory cases | P739 float bound |
 | `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | pass / pass / pass | warp-transit receipt |
@@ -8995,3 +9039,4 @@ rejoin stints, `LiveSuicideShipDeleteTests` combat delete and `P590PodRescueTest
 `hullinfobmp.mdl` and `partinfo.mdl`; manifests regenerated (4 roots, 7 manifest lines) → 3/3 pass.
 `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (P763 server flag, default off)
 **fails 2/3 alone** — not touched by this batch (client-only), but no longer just a sweep flake: needs its own task.
+**Resolved by P1021** (see the P1021 section at the top).
