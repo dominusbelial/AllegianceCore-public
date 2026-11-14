@@ -434,19 +434,19 @@ public sealed class P990BroadcastLaneFixtureTests
         return line[start..end];
     }
 
-    /// <summary>P990 — the same §4 method as P983, on a workload that mirrors the
+    /// <summary>P990/P1009 — a workload that mirrors the
     /// real per-tick mix: ordered frames whose headers must be parsed for the
     /// per-fmid split, keyed frames across the port's families, and one pose stamp
-    /// per heavy record. The gate is the diagnostic's cost against the measured
-    /// p95 projection tick on the same 144-peer fixture.</summary>
+    /// per heavy record. Compare steady-state accounting with frozen P990 code
+    /// in the same process, and retain a small-share projection-tick guard.</summary>
     [SkippableFact]
     [Trait("Requires", "Artwork")]
     [Trait("Tier", "Perf")]
-    public void Mixed_lane_overhead_stays_within_30ns_per_call_and_three_percent_of_the_p95_tick()
+    public void Mixed_lane_overhead_stays_within_reference_budget_and_small_share_of_the_p95_tick()
     {
         Require.Artwork();
         var (offBlocks, _) = MeasureTickBlocks();
-        double offP95 = offBlocks.Order().ToArray()[offBlocks.Length / 2];
+        double offP95 = Percentile(offBlocks, 0.5);
 
         var telemetry = new BroadcastTelemetry();
         var ids = Enumerable.Range(1, 144).Select(i => new ConnectionId((uint)i)).ToArray();
@@ -459,6 +459,10 @@ public sealed class P990BroadcastLaneFixtureTests
         var heavy = Enumerable.Range(0, 16).Select(i => new PoseStamp((short)(10000 + i), 0, Vector3.Zero, true)).ToArray();
         telemetry.SetSecond(1);
         foreach (var id in ids) { var peer = telemetry.Peer(id); for (short s = 0; s < 140; s++) peer.MarkPose(s, 0); }
+        var reference = new P990Reference.BroadcastTelemetry();
+        reference.SetSecond(1);
+        reference.SimNowMs = 0;
+        foreach (var id in ids) { var peer = reference.Peer(id); for (short s = 0; s < 140; s++) peer.MarkPose(s, 0); }
         void Workload()
         {
             foreach (var id in ids)
@@ -471,6 +475,25 @@ public sealed class P990BroadcastLaneFixtureTests
                 for (int i = 0; i < heavy.Length; i++) peer.MarkPose(heavy[i].ShipId, 1);
             }
         }
+        // Keep the workload identical, including the peer lookup and array loops.
+        // The reference implementation is independent of production changes.
+        void ReferenceWorkload()
+        {
+            foreach (var id in ids)
+            {
+                var peer = reference.Peer(id);
+                reference.RecordSendFrame(id, 2, P990Reference.BroadcastCategory.HeavyShipUpdates, keyedFrames[0], splitBytes: 24);
+                for (int i = 0; i < statusFrames.Length; i++) reference.RecordSendFrame(id, 0, P990Reference.BroadcastCategory.Other, statusFrames[i]);
+                for (int i = 0; i < keyedFrames.Length; i++) reference.RecordSendFrame(id, i + 1, P990Reference.BroadcastCategory.Other, keyedFrames[i]);
+                for (int i = 0; i < heavy.Length; i++) peer.MarkPose(heavy[i].ShipId, 1);
+            }
+        }
+        // Call count alone does not allow time for background tier compilation.
+        // Warm the actual paths for wall time as well, without changing JIT flags.
+        long warmStart = Stopwatch.GetTimestamp();
+        int warmTicks = 0;
+        do { ReferenceWorkload(); Workload(); warmTicks++; }
+        while (Stopwatch.GetElapsedTime(warmStart).TotalSeconds < 1);
         // Per-arm attribution: which of the four accounting kinds costs what
         // (each arm runs the exact per-tick call count of its kind at 144 peers).
         void HeavyArm()
@@ -508,11 +531,44 @@ public sealed class P990BroadcastLaneFixtureTests
         }
         double heavyMs = Arm(HeavyArm), orderedMs = Arm(OrderedArm), keyedMs = Arm(KeyedArm), stampMs = Arm(StampArm);
 
-        for (int i = 0; i < 20; i++) Workload();
-        const int reps = 50;
-        long start = Stopwatch.GetTimestamp();
-        for (int i = 0; i < reps; i++) Workload();
-        double costMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency / reps;
+        const int blocks = 15, reps = 128;
+        var costs = new double[blocks];
+        var references = new double[blocks];
+        var ratios = new double[blocks];
+        int rejected = 0;
+        long allocated = 0;
+        for (int block = 0; block < blocks;)
+        {
+            TimeSpan pauses = GC.GetTotalPauseDuration();
+            int collections = GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2);
+            double current, baseline;
+            // Alternate order to avoid systematically favoring the second arm.
+            if ((block & 1) == 0) { baseline = Measure(ReferenceWorkload); current = Measure(Workload); }
+            else { current = Measure(Workload); baseline = Measure(ReferenceWorkload); }
+            if (GC.GetTotalPauseDuration() != pauses ||
+                GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2) != collections)
+            {
+                Assert.True(++rejected <= blocks, "too many GC-contaminated accounting blocks");
+                continue;
+            }
+            costs[block] = current;
+            references[block] = baseline;
+            ratios[block] = current / baseline;
+            block++;
+        }
+        double costMs = Percentile(costs, 0.5);
+        double referenceMs = Percentile(references, 0.5);
+        double ratio = Percentile(ratios, 0.5);
+
+        double Measure(Action action)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            long start = Stopwatch.GetTimestamp();
+            for (int i = 0; i < reps; i++) action();
+            long elapsed = Stopwatch.GetTimestamp() - start;
+            allocated += GC.GetAllocatedBytesForCurrentThread() - before;
+            return elapsed * 1000.0 / Stopwatch.Frequency / reps;
+        }
 
         const int peers = 144, perPeerCalls = 1 + 24 + 8 + 16;
         double perCallNs = costMs * 1_000_000 / (peers * perPeerCalls);
@@ -520,30 +576,38 @@ public sealed class P990BroadcastLaneFixtureTests
                           $"share={costMs / offP95 * 100:0.000}% frames={telemetry.Probes} " +
                           $"perCallNs={perCallNs:0.0} " +
                           $"arms[heavy={heavyMs:0.0000} ordered24={orderedMs:0.0000} keyed8={keyedMs:0.0000} stamps16={stampMs:0.0000}]ms");
+        Console.WriteLine($"[p1009-method] frequency={Stopwatch.Frequency} highResolution={Stopwatch.IsHighResolution} " +
+                          $"warmTicks={warmTicks} blocks={blocks} reps={reps} gcRejected={rejected} allocated={allocated} " +
+                          $"referenceNs={referenceMs * 1_000_000 / (peers * perPeerCalls):0.00} ratio={ratio:0.000} " +
+                          $"costBlocks=[{Values(costs)}] referenceBlocks=[{Values(references)}] " +
+                          $"offP95Blocks=[{Values(offBlocks)}]");
         Assert.True(telemetry.Probes > 0);
         Assert.True(telemetry.OrderedLaneWindowBytes(ShipStatusMessage.Fmid, 1) > 0);
+        Assert.Equal(0, allocated);
+        Assert.True(reference.OrderedLaneWindowBytes(ShipStatusMessage.Fmid, 1) > 0);
 
-        // The bound is the PER-ACCOUNTED-CALL cost, not a share of one fixture's
-        // p95: the diagnostic's work is exactly "one pass per frame and per pose
-        // stamp the server already hands to the transport", so a share bound only
-        // moves with how many frames the fixture happens to send per peer. P983's
-        // 1 %-of-p95 bound was measured on a 14-calls/peer workload; the rig's real
-        // mix (P990 audit of the b104 window: ~25 frames + ~19 poses per peer per
-        // tick) is ~50 calls/peer, i.e. 7 200 calls per 144-peer tick, so at the
-        // ~20 ns/call this path measures, the honest expectation at 144 peers is
-        // ~0.14 ms = ~2.3 % of a ~6 ms tick — under 1 % is not reachable at 144
-        // peers for the real mix with any per-frame accounting. 30 ns/call leaves
-        // the gate ~35 % above the measured cost (this host runs at load 13-24 from
-        // other lanes) while still catching a regression back towards the
-        // dictionary-based path (25-28 ns/call before the flat table).
-        Assert.True(perCallNs <= 30,
-            $"the diagnostic costs {perCallNs:0.0} ns per accounted frame/pose stamp " +
-            $"({costMs:0.0000} ms per 144-peer mixed tick, {costMs / offP95 * 100:0.0}% of the {offP95:0.000}ms p95 tick)");
-        Assert.True(costMs <= offP95 * 0.03,
-            $"the diagnostic costs {costMs:0.0000}ms per 144-peer mixed tick, " +
-            $"{costMs / offP95 * 100:0.0}% of the {offP95:0.000}ms p95 tick (bound 3% = ~1.3x the " +
-            "derived 50-calls/peer expectation above)");
+        // P1009: original and current code fail the old host's 30 ns / 3%
+        // bounds alike. Fifteen warmed paired blocks compare against immutable
+        // P990 accounting on THIS runtime/host. Preserve P990's ~35% per-call
+        // headroom; it is a regression allowance, not an ns promise across CPUs.
+        // The independent share cap is 6%: ~1.3 x the same-host ~4.5% expectation
+        // (rounded up), matching the original share-margin philosophy. Raw share
+        // is still gated: a slow projection cannot hide a relative cost regression,
+        // and a slow reference cannot excuse an arbitrarily large share of a tick.
+        // Derivation, all runs and limitations: docs/reports/P990_OVERHEAD_P1009.md.
+        double regression = PerfCalibration.SimulateRegressionFactor;
+        Console.WriteLine($"[p1009-budget] ratioLimit=1.35 shareLimit=6% regressionFactor={regression:0.00}");
+        Assert.True(ratio * regression <= 1.35,
+            $"the diagnostic costs {perCallNs:0.0} ns/call vs original P990 " +
+            $"{referenceMs * 1_000_000 / (peers * perPeerCalls):0.0} ns/call: " +
+            $"paired median ratio {ratio * regression:0.000} exceeds 1.35");
+        Assert.True(costMs * regression <= offP95 * 0.06,
+            $"the diagnostic costs {costMs * regression:0.0000}ms per 144-peer mixed tick, " +
+            $"{costMs * regression / offP95 * 100:0.0}% of the {offP95:0.000}ms p95 tick (bound 6%)");
     }
+
+    private static string Values(double[] values) => string.Join(",",
+        values.Select(v => v.ToString("0.0000", CultureInfo.InvariantCulture)));
 
     /// <summary>P990 — the rig-scale question: at 411 seated peers (the b104 run's
     /// shape: three sectors, ~136 visible ships per peer) what does the diagnostic
@@ -699,7 +763,7 @@ public sealed class P990BroadcastLaneFixtureTests
         }
     }
 
-    private static (double[] BlockP95, double[] Times) MeasureTickBlocks(int blocks = 4, int warm = 15, int measured = 120)
+    private static (double[] BlockP95, double[] Times) MeasureTickBlocks(int blocks = 10, int warm = 15, int measured = 120)
     {
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(Config(budget: false));
@@ -708,23 +772,42 @@ public sealed class P990BroadcastLaneFixtureTests
         mission.Stage = MissionStage.Started;
         for (int i = 0; i < peers.Count; i++) peers[i].Ship.SideId = (short)(i % 2);
         uint tick = 0;
+        long warmStart = Stopwatch.GetTimestamp();
+        do
+        {
+            server.TestProjectRecordedTick(tick, snapshot: true);
+            Advance();
+        }
+        while (Stopwatch.GetElapsedTime(warmStart).TotalSeconds < 1);
         var blocksOut = new double[blocks];
         var all = new List<double>(blocks * measured);
+        int gcTicks = 0;
+        long allocated = 0;
         for (int block = 0; block < blocks; block++)
         {
-            for (int i = 0; i < warm; i++) Advance();
+            for (int i = 0; i < warm; i++)
+            {
+                server.TestProjectRecordedTick(tick, snapshot: true);
+                Advance();
+            }
             var times = new double[measured];
             for (int i = 0; i < measured; i++)
             {
+                int collections = GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2);
+                long before = GC.GetAllocatedBytesForCurrentThread();
                 long start = Stopwatch.GetTimestamp();
                 server.TestProjectRecordedTick(tick, snapshot: true);
                 times[i] = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+                allocated += GC.GetAllocatedBytesForCurrentThread() - before;
+                if (GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2) != collections) gcTicks++;
                 all.Add(times[i]);
                 Advance();
             }
             blocksOut[block] = Percentile(times, 0.95);
         }
         server.FlushBroadcastSnapshots();
+        Console.WriteLine($"[p1009-projection] ticks={all.Count} gcTicks={gcTicks} allocatedPerTick={allocated / all.Count} " +
+                          $"p95Blocks=[{Values(blocksOut)}]");
         return (blocksOut, all.ToArray());
 
         void Advance()

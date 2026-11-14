@@ -248,6 +248,11 @@ reproducer for starvation is filed.
 
 ## 4. Overhead before/after
 
+P1009 follow-up: the absolute 30 ns / 3% limits below failed on the original
+commit on another host. The warmed, hardware-relative guard and full comparison
+are documented in [P990_OVERHEAD_P1009.md](P990_OVERHEAD_P1009.md); the original
+measurements below remain historical evidence.
+
 Method: exactly P983 §4 — the largest local fixture (144 seated peers, one sector, native ranked path, rig baseline
 flags), the diagnostic's own per-tick workload timed directly against the measured projection p95 (so a noisy
 whole-tick wall-clock A/B, whose floor on this shared host is ±3 %, cannot hide a cost). Host: 24 vCPU shared,

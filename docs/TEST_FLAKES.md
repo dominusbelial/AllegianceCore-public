@@ -8494,6 +8494,23 @@ regression or safe small fix was established. Investigate stable warm-up and
 host/build comparability separately. Full evidence and final gate:
 `docs/reports/GUNFIRE_FIXTURE_REBASELINE_P1002.md`.
 
+**2026-11-14 — P1009 outcome: host/method issue established.** On one host,
+the original P990 `015019bf` and base `bcdcd8a0` both failed the original test
+10/10. Accounting medians were 31.7/31.8 ns with overlapping ranges; the
+production telemetry source is identical. With real projection warm-up and
+15 warmed accounting blocks, both medians become 27.9 ns, while the share is
+still 4.438/4.4725%, exceeding the original host's 3%. No later accounting
+regression or offending commit was found; a bisect has no passing baseline.
+
+The renamed
+`Mixed_lane_overhead_stays_within_reference_budget_and_small_share_of_the_p95_tick`
+uses a frozen P990 reference in the same process (paired median ratio <=1.35)
+and an independently gated 6% actual p95 share, derived from ~4.5% x the
+original ~1.3 margin. Setup stays outside timing; GC-contaminated accounting
+pairs are rejected and measured allocations must be zero. Native wire behavior
+and production defaults are unchanged. Final qualification and every repeated
+measurement: `docs/reports/P990_OVERHEAD_P1009.md`.
+
 ### 2026-11-13 — P1002 Fast qualification (fixture-only changes)
 
 One full Fast run on `61a50173` plus P1002 test/documentation changes:
