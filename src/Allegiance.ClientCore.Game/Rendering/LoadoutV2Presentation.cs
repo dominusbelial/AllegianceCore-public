@@ -35,6 +35,10 @@ public sealed class LoadoutV2Presentation
     public int HullFocus { get; init; } = -1;
     public int SlotFocus { get; init; } = -1;
     public int OfferFocus { get; init; } = -1;
+    /// <summary>P1015: the keyboard/pad-focused button, or null.</summary>
+    public LoadoutV2Layout.Kind? ActionFocus { get; init; }
+    /// <summary>P1015: the footer hint, built from the live key table.</summary>
+    public string? Hint { get; init; }
 
     /// <summary>The production draw gate. Other docked panes keep their own routing.</summary>
     public static bool UseV2(VisualOptions visuals, bool dockedLoadoutView)
@@ -45,24 +49,33 @@ public sealed class LoadoutV2Presentation
     public static int GunnerMount(int mount, int currentFixedWeapons, int chosenFixedWeapons)
         => mount + currentFixedWeapons - chosenFixedWeapons;
 
+    /// <param name="input">P1015: the V2 input router. When given, it owns the
+    /// focus and the open picker is the view-model's; when null (P1014 callers)
+    /// the old shop cursor is mirrored as before.</param>
     public static LoadoutV2Presentation Build(LoadoutV2Model model,
-        ShipStatSheet? current, ShipStatSheet? pending)
+        ShipStatSheet? current, ShipStatSheet? pending, LoadoutV2Input? input = null, string? hint = null)
     {
         var shop = model.Shop;
         var hulls = model.HullRows;
         var slots = model.SlotRows;
-        // Until P1015 the shipping keys own ShopModel.OpenSlot/Cursor. Future
-        // V2 input can use the thin view-model's picker without another rule set.
-        var open = shop.SlotOpen ? shop.OpenSlot : model.OpenSlot;
+        // P1015: with the router, the open picker is the view-model's and the
+        // focus is the router's. Without it the old shop page/cursor is mirrored.
+        var open = input is not null ? model.OpenSlot : shop.SlotOpen ? shop.OpenSlot : model.OpenSlot;
         int openIndex = FindSlot(slots, open);
-        int slotFocus = shop.Page == ShopPage.SlotList ? FindSlot(slots, shop.SlotUnderCursor) : -1;
-        var hullRows = hulls.Select((h, i) => HullRow(h,
-            shop.Page == ShopPage.HullList && i == shop.HullCursor)).ToArray();
+        int slotFocus = input is not null
+            ? input.Column == LoadoutV2Column.Slots && slots.Count > 0 ? input.SlotFocus : -1
+            : shop.Page == ShopPage.SlotList ? FindSlot(slots, shop.SlotUnderCursor) : -1;
+        int hullFocus = input is not null
+            ? input.Column == LoadoutV2Column.Hulls && openIndex < 0 && hulls.Count > 0 ? input.HullFocus : -1
+            : shop.Page == ShopPage.HullList ? shop.HullCursor : -1;
+        int offerFocus = input is not null ? (openIndex >= 0 ? input.OfferFocus : -1)
+            : shop.SlotOpen ? shop.Cursor : -1;
+        var hullRows = hulls.Select((h, i) => HullRow(h, i == hullFocus)).ToArray();
         var slotRows = slots.Select((s, i) => SlotRow(s, i == openIndex, i == slotFocus)).ToArray();
         var offers = new List<LoadoutV2DisplayRow>();
         if (openIndex >= 0 && pending is not null && open is { } slot)
         {
-            int cursor = shop.SlotOpen ? shop.Cursor : -1;
+            int cursor = offerFocus;
             offers.Add(OfferRow("<empty>", 0, !slots[openIndex].Filled, cursor == 0,
                 pending, pending.WithPart(slot.Type, slot.Mount, null)));
             int i = 1;
@@ -104,8 +117,9 @@ public sealed class LoadoutV2Presentation
             Title = "LOADOUT / " + (model.EffectiveHull?.Name ?? "No hull"),
             Money = shop.MyMoney is { } money ? "MONEY " + Dollars(money) : "MONEY --",
             Hulls = hullRows, Slots = slotRows, Offers = offers, Stats = stats,
-            OpenSlot = openIndex, HullFocus = shop.Page == ShopPage.HullList ? shop.HullCursor : -1,
-            SlotFocus = slotFocus, OfferFocus = shop.SlotOpen ? shop.Cursor : -1,
+            OpenSlot = openIndex, HullFocus = hullFocus,
+            SlotFocus = slotFocus, OfferFocus = offerFocus,
+            ActionFocus = openIndex < 0 ? input?.FocusedAction : null, Hint = hint,
             Price = [new("Loadout " + Dollars(shop.NewLoadoutValue)),
                 new("Refund " + Dollars(shop.CurrentShipValue), LoadoutV2Ink.Muted),
                 new("Net " + Dollars(shop.Cost), shortfall ? LoadoutV2Ink.Worse : LoadoutV2Ink.Normal),
@@ -126,6 +140,11 @@ public sealed class LoadoutV2Presentation
         return LoadoutV2Layout.Compute(width, height, scale, Hulls.Count, Slots.Count,
             Offers.Count, OpenSlot, hull, slot, offer, Stats.Count);
     }
+
+    /// <summary>P1015: lay out at the input router's scroll offsets (wheel and
+    /// focus), keeping the clamped offsets in the router.</summary>
+    public LoadoutV2Layout Layout(float width, float height, float scale, LoadoutV2Input input)
+        => input.Arrange(width, height, scale, Hulls.Count, Slots.Count, Offers.Count, OpenSlot, Stats.Count);
 
     public static LoadoutV2DisplayRow HullRow(LoadoutV2HullRow hull, bool focused = false)
     {

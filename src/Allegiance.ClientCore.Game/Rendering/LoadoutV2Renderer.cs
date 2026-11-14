@@ -69,7 +69,7 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
                     case LoadoutV2Layout.Kind.Revert:
                     case LoadoutV2Layout.Kind.Buy:
                     case LoadoutV2Layout.Kind.Launch:
-                        bool hovered = hover == element;
+                        bool hovered = hover == element || frame.ActionFocus == element.Kind;
                         Fill(element.Bounds, hovered ? accent * .23f : background);
                         Outline(element.Bounds, hovered ? accent : accent * .5f);
                         var label = element.Kind switch
@@ -82,9 +82,10 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
                         break;
                 }
             }
-            // Existing keyboard verbs are intentionally unchanged in P1014.
+            // P1015: the hint is the live key map (LoadoutV2Input.Hint); the literal
+            // is the P1014 text for callers that still mirror the old shop keys.
             var footer = layout.Footer;
-            Text(new("Q/E hull  |  Tab hulls/parts  |  Arrows select  |  Space choose  |  B back  |  L launch",
+            Text(new(frame.Hint ?? "Q/E hull  |  Tab hulls/parts  |  Arrows select  |  Space choose  |  B back  |  L launch",
                 LoadoutV2Ink.Muted), new(16, footer.Y + 5, footer.Width - 32, 20), style, .85f * layout.Scale);
             Overflow(layout.HullList, layout.HullScroll, layout.HullCapacity, frame.Hulls.Count, style, layout.Scale);
             Overflow(layout.SlotList, layout.SlotScroll, layout.SlotCapacity - layout.OfferCapacity, frame.Slots.Count, style, layout.Scale);

@@ -583,6 +583,7 @@ public sealed partial class Game1
                     Console.WriteLine("[monogame] teleport pane -> closed by Escape");
                     break;
                 case EscapeUiAction.Loadout:
+                    if (LoadoutV2CloseOnEscape()) break; // P1015: Esc closes the inline picker first
                     if (TrainingActive) break; // console.cpp:1128-1131
                     _hangarOnly = true;
                     Console.WriteLine("[monogame] loadout -> hangar by Escape");

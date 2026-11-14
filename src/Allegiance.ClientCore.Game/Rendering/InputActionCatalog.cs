@@ -539,6 +539,14 @@ public static class InputActionCatalog
         new("ShopCycleHullNext", "PANES / MENUS", "Docked shop: next hull", K(Keys.E), null),
         new("ShopLaunch", "PANES / MENUS", "Docked shop: launch (BUY_LOADOUT)", K(Keys.L), null),
         new("ShopUndock", "PANES / MENUS", "Docked shop: undock without buying", K(Keys.U), null),
+        // P1015 — Loadout V2 (visuals.hangar.loadoutV2) only. Native's loadout is
+        // mouse-driven; its one key handler is the custom-loadout digits
+        // (WinTrek/load.cpp:2219-2250). While the V2 screen is shown, a plain digit
+        // bound here focuses a column instead of restoring that custom loadout;
+        // rebind these to get the native restore back on 1 and 2.
+        new("LoadoutFocusHulls", "PANES / MENUS", "Loadout V2: focus the hull column (unbound by default: plain 1 restores custom loadout 1 as native; Tab cycles focus)", U(), null),
+        new("LoadoutFocusSlots", "PANES / MENUS", "Loadout V2: focus the slot column (unbound by default: plain 2 restores custom loadout 2 as native; Tab cycles focus)", U(), null),
+        new("LoadoutDefault", "PANES / MENUS", "Loadout V2: default loadout for the hull", K(Keys.D), null),
         new("ToggleTeleportPane", "PANES / MENUS", "Docked: toggle the teleport pane [TK_ConModeTeleport]", K(Keys.T), K(Keys.F8)),
         new("ToggleInvestmentPane", "PANES / MENUS", "Toggle team investment (flight, hangar or command) [TK_ConModeInvest]", K(Keys.I), K(Keys.F5)),
         new("InvestPreviousTab", "TEAM FUNDING", "Investment: previous technology tab", K(Keys.OemOpenBrackets), null),

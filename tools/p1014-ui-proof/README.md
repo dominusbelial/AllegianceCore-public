@@ -1,54 +1,49 @@
-# P1014 real-client loadout proof
+# P1014 / P1015 real-client loadout proof
 
 Runs production Game1 against an in-process loopback server with PCore001 and
-native artwork. It docks, opens loadout using native F4, selects the station's
-stock scout and defaults it, opens the weapon picker with the existing
-Tab/Space keys, moves its cursor with Down, then uses a reachable-research
-fixture and a zero wallet to select a genuinely priced hull. No prices, models,
-buy rules or rendered pixels are substituted. It checks that locked hulls and
-inline offers occupy visible layout elements and that the buy button reads the
-shared shortfall. The orbital angle alone is held fixed for reproducible images.
+native artwork. It docks, opens the loadout with native F4 and selects the
+station's stock scout with its native default. No prices, models, buy rules or
+rendered pixels are substituted; only the preview's orbit angle is held fixed.
+
+**Flag on (default run)** plays the Loadout V2 screen through its real input
+path (P1015). The pointer is the scripted hangar pointer Game1 reads in place
+of the mouse (position, left button, wheel); keys are real key states:
+
+- click a hull row (selects it), click back to the stock scout;
+- click a slot (inline picker opens), click it again (closes), reopen, hover an
+  offer, click it (mounted, picker closed);
+- wheel the hull column down, past the end, and back;
+- `2`, Down/Up, Space (picker by keyboard), Up, Esc (picker closes, screen
+  stays), Right/Left (next/previous hull), `1`;
+- `D` (native default), the picker's empty row, the Default button, arrows on
+  the button row, Space on Revert, Tab;
+- Esc with no picker open (back to the hangar).
+
+Every step is a `P1015_CHECK` line; the run ends with `P1015_PASS` and exit 0.
+Four backbuffer PNGs are written per run.
+
+**`--off`** drives the old three-page loadout with its own unchanged keys
+(Down, Tab, Space, B) and checks that no V2 frame or V2 input router is ever
+built.
 
 From the repo root, build this project, set `ALLEGIANCE_ARTWORK_PATH` to the
 local corpus, then run with a fresh profile:
 
 ```sh
-mkdir -p .scratch/p1014/profile
+mkdir -p .scratch/p1015/profile
 SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null \
-ALLEGIANCE_NOVSYNC=1 XDG_CONFIG_HOME="$PWD/.scratch/p1014/profile" \
+ALLEGIANCE_NOVSYNC=1 XDG_CONFIG_HOME="$PWD/.scratch/p1015/profile" \
 xvfb-run -a -s '-screen 0 1920x1080x24' \
-  timeout --kill-after=10s 150s dotnet \
+  timeout --kill-after=10s 200s dotnet \
   tools/p1014-ui-proof/bin/Debug/net10.0/p1014-ui-proof.dll \
-  .scratch/p1014/captures classic 1920 1080
+  .scratch/p1015/captures classic 1920 1080
 ```
 
-Repeat for `modern`, and for `1280 720` with an Xvfb screen of that size. Three
-actual backbuffer PNGs are written per run: default (including locked hulls),
-open weapon offers, and unaffordable heavy hull (including turret seats).
+Repeat for `modern`, for `1280 720` with an Xvfb screen of that size, and with
+`--off` appended. Extra captures stay in ignored scratch; review images before
+adding a retained set to a public change set.
 
-`--off` captures only the untouched legacy renderer, checks the loadout route,
-and checks that no V2 frame was built. The pre-implementation harness/binaries
-can run the same off fixture for a pixel comparison; P1014's report records the
-baseline provenance and hashes. Baseline and final frames use the same orbit
-angle and local fixture. Extra captures stay in ignored scratch; review images
-before adding the retained set to a public change set.
-
-No production input is changed. Native Enter opens chat, so the proof uses the
-existing Space select binding; the pointer is parked outside legacy hover bands
-while verifying keyboard selection. The proof has a 120-second watchdog and
-always cancels/joins its server ticker when Game1 exits.
-
-P1016 adds `--hardpoints=fighter`, `--hardpoints=bomber` and
-`--hardpoints=capital`. Each opens the actual V2 renderer on the authentic
-PCore001 Fighter, Bomber or Cruiser, using a display-only ShopModel fixture
-with native default parts. Fighter uses the existing slot keyboard focus;
-Bomber/Cruiser place the actual mouse over a turret row using layout bounds.
-The latter inject a named passenger through production EXPORT and
-LOADOUT_CHANGE handlers and assert that the marker receives the seated name.
-These fixtures inspect hulls without buying them or relaxing production rules.
-
-Use the same Xvfb recipe, dimensions and HUD styles as above. One PNG is written
-per run. `--extras` also captures an opposite orbit and a shield hover (asserting
-that no marker exists for the shield). PCore001 has no `minDot` in its native
-hardpoint format: the faint turret decoration is labelled as an aim guide with
-the arc limit unavailable. It is not an invented gameplay restriction.
+The proof uses the Native key layout, where Enter opens chat, so it chooses
+with Space (the hint the screen shows). It has a 150-second watchdog and always
+cancels/joins its server ticker when Game1 exits. `compare.py` is the P1014
+flag-off pixel comparison helper.
