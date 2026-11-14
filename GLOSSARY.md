@@ -1253,6 +1253,18 @@ list in **reverse**.
   native `CanMount` masks, prices/`GetValue`, Default/Revert/custom loadouts), rendered by
   `src/Allegiance.ClientCore.Game/Rendering/ShopLayout.cs` and driven from
   `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`. *Native:* `WinTrek/load.cpp`.
+- **Loadout V2 renderer (P1014, default off)** — `visuals.hangar.loadoutV2` in
+  `src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs` routes the active loadout
+  through `src/Allegiance.ClientCore.Game/Game1.LoadoutV2.cs` and
+  `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Renderer.cs` in both HUD styles.
+  The pure `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Presentation.cs`
+  builds hull/slot/inline-offer rows, native-first stats, signed deltas and shared
+  ShopModel prices; the P519 real hull preview uses the V2 layout's centre rect.
+  The original panes remain the off path; existing shop keys still own selection.
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1014LoadoutRendererTests.cs`;
+  real-window proof: `tools/p1014-ui-proof/`. Native: `WinTrek/load.cpp:176-205,
+  785-820,877-887,986-1054,1497-1531`; report:
+  `docs/reports/LOADOUT_V2_RENDERER_P1014.md`.
 - **Ship stat sheet + stat deltas (P1011)** — the pure model behind the Loadout V2 stats bar:
   `src/Allegiance.ClientCore.Game/Rendering/ShipStatSheet.cs` turns a hull type + the mounted part
   types + the side's `GlobalAttributeSet` into the ship's stats, using native's loadout info-pane

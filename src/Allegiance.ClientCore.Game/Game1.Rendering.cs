@@ -2090,6 +2090,10 @@ public sealed partial class Game1
             var telRows = Rendering.TeleportLayout.Build(telPane);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney, footerHeight: 84f);
         }
+        else if (Rendering.LoadoutV2Presentation.UseV2(_visuals, DockedLoadoutView) && _shopModel is { } v2Shop)
+        {
+            DrawLoadoutV2(gameTime, v2Shop);
+        }
         else if (DockedLoadoutView && _shopModel is { } dockShop)
         {
             // P519 — render the effective hull's real in-game model orbiting

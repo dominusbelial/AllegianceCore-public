@@ -415,7 +415,19 @@ public sealed class LoadoutV2Model
 
     /// <summary>The effective hull the slot column describes (chosen, else the
     /// docked one).</summary>
-    public DataHullTypeIGC? EffectiveHull => _shop.EffectiveHull;
+    public DataHullTypeIGC? EffectiveHull
+    {
+        get
+        {
+            if (_shop.EffectiveHull is { } offered) return offered;
+            // A restored/current hull can outlive the station's tech offer.
+            // Keep its real display record without making it purchasable or
+            // changing ShopModel's mount/offer rules (P1014).
+            foreach (var hull in _hullUniverse)
+                if (hull.HullId == _shop.EffectiveHullId) return hull;
+            return null;
+        }
+    }
 
     /// <summary>
     /// P1010 — one row per mount the effective hull really has: fixed weapon
@@ -429,7 +441,7 @@ public sealed class LoadoutV2Model
     {
         get
         {
-            if (_shop.EffectiveHull is not { } h) return Array.Empty<LoadoutV2SlotRow>();
+            if (EffectiveHull is not { } h) return Array.Empty<LoadoutV2SlotRow>();
             var rows = new List<LoadoutV2SlotRow>();
             int maxFixed = Math.Min(h.MaxFixedWeapons, h.Hardpoints.Length);
             int maxWeapons = Math.Min(h.MaxWeapons, h.Hardpoints.Length);

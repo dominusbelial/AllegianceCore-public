@@ -4,6 +4,49 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1014 loadout renderer qualification — 2026-11-14 UTC
+
+The single full Fast sweep ran **14,356 cases in 665.0 s: 14,341 passed / 8 failed /
+7 skipped**, with a 7,200-second outer bound. It remains **FAIL**. All **13 new
+P1014 renderer cases passed** in the sweep, with no timing violations. Three
+failures were task-owned stale Visuals-page row counts (13 versus the new 14);
+those assertions now include the new default-off row. The final 17 new/changed
+cases passed three isolated repetitions (**51/0/0**), and 106 related checks passed.
+The three corrected expectations are not classified as flakes.
+
+The five non-task assertion failures and eight timing violations covered **11
+distinct methods**. Each was run **three times alone**, including every theory
+case: **33 processes, 90/3/0** total. The calibrated case limit was **13.827 s**.
+Only missile-lock partial-tip delivery failed in isolation, all three times; it
+also remained over the limit. All other isolated cases passed below the limit.
+No simulation, server, client-state, training, test range, tier or timing limit
+was changed for these results.
+
+| Method | Sweep trigger | Each isolated run (P/F/S) | Maximum isolated case |
+| --- | --- | --- | --- |
+| `P909TrainingBindingsTests.Key_gate_commander_messages_quick_chat_ack_and_eliminated_target_use_real_client` | assertion failure | **2/0/0 ×3** | 0.628 s |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | assertion failure | **1/0/0 ×3** | 1.569 s |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | assertion failure; slow (38.410 s) | **0/1/0 ×3** | 38.486 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | slow (15.816 s) | **3/0/0 ×3** | 7.431 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow (17.419 s) | **1/0/0 ×3** | 4.403 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow (17.634 s) | **2/0/0 ×3** | 5.838 s |
+| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` | assertion failure | **1/0/0 ×3** | 1.192 s |
+| `MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock` | assertion failure; slow (13.966 s) | **1/0/0 ×3** | 0.735 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | slow (15.645 s) | **1/0/0 ×3** | 2.117 s |
+| `P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work` | slow (15.068 s) | **8/0/0 ×3** | 1.841 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | slow (19.536 s) | **10/0/0 ×3** | 6.162 s |
+
+Failure signatures: missile lock reached 1.000 but the client never observed the
+partial tip (the existing P1019 signature); respawn never latched the remote
+death; seeded seating saw lobby side -2 instead of side 1; the miner assertion
+had no nullable station value; Classic training targeting saw -1 instead of 990.
+The latter four passed all isolated repetitions; no underlying fix is claimed.
+
+Portable method/case results and all sweep signatures:
+`docs/reports/P1014_assets/reproductions.json`. Implementation, captures and full
+gate details: `docs/reports/LOADOUT_V2_RENDERER_P1014.md`. The full sweep was not
+repeated after the expectation fixes.
+
 ## P1013 loadout geometry qualification — 2026-11-14 UTC
 
 The single full Fast sweep ran **14,313 cases in 609.6 s: 14,298 passed / 8 failed /
