@@ -8660,3 +8660,37 @@ nine failures and four timing offenders are the already-ledgered families
 (P739 float bound, `LiveCombatWireTests` contention, warp-transit receipt,
 auto-seat boundary, miner capacity, NPC clearance, roster stint, `MissileLock`
 partial tip, `DeadLatch` receipt) and none repeats a drop/treasure signature.
+
+### 2026-11-14 — P1010 Fast qualification (Loadout V2 view-model)
+
+One full Fast run on the P1010 tree (client-only: a new pure
+`LoadoutV2Model` over `ShopModel`, four behaviour-neutral `ShopModel` entry
+points, and one `public` visibility change on `BucketCatalog.ReachableTechs` — no
+server, sim, wire, timer, lobby or audio path): **14,266 passed / 6 failed /
+7 skipped** of 14,279 cases, 570.5 s. 9/9 infrastructure checks passed. The
+runner stays **FAIL** on the ledgered families below and on seven timing
+offenders against the 14.637 s calibrated limit (P744 factor 1.464). Host load
+average was 17–21 on the shared 16-CPU container during the run.
+
+Every failed case was then selected in a fresh process three times.
+
+| Case | Fast signature | Three isolated repetitions |
+|---|---|---|
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | allocation-counter reading non-zero under parallel load | **pass / pass / pass**, 13–14 ms |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | missing partial tip at lock 1.000, 37.9 s | **fail / pass / fail** (1 s passes, 38 s fails) — the recorded clean-base rate, existing receipt family |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | remote death latch missed in the sweep | **pass / pass / pass** |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | ledgered transit-receipt intermittency | **pass / pass / pass** |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5, 7) | `Assert.InRange` 7.0000000000000009 outside (6.9, 7] — the ledgered float upper-bound family | **pass / pass / pass** (all three cases per run) |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `Assert.InRange` 31.9 s outside [28, 31] — the ledgered clock-boundary family | **fail / pass / pass**, ~1 s |
+
+No failed, slow or repeated case exercises the shop, loadout or tech-mask code.
+Timing-only offenders (assertions passed, sweep seconds): `P814GunnerTests.P814b`
+20.9 s, `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts`
+(civ 25) 19.6 s, `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part…`
+(civ 35) 17.2 s, `P999CivStrategyTests.Every_profile_is_reachable…` (civ 5) 27.0 s,
+`P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`
+17.0 s, `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes`
+(civ 3) 15.6 s — all ledgered timing-only families.
+
+The 15 new P1010 cases (Fast) pass 3× alone at 195–198 ms. Report:
+`docs/reports/LOADOUT_V2_MODEL_P1010.md`.

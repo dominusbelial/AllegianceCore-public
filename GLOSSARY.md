@@ -1235,6 +1235,26 @@ list in **reverse**.
   `engine/button.cpp:108-290`, `engine/frameimage.cpp:110-500`. Tests:
   `tests/Allegiance.ClientCore.MonoGame.Tests/P945HangarArtTests.cs`; report:
   `HANGAR_ART_P945.md`.
+- **Hangar loadout V2 view-model (P1010)** — the epic's one-screen
+  `hulls | ship | slots` model, a pure view-model over `ShopModel` (never a
+  second copy of the buy/mount/price rules):
+  `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Model.cs` — `HullRows`
+  (offered hulls in native `GetNextHullType` order plus the hulls the side could
+  unlock, each with core name/armour class/price and a human lock reason from
+  native `CanBuy`), `SlotRows` (native `SlotValidForHull`: fixed weapons, gunner
+  turrets, equipment sockets including pack), `OffersFor` (native `CanMount`
+  mask filter over the station's tech-filtered catalogue, carrying the whole
+  part record for the P1011 stat sheet), and the SelectHull / OpenSlot /
+  ChooseOffer / ClearSlot / Default / Revert / Next-Previous actions, every
+  mutation routed through `ShopModel`. The shop gained `SlotOffers`,
+  `MountInSlot`, `SelectHull(hullId)`, `RevertToCurrentLoadout` and the
+  `ClearSlot(slot, notify)` sound seam — all behaviour-neutral for the old
+  screen. Hull availability beyond the current mask uses the side's reachable
+  tech tree (`BucketCatalog.ReachableTechs`, the native `ttbmLocalUltimate`,
+  `Igc/sideigc.cpp:119-206`). Native: `WinTrek/load.cpp:112-122,1568-1636,
+  1656-1678,1714-1743`; tests
+  `tests/Allegiance.ClientCore.MonoGame.Tests/LoadoutV2ModelTests.cs`; report
+  `docs/reports/LOADOUT_V2_MODEL_P1010.md`.
 - **Native sound dispatch (P871)** — the numeric `SoundID` space and the
   cue/loop routing: the generated `soundList` table
   (`src/Allegiance.Core/Audio/NativeSoundCatalog.Generated.cs`, rebuilt by
