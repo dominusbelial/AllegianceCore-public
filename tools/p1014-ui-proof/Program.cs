@@ -18,6 +18,11 @@ using Srv = Allegiance.Server.Server;
 string output = Path.GetFullPath(args[0]), style = args[1];
 int width = int.Parse(args[2]), height = int.Parse(args[3]);
 bool off = args.Contains("--off");
+bool walkthrough = args.Contains("--walkthrough");
+string? capture = args.FirstOrDefault(a => a.StartsWith("--capture="))?.Split('=', 2)[1];
+string? hardpoints = args.FirstOrDefault(a => a.StartsWith("--hardpoints="))?.Split('=', 2)[1];
+if (hardpoints is not null && hardpoints is not ("fighter" or "bomber" or "capital"))
+    throw new ArgumentException("Use --hardpoints=fighter|bomber|capital");
 bool buy = args.Contains("--buy");   // P1017: the refused-buy script
 Directory.CreateDirectory(output);
 string content = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
@@ -51,14 +56,14 @@ var ticker = new Thread(() =>
     }
 });
 ticker.Start();
-var proof = new Proof(game, output, style, width, height, off, simGate, buy ? server : null);
+var proof = new Proof(game, output, style, width, height, off, simGate, buy || walkthrough ? server : null, hardpoints, args.Contains("--extras"), walkthrough, capture);
 game.Components.Add(proof);
 try { game.Run(); }
 finally { stop.Cancel(); ticker.Join(); }
 return proof.Passed ? 0 : 1;
 
 sealed class Proof(Game1 game, string output, string style, int width, int height,
-    bool off, object gate, Srv? buyServer = null) : GameComponent(game)
+    bool off, object gate, Srv? buyServer = null, string? hardpoints = null, bool extras = false, bool walkthrough = false, string? capture = null) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch watch = Stopwatch.StartNew();
@@ -66,7 +71,10 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
     private int step;
     private double next;
     private int wheel;
+    private float orbit = .8f;
     private short dockedHull;
+    private int checks;
+
     private ExpandedPartSnapshot docked = new([]);
     private SlotDef slot;
     private short pickedPart;
@@ -89,13 +97,15 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
     private LoadoutV2Input Router => Get<LoadoutV2Input>("_loadoutV2InputState");
     private LoadoutV2Presentation Frame => Get<LoadoutV2Presentation>("_loadoutV2Frame");
 
-    private static void Require(bool condition, string message)
+    private void Require(bool condition, string message)
     {
-        Console.WriteLine($"P1015_CHECK {message}: {condition}");
+        checks++;
+        Console.WriteLine($"P1018_CHECK {checks} t={watch.Elapsed.TotalSeconds:F1} {message}: {condition}");
         if (!condition) throw new InvalidOperationException(message);
     }
     private void Shot(string name)
     {
+        if (capture is not null && capture != name) return;
         Set("_autoshotDir", output);
         Set("_autoShotName", $"{style}-{width}x{height}-{name}");
         Set("_autoShotScheduled", true);
@@ -151,7 +161,7 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
             Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", !off);
             // The server's advanced starting scout is not sold by this fresh
             // station; start from its real stock scout and native default.
-            if (buyServer is null)
+            if (buyServer is null && hardpoints is null)
             {
                 Shop.SelectHull(Shop.BuyableHulls.First().HullId);
                 Shop.ApplyDefaultLoadout();
@@ -163,11 +173,21 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         });
         Do(() => Keys());
         Check(() => !Get<bool>("_hangarOnly"), "native F4 opens loadout");
-        if (buyServer is not null) BuyFlow(buyServer); else if (off) OldScreen(); else V2Screen();
+        if (walkthrough)
+        {
+            PrepareWalkthrough(buyServer!);
+            V2Screen();
+            BuyFlow(buyServer!);
+            LaunchAndRedock(buyServer!);
+            Wait(() => watch.Elapsed.TotalSeconds >= 120);
+        }
+        else if (hardpoints is not null) HardpointScene();
+        else if (buyServer is not null) BuyFlow(buyServer);
+        else if (off) OldScreen(); else V2Screen();
         Do(() =>
         {
             Passed = true;
-            Console.WriteLine($"{(buyServer is null ? "P1015" : "P1017")}_PASS {style} {width}x{height} off={off}");
+            Console.WriteLine($"P1018_PASS {style} {width}x{height} off={off} hardpoints={hardpoints} walkthrough={walkthrough} checks={checks} elapsed={watch.Elapsed.TotalSeconds:F1}");
             game.Exit();
         });
     }
@@ -195,7 +215,7 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
     {
         Check(() => Raw("_loadoutV2Frame") is not null && Raw("_loadoutV2InputState") is not null,
             "flag on builds the V2 frame and its input router");
-        Check(() => Frame.Hint!.Contains("hulls/slots") && Frame.Hint.Contains("default"),
+        Check(() => Frame.Hint == LoadoutV2Input.Hint(KeyBindingStore.Instance.Map.LabelOf),
             "footer hint comes from the key table");
 
         // ── mouse: hull row ─────────────────────────────────────────────────
@@ -206,9 +226,12 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Click(() => Element(LoadoutV2Layout.Kind.Hull, hullRow));
         Check(() => Shop.EffectiveHullId == Model.HullRows[hullRow].HullId, "clicking a hull row selects that hull");
         Check(() => Shop.Page == ShopModel.ShopPage.HullList && !Shop.SlotOpen, "old shop pages are not driven");
-        // Back to the stock scout for the part work.
-        Click(() => Element(LoadoutV2Layout.Kind.Hull,
-            Enumerable.Range(0, Model.HullRows.Count).First(i => Model.HullRows[i].HullId == dockedHull)));
+        // The walkthrough's fully researched station has obsoleted the spawn
+        // scout: continue on the hull just selected. The original input-only
+        // fixture returns to its stock scout.
+        if (!walkthrough)
+            Click(() => Element(LoadoutV2Layout.Kind.Hull,
+                Enumerable.Range(0, Model.HullRows.Count).First(i => Model.HullRows[i].HullId == dockedHull)));
         Do(() => docked = ExpandedPartSnapshot.Of(Shop));
 
         // ── mouse: slot → inline picker → offer ─────────────────────────────
@@ -231,9 +254,11 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
             pickedPart = offers[pick].PartId;
             offerRow = pick + 1;
         });
+        RevealOfferAtTop(offerRow);
         Hover(() => Element(LoadoutV2Layout.Kind.Offer, offerRow));
         Check(() => Router.Hover is { Kind: LoadoutV2Layout.Kind.Offer } h && h.Index == offerRow,
             "the hovered offer is the router's hover");
+        Check(() => Frame.Offers[offerRow].Detail.Count > 1, "offer shows its real stat deltas before mounting");
         Do(() => Shot("1-click-slot-picker"));
         Click(() => Element(LoadoutV2Layout.Kind.Offer, offerRow));
         Check(() => Shop.PartInSlot(slot)?.PartId == pickedPart && Model.OpenSlot is null,
@@ -276,6 +301,8 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         TabTo(LoadoutV2Column.Hulls);
         Check(() => Router.Column == LoadoutV2Column.Hulls, "Tab cycles back to the hull column");
 
+        if (walkthrough) WalkthroughTurret();
+
         // ── Default / Revert ────────────────────────────────────────────────
         ExpandedPartSnapshot expected = new([]);
         Do(() =>
@@ -290,6 +317,7 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Press(Microsoft.Xna.Framework.Input.Keys.D);
         Check(() => expected.Same(Shop), "D applies the native default loadout");
         Click(() => Element(LoadoutV2Layout.Kind.Slot, slotRow));
+        RevealOfferAtTop(0);
         Click(() => Element(LoadoutV2Layout.Kind.Offer, 0));
         Check(() => Shop.PartInSlot(slot) is null, "the empty row empties the slot");
         Click(() => Element(LoadoutV2Layout.Kind.Default));
@@ -311,8 +339,11 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Check(() => !Get<bool>("_launchSent"), "nothing was bought or launched by the script");
 
         // ── leaving ─────────────────────────────────────────────────────────
-        Press(Microsoft.Xna.Framework.Input.Keys.Escape);
-        Check(() => Get<bool>("_hangarOnly"), "Esc with no picker open leaves to the hangar as before");
+        if (!walkthrough)
+        {
+            Press(Microsoft.Xna.Framework.Input.Keys.Escape);
+            Check(() => Get<bool>("_hangarOnly"), "Esc with no picker open leaves to the hangar as before");
+        }
     }
 
     // ── P1017: Buy / Launch refusals on the V2 screen ───────────────────────
@@ -427,13 +458,155 @@ sealed class Proof(Game1 game, string output, string style, int width, int heigh
         Do(() => Shot("p1017-3-bought"));
     }
 
+    private void RevealOfferAtTop(int index) => Do(() =>
+    {
+        // Compact viewports initially scroll the picker to the current part.
+        // Reveal the early offer using the real independent wheel input.
+        if (!Layout.Elements.Any(e => e.Kind == LoadoutV2Layout.Kind.Offer && e.Index == index))
+            Pointer(Layout.OfferViewport.CenterX, Layout.OfferViewport.CenterY, notches: 200);
+    });
+
+    private void PrepareWalkthrough(Srv server)
+    {
+        Check(() => Shop.CurrentParts.Count > 0, "first dock contains the server's actual equipped inventory");
+        Do(() =>
+        {
+            var side = server.Missions[0].Sides.First(s => s.Id == Peer(server).Ship.SideId);
+            side.DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)0xff, TechTreeBitMask.ByteCount).ToArray());
+            Call(server, "BroadcastSideTechChange", server.Missions[0], side);
+            SetMoney(server, 1_000_000);
+        });
+        Wait(() => Shop.MyMoney == 1_000_000 && Shop.BuyableHulls.Any(h => h.MaxWeapons > h.MaxFixedWeapons));
+    }
+
+    // Select by cycling the actual key-table verb. No view-model mutation or
+    // fixture replacement in the integrated walkthrough.
+    private void CycleTo(Func<bool> selected)
+    {
+        Wait(() =>
+        {
+            if (selected()) { Keys(); return true; }
+            Keys(Microsoft.Xna.Framework.Input.Keys.E);
+            return true;
+        });
+        // Subsequent cycles are scheduled dynamically until the target arrives.
+        steps.Add(() =>
+        {
+            if (selected()) { Keys(); return true; }
+            var prior = Get<Keys[]>("_introProofKeys");
+            Keys(prior.Length == 0 ? [Microsoft.Xna.Framework.Input.Keys.E] : []);
+            return false;
+        });
+        Do(() => Keys());
+    }
+
+    private void WalkthroughTurret()
+    {
+        short before = 0;
+        Do(() => before = Shop.EffectiveHullId);
+        CycleTo(() => Model.SlotRows.Any(row => row.IsTurret));
+        Check(() => Shop.EffectiveHullId != before, "hull cycling reaches a real hull with turret slots");
+        Hover(() => Layout.Elements.First(e => e.Kind == LoadoutV2Layout.Kind.Slot && Model.SlotRows[e.Index].IsTurret));
+        Check(() => Router.Hover is { Kind: LoadoutV2Layout.Kind.Slot }
+            && Get<LoadoutV2HardpointMarker?>("_loadoutV2Marker") is { IsTurret: true },
+            "P1015 hover produces a real turret marker");
+        Do(() => Shot("5-turret-hover"));
+        Do(() => Pointer(2, 2));
+        CycleTo(() => Shop.EffectiveHullId == before);
+        // Restore the row used by the preceding input script.
+        Do(() => slot = Model.SlotRows.First(r => Model.OffersFor(r.Slot).Count > 1).Slot);
+    }
+
+    private void LaunchAndRedock(Srv server)
+    {
+        Click(() => Element(LoadoutV2Layout.Kind.Launch));
+        Wait(() => !Get<bool>("_dockedActive") && Peer(server).Ship.StationId is null);
+        Check(() => Get<ConnectionSession>("_session").World.Ships[Peer(server).Ship.Id].StationId < 0,
+            "Launch leaves the station on server and client");
+        // Deterministic local flight placement: exercise the ordinary server
+        // docking handler, not a client-only dock flag. No remote hosts.
+        Wait(() =>
+        {
+            var ship = Peer(server).Ship;
+            if (ship.StationId is null)
+            {
+                // Hold the real bay placement across the ordinary launch
+                // cooldown and client flight updates until collision docks it.
+                var station = ship.Sector!.Stations.First(s => s.SideId == ship.SideId);
+                ship.Position = Allegiance.TestInfra.DockTestPlacement.Inside(server.Missions[0], station, ship.HullType);
+                ship.Velocity = Allegiance.Core.Collision.Vector3.Zero;
+                ship.StateM = 0;
+                Set("_throttle", 0f);
+            }
+            return Get<bool>("_dockedActive") && ship.StationId is not null;
+        });
+        Check(() => Shop.CurrentHullId == Peer(server).Ship.HullType.HullId
+            && Shop.CurrentParts.Select(p => (p.PartId, p.MountId)).SequenceEqual(
+                Peer(server).Ship.Parts.Select(p => (p.PartId, p.MountId))),
+            "re-dock rebuilds the shop from the actual hull and parts");
+        Press(Microsoft.Xna.Framework.Input.Keys.F4);
+        Check(() => !Get<bool>("_hangarOnly") && Raw("_loadoutV2Frame") is not null,
+            "F4 reopens V2 after re-dock");
+        Do(() => Shot("6-redocked"));
+    }
+
+    private void HardpointScene()
+    {
+        Do(() =>
+        {
+            var catalog = Get<ShopCatalog>("_shopCatalog");
+            string name = hardpoints switch { "fighter" => "Fighter", "bomber" => "Bomber", _ => "Cruiser" };
+            var hull = catalog.Hulls.First(h => h.Name == name);
+            var fixture = new ShopModel(catalog, hull.HullId, [], 10000);
+            fixture.ApplyDefaultLoadout();
+            Set("_shopModel", new ShopModel(catalog, hull.HullId, fixture.ChosenParts.ToArray(), 10000));
+            if (hardpoints != "fighter")
+            {
+                var world = Get<ConnectionSession>("_session").World;
+                short source = world.MyShipId!.Value;
+                int currentFixed = catalog.Hulls.First(h => h.HullId == world.Ships[source].HullId).MaxFixedWeapons;
+                world.Apply(new Allegiance.Core.Wire.ExportShip { ShipId = 30000, HullId = hull.HullId,
+                    SideId = world.MySideId!.Value, CharacterName = "Proof gunner" });
+                world.Apply(new Allegiance.Core.Wire.LoadoutChange { SidShip = source,
+                    HullId = world.Ships[source].HullId, Parts = world.Ships[source].Loadout ?? [],
+                    Passengers = [new(30000, (byte)currentFixed)] });
+            }
+        });
+        Check(() => Model.EffectiveHull?.Name == (hardpoints == "capital" ? "Cruiser" : hardpoints == "bomber" ? "Bomber" : "Fighter"),
+            "hardpoint fixture renders the requested real core hull");
+        if (hardpoints == "fighter")
+        {
+            Do(() => Pointer(2, 2));
+            TabTo(LoadoutV2Column.Slots);
+            Check(() => Router.Column == LoadoutV2Column.Slots && Frame.Slots[0].Focused,
+                "fighter slot focus goes through P1015 Tab input");
+        }
+        else Hover(() => Layout.Elements.First(e => e.Kind == LoadoutV2Layout.Kind.Slot && Model.SlotRows[e.Index].IsTurret));
+        Check(() => Get<LoadoutV2HardpointMarker?>("_loadoutV2Marker") is not null, "hover/focus produces a real CVH mount marker");
+        Check(() => Get<LoadoutV2HardpointMarker>("_loadoutV2Marker").IsTurret == (hardpoints != "fighter"), "marker agrees with the core mount type");
+        Check(() => Get<LoadoutV2HardpointMarker>("_loadoutV2Marker").Arc.Count == (hardpoints == "fighter" ? 0 : 49), "turrets alone show the direction guide");
+        Check(() => !Get<LoadoutV2HardpointMarker>("_loadoutV2Marker").ArcLimitKnown, "PCore001 has no authored arc limit");
+        if (hardpoints != "fighter") Check(() => Get<LoadoutV2HardpointMarker>("_loadoutV2Marker").GunnerName == "Proof gunner", "marker shows its seated gunner");
+        if (hardpoints == "capital") Check(() => Model.SlotRows.Count(s => s.IsTurret) >= 3, "capital has several authored turret rows");
+        Do(() => Shot("hardpoint-" + hardpoints));
+        if (extras)
+        {
+            Do(() => orbit += MathHelper.Pi);
+            Check(() => Get<LoadoutV2HardpointMarker?>("_loadoutV2Marker") is not null, "marker survives the opposite orbit");
+            Do(() => Shot("opposite-orbit"));
+            Hover(() => Layout.Elements.First(e => e.Kind == LoadoutV2Layout.Kind.Slot && Model.SlotRows[e.Index].Slot.Type == EquipmentType.Shield));
+            Check(() => Get<LoadoutV2HardpointMarker?>("_loadoutV2Marker") is null, "shield hover creates no invented mount");
+            Do(() => Shot("shield-no-marker"));
+        }
+    }
+
     public override void Update(GameTime gameTime)
     {
-        if (watch.Elapsed.TotalSeconds > 150) throw new TimeoutException("P1015 proof");
-        if (buyServer is not null) Get<VisualOptions>("_visuals").SetToggle("hangar.loadoutV2", true);
+        if (watch.Elapsed.TotalSeconds > (walkthrough ? 210 : 150)) throw new TimeoutException("P1018 proof: step " + step + "/" + steps.Count);
+
         Get<HudSettings>("_hudSettings").Style = style == "classic" ? HudStyle.Classic : HudStyle.Modern;
         // Fix only the proof's orbit angle for reproducible pixels.
-        Set("_hullPreviewSpin", .8f - DockedHullOrbit.Advance(0, gameTime.ElapsedGameTime.TotalSeconds));
+        Set("_hullPreviewSpin", orbit - DockedHullOrbit.Advance(0, gameTime.ElapsedGameTime.TotalSeconds));
         if (watch.Elapsed.TotalSeconds < next || step >= steps.Count) return;
         lock (gate)
             if (steps[step]()) { step++; next = watch.Elapsed.TotalSeconds + .4; }

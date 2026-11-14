@@ -102,11 +102,12 @@ public class LoadoutRoundTripTests
             Assert.True(ack.FValidated, $"logon failed: {ack.CharNameOrFailureReason}");
             client.RequestSide(0);   // P281 — pick a side to trigger the deferred launch burst
 
-            // The logon burst's own BUY_LOADOUT_ACK is hull-only (nParts=0) and
-            // names the ship's real current hull — grab that hull for our request.
+            // P1018: the logon burst names the actual hull AND equipped spawn
+            // inventory; a hull-only response would erase parts in the shop.
             var logonAckRaw = client.WaitForFmid(BuyLoadoutAck.Fmid, 5000);
             var logonAck = BuyLoadoutAck.Decode(logonAckRaw);
-            Assert.Empty(logonAck.Parts);            // zero-part regression: logon-burst ACK has no tail
+            Assert.NotEmpty(logonAck.Parts);
+            Assert.Equal(server.Ships.Single().Ship.ExportInventoryForAck(), logonAck.Parts);
             short hullId = logonAck.HullId;
             Assert.True(hullId > 0, $"expected a real hull, got {hullId}");
 
@@ -171,7 +172,8 @@ public class LoadoutRoundTripTests
             Assert.False(resp.FBoughtEverything);    // honest: nothing bought
             Assert.False(resp.FLaunch);
 
-            // Byte-identical to the logon burst's hull-only ACK form.
+            // The requested empty loadout still has the historical hull-only
+            // wire form; the initial state-sync ACK now carries real inventory.
             Assert.Equal(new BuyLoadoutAck { HullId = hullId }.Encode(), respRaw);
         }
         finally

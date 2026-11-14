@@ -14,8 +14,9 @@ public static class DockedTouchZones
 {
     /// <summary>
     /// V2 uses the exact visible draw rectangles, including model indices after
-    /// scrolling. Call only from the future V2 input branch; legacy zones below
-    /// keep their existing geometry and behaviour.
+    /// scrolling, plus the visible Back/Undock header targets. The V2 branch
+    /// consumes taps before legacy zones below; those
+    /// keep their existing geometry and behaviour on the old screen.
     /// </summary>
     public static LoadoutV2Layout.Element? LoadoutV2HitTest(LoadoutV2Layout layout, float tx, float ty)
         => layout.HitTest(tx, ty);

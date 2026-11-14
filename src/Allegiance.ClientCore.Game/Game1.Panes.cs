@@ -79,6 +79,10 @@ public sealed partial class Game1
 
     private bool HandleDockedScreen(KeyboardState ks, bool composing)
     {
+        // Observe held devices even on the early hangar/command/flight exits.
+        // A V2 picker or old hit rectangles must not survive leaving its screen.
+        if (_loadoutV2InputState is not null && !LoadoutV2Shown)
+            UpdateLoadoutV2Input(ks, GamePadNavNow(), composing, null);
         if (!TrainingAllowsHangar) return false;
         var world = _session.World;
         short me = world.MyShipId ?? -1;
@@ -807,7 +811,11 @@ public sealed partial class Game1
 
         foreach (var (tx, ty) in taps)
         {
-            // Pane toggles are always offered while not launch-pending.
+            // Consume the whole V2 surface before legacy pane hit bands,
+            // including while a popup owns input.
+            if (TryLoadoutV2Tap(tx, ty, mySe)) return;
+
+            // Legacy pane toggles only belong to the legacy screen.
             if (active)
             {
                 var telRect = Rendering.DockedTouchZones.TeleportRect(w, h);
@@ -848,12 +856,6 @@ public sealed partial class Game1
                 if (idx < 0) continue;
                 tel.MoveCursor(idx - tel.Cursor);
                 ActivateTeleport(tel, mySe);
-                return;
-            }
-            if (active && LoadoutV2Shown)
-            {
-                // P1015 — only the V2 screen's drawn rectangles are tap targets.
-                LoadoutV2Tap(tx, ty, mySe);
                 return;
             }
             if (active && !_investActive && !_teleportActive && _shopModel is { } shop)

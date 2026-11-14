@@ -9025,3 +9025,39 @@ civ-profile and showcase-rock cases; none is in the buy path. Both sweeps are re
 The Live training gate was not run (the story's gate is the light one). Report:
 `docs/reports/LOADOUT_V2_BUY_FLOW_P1017.md`.
 
+
+
+## 2026-11-14 — P1018 Loadout V2 integration, one Fast sweep
+
+One completed sweep (base `7254ffcc`): **14,503 passed / 13 failed / 7 not executed**
+of 14,523, **624.6 s**, Fast limit **11.596 s** (P744 factor 1.159602). Infrastructure
+checks: **9/0/0**. The sweep remains **FAIL**. Six task-caused fixture assumptions
+about empty initial inventory / unoccupied sockets were corrected and verified
+three times each; they are **not flakes**. Details and media qualification:
+`docs/reports/LOADOUT_V2_INTEGRATION_P1018.md`. No second full sweep was run.
+
+Every non-task failed method and each timing-only offender was repeated in its
+own process three times, including all cases of theory methods. Results below
+are **Passed / Failed / Skipped (maximum case duration)** per repetition.
+
+| Method | Run 1 | Run 2 | Run 3 | Sweep signature |
+| --- | --- | --- | --- | --- |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1/0/0 (0.010 s) | 1/0/0 (0.010 s) | 1/0/0 (0.010 s) | 1,280 B allocated, expected 0; existing allocation-counter intermittency |
+| `P941InputLayoutTests.Keymap_store_picks_the_layout_from_the_file` | 1/0/0 (0.032 s) | 1/0/0 (0.031 s) | 1/0/0 (0.032 s) | Native layout expected, Port observed; process-wide ALLEGIANCE_KEYMAP is mutated by P941/P949 tests (concurrent environment race is an inference) |
+| `FullSessionKillIntegrationTests.FullSession_ThreePeers_TeammateComposition_Then_RealCrossSideKill` | 1/0/0 (1.182 s) | 1/0/0 (1.237 s) | 1/0/0 (1.285 s) | cross-side PLAYERINFO still carried team-lobby side -2, expected 1; injected spawner bypasses the default spawn path |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0 (5.588 s) | 3/0/0 (5.470 s) | 3/0/0 (5.500 s) | civ 35: 12.224 s; all three theory cases repeated |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 1/0/0 (3.248 s) | 1/0/0 (3.206 s) | 1/0/0 (3.239 s) | 14.997 s, timing only |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0 (4.160 s) | 2/0/0 (4.161 s) | 2/0/0 (4.112 s) | civ 25: 15.072 s; both theory cases repeated |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | 1/0/0 (0.557 s) | 1/0/0 (0.568 s) | 1/0/0 (0.583 s) | 31.645 s, probe damage receipt absent; existing receipt family |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | 0/1/0 (1.731 s) | 1/0/0 (1.724 s) | 1/0/0 (1.733 s) | one queued broadcast observed after capacity; failed in sweep and run 1 alone (existing family) |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | 10/0/0 (1.752 s) | 10/0/0 (1.751 s) | 10/0/0 (1.754 s) | civ 3: 15.270 s; all ten theory cases repeated |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | 1/0/0 (1.031 s) | 1/0/0 (1.023 s) | 1/0/0 (1.069 s) | 30.334 s, ore remained zero; existing native-miner fixture family |
+| `ProbeCombatLiveTests.Lethal_hit_kills_probe_removes_from_sector_and_broadcasts_destroy_to_same_side_peer` | 1/0/0 (0.431 s) | 0/1/0 (14.755 s) | 1/0/0 (0.411 s) | 15.032 s, lethal missile did not kill probe; failed again in run 2 alone (existing family) |
+
+Final non-task repeats: **67/2/0** cases across **33 processes** (69 executions).
+The asteroid-capacity and lethal-probe cases remain intermittent even alone; no
+claim of repair is made. Probe, armed-probe and native-miner fixtures use injected
+player spawners; this story does not change their missile, mining or collision
+rules. No timing allowance, tier, simulation rule or assertion was relaxed for
+these failures. Portable per-case outcomes/timings are retained in
+`docs/reports/P1018_assets/verification.json`; raw logs/TRX are in ignored scratch.

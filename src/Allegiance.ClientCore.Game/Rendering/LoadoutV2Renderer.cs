@@ -65,6 +65,8 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
                         for (int i = 0; i < frame.Price.Count; i++)
                             Text(frame.Price[i], new(bounds.X, bounds.Y + line * i, bounds.Width, line), style, scale * .9f);
                         break;
+                    case LoadoutV2Layout.Kind.Back:
+                    case LoadoutV2Layout.Kind.Undock:
                     case LoadoutV2Layout.Kind.Default:
                     case LoadoutV2Layout.Kind.Revert:
                     case LoadoutV2Layout.Kind.Buy:

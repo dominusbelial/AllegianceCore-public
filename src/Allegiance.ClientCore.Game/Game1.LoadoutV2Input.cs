@@ -34,10 +34,17 @@ public partial class Game1
     /// <summary>Every docked frame: feed the router. It only observes (held keys,
     /// button, wheel) while the gates are closed, so nothing held across a popup
     /// or the hangar becomes a fresh press.</summary>
-    private void UpdateLoadoutV2Input(KeyboardState ks, PadNav nav, bool composing, ShipEntity mySe)
+    private void UpdateLoadoutV2Input(KeyboardState ks, PadNav nav, bool composing, ShipEntity? mySe)
     {
         // Flag off: no router is ever created and no device is read here.
         if (_loadoutV2InputState is null && !LoadoutV2Shown) return;
+        if (!LoadoutV2Shown)
+        {
+            _loadoutV2InputState?.Suspend(_loadoutV2Model);
+            _loadoutV2Frame = null;
+            _loadoutV2Layout = null;
+            _loadoutV2Marker = null;
+        }
         bool live = LoadoutV2InputLive(composing);
         bool control = ks.IsKeyDown(Keys.LeftControl) || ks.IsKeyDown(Keys.RightControl);
         var keys = LoadoutV2Input.Keys(action => ActionDown(ks, action), control,
@@ -51,7 +58,7 @@ public partial class Game1
         var result = LoadoutV2InputRouter.Step(LoadoutV2ModelFor(_shopModel), _loadoutV2Layout, live, keys, pointer);
         // Native slot MouseEnter cues mouseoverSound (WinTrek/load.cpp:233-237).
         if (result.HoverCue) UiSounds?.PlayMouseOver();
-        ApplyLoadoutV2Request(result.Request, mySe);
+        if (mySe is not null) ApplyLoadoutV2Request(result.Request, mySe);
     }
 
     /// <summary>Buy, Launch and Back on the old screen's own paths: native
@@ -59,6 +66,7 @@ public partial class Game1
     /// (WinTrek/load.cpp:1511-1531,1498-1509,1533-1538).</summary>
     private void ApplyLoadoutV2Request(LoadoutV2Request request, ShipEntity mySe)
     {
+        if ((request & LoadoutV2Request.Undock) != 0) UndockFromLoadout();
         if ((request & LoadoutV2Request.Buy) != 0) BuyFromHangar(mySe);
         if ((request & LoadoutV2Request.Launch) != 0) LaunchFromHangar(mySe);
         // Same rule as Escape (training keeps the loadout, console.cpp:1128-1131).
@@ -76,6 +84,13 @@ public partial class Game1
 
     /// <summary>A touch tap on the V2 screen: the drawn rectangles are the only
     /// targets (DockedTouchZones.LoadoutV2HitTest).</summary>
+    private bool TryLoadoutV2Tap(float x, float y, ShipEntity mySe)
+    {
+        if (!LoadoutV2Shown) return false;
+        LoadoutV2Tap(x, y, mySe);
+        return true;
+    }
+
     private void LoadoutV2Tap(float x, float y, ShipEntity mySe)
     {
         if (!LoadoutV2InputLive(composing: false) || _loadoutV2Layout is not { } layout
@@ -92,10 +107,7 @@ public partial class Game1
         bool uKey = ActionDown(ks, "ShopUndock");
         if (uKey && !_dockUWasDown && !_launchSent)
         {
-            _session.SendDocked();
-            _launchSent = true;
-            _throttle = Flight.FlightInput.DefaultThrottle;
-            Console.WriteLine("[monogame] UNDOCK (no buy) -> FM_C_DOCKED(NA)");
+            UndockFromLoadout();
         }
         _dockUWasDown = uKey;
         _dockUpWasDown = ActionDown(ks, "MenuUp") || nav.Up;
@@ -108,6 +120,16 @@ public partial class Game1
         _dockEWasDown = ActionDown(ks, "ShopCycleHullNext") || nav.Right;
         _dockBWasDown = ActionDown(ks, "MenuBack") || nav.Back;
         HandleCustomLoadoutKeys(shop, ks);
+    }
+
+    // Shared by the existing keyboard action and the visible V2 touch target.
+    private void UndockFromLoadout()
+    {
+        if (_launchSent) return;
+        _session.SendDocked();
+        _launchSent = true;
+        _throttle = Flight.FlightInput.DefaultThrottle;
+        Console.WriteLine("[monogame] UNDOCK (no buy) -> FM_C_DOCKED(NA)");
     }
 
     /// <summary>True for a plain digit bound to a V2 focus verb: on the V2 screen

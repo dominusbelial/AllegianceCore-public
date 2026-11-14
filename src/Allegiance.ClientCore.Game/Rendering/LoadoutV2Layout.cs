@@ -16,7 +16,7 @@ public sealed class LoadoutV2Layout
     public enum Kind
     {
         Title, Money, HullHeading, SlotHeading, Hull, Preview, Slot, Offer, Stat,
-        Price, Default, Revert, Buy, Launch,
+        Price, Default, Revert, Buy, Launch, Back, Undock,
     }
 
     /// <summary>
@@ -136,9 +136,15 @@ public sealed class LoadoutV2Layout
             => elements.Add(new(kind, bounds, Inset(bounds, 6f * scale), index, owner));
         TouchRect Row(TouchRect area, int index) => new(area.X, area.Y + index * pitch,
             area.Width, pitch - 3f * scale);
-        Add(Kind.Title, new(header.X, header.Y, header.Width * .62f, header.Height));
-        Add(Kind.Money, new(header.X + header.Width * .62f + gap, header.Y,
-            header.Width * .38f - gap, header.Height));
+        // Navigation occupies visible, disjoint header targets. The old touch
+        // teleport/investment bands are never active over this header.
+        float navWidth = 112f * scale;
+        float textWidth = header.Width - 2 * navWidth - 3 * gap;
+        Add(Kind.Title, new(header.X, header.Y, textWidth * .58f, header.Height));
+        Add(Kind.Money, new(header.X + textWidth * .58f + gap, header.Y,
+            textWidth * .42f, header.Height));
+        Add(Kind.Back, new(header.Right - 2 * navWidth - gap, header.Y, navWidth, header.Height));
+        Add(Kind.Undock, new(header.Right - navWidth, header.Y, navWidth, header.Height));
         Add(Kind.HullHeading, new(hulls.X + inset, hulls.Y + inset,
             hullViewport.Width, headingHeight));
         Add(Kind.SlotHeading, new(slots.X + inset, slots.Y + inset,

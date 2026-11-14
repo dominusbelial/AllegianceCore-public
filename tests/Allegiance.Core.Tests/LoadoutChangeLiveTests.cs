@@ -139,6 +139,9 @@ public class LoadoutChangeLiveTests
             PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId), 8000);
             Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
 
+            // P1018: the spawn weapon is now in Parts. Start this mount/remove
+            // fixture with an empty socket so it removes the part it adds.
+            subject.ClearLoadout();
             // Clear any loadout-changes sent during spawn before the real action.
             subBot.ResetLoadoutChanges(); obsBot.ResetLoadoutChanges(); enemyBot.ResetLoadoutChanges();
 
