@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Allegiance.Core;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -54,9 +55,10 @@ public readonly record struct SlotDef(EquipmentType Type, byte Mount, bool IsTur
 /// real mounted parts (the P519 dock-sync BUY_LOADOUT_ACK tail) and every edit
 /// (fill a slot / clear a slot / swap hull) mutates that same pending list — so
 /// a launch sends N &gt; 0 parts equal to the ship's intended loadout, never 0.
-/// On a hull change the parts that don't fit the new hull are dropped (native
-/// ReplaceLoadout/RefreshLoadout, load.cpp:1453-1474, mounts only what fits), so
-/// launching after a hull change sends that hull's mountable loadout.</para>
+/// On a hull change NOTHING is carried over from the previous hull (P1012):
+/// native <c>BuyHull</c> terminates every pending part and rebuilds the ship
+/// from custom-loadout slot 0 for the new hull, else the hull's default
+/// loadout (<c>load.cpp:1453-1490</c>, <c>clintlib.h:1790-1802</c>).</para>
 ///
 /// <para>Model, not view: MonoGame-free and headless-testable (the
 /// <see cref="ScoreboardLayout"/> discipline). The <em>current page</em> (hull
@@ -79,7 +81,14 @@ public sealed class ShopModel
     /// (<c>BuyHull</c> → <c>RefreshLoadout(customLoadouts[0], phullType)</c>,
     /// load.cpp:1478-1486), which is the behaviour this row pins.
     /// </summary>
-    private readonly Dictionary<(short HullId, int Slot), List<ExpandedPartData>> _customLoadouts = new();
+    private readonly Dictionary<(short HullId, int Slot), List<ExpandedPartData>> _customLoadouts;
+
+    /// <summary>P1012 — the docked ship's cargo hold (negative native mounts), kept
+    /// only to value the ship the server will refund: native <c>GetValue</c> sums
+    /// every part including cargo (<c>shipIGC.h:396-406</c>), and the server refunds
+    /// that whole value before pricing the new loadout (<c>FedSrv.CPP:6183-6193</c>).
+    /// The shop does not edit cargo (the existing shop gap).</summary>
+    public IReadOnlyList<ExpandedPartData> CurrentCargo { get; }
 
     /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
     /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
@@ -140,30 +149,32 @@ public sealed class ShopModel
     public bool WillSwapHull => ChosenHullId is { } c && c != CurrentHullId;
 
     /// <summary>
-    /// P519 — the chosen parts the server will DROP on launch because the
-    /// effective hull can't mount them. Under the new slot-driven model a hull
-    /// change already drops non-fitting parts eagerly (native ReplaceLoadout),
-    /// so this is normally empty; it stays as the honest projection for any
-    /// remaining part that slipped through (e.g. a free-mounted same-type part).
-    /// Gated on <see cref="WillSwapHull"/> like P394/P335.
+    /// P519 — the chosen parts the server will DROP on buy because the effective
+    /// hull can't mount them at their mount. P1012: the test is the server's own,
+    /// per mount (native <c>m_myHullType.CanMount(ppt, ppdNext-&gt;mountID)</c>,
+    /// <c>shipIGC.h:1029-1031</c>), and it is no longer gated on a pending hull
+    /// swap. A hull change rebuilds the pending loadout from parts that fit
+    /// (native <c>BuyHull</c>), so this is normally empty; it stays as the honest
+    /// projection for anything that slipped through (a P996 restored part in a
+    /// hardpoint whose mask rejects it, a part the docked ship itself carries in
+    /// a mount the hull record does not accept).
     /// </summary>
     public IReadOnlyList<ExpandedPartData> ChosenPartsThatDontFitEffectiveHull
     {
         get
         {
-            if (!WillSwapHull) return [];
             if (EffectiveHull is not { } eff) return [];
             var bad = new List<ExpandedPartData>();
             foreach (var p in _chosenParts)
             {
                 var pt = LookupPart(p.PartId);
-                if (pt is { } part && !eff.CanMountPart(part)) bad.Add(p);
+                if (pt is { } part && !eff.CanMountPart(part, unchecked((sbyte)p.MountId))) bad.Add(p);
             }
             return bad;
         }
     }
 
-    // ── pricing (native GetValue: hull price + Σ part prices) ───────────────
+    // ── pricing (native GetValue: hull price + Σ part instance prices) ──────
 
     /// <summary>P468 — the local player's wallet (P442), or null until the first
     /// SET_MONEY. When null the shop can't judge affordability.</summary>
@@ -171,17 +182,45 @@ public sealed class ShopModel
 
     public bool AffordabilityKnown => MyMoney is not null;
 
-    public long ValueOf(short hullId, IReadOnlyList<ExpandedPartData> parts)
+    /// <summary>Native <c>IshipIGC::GetValue</c> (<c>shipIGC.h:396-406</c>): the
+    /// hull price plus every part INSTANCE's price. P1012: an expendable launcher
+    /// instance costs <c>amount × launcher price</c> (<c>magazineigc.h:85-88</c>,
+    /// <c>dispenserigc.h:86-89</c>), a pack costs nothing (<c>packigc.h:80-83</c>),
+    /// every other part its type price — the same sum the server debits
+    /// (<c>FedSrv.CPP:6183-6199</c>).</summary>
+    public long ValueOf(short hullId, IReadOnlyList<ExpandedPartData> parts) =>
+        HullValue(hullId) + PartsValue(parts);
+
+    private long HullValue(short hullId)
+    {
+        foreach (var h in _cat.Hulls)
+            if (h.HullId == hullId) return h.Price;
+        return 0;
+    }
+
+    private long PartsValue(IReadOnlyList<ExpandedPartData> parts)
     {
         long v = 0;
-        foreach (var h in _cat.Hulls)
-            if (h.HullId == hullId) { v += h.Price; break; }
         foreach (var p in parts)
-            if (LookupPart(p.PartId) is { } pc) v += pc.Price;
+            if (LookupPart(p.PartId) is { } pc) v += PartInstancePrice(pc, p.Amount);
         return v;
     }
 
-    public long CurrentShipValue => ValueOf(CurrentHullId, CurrentParts);
+    /// <summary>P1012 — one mounted part's native price (see <see cref="ValueOf"/>).</summary>
+    public static long PartInstancePrice(in DataPartTypeIGC part, short amount)
+    {
+        if (part.Type is DataPartTypeIGC.Pack) return 0;
+        return IsExpendableLauncher(part) ? (long)part.Price * Math.Max((short)0, amount) : part.Price;
+    }
+
+    /// <summary>Native <c>IlauncherTypeIGC::IsLauncherType</c>: magazine,
+    /// dispenser or chaff launcher.</summary>
+    public static bool IsExpendableLauncher(in DataPartTypeIGC part) =>
+        part.EquipmentType is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher;
+
+    /// <summary>The docked ship's refundable value: mounted parts AND the cargo
+    /// hold (P1012 — the server refunds both, <c>FedSrv.CPP:6183</c>).</summary>
+    public long CurrentShipValue => ValueOf(CurrentHullId, CurrentParts) + PartsValue(CurrentCargo);
 
     public long NewLoadoutValue => ValueOf(EffectiveHullId, _chosenParts);
 
@@ -240,33 +279,35 @@ public sealed class ShopModel
 
     /// <summary>P519 — cycle to the next/previous buyable hull (native
     /// OnButtonNext/OnButtonPrevious → GetNextHullType, load.cpp:1568-1636),
-    /// wrapping around the buyable list. Sets the chosen hull and rebases the
-    /// pending loadout onto the new hull (dropping non-fitting parts).</summary>
+    /// wrapping around the buyable list. A different hull is bought the native
+    /// way (<see cref="BuyHull"/>); coming full circle to the same hull changes
+    /// nothing (<c>if (pht != phtCurrent) BuyHull(pht)</c>, load.cpp:1618-1625).</summary>
     public void CycleHull(bool forward)
     {
         if (BuyableHulls.Count == 0) return;
         int idx = IndexOfHull(EffectiveHullId);
         idx = (idx + (forward ? 1 : -1) + BuyableHulls.Count) % BuyableHulls.Count;
         var next = BuyableHulls[idx];
-        ChosenHullId = next.HullId;
         HullCursor = idx;
-        RebaseForEffectiveHull();
+        BuyHull(next.HullId, next.HullId);
         BlockReason = null;
     }
 
     /// <summary>P519 — select the hull under the HULLS-list cursor (the native
-    /// hull-menu click). Picking the current hull de-picks (keep current);
-    /// picking any other sets it as the chosen hull and rebases the loadout.</summary>
+    /// hull-menu click, <c>OnMenuCommand</c>, load.cpp:1894-1899). P1012: picking
+    /// the hull that is already pending does nothing — native only calls
+    /// <c>BuyHull</c> when <c>phullType != m_pship-&gt;GetBaseHullType()</c>
+    /// (load.cpp:1896), so the player's slot edits survive and no sound plays.
+    /// Picking any other hull — including the docked ship's own hull after
+    /// another one was pending — buys it (<see cref="BuyHull"/>).</summary>
     public void SelectHullAtCursor()
     {
         if (BuyableHulls.Count == 0) return;
         var hull = BuyableHulls[HullCursor];
-        bool picked = hull.HullId != CurrentHullId;   // re-picking de-picks (keep current)
-        ChosenHullId = picked ? hull.HullId : null;
-        RebaseForEffectiveHull();
+        bool changed = BuyHull(hull.HullId, hull.HullId == CurrentHullId ? null : hull.HullId);
         BlockReason = null;
-        if (picked)
-            HullChosen?.Invoke();            // native mountSound on hull pick, load.cpp:1480-1487
+        if (changed)
+            HullChosen?.Invoke();            // native mountSound in BuyHull, load.cpp:1487
     }
 
     /// <summary>The hull row the HULLS cursor is on (for the detail panel).</summary>
@@ -279,24 +320,22 @@ public sealed class ShopModel
     /// station offers is selectable (the gate is native <c>GetNextHullType</c>'s
     /// <c>GroupID &gt;= 0 &amp;&amp; pstation-&gt;CanBuy(pht) &amp;&amp;
     /// !pstation-&gt;IsObsolete(pht)</c>, <c>WinTrek/load.cpp:1603-1606</c>, which
-    /// <see cref="BuyableHulls"/> already encodes). Selecting the docked hull
-    /// de-picks it (keep the current hull, no loadout refresh) exactly as native
-    /// <c>NextHull</c> does when <c>pht == phtCurrent</c> (<c>load.cpp:1620-1625</c>,
-    /// hull menu <c>:1896-1898</c>); selecting another hull rebases the pending
-    /// loadout onto that hull's saved custom slot 0 / native default and raises
-    /// <see cref="HullChosen"/> for the hull-menu <c>mountSound</c>
-    /// (<c>load.cpp:1480-1487</c>).
+    /// <see cref="BuyableHulls"/> already encodes). P1012: the same rule as the
+    /// hull menu — picking the hull already pending is a no-op (native only calls
+    /// <c>BuyHull</c> when <c>phullType != m_pship-&gt;GetBaseHullType()</c>,
+    /// <c>load.cpp:1896</c>); any other hull, the docked one included, is bought
+    /// the native way (<see cref="BuyHull"/>: nothing carried over, custom slot 0
+    /// for that hull else its default) and raises <see cref="HullChosen"/> for
+    /// the <c>mountSound</c> (<c>load.cpp:1487</c>).
     /// </summary>
     /// <returns>False when the hull is not offered at this station.</returns>
     public bool SelectHull(short hullId)
     {
         if (!InHullCatalog(hullId)) return false;
         HullCursor = IndexOfHull(hullId);
-        bool picked = hullId != CurrentHullId;   // re-picking the docked hull de-picks (keep current)
-        ChosenHullId = picked ? hullId : null;
-        RebaseForEffectiveHull();
+        bool changed = BuyHull(hullId, hullId == CurrentHullId ? null : hullId);
         BlockReason = null;
-        if (picked) HullChosen?.Invoke();
+        if (changed) HullChosen?.Invoke();
         return true;
     }
 
@@ -403,10 +442,12 @@ public sealed class ShopModel
         foreach (var p in _cat.Parts)
             if (PartFitsSlot(hull.Value, slot, p))
                 list.Add(new SlotPartOffer(p, DefaultAmount(p), false));
+        // P1012 — a launcher is bought with the amount the PENDING hull holds
+        // (native BuyPart, load.cpp:1440-1444: GetAmount(m_pship)).
         if (_launchers is { } ls)
             foreach (var l in ls)
                 if (PartFitsSlot(hull.Value, slot, l.Part))
-                    list.Add(new SlotPartOffer(l.Part, l.Ammo, true));
+                    list.Add(new SlotPartOffer(l.Part, DefaultAmmoFor(hull.Value, l.Part.PartId, l.Part), true));
         // Stable, deterministic order: by price then name then id.
         list.Sort((a, b) =>
         {
@@ -625,13 +666,23 @@ public sealed class ShopModel
 
     // ── construction + helpers ───────────────────────────────────────────────
 
+    /// <param name="customLoadouts">P1012 — the client's custom-loadout slots.
+    /// Native keeps them on the client for the whole session and on disk
+    /// (<c>m_customLoadouts</c>, clintlib.h:826, clintlib.cpp:1155); pass the
+    /// session's store so a slot saved at one dock is still there at the next.
+    /// Null = a private store that lives as long as this model.</param>
+    /// <param name="currentCargo">P1012 — the docked ship's cargo hold, counted in
+    /// <see cref="CurrentShipValue"/> only.</param>
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
-        int? money = null)
+        int? money = null, ShopCustomLoadouts? customLoadouts = null,
+        IReadOnlyList<ExpandedPartData>? currentCargo = null)
     {
         _cat = catalog;
         _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
+        _customLoadouts = (customLoadouts ?? new ShopCustomLoadouts()).Slots;
         CurrentHullId = currentHullId;
         CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
+        CurrentCargo = currentCargo ?? Array.Empty<ExpandedPartData>();
         MyMoney = money;
 
         // P394 + P519 Bug 3 — seed the pending loadout verbatim from the ship's
@@ -833,33 +884,93 @@ public sealed class ShopModel
         }
     }
 
-    /// <summary>P571 — after a real hull swap, the pending loadout becomes the
-    /// NEW hull's NATIVE default loadout — the preferred part types that mount
-    /// (native <c>TryToBuyParts</c>, clintlib.h:1341-1368, which fills the
-    /// empty slots with <c>GetPreferredPartTypes()</c>; <c>BuyHull</c> → <c>RefreshLoadout(customLoadouts[0],
-    /// phullType)</c>, load.cpp:1478-1486). The player can still edit it in the
-    /// shop. Keeping the old hull's parts verbatim (minus non-fitting ones)
-    /// would ship a stripped hull whenever the docked ship had none — e.g. the
-    /// respawned lifepod's bare chassis (the P571 "+0 parts" bug). Scope: only
-    /// when a real swap is pending (P334).</summary>
-    private void RebaseForEffectiveHull()
+    /// <summary>
+    /// P1012 — native <c>LoadoutImpl::BuyHull</c> (<c>load.cpp:1476-1490</c>), the
+    /// one path every hull change takes (hull menu <c>:1894-1898</c>, Next/Previous
+    /// <c>:1618-1625</c>). Nothing is carried over from the hull being left:
+    /// <c>RefreshLoadout</c> terminates every pending part (<c>:1453-1470</c>) and
+    /// <c>ReplaceLoadout(ship, station, hull, moneyLots, customLoadouts[0])</c>
+    /// (<c>clintlib.h:1790-1802</c>) rebuilds the ship as
+    /// <list type="bullet">
+    /// <item>the custom-loadout slot 0 saved for THAT hull, when there is one
+    /// (<see cref="ReplaySavedLoadout"/>), else</item>
+    /// <item>the hull's default loadout (<c>BuyDefaultLoadout</c>,
+    /// <see cref="DefaultLoadoutFor"/>).</item>
+    /// </list>
+    /// The budget is <c>moneyLots</c>, so the player's wallet never trims the
+    /// rebuilt loadout; affordability is judged at Buy/Launch
+    /// (<c>load.cpp:1498-1531</c>). The rule has no special case for the hull the
+    /// docked ship already has: going A → B → A rebuilds A from slot 0 / the
+    /// default, it does not bring back the docked ship's parts or the edits made
+    /// before leaving A (those go to <c>m_loadouts</c> via <c>SaveLoadout</c>,
+    /// <c>load.cpp:1478</c>, which <c>BuyHull</c> never reads back).
+    /// </summary>
+    /// <returns>True when the hull changed (native plays <c>mountSound</c>).</returns>
+    private bool BuyHull(short hullId, short? chosenHullId)
     {
-        if (!WillSwapHull) return;
-        if (EffectiveHull is not { } eff) return;
+        if (hullId == EffectiveHullId) return false;     // load.cpp:1623 / :1896
+        ChosenHullId = chosenHullId;
         _chosenParts.Clear();
-        // P759 — native BuyHull refreshes the NEW hull from the saved custom
-        // loadout slot 0 for that hull when one exists, else its native default
-        // (RefreshLoadout(customLoadouts[0], phullType), load.cpp:1478-1486).
-        IReadOnlyList<ExpandedPartData> seed =
-            _customLoadouts.TryGetValue((eff.HullId, 0), out var saved)
-                ? saved
-                : DefaultLoadoutFor(eff);
-        foreach (var p in seed)
-            _chosenParts.Add(p);
+        if (EffectiveHull is { } eff)
+        {
+            if (_customLoadouts.TryGetValue((eff.HullId, 0), out var saved))
+                ReplaySavedLoadout(eff, saved);
+            else
+                _chosenParts.AddRange(DefaultLoadoutFor(eff));
+        }
         NormalizeWeaponMounts();
-        // Keep the chosen slots consistent with the new hull (a filled slot that
-        // vanished is just empty).
         SlotCursor = 0;
+        return true;
+    }
+
+    /// <summary>
+    /// P1012 — native <c>ReplaceLoadout</c>'s clone loop for a cached loadout
+    /// (<c>clintlib.h:1824-1845</c>). Each saved part is re-resolved against what
+    /// the station sells NOW — the buyable successor when the part can be bought,
+    /// else the nearest buyable predecessor (<c>GetSimilarPart</c>,
+    /// <c>stationIGC.h:453-470</c>), else it is dropped — and is mounted only when
+    /// the hull accepts it at the saved mount (<c>pht-&gt;CanMount(ppt, cpl.mount)</c>).
+    /// It is bought fresh (<c>BuyPartOnBudget</c>, <c>clintlib.h:1305-1339</c>): a
+    /// launcher gets the amount this hull holds, the part is fully mounted.
+    /// </summary>
+    private void ReplaySavedLoadout(in DataHullTypeIGC hull, IReadOnlyList<ExpandedPartData> saved)
+    {
+        foreach (var p in saved)
+        {
+            if (ResolveSavedPart(p.PartId) is not { } partId) continue;
+            if (LookupPart(partId) is not { } part) continue;
+            int mount = unchecked((sbyte)p.MountId);
+            if (!hull.CanMountPart(part, mount)) continue;
+            bool occupied = _chosenParts.Any(c => c.MountId == p.MountId
+                && LookupPart(c.PartId) is { } have && have.EquipmentType == part.EquipmentType);
+            if (occupied) continue;
+            short amount = IsExpendableLauncher(part) ? DefaultAmmoFor(hull, partId, part) : p.Amount;
+            _chosenParts.Add(new ExpandedPartData(partId, amount, p.MountId, ExpandedPartData.FullyMounted));
+        }
+    }
+
+    /// <summary>P1012 — the part a saved loadout entry buys today (native
+    /// <c>clintlib.h:1828-1835</c>): its highest offered successor, else the
+    /// nearest offered predecessor (<c>GetSimilarPart</c>). Null = not for sale in
+    /// any form.</summary>
+    private short? ResolveSavedPart(short savedPartId)
+    {
+        if (BuyablePartOrDefault(savedPartId) is { } buyable) return buyable;
+        if (_cat.Core is not { } core) return null;
+        short cur = savedPartId;
+        for (int guard = 0; guard < 64; guard++)
+        {
+            short? pred = null;
+            foreach (var kv in core.PartTypes.OrderBy(kv => kv.Key))
+                if (kv.Value.SuccessorPartId == cur && kv.Key != cur) { pred = kv.Key; break; }
+            if (pred is null)
+                foreach (var id in core.Launchers.Keys.OrderBy(k => k))
+                    if (id != cur && core.TryBuildExpendableLauncher(id, out var lp) && lp.SuccessorPartId == cur) { pred = id; break; }
+            if (pred is not { } found) return null;
+            if (InCatalog(found)) return found;
+            cur = found;
+        }
+        return null;
     }
 
     /// <summary>
@@ -905,12 +1016,13 @@ public sealed class ShopModel
     public void RestoreCustomLoadout(int slot)
     {
         _chosenParts.Clear();
-        if (_customLoadouts.TryGetValue((EffectiveHullId, slot), out var saved))
-            foreach (var p in saved)
-                _chosenParts.Add(p);
-        else if (EffectiveHull is { } eff)   // P764b — no cached loadout for the hull → the default (clintlib.h:1796-1800)
-            foreach (var p in DefaultLoadoutFor(eff))
-                _chosenParts.Add(p);
+        if (EffectiveHull is { } eff)
+        {
+            if (_customLoadouts.TryGetValue((eff.HullId, slot), out var saved))
+                ReplaySavedLoadout(eff, saved);   // P1012 — the same clone loop a hull change uses
+            else                                  // P764b — no cached loadout for the hull → the default (clintlib.h:1796-1800)
+                _chosenParts.AddRange(DefaultLoadoutFor(eff));
+        }
         NormalizeWeaponMounts();
         BlockReason = null;
     }
@@ -995,13 +1107,13 @@ public sealed class ShopModel
                 {
                     if ((part.PartMask & ~hull.Hardpoints[m].PartMask) != 0) continue;
                     if (!taken.Add((EquipmentType.Weapon, m))) continue;
-                    list.Add(new ExpandedPartData(partId, DefaultAmmoFor(partId, part), (byte)m, ExpandedPartData.FullyMounted));
+                    list.Add(new ExpandedPartData(partId, DefaultAmmoFor(hull, partId, part), (byte)m, ExpandedPartData.FullyMounted));
                 }
             }
             else
             {
                 if (!taken.Add((part.EquipmentType, 0))) continue;
-                list.Add(new ExpandedPartData(partId, DefaultAmmoFor(partId, part), 0, ExpandedPartData.FullyMounted));
+                list.Add(new ExpandedPartData(partId, DefaultAmmoFor(hull, partId, part), 0, ExpandedPartData.FullyMounted));
             }
         }
         return list;
@@ -1047,12 +1159,17 @@ public sealed class ShopModel
         return _cat.Core is not null && _cat.Core.TryBuildExpendableLauncher(id, out part);
     }
 
-    /// <summary>P571 — the ammo a default-loadout part carries: a launcher's real
-    /// reserve (the shop's <see cref="LauncherOffer.Ammo"/>), else the standard
-    /// toggle amount (<see cref="DefaultAmount"/>: weapons get a real reserve,
-    /// one-off mounts get 1).</summary>
-    private short DefaultAmmoFor(short partId, in DataPartTypeIGC part)
+    /// <summary>P571/P1012 — the amount a freshly bought part carries. A launcher
+    /// gets what the HULL holds — native <c>IlauncherTypeIGC::GetAmount(pship)</c>,
+    /// <c>launchertypeigc.h:130-142</c>: hull capacity for the equipment type /
+    /// expendable size, minimum 1 — which is why the same missile rack carries a
+    /// different count (and costs a different amount) on a different hull. Without
+    /// the parsed core the launcher's own stock amount stands in. Everything else
+    /// gets the standard toggle amount (<see cref="DefaultAmount"/>).</summary>
+    private short DefaultAmmoFor(in DataHullTypeIGC hull, short partId, in DataPartTypeIGC part)
     {
+        if (IsExpendableLauncher(part) && _cat.Core is { } core)
+            return Ship.ClampPartAmount(hull, core, part, short.MaxValue);
         if (_launchers is { } ls)
             foreach (var l in ls)
                 if (l.Part.PartId == partId) return l.Ammo;
@@ -1109,3 +1226,20 @@ public sealed class ShopModel
 /// <summary>P519 — one part offered in an open slot: the real part plus the ammo
 /// to grant when it's mounted (the launcher's real reserve when <see cref="IsLauncher"/>).</summary>
 public readonly record struct SlotPartOffer(DataPartTypeIGC Part, short Amount, bool IsLauncher);
+
+/// <summary>
+/// P1012 — the client's custom-loadout slots (native <c>m_customLoadouts</c>,
+/// <c>clintlib.h:826</c>: <c>MAX_CUSTOM_LOADOUTS</c> lists, each holding one saved
+/// loadout per hull). Slot 0 is the one a hull change rebuilds from and the one
+/// Buy / Default write (<c>load.cpp:1481</c>, <c>:1524-1527</c>, <c>:1643</c>).
+/// Native keeps the slots for the life of the client and on disk; the port keeps
+/// them for the life of the client process — one instance is shared by every
+/// <see cref="ShopModel"/> the session opens.
+/// </summary>
+public sealed class ShopCustomLoadouts
+{
+    internal Dictionary<(short HullId, int Slot), List<ExpandedPartData>> Slots { get; } = new();
+
+    /// <summary>Whether a loadout was saved for this hull in this slot.</summary>
+    public bool Has(short hullId, int slot) => Slots.ContainsKey((hullId, slot));
+}

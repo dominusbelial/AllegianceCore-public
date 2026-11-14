@@ -922,6 +922,20 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreTests.cs`,
   `tests/Allegiance.ClientCore.MonoGame.Tests/P996LifepodHangarRestoreLiveTests.cs`;
   report `docs/reports/LIFEPOD_RESPAWN_P996.md`.
+- **Hull-switch carry-over (P1012)** — changing hull in the loadout carries nothing over: native `BuyHull`
+  clears the pending parts and rebuilds the ship from custom-loadout slot 0 for the new hull, else the hull's
+  default loadout — also when going back to the docked ship's own hull. Picking the pending hull again is a
+  no-op. Slot 0 is written by Buy and Default and lives on the client (`ShopCustomLoadouts`, one per client
+  process), so it survives undocking. A launcher is bought with what the hull holds (capacity / expendable
+  size) and priced at amount × price; the docked ship's value includes its cargo hold.
+  `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs` (`BuyHull`, `ReplaySavedLoadout`,
+  `ResolveSavedPart`, `DefaultAmmoFor`, `ValueOf`, `ShopCustomLoadouts`).
+  *Native:* `WinTrek/load.cpp:1453-1490,1618-1625,1894-1899`, `clintlib/clintlib.h:1305-1339,1790-1874`,
+  `Igc/launchertypeigc.h:130-142`, `Igc/shipIGC.h:396-406`, `FedSrv/FedSrv.CPP:6183-6199`. Parity rows
+  "Loadout panel (shop) / …" in `docs/parity/parity-matrix.csv`; tests
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1012HullSwitchCarryOverTests.cs`,
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1012HullSwitchMoneyLiveTests.cs`; report
+  `docs/reports/HULL_SWITCH_CARRYOVER_P1012.md`.
 - **Dead-ship parts die with the ship (P998)** — native `KillShipEvent` rolls one
   treasure per part and then `p->Terminate()`s every one of them (cargo included,
   it is a part with a negative mount) before the eject/restart hull swap, which is

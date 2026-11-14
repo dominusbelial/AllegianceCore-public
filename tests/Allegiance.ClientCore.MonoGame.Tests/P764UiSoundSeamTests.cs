@@ -713,8 +713,11 @@ public sealed class P764CustomLoadoutSlotTests
         if (root.Length == 0 || !File.Exists(Path.Combine(root, "PCore001.igc")))
             return;   // corpus absent on a clean clone (P597)
         var catalog = ShopCatalog.TryLoad(root) ?? throw new InvalidOperationException("catalogue missing");
-        var hull = catalog.Hulls.OrderBy(h => h.HullId).First();
-        var weapon = catalog.Parts.First(p => p.EquipmentType == EquipmentType.Weapon);
+        // P1012 — a restored slot keeps only what the hull mounts AT THE SAVED
+        // MOUNT (native ReplaceLoadout, clintlib.h:1839-1840), so the fixture
+        // must be a weapon hardpoint 0 really accepts.
+        var hull = catalog.Hulls.OrderBy(h => h.HullId).First(h => h.GroupId >= 0 && h.Hardpoints.Length > 0);
+        var weapon = catalog.Parts.First(p => p.EquipmentType == EquipmentType.Weapon && hull.CanMountPart(p, 0));
         var model = new ShopModel(catalog, currentHullId: hull.HullId,
             currentParts: new[] { new ExpandedPartData(weapon.PartId, 1, 0, ExpandedPartData.FullyMounted) });
         Assert.Single(model.ChosenParts);

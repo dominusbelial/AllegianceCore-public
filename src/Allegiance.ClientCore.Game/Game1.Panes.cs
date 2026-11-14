@@ -174,7 +174,9 @@ public sealed partial class Game1
                     offerCat,
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
-                    world.MyMoney);
+                    world.MyMoney,
+                    _shopCustomLoadouts,
+                    mySe.Cargo);
                 // P996 — BERTHED IN A LIFEPOD: the ship's current hull is the pod,
                 // which the station does not offer, so without this the hangar
                 // shows/launches the pod (the P996 loop: BUY_LOADOUT(pod hull,

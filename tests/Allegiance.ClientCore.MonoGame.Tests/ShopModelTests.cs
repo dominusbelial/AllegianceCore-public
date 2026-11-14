@@ -535,7 +535,7 @@ public class ShopModelTests
     /// <summary>P755 — picking a different hull in the HULLS list raises
     /// HullChosen exactly when the effective hull changes (the native hull-menu
     /// selection mounts the new hull's default loadout with mountSound,
-    /// load.cpp:1480-1487); re-picking the current hull does not.</summary>
+    /// load.cpp:1476-1490); re-picking the pending hull does not (load.cpp:1896).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Hull_pick_raises_hull_chosen_only_on_change()
@@ -556,17 +556,23 @@ public class ShopModelTests
         Assert.Equal(1, raised);
         Assert.Equal(other.HullId, m.EffectiveHullId);
 
-        // re-picking the same hull remounts its default loadout again (native
-        // plays mountSound for every hull-menu selection, load.cpp:1480-1487)
+        // P1012 — re-picking the hull that is already pending does nothing:
+        // native only calls BuyHull when the menu item differs from the pending
+        // hull (load.cpp:1896), so there is no rebuild and no mountSound.
         m.Activate();
-        Assert.Equal(2, raised);
+        Assert.Equal(1, raised);
         Assert.Equal(other.HullId, m.EffectiveHullId);
 
-        // clicking the CURRENT hull de-picks (keep current) without a loadout
-        // change → no event
+        // P1012 — picking the docked ship's own hull while another is pending IS
+        // a hull change (BuyHull, load.cpp:1476-1490): mountSound plays.
         int curIdx = 0;
         foreach (var h in m.BuyableHulls) { if (h.HullId == cur.HullId) break; curIdx++; }
         m.MoveCursor(curIdx - m.Cursor);
+        m.Activate();
+        Assert.Equal(2, raised);
+        Assert.Null(m.ChosenHullId);
+
+        // ...and picking it again is once more a no-op.
         m.Activate();
         Assert.Equal(2, raised);
         Assert.Equal(cur.HullId, m.EffectiveHullId);

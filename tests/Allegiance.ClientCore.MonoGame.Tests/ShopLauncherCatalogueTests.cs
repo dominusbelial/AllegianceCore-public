@@ -134,7 +134,9 @@ public class ShopLauncherCatalogueTests
 
         var bought = Assert.Single(m.ChosenParts);
         Assert.Equal(lo.Part.PartId, bought.PartId);
-        Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
+        // P1012 — native buys a launcher with what the pending hull holds
+        // (launchertypeigc.h:130-142), not the launcher's stock amount.
+        Assert.Equal(P1012Native.LauncherAmount(Catalog.Core!, yesHull, lo.Part), bought.Amount);
     }
 
     [Trait("Requires", "Artwork")]
@@ -160,7 +162,9 @@ public class ShopLauncherCatalogueTests
         Assert.Contains(lo.Part.Name, pend.Text, StringComparison.OrdinalIgnoreCase);
         var bought = Assert.Single(m.ChosenParts);
         Assert.Equal(lo.Part.PartId, bought.PartId);
-        Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
+        // P1012 — native buys a launcher with what the pending hull holds
+        // (launchertypeigc.h:130-142), not the launcher's stock amount.
+        Assert.Equal(P1012Native.LauncherAmount(Catalog.Core!, yesHull, lo.Part), bought.Amount);
     }
 
     [Trait("Requires", "Artwork")]
@@ -270,7 +274,7 @@ public class ShopLauncherCatalogueTests
 
         var bought = Assert.Single(m.ChosenParts);
         Assert.Equal(ov.Part.PartId, bought.PartId);
-        Assert.Equal(ov.Ammo, bought.Amount);           // real ammo reserve, not a default
+        Assert.Equal(P1012Native.LauncherAmount(Catalog.Core!, hull.Value, ov.Part), bought.Amount);   // P1012: hull capacity / expendable size
     }
 
     [Trait("Requires", "Artwork")]
@@ -291,7 +295,7 @@ public class ShopLauncherCatalogueTests
         m.Activate();                                    // open the dispenser slot
 
         var offer = m.OpenSlotParts.Single(o => o.Part.PartId == ov.Part.PartId);
-        Assert.Equal(ov.Ammo, offer.Amount);
+        Assert.Equal(P1012Native.LauncherAmount(Catalog.Core!, hull.Value, ov.Part), offer.Amount);   // P1012: hull capacity / expendable size
     }
 
     /// <summary>A kind with no mounting hull is genuinely unbuyable: P519's
