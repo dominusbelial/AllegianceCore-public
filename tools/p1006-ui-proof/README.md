@@ -22,12 +22,17 @@ requests 800×480 to match the offscreen driver's initial surface.
 
 `intro` captures first start, splash-skip Escape, suggestion dismissal and an
 intentional root Escape popup, checking that only the popup receives Down.
-`flight` captures hangar, docked command, a hidden Loadout click, explicit F4
+`flight` captures hangar, docked command, a hidden Loadout click, explicit inventory
 loadout, launch, and command in space with hidden hangar input. A 180-second
 watchdog bounds every run; the loopback ticker is cancelled and joined on exit.
+The inventory press resolves the live binding: fresh profiles use Port layout's
+Shift+F4. Add `--native-layout` to a flight run to verify native's plain F4;
+the proof asserts that binding and reports each action's actual chord. HUD style
+and keyboard layout are independent. Intro freshness checks require no saved
+player/keymap, the default `pilot` name, and the first-run training suggestion.
 
 Use `--baseline` with a pre-fix client assembly. It records failed checks
 without rejecting that client; the flag only relaxes assertions and does not
 select or recreate an older implementation.
-The P1006 lane's initial baseline execution failed before rendering because its
-container lacks OpenGL/EGL; see the report for qualification status.
+The original P1006 lane lacked OpenGL/EGL. P1019 completed software-GL captures;
+see `docs/reports/SCREENSHOT_DEBT_P1019.md` for results and timings.

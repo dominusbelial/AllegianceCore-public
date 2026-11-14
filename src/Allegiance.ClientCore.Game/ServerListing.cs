@@ -175,11 +175,11 @@ public sealed record ServerListing(
             ? $"{PlayerCount}/{MaxPlayers}"
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
-        // P970 — the row's ASCII lock sits right after the name: the HUD fonts bake
-        // ASCII 32..126 only (no padlock glyph), and the browser trims long rows, so
-        // the marker must come before the columns that get cut.
+        // P1019 — keep capacity and the ASCII lock/slot state ahead of the
+        // address: long rows are ellipsized, and the protected-game fixture
+        // previously lost its player count even at 1280x720.
         var guard = PasswordRequired ? "  [password required]" : "";
-        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name}{guard} {SlotStatusText}  {addr}{LocationText()}   {players} players   {mission}{GamesText()}";
+        return $"[{(Verified ? "verified" : "unverified")}] {(PlayerHosted ? "[player hosted] " : "")}{name} {players} players{guard} {SlotStatusText}  {addr}{LocationText()}   {mission}{GamesText()}";
     }
 
     /// <summary>

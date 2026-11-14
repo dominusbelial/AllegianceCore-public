@@ -14,10 +14,12 @@ using Srv = Allegiance.Server.Server;
 
 // Real Game1, production input handlers and backbuffer captures. The caller
 // supplies a fresh XDG_CONFIG_HOME, artwork, and SDL offscreen or an X display.
-// p1006-ui-proof <output> <classic|modern> <intro|flight> [--baseline]
+// p1006-ui-proof <output> <classic|modern> <intro|flight> [--baseline] [--native-layout]
 string output = Path.GetFullPath(args[0]);
 string style = args[1];
 bool intro = args[2] == "intro", baseline = args.Contains("--baseline");
+bool nativeLayout = args.Contains("--native-layout");
+if (nativeLayout) KeyBindingStore.Instance.Map.SetLayout(InputLayout.Native);
 Directory.CreateDirectory(output);
 string content = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
 string localContent = Path.Combine(AppContext.BaseDirectory, "Content");
@@ -67,6 +69,7 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
     private double _next;
     private int _step;
     private short _hull;
+    private bool _releaseSplashEscape;
     public bool Passed { get; private set; }
     private T Get<T>(string name) => (T)typeof(Game1).GetField(name, Hidden)!.GetValue(game)!;
     private void Set(string name, object? value) => typeof(Game1).GetField(name, Hidden)!.SetValue(game, value);
@@ -75,6 +78,7 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
     private void ActionKey(string action)
     {
         var binding = (KeyBinding)Call("KeyOf", action)!;
+        Console.WriteLine($"P1006_KEY {action}={binding.Label} layout={KeyBindingStore.Instance.Map.Layout}");
         var keys = new List<Keys> { binding.Key };
         if ((binding.Modifiers & InputModifiers.Shift) != 0) keys.Add(Microsoft.Xna.Framework.Input.Keys.LeftShift);
         if ((binding.Modifiers & InputModifiers.Control) != 0) keys.Add(Microsoft.Xna.Framework.Input.Keys.LeftControl);
@@ -105,6 +109,14 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
     public override void Update(GameTime gameTime)
     {
         if (_watch.Elapsed.TotalSeconds > 180) throw new TimeoutException("P1006 UI proof");
+        // Release the splash-skip press as soon as that screen consumes it.
+        // Holding it across the .7 s capture interval would also dismiss the
+        // newly opened training suggestion before its independent check.
+        if (_releaseSplashEscape && Get<object>("_state").ToString() != "Splash")
+        {
+            Keys();
+            _releaseSplashEscape = false;
+        }
         if (_watch.Elapsed.TotalSeconds < _next) return;
         Get<HudSettings>("_hudSettings").Style = style == "classic" ? HudStyle.Classic : HudStyle.Modern;
         lock (gate)
@@ -125,7 +137,12 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
         {
             case 0:
                 if (Get<object>("_state").ToString() != "Intro") return;
-                Require(Get<System.Text.StringBuilder>("_pilotBuf").Length == 0, "fresh profile");
+                Require(!File.Exists(IntroPreferences.FilePath) && KeyBindingStore.Instance.FreshProfile,
+                    "fresh profile has no saved player or keymap");
+                Require(Get<System.Text.StringBuilder>("_pilotBuf").ToString() == new IntroPreferences().Pilot,
+                    "fresh profile uses default pilot name");
+                Require(Get<object>("_introView").ToString() == "TrainingSuggest",
+                    "fresh profile shows training suggestion");
                 Shot("fresh-intro"); Advance(); break;
             case 1:
                 // Replaying the startup splash makes the Escape-to-skip edge
@@ -133,6 +150,7 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
                 var field = typeof(Game1).GetField("_state", Hidden)!;
                 field.SetValue(game, Enum.Parse(field.FieldType, "Splash"));
                 Set("_splashStartSeconds", 1e9);
+                _releaseSplashEscape = true;
                 Keys(Microsoft.Xna.Framework.Input.Keys.Escape); Advance(); break;
             case 2:
                 Keys();
@@ -170,6 +188,11 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
             case 0:
                 if (!Get<bool>("_dockedActive") || Get<ShopModel?>("_shopModel") is null
                     || string.IsNullOrEmpty(session.World.BriefingText)) return;
+                var inventory = (KeyBinding)Call("KeyOf", "ConModeInventory")!;
+                Console.WriteLine($"P1006_BINDING inventory={inventory.Label} layout={KeyBindingStore.Instance.Map.Layout}");
+                if (KeyBindingStore.Instance.Map.Layout == InputLayout.Native)
+                    Require(inventory == new KeyBinding(Microsoft.Xna.Framework.Input.Keys.F4, InputModifiers.None),
+                        "native inventory shortcut is plain F4");
                 Require(!(bool)Call("IsBriefingVisible", new object[] { null! })!,
                     "late join to started game has no stale briefing");
                 Shot("hangar"); Advance(); break;
@@ -193,11 +216,12 @@ sealed class Proof(Game1 game, string output, string style, bool intro, bool bas
             case 6:
                 Keys();
                 Require(Get<ShopModel>("_shopModel").EffectiveHullId == _hull, "hidden hull-cycle key does nothing");
-                // F4 is explicitly allowed in native: docked command -> loadout.
-                Keys(Microsoft.Xna.Framework.Input.Keys.F4); Advance(); break;
+                // Native F4 / Port Shift+F4 explicitly enters docked loadout
+                // (WinTrek.cpp:10001-10021). Fresh profiles use the Port map.
+                ActionKey("ConModeInventory"); Advance(); break;
             case 7:
                 Keys();
-                Require(Get<CameraMode>("_cameraMode") == CameraMode.Cockpit && !Get<bool>("_hangarOnly"), "F4 explicitly opens docked loadout");
+                Require(Get<CameraMode>("_cameraMode") == CameraMode.Cockpit && !Get<bool>("_hangarOnly"), "inventory shortcut explicitly opens docked loadout");
                 Shot("explicit-loadout"); Advance(); break;
             case 8:
                 ActionKey("ConModeCombat"); Advance(); break;

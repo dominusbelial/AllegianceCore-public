@@ -1,8 +1,10 @@
 # P1006 — Command screen input and duplicate menus
 
-The input fixes are implemented for Classic and Modern. Visual qualification is
-currently blocked: the supplied Debian container has no OpenGL/EGL runtime, and
-`Game1.Run()` fails before its first rendered frame. No screenshots were produced. Gate results and counts are recorded below.
+The input fixes are implemented for Classic and Modern. The original P1006 lane
+lacked OpenGL/EGL and produced no screenshots. P1019 completed real-window
+capture/review coverage in both styles; see [Real-window proof (P1019)](#real-window-proof-p1019)
+and the [P1019 report](SCREENSHOT_DEBT_P1019.md) for the proof corrections,
+current gate and remaining rendering defects. Original gate counts remain below.
 
 ## Findings and native intent
 
@@ -138,6 +140,46 @@ MonoGame.OpenGL.GL.GetString`, before rendering. The container has neither
 forbids contacting public hosts, so no external packages were downloaded.
 The pre-fix binaries are preserved under task scratch for later comparison.
 There are **no newly captured P1006 before/after screenshots to inspect**. A local OpenGL runtime is still needed to complete those fresh captures.
+
+
+## Real-window proof (P1019)
+
+The missing-runtime limitation below describes the original P1006 lane. P1019
+has Mesa software GL and ran the real `Game1` proof in Classic and Modern, with
+fresh profiles and local artwork/loopback server. All checks passed in each
+style. [P1019 report](SCREENSHOT_DEBT_P1019.md) records final gate, capture times,
+media review and rendering qualifications.
+
+| Check | Classic | Modern |
+| --- | --- | --- |
+| No saved player/keymap in fresh profile | PASS | PASS |
+| Default `pilot` name is loaded | PASS | PASS |
+| First-run training suggestion is visible | PASS | PASS |
+| Escape skips splash | PASS | PASS |
+| Splash skip leaves no second menu | PASS | PASS |
+| Suggestion dismissal leaves no second menu | PASS | PASS |
+| Explicit root popup owns Down; intro selection stays unchanged | PASS | PASS |
+| Late join to started game has no stale briefing | PASS | PASS |
+| F3 enters command | PASS | PASS |
+| Hidden Loadout click leaves command active | PASS | PASS |
+| Hidden hull-cycle key leaves hull unchanged | PASS | PASS |
+| Inventory shortcut explicitly opens docked loadout | PASS | PASS |
+| Launch retires hangar despite investment | PASS | PASS |
+| Launch retires shop | PASS | PASS |
+| In-space click/shop-launch binding leaves command/hangar state unchanged | PASS | PASS |
+| Native preset binds inventory to plain F4 and opens loadout | PASS | PASS |
+
+The F4 failure was a harness assumption: fresh profiles use Port Shift+F4;
+plain F4 invokes the external camera action. The proof now resolves the live
+inventory binding and separately tests native plain F4 using `--native-layout`.
+It also checks the real fresh-profile defaults instead of expecting an empty
+pilot name, and releases splash Escape after the splash consumes it so the
+suggestion gets its own press. Production console routing is unchanged.
+
+Captures are in [P1006_assets/after/](P1006_assets/after/): four intro and eight
+flight states per style, plus explicit-loadout captures from the native preset.
+The P1019 report qualifies visual inspection separately from the passing input
+assertions; these are actual backbuffers, without synthetic replacement UI.
 
 ## Gate
 

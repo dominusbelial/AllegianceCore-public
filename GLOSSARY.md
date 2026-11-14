@@ -1223,6 +1223,9 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/P1006ScreenInputTests.cs`; real-client
   capture harness: `tools/p1006-ui-proof/Program.cs`; report:
   `docs/reports/COMMAND_SCREEN_INPUT_P1006.md`.
+  P1019 exercises the live inventory binding (Port Shift+F4 / native F4) and
+  records software-GL capture setup and timings in
+  `docs/reports/SCREENSHOT_DEBT_P1019.md`.
 - **Intro screen (P731/P946)** — the port's keyboard intro menu: the button set/commands and the pure key→focus
   mapping (arrows always move the selection, Tab toggles typed-text focus, Enter activates) in
   `src/Allegiance.ClientCore.Game/IntroScreenModel.cs`, resolution-adaptive menu geometry (short viewports compress
