@@ -105,16 +105,20 @@ public sealed class TeamPaneRenderer
     /// <paramref name="maxWidth"/> with a trailing "..." so no line can overflow
     /// the panel. Binary search over prefixes: O(log n) measurements.</summary>
     internal static string Fit(string text, SpriteFont font, float maxWidth)
+        => Fit(text, value => font.MeasureString(value).X, maxWidth);
+
+    /// <summary>Device-free measurement overload shared with loadout V2.</summary>
+    internal static string Fit(string text, Func<string, float> measureWidth, float maxWidth)
     {
         if (maxWidth <= 0f || text.Length == 0) return text;
-        if (font.MeasureString(text).X <= maxWidth) return text;
+        if (measureWidth(text) <= maxWidth) return text;
         const string Ellipsis = "...";
-        float ell = font.MeasureString(Ellipsis).X;
+        float ell = measureWidth(Ellipsis);
         int lo = 0, hi = text.Length;
         while (lo < hi)
         {
             int mid = (lo + hi + 1) / 2;
-            if (font.MeasureString(text[..mid]).X + ell <= maxWidth) lo = mid;
+            if (measureWidth(text[..mid]) + ell <= maxWidth) lo = mid;
             else hi = mid - 1;
         }
         return text[..lo].TrimEnd() + Ellipsis;

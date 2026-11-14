@@ -12,6 +12,18 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public static class DockedTouchZones
 {
+    /// <summary>
+    /// V2 uses the exact visible draw rectangles, including model indices after
+    /// scrolling. Call only from the future V2 input branch; legacy zones below
+    /// keep their existing geometry and behaviour.
+    /// </summary>
+    public static LoadoutV2Layout.Element? LoadoutV2HitTest(LoadoutV2Layout layout, float tx, float ty)
+        => layout.HitTest(tx, ty);
+
+    /// <summary>V2 touch zones shared with drawing; no enlarged overlapping bands.</summary>
+    public static IReadOnlyList<LoadoutV2Layout.Element> LoadoutV2Zones(LoadoutV2Layout layout)
+        => layout.Elements;
+
     /// <summary>The LAUNCH button (bottom-right of the docked screen): sends the
     /// same BUY_LOADOUT(fLaunch) the L key does.</summary>
     public static TouchRect LaunchRect(float w, float h) =>
