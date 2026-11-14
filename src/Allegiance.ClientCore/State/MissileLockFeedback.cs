@@ -6,7 +6,7 @@ namespace Allegiance.ClientCore.State;
 /// No networking, no MonoGame — just the lock-tip rules, so they are unit-testable
 /// in isolation (the same pure-piece discipline as <c>Rendering.ChatLogFormat</c>).
 ///
-/// This is the port of native's lock-tip block (<c>WinTrek/console.cpp:929-946</c>),
+/// This is the port of native's lock-tip block (<c>WinTrek/console.cpp:935-950</c>),
 /// which reads the local magazine's <c>GetLock()</c> every frame and posts a
 /// console tip exactly when the lock <em>crosses</em> a threshold:
 /// <code>
@@ -40,7 +40,7 @@ public static class MissileLockFeedback
     /// <summary>
     /// The console tip to post for a transition, or <c>null</c> when the transition
     /// posts nothing (holding a state, or a target-change that suppressed "lost").
-    /// Exact port of <c>console.cpp:933-945</c>; the missile type name is interpolated
+    /// Exact port of <c>console.cpp:941-948</c>; the missile type name is interpolated
     /// into the "acquired" line (native <c>GetMissileType()-&gt;GetName()</c>).
     /// </summary>
     /// <param name="prev">The previous frame's lock state.</param>

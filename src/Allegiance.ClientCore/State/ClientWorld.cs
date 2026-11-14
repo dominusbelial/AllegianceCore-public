@@ -772,7 +772,7 @@ public sealed partial class ClientWorld
 
     // P230 — the local ship's missile-lock snapshot (from the owner-only
     // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
-    // the partial/full/lost console tips (native console.cpp:929-946).
+    // the partial/full/lost console tips (native console.cpp:935-950).
     private IgcObjectType _prevLockTargetType;
     private MissileLockState _missileLock = MissileLockState.None;
     private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
@@ -6014,7 +6014,7 @@ public sealed partial class ClientWorld
 
     /// <summary>FM_S_MISSILE_LOCK_UPDATE(204) — the owner-only P230 lock snapshot
     /// (server-computed, P226). Updates <see cref="MissileLock"/> and edge-detects
-    /// the three native console tips (partial / acquired / lost, <c>console.cpp:929-946</c>),
+    /// the three native console tips (partial / acquired / lost, <c>console.cpp:935-950</c>),
     /// posting any that fire into the chat log as bare system lines (sender NA so
     /// the renderer shows the tip with no player prefix). Exactly one tip posts on
     /// each crossing; holding a state posts nothing (never spammed per frame).</summary>

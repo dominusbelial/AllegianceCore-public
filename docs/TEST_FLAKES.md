@@ -4,6 +4,44 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1020 missile-lock partial-tip test — RESOLVED — 2026-11-14 UTC
+
+`MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` is **closed**; every row below
+that names it is annotated "Resolved by P1020". It was never a load flake and never a product defect: the test
+raced itself. Report: `docs/reports/MISSILE_LOCK_TIP_P1020.md`.
+
+- **Cause.** The spawner set `CommandTarget` at spawn, so the server built the lock (0.05 per fixed 50 ms sim tick,
+  full after 20 ticks) during the test's *fast* join pump (about 1.7 ms of wall-clock per tick), before the client
+  was seated. The owner-only `MISSILE_LOCK_UPDATE(204)` stream is best-effort and latest-wins, so the first frame
+  the client applied was wherever the lock had got to: 0.850 / 0.900 (pass, partial tip) or already 1.000 (fail,
+  "acquired" only, then a 900-tick x 40 ms = ~38 s wait for a partial tip that could no longer be posted). Measured
+  on the dispatch base: 18, 19 and 28 server frames before the first client frame (pass / pass / fail).
+- **Which side.** The test. Native's tip block (`WinTrek/console.cpp:941-950`) is a frame-to-frame `if / else if`
+  chain; a 0 -> 1 jump between two observed frames posts only "acquired" there too. Client and server unchanged.
+- **Fix.** The test now targets the enemy only after the client has applied a no-target, lock-0 frame, and
+  lock-steps the server (one sim tick, then wait for the client to hold that tick's lock value). It asserts more
+  than before: the exact per-frame sequence 0.050 ... 1.000, the partial tip on the first frame, tip order, and
+  the lost tip as the third and last. No timing limit, tier or product code changed.
+- **Result.** **10/10 alone** (about 1 s each) and **passed in the full Fast sweep** (0.989 s; previously ~38 s).
+- **If it fails again** it is a new defect (a lock frame not delivered within 10 s, or a tip edge), not this family.
+
+The single full Fast sweep ran **14,375 cases in 543.6 s: 14,366 passed / 2 failed / 7 skipped**, 7,200-second outer
+bound, calibrated case limit **11.563 s**. It remains **FAIL** on two non-task assertion failures and five timing
+exceedances, none on the missile-lock path. Each method was run **three times alone** (every theory case); all passed,
+all below the limit. No test range, tier or timing limit was changed.
+
+| Method | Sweep trigger | Three isolated runs | Isolated time |
+| --- | --- | --- | --- |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | assertion failure: "B never saw A's death (IsDead never latched on B) after 2500 ticks", 4 s | **pass / pass / pass** | about 1 s |
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` | assertion failure: expected 16, actual 272 (line 305), 54 ms | **pass / pass / pass** | 0.34 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow-Fast 15.136 s | **pass / pass / pass** | 3 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | slow-Fast 14.002 s (civ 35) | **pass / pass / pass**, all civ cases | 3–5 s per case |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow-Fast 12.364 s (civ 25) | **pass / pass / pass**, all civ cases | 3–4 s per case |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | slow-Fast 16.349 s (civ 5) | **pass / pass / pass**, all civ cases | 1–4 s per case |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | slow-Fast 15.418 s (civ 3) | **pass / pass / pass**, all civ cases | 0.3–1 s per case |
+
+All seven are sweep-only here; causes were not investigated in this task.
+
 ## P1014 loadout renderer qualification — 2026-11-14 UTC
 
 The single full Fast sweep ran **14,356 cases in 665.0 s: 14,341 passed / 8 failed /
@@ -26,7 +64,7 @@ was changed for these results.
 | --- | --- | --- | --- |
 | `P909TrainingBindingsTests.Key_gate_commander_messages_quick_chat_ack_and_eliminated_target_use_real_client` | assertion failure | **2/0/0 ×3** | 0.628 s |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | assertion failure | **1/0/0 ×3** | 1.569 s |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | assertion failure; slow (38.410 s) | **0/1/0 ×3** | 38.486 s |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | assertion failure; slow (38.410 s) | **0/1/0 ×3** | 38.486 s **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | slow (15.816 s) | **3/0/0 ×3** | 7.431 s |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | slow (17.419 s) | **1/0/0 ×3** | 4.403 s |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | slow (17.634 s) | **2/0/0 ×3** | 5.838 s |
@@ -66,7 +104,7 @@ ledgered; their underlying causes remain outside this story.
 | Method | Sweep observation | Isolated Passed/Failed/Skipped, three runs | Longest case seconds, three runs |
 |---|---|---|---|
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never latched A's death after 2500 ticks; 4.930 s. Same assertion recurs alone. | **1/0/0; 0/1/0; 1/0/0** | 1.384 / 5.267 / 1.384 |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Lock 1.000 without the partial tip; 37.931 s, also over time. Same assertion recurs alone. | **1/0/0; 0/1/0; 0/1/0** | 1.455 / 38.376 / 38.324 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Lock 1.000 without the partial tip; 37.931 s, also over time. Same assertion recurs alone. | **1/0/0; 0/1/0; 0/1/0** | 1.455 / 38.376 / 38.324 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | Passed; 15.640 s exceeded the limit. | **1/0/0; 1/0/0; 1/0/0** | 5.023 / 5.073 / 5.144 |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | Passed; civ 25/35 took 16.979/13.748 s. | **3/0/0; 3/0/0; 3/0/0** | 5.613 / 5.714 / 5.729 |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed; 14.482 s exceeded the limit. | **1/0/0; 1/0/0; 1/0/0** | 3.272 / 3.303 / 3.310 |
@@ -105,7 +143,7 @@ maxima are the longest individual case in each isolated process.
 
 | Method | Sweep observation | Isolated P/F/S, runs 1–3 | Max case seconds, runs 1–3 |
 | --- | --- | --- | --- |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: partial tip missing at lock 1.000; 38.464 s | **0/1/0; 0/1/0; 0/1/0** | 39.009 / 38.796 / 38.855 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: partial tip missing at lock 1.000; 38.464 s | **0/1/0; 0/1/0; 0/1/0** | 39.009 / 38.796 / 38.855 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | FAIL: 31.500000000000313 outside [28,31] | **0/1/0; 0/1/0; 0/1/0** | 1.206 / 1.227 / 1.165 |
 | `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | FAIL: probe-broadcast receipt collection empty (ChaffTests.cs:692) | **1/0/0; 1/0/0; 1/0/0** | 0.511 / 0.495 / 0.523 |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | PASS; timing 13.682 / 17.789 s | **3/0/0; 3/0/0; 3/0/0** | 7.782 / 7.811 / 7.861 |
@@ -154,7 +192,7 @@ was **11.503 s**; theories below include all ten parameter cases per repetition.
 | Method | Sweep observation | Isolated Passed/Failed/Skipped, three runs | Longest case seconds per run |
 |---|---|---|---|
 | `P994GunfireBatchTests.Record_build_has_no_steady_path_allocations` | Expected zero allocated bytes; observed 3024. Not reproduced alone; cause unconfirmed. | **1/0/0; 1/0/0; 1/0/0** | 0.009 / 0.009 / 0.009 |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Missing partial tip at lock 1.000; 37.835 s. Existing receipt family; fails again in one isolated run. | **1/0/0; 0/1/0; 1/0/0** | 1.491 / 38.575 / 1.767 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Missing partial tip at lock 1.000; 37.835 s. Existing receipt family; fails again in one isolated run. | **1/0/0; 0/1/0; 1/0/0** | 1.491 / 38.575 / 1.767 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never saw A's death/IsDead latch. Existing receipt family; not reproduced alone. | **1/0/0; 1/0/0; 1/0/0** | 1.316 / 1.309 / 1.349 |
 | `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | Ore remained zero after auto-undock; 31.274 s. Previously ledgered family; not reproduced alone. | **1/0/0; 1/0/0; 1/0/0** | 3.441 / 2.827 / 3.430 |
 | `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed, but civ 3 took 12.261 s in the sweep. All ten theory cases run per isolated repetition. | **10/0/0; 10/0/0; 10/0/0** | 1.834 / 1.843 / 1.800 |
@@ -201,7 +239,7 @@ or slow non-task method was run three times alone, with all its theory cases:
 | Method | Isolated P/F/S, repeats 1–3 | Longest case seconds, repeats 1–3 |
 | --- | --- | --- |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | 1/0/0; 1/0/0; 1/0/0 | 1.334 / 1.343 / 1.303 |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0; 1/0/0; 0/1/0 | 1.508 / 1.545 / 38.537 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0; 1/0/0; 0/1/0 | 1.508 / 1.545 / 38.537 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0; 3/0/0; 3/0/0 | 5.582 / 5.528 / 5.461 |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 2/0/0; 2/0/0; 2/0/0 | 4.183 / 4.159 / 4.168 |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 0/1/0; 0/1/0; 0/1/0 | 1.204 / 1.052 / 1.036 |
@@ -234,7 +272,7 @@ repetition; durations are the longest case in each repetition.
 
 | Method | Sweep observation | Three isolated runs; longest case seconds |
 | --- | --- | --- |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: lock never reached full + partial tip in the client world (lock 1.000) | **0/1/0; 0/1/0; 0/1/0**; 38.537 / 38.528 / 38.512 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL: lock never reached full + partial tip in the client world (lock 1.000) | **0/1/0; 0/1/0; 0/1/0**; 38.537 / 38.528 / 38.512 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | PASS, over Fast limit (11.963 s) | **1/0/0; 1/0/0; 1/0/0**; 3.222 / 3.282 / 3.284 |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | PASS, over Fast limit (11.872 s) | **2/0/0; 2/0/0; 2/0/0**; 4.137 / 4.184 / 4.204 |
 | `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | PASS, over Fast limit (11.813 s) | **10/0/0; 10/0/0; 10/0/0**; 4.404 / 4.432 / 4.389 |
@@ -268,7 +306,7 @@ per repetition, followed by the longest case duration per repetition.
 
 | Method | Current, three isolated runs | Dispatch base, three isolated runs |
 |---|---|---|
-| MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire | **0/1/0; 0/1/0; 1/0/0**; max s: 38.200 / 38.195 / 1.554 | **0/1/0; 0/1/0; 0/1/0**; max s: 38.189 / 38.177 / 38.191 |
+| MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire | **0/1/0; 0/1/0; 1/0/0**; max s: 38.200 / 38.195 / 1.554 | **0/1/0; 0/1/0; 0/1/0**; max s: 38.189 / 38.177 / 38.191 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats | **1/0/0; 1/0/0; 1/0/0**; max s: 3.334 / 3.418 / 3.500 | **1/0/0; 1/0/0; 1/0/0**; max s: 3.451 / 3.432 / 3.431 |
 | SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts | **2/0/0; 2/0/0; 2/0/0**; max s: 4.329 / 4.320 / 4.277 | **2/0/0; 2/0/0; 2/0/0**; max s: 4.442 / 4.478 / 4.326 |
 | GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster | **1/0/0; 1/0/0; 1/0/0**; max s: 0.557 / 0.547 / 0.562 | **1/0/0; 1/0/0; 1/0/0**; max s: 0.565 / 0.572 / 0.521 |
@@ -363,7 +401,7 @@ rotation, bot decision or server production source changed.
 |---|---|---|
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail/fail/fail in original environment; **pass/pass/pass** with writable scratch `XDG_CONFIG_HOME` (0.070/0.070/0.058 s) | Existing sandbox obstruction restoring the read-only real user profile. No real profile or product/profile source was changed. |
 | `ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` | **pass/pass/pass**, 1.136/1.132/1.136 s | Existing named-sender seating-order race; sweep asserted that the sender had no teammate. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.374/38.319/38.393 s | Known missing partial-tip receipt despite lock 1.000. Persistent alone; remains open and also exceeds Fast's time limit. Not described as cleared or solely load-induced. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.374/38.319/38.393 s | Known missing partial-tip receipt despite lock 1.000. Persistent alone; remains open and also exceeds Fast's time limit. Not described as cleared or solely load-induced. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | **pass/pass/pass**, 0.668/0.661/0.660 s | Sweep's existing docking-deviation intermittent: `maxLineDeviation=241.8` against a 200 bound. No dodge or movement source changed. |
 | `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | **pass/pass/pass**, 1.080/1.095/1.079 s | Existing independent-rollout intermittent: sweep drift 13.37 units at tick 147. |
 | `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | **pass/pass/pass**, 1.899/1.984/1.962 s | Known empty decoded stage-notification collection at line 181; rotation source unchanged. |
@@ -550,7 +588,7 @@ exceedances received three isolated repetitions on the changed tree:
 | Sweep failure / timing family | Three isolated runs | Classification |
 |---|---|---|
 | `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` (expected side 1, saw lobby side -2) | **2 pass / 1 fail**, same lobby/logon-drain signature | Existing seating/logon timing family; the P974/P967-era entries include the same signature and changing isolated outcomes. No server/session/seed path changed by P985. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.369 s timeout in sweep) | **3/3 pass**, about 1 s each | Existing missing-partial-tip receipt family under sweep load; no missile/lock/tip path changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.369 s timeout in sweep) | **3/3 pass**, about 1 s each | Existing missing-partial-tip receipt family under sweep load; no missile/lock/tip path changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path` and `Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` (passed at 10.183/11.194 s) | **3/3 pass each**, about 7–8 s | Existing timing-only exceedances under sweep load. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passed at 10.127 s) | **3/3 pass**, about 9 s | Existing near-limit native-physics timing family; no warp/sim rule or duration limit changed. |
 
@@ -586,7 +624,7 @@ attempts; the completed gate used the runner's task-local lock override.
 
 | Completed Fast failure/timing family | Three isolated runs (passed/failed/skipped) | Classification |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0/3/0**, same ~38 s timeout | Existing missing partial-tip receipt; the P966 entry below includes a failing clean-base control. It also accounts for the 38.468 s slow-Fast execution. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0/3/0**, same ~38 s timeout | Existing missing partial-tip receipt; the P966 entry below includes a failing clean-base control. It also accounts for the 38.468 s slow-Fast execution. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P813cReconnectGraceTests.Voluntary_logoff_is_immediate_and_reports_quit` | **3/0/0** | Existing quit-receipt race (`Assert.Contains` over an empty list), already recorded in this ledger. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **2/1/0**; isolated failure 31.60 s, sweep 31.75 s, fixture range [28,31] | Existing server-deadline/client-receipt clock boundary; P966 has clean-base controls. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (assertions passed; sweep 11.264 s > 10 s) | **3/0/0**, 9.394/9.424/9.452 s | Existing timing family, also recorded by P966. |
@@ -656,7 +694,7 @@ server-wire/NPC case and belongs to an already-ledgered family:
 | `MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` (sweep 1) | fail 13.1 s (`NPC should have docked and sold within the tick budget`), also over the 10 s Fast limit; its P817 twin passed in 0.7 s in the same run | **3/3 pass** (12 s per 3-test run) |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (sweep 1) | pass, 10.6 s (over the limit; ledgered timing family since P966) | **3/3 pass** |
 | `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (both sweeps) | pass, 11.1 s / 11.4 s (over the limit) | **pass** (1 s) alone |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (sweep 2) | fail 38.4 s (`lock never reached full + partial tip (lock 1.000)`) — the ledgered 38.7–38.8 s timeout signature | **1 pass / 2 fail** (pass 1 s, fails 38 s), i.e. the recorded **clean-base** rate (P966 row: 1 pass / 2 fail) |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (sweep 2) | fail 38.4 s (`lock never reached full + partial tip (lock 1.000)`) — the ledgered 38.7–38.8 s timeout signature | **1 pass / 2 fail** (pass 1 s, fails 38 s), i.e. the recorded **clean-base** rate (P966 row: 1 pass / 2 fail) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` (sweep 2) | `31.05` against the fixture's [28, 31] — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) | **2 pass / 3 fail** over the mixed cohorts, same one-second signature |
 | `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` (sweep 2) | fail (`target shield never dropped below 0.74 (ended 1)`) | **3/3 pass** (3 s each, load 2.8–4.0) |
 
@@ -696,7 +734,7 @@ run shared the host with two concurrent lane Fast sweeps (measured load average
 
 | Sweep failure / timing family | Standalone on this tree | Classification |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s; "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail** (pass 1 s; fails 38 s) | The open partial-tip receipt failure ledgered since the P933/P935 cohorts (P966 entry: clean base 1/2, changed 0/3, same 38 s signature). No missile-lock/lock-tip source is on the P975 path. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s; "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail** (pass 1 s; fails 38 s) | The open partial-tip receipt failure ledgered since the P933/P935 cohorts (P966 entry: clean base 1/2, changed 0/3, same 38 s signature). No missile-lock/lock-tip source is on the P975 path. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` (`Assert.Same`: target null) | **3 pass / 0 fail** | The ledgered null-target family (P945/P966: fail/fail/fail in both changed and base cohorts); load flake in this sweep, which ran at load 12–19 behind two other lane sweeps. |
 | SLOW FAST `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` 10.48 s, `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 10.04 s | not re-run (both PASSED in the sweep) | Ledgered timing-only exceedances of the calibrated 10 s guard; assertions passed. |
 
@@ -733,7 +771,7 @@ no P966 source is on either path.
 | Sweep failure / timing family | Changed tree, standalone | Clean base `1f6e1250`, standalone | Classification |
 |---|---|---|---|
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **3 pass / 4 fail** over 7 runs (values 32.15–32.40 against the fixture's [28, 31]; 1 s each) | **2 pass / 3 fail** over 5 runs, same 32.x signature | Existing receipt/simulation-clock boundary (also P945/P948/P953/P967 entries): the auto-seat fires at the 30 s deadline but the test's `elapsed` is measured when the FltBot receive thread surfaces `ShipAssignment`, which lags by 1–2 sim-seconds under host load (load avg 0.9–2.9 during validation). No side-select/auto-seat source changed by P966. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0 pass / 3 fail** (38 s each — the timeout signature) | **1 pass / 2 fail** (pass 1 s; fails 38 s) | Known missing partial-tip receipt (ledgered since P935-era; same 38.7–38.8 s durations). No missile-lock/lock-tip source changed by P966. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **0 pass / 3 fail** (38 s each — the timeout signature) | **1 pass / 2 fail** (pass 1 s; fails 38 s) | Known missing partial-tip receipt (ledgered since P935-era; same 38.7–38.8 s durations). No missile-lock/lock-tip source changed by P966. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `MissileLockLiveTests` (SLOW FAST 38.299 s) and `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (SLOW FAST 10.246 s vs the 10.000 s limit) | — | — | Timing exceedances of the same two led families under the shared-host load; assertions pass when the box is quieter. |
 
 Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
@@ -800,7 +838,7 @@ consecutive isolated runs.
 | --- | --- | --- |
 | `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` ("no KILL_SHIP observed by the real Bot within budget") | **pass / pass / pass**, 0.6 s per run | The ledgered combat-timing family (same signature as the P865b entry: load flakes under tier parallelism). |
 | `SideEliminationLiveTests.Side_with_two_restart_stations_survives_losing_one` ("first station must be destroyed", 20.6 s — also over the Fast guard) | **pass / pass / pass**, 0.6 s per run | Live-wire elimination timing; same class as the ledgered side-elimination family. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38 s, "lock never reached full + partial tip (lock 1.000)") | **fail / fail / fail**, 38 s each, host load 0.66 (idle) | The known open partial-tip receipt failure (P933/P935/P938 cohorts, P961 entry above) — fails in isolated cohorts too. No lock/missile/tip code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38 s, "lock never reached full + partial tip (lock 1.000)") | **fail / fail / fail**, 38 s each, host load 0.66 (idle) | The known open partial-tip receipt failure (P933/P935/P938 cohorts, P961 entry above) — fails in isolated cohorts too. No lock/missile/tip code changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` (resign chat present, filter not matched) | **pass / pass / pass**, 0.6 s each | Ledgered ballot-receipt timing family (same as the P961 sweep). |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (body **passed**, 10.58 s over the Fast guard) | pass / pass / pass in earlier sweeps | Existing timing-only Fast offender; no tier or limit relaxed, no warp code changed. |
 
@@ -1145,7 +1183,7 @@ not turn the Fast sweep green.
 | Non-task method / theory family | Three isolated invocations | P/F/S | Max case (s) | Disposition |
 | --- | --- | --- | --- | --- |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass / pass / pass | 3/0/0 | 5.587 | Assertions and timing pass in all isolated repeats |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | 2/1/0 | 38.779 | Known missing partial-tip receipt; remains intermittent |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | 2/1/0 | 38.779 | Known missing partial-tip receipt; remains intermittent **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | pass / pass / pass | 3/0/0 | 4.228 | Assertions and timing pass in all isolated repeats |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | pass / pass / pass | 9/0/0 | 7.897 | Assertions and timing pass in all isolated repeats |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass | 3/0/0 | 3.663 | Assertions and timing pass in all isolated repeats |
@@ -1202,7 +1240,7 @@ already-ledgered bundle-path obstruction, not 52 distinct defects:
 - The five `PlayerBundlePathsTests` parameter cases across four methods still
   fail because mandatory scratch TMPDIR is inside the repository and ancestor
   `local.env` is discovered. Passing parameter cases are retained in the counts.
-- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` **Resolved by P1020** (test race, not load or product: see the P1020 section at the top).
   is **pass/pass/fail** alone (failure: full lock reached, partial-tip condition
   never satisfied); remains intermittent, not cleared as a load-only flake.
 - The six other assertion-failure methods pass three isolated runs. The profile
@@ -1224,7 +1262,7 @@ process overrides and let the fixture’s own deliberate configuration apply.
 | `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | 1/0/0 ×3 | 0.009/0.009/0.009 | — |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | 1/0/0 ×3 | 0.058/0.071/0.081 | — |
 | `SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass` | 1/0/0 ×3 | 1.648/1.582/1.592 | — |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0, 1/0/0, 0/1/0 | 1.722/1.820/38.853 | — |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 1/0/0, 1/0/0, 0/1/0 | 1.722/1.820/38.853 | — **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 3/0/0 ×3 | 6.598/6.748/9.121 | — |
 | `P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production` | 3/0/0 ×3 | 3.705/4.942/4.676 | — |
 | `P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base` | 1/0/0 ×3 | 2.292/2.662/2.505 | — |
@@ -1388,7 +1426,7 @@ processes after the sweep.
 | Sweep exception | Observation in the sweep | Isolated outcome |
 | --- | --- | --- |
 | `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | `Assert.Empty` got a real Tailscale node (`<tailnet address>`, `<tailnet host>`, LAN game on 6073) although the injected `TailscaleStatus` returned null | **fail / fail / fail** (61/55/60 ms) — environmental: this host's Tailscale interface is up, so the "absent" scan finds it; no discovery code changed |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.7 s, also over the guard) | "lock never reached full + partial tip (lock 1.000)" | **fail / fail / fail** in the isolated cohort (38–40 s, same 1.000 signature), then a further isolated run **passed** in 1 s — the existing intermittent partial-tip receipt failure; remains open |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.7 s, also over the guard) | "lock never reached full + partial tip (lock 1.000)" | **fail / fail / fail** in the isolated cohort (38–40 s, same 1.000 signature), then a further isolated run **passed** in 1 s — the existing intermittent partial-tip receipt failure; remains open **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | "B never saw A's death (IsDead never latched)" | **pass / pass / pass** (~1 s) — existing asynchronous death-receipt intermittency (also P903/P899/P896) |
 | `P864dTeamLobbyClientListLiveTests.A_lobby_player_requests_a_side_and_the_join_side_relay_moves_it_out_of_the_pool` | `Assert.Contains` missing the moved ship in the relay list | **pass / pass / pass** |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | `Assert.Same` expected ship, actual null | **fail / fail / fail** — the already-led persistent NPC wingman failure (unchanged code) |
@@ -1420,7 +1458,7 @@ ledger entries plus one new host condition:
 | `DiscoveryTests.Coordinator_is_silent_when_tailscale_absent` | failed | **fail / fail / fail** (53/70/74 ms) | Not P945: the injected `TailscaleStatus = () => null` is bypassed by the engine's own tailnet scan, which finds a live Allegiance server on this workstation's tailnet (`<tailnet address>:6073`, 14 players). Environmental — the host has a running tailnet game. No discovery code changed by P945. |
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | failed | **pass / pass / pass** | Already ledged allocation intermittency. |
 | `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass / pass / pass** | Already ledged ballot-receipt family. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed (38.8 s) | known open failure | Persistent ledger entry (P933/P935/P938 cohorts); no lock/tip code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed (38.8 s) | known open failure | Persistent ledger entry (P933/P935/P938 cohorts); no lock/tip code changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | failed | known baseline failure | Persistent null-target assertion, fails on the unmodified base too. |
 | `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(Classic, reminders)` | failed (9 m 3 s) | not re-run (20 min budget) | M2 prompt-sequence snapshot ("native prompts missing or out of order") taken from `ClientTrainingSite.Messages` — instructor messages posted by the training host; P945 changed only client presentation (docked view flag, HUD draw path). Same full-gate-only real-window family already ledged above. |
 | `P800HullProofGpuTests`, `SC2NaniteSupportTests`, `P814GunnerTests`, `P777WarpExitWobbleTests`, `P750NativeAsteroidTypesTests`, `WarpTransitServerTests`, `P942ResearchOrderingTests` | 8 executions over the calibrated 10 s Fast limit (10.5–38.8 s) | n/a | Host load average 11–14 on 24 CPUs (other lanes running); the same executions were 8–17 s in the earlier sweep. |
@@ -1448,7 +1486,7 @@ test process from this lane. The profile control alone redirects
 |---|---|---|
 | Five `PlayerBundlePathsTests` cases (Artwork executable fallback; Artwork/NativeSource missing defaults; local configuration precedence; native install-subdirectory guessing) | Each **fail/fail/fail** | The unchanged nine-case class on dispatch Core/Server libraries gives **5 failed / 4 passed ×3**. Existing mandatory in-worktree TMPDIR discovers ancestor `local.env`; no path-resolution source changed. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.180/1.154/1.149 s | **fail/fail/fail** on dispatch libraries, same expected-ship/actual-null assertion. Existing persistent baseline failure; no NPC movement/targeting code changed. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.336/38.275/38.289 s | **fail/fail/fail** on the dispatch client test/runtime snapshot, same final lock 1.000 without required partial tip. Remains open and is also a Fast timing failure; not classified as cleared or solely load-induced. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.336/38.275/38.289 s | **fail/fail/fail** on the dispatch client test/runtime snapshot, same final lock 1.000 without required partial tip. Remains open and is also a Fast timing failure; not classified as cleared or solely load-induced. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **pass/pass/pass**, 0.071/0.070/0.059 s with writable scratch profile | Existing sandbox obstruction: sweep cannot restore the read-only real user profile. No product/profile edit or write to the real profile was made. |
 | `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | **pass/pass/pass**, 0.006/0.006/0.008 s | Sweep observed 2,360 allocated bytes over 10,000 frames. Existing allocation-under-parallel-load family; no HUD code changed. |
 | `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | All four parameter cases **pass/pass/pass** | Disabled/off sweep observed 14.90 against [14.94,15.06], the existing P813b/P887 clock-observation boundary signature. No clock or countdown code changed. |
@@ -1675,7 +1713,7 @@ All optimized sources/tests were restored afterward and requalified.
 | Five `PlayerBundlePathsTests` cases (Artwork executable fallback; Artwork/NativeSource missing defaults; local config precedence; native-source subdirectory guessing) | Each **fail/fail/fail**; selected SkyPack companion cases pass 3/3 | Same five cases **fail/fail/fail**, companions pass 3/3 | Existing mandated in-worktree TMPDIR discovers ancestor `local.env`; no resolver/fixture change. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail** | **fail/fail/fail** | Existing null target assertion; same dispatch-base behavior. |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **fail/fail/fail** | **fail/fail/fail** | Existing expected flying=3 / observed docked=2 history. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail** | **pass/fail/pass** | Existing partial-tip receipt failure with final lock 1.000, sensitive to receipt timing. Not classified as cleared or solely load-induced. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail** | **pass/fail/pass** | Existing partial-tip receipt failure with final lock 1.000, sensitive to receipt timing. Not classified as cleared or solely load-induced. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass/pass/pass** | **pass/fail/fail** | Sweep observed 31.2 simulated seconds against [28,31]; existing clock/receipt boundary. |
 | `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | **pass/pass/fail** | **pass/pass/pass** | Existing mining receipt family (also ledgered in P903/P926): sweep saw one queued report after the asserted drain. Intermittent here; this small control sample does not establish its cause or clear the failure. |
 
@@ -1706,7 +1744,7 @@ asteroid, class-selection or parity test failed).
 
 | Sweep failure | Three runs alone | Qualification |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.3 s, also over the 10 s guard) | **pass / fail / pass** | Existing ledgered partial-tip receipt timing failure (P928: optimized fail/fail/fail, dispatch base pass/fail/pass). Intermittent; unrelated to map generation. Not cleared. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.3 s, also over the 10 s guard) | **pass / fail / pass** | Existing ledgered partial-tip receipt timing failure (P928: optimized fail/fail/fail, dispatch base pass/fail/pass). Intermittent; unrelated to map generation. Not cleared. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail / fail / fail** | Existing baseline defect recorded by P928 (pristine dispatch-base tree also fail/fail/fail): null target where the test expects the chasing ship. Not P939's to fix; unchanged by this task. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | **pass / pass / pass** | Load/timing flake — the sweep saw 31.1 simulated seconds against the [28, 31] window (P928 already lists the clock/receipt boundary). |
 
@@ -1748,7 +1786,7 @@ repository toolchain edits. Details and the advisory are in the P924 report.
 | `PlayerBundlePathsTests` (four methods, five failed cases) | **5 failed / 4 passed** in each of three complete family runs | Existing fixture-ancestry conflict: required worktree-local `TMPDIR` makes an allegedly external directory discover the checkout's `local.env`. Same persistent P915/P914/P913 signature. No resolver change. |
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | **fail/fail/fail**, 0.049/0.048/0.060 s; **pass/pass/pass** with scratch `XDG_CONFIG_HOME`, 0.065/0.065/0.054 s | Existing sandbox blocks restoring the real user profile. Writable scratch configuration resolves the obstruction; profile/UI code unchanged. |
 | `P897ClientTransportTests.Reconnect_reuses_initial_protocol_even_after_preference_changes` | **pass/pass/pass**, both TCP and UDP each time (6/6 cases) | Sweep TCP setup threw `Address already in use`. Standalone reconnect succeeds; no transport code change. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.372/38.325/38.287 s | Known missing partial-tip receipt despite final lock 1.000; persistent alone, not classified as solely load-induced. Also exceeds Fast's time guard. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **fail/fail/fail**, 38.372/38.325/38.287 s | Known missing partial-tip receipt despite final lock 1.000; persistent alone, not classified as solely load-induced. Also exceeds Fast's time guard. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.234/1.245/1.229 s | Known null `DefendTarget` / reference assertion, persistent under prior baseline controls. No NPC/flight policy change. |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | **pass/pass/fail**, 0.321/0.326/0.367 s | Known expected flying=3 / actual docked=2 join-burst history; intermittent even alone. |
 | `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | **pass/pass/pass**, 1.664/1.726/1.655 s | Sweep missed the same-side driver's relayed pod update. Existing intake/receipt-order fixture family; no pod update code change. |
@@ -1797,7 +1835,7 @@ bot policy, binding or shop implementation changed in this task.
 | `P838GcProfTests.Gcprof_line_emitted_with_sane_values_and_tickprof_format_unchanged` | **pass/pass/pass**, 86/86/76 ms | Sweep allocation value 3827.1 outside 0.8–16; process-level allocation/load sensitivity. Profiler unchanged. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail** | Existing null `DefendTarget` / reference assertion at line 179, already persistent under P914 and earlier base controls. Remains open. |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **pass/fail/pass**, 627/600/584 ms | Known stale dock-status history (station 1051 vs -1); intermittent even alone, remains open. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/fail/pass** | Known missing partial-tip receipt despite lock reaching 1.000; failed isolation is also ~38 s. Not solely a sweep/load flake; remains open. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/fail/pass** | Known missing partial-tip receipt despite lock reaching 1.000; failed isolation is also ~38 s. Not solely a sweep/load flake; remains open. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | **pass/pass/pass**, approximately 3/3/4 s | Timing only: sweep 15.108 s; all-hull GPU proof passes alone. |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Both civ cases **pass/pass/pass** (6/6) | Timing only: civ 25 sweep 11.569 s; each complete two-case isolation took ~7 s. |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | All three civ cases **pass/pass/pass** (9/9) | Timing only: civ 35 sweep 10.532 s; complete three-case isolation runs took ~12 s. |
@@ -1866,7 +1904,7 @@ preserved the existing bundle fixtures' outside-repository lexical temp path.
 
 | Method / family | Three standalone results | Finding |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/pass/pass**, 1.808/1.820/1.767 s | Sweep missed the partial tip despite lock 1.000 (38.225 s); known wire-receipt intermittency. Below 2 s alone. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | **pass/pass/pass**, 1.808/1.820/1.767 s | Sweep missed the partial tip despite lock 1.000 (38.225 s); known wire-receipt intermittency. Below 2 s alone. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | **pass/fail/pass**, 0.621/0.600/0.620 s | Known stale dock-status history (station 1051 versus -1); still intermittent alone, remains open. |
 | `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | **pass/pass/pass**, 0.599/0.612/0.621 s | Sweep saw no enemy damage and took 40.018 s; same load/receipt family already ledgered under P887. Passes alone. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | **fail/fail/fail**, 1.266/1.232/1.176 s | Same null DefendTarget at line 179 as P908/P907/P906/P904; persistent existing failure, remains open. |
@@ -2048,7 +2086,7 @@ Every failing or slow method, plus the affected ballot receipt failure, was repe
 |---|---|---|
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` | pass / pass / pass; 4.276 / 4.001 / 4.069 s | Fast timing only (10.470 s); real GPU proof passes in 4.0–4.3 s alone. |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | pass / pass / pass; 1.480 / 1.439 / 1.433 s | Known asynchronous remote death/respawn receipt intermittency (also P903/P899/P896). |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL / FAIL / FAIL; 38.375 / 38.390 / 38.345 s | Persistent existing missing partial-tip receipt with final lock 1.000; same 0/3 signature recorded under P901. Remains open and remains a Fast timing failure. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | FAIL / FAIL / FAIL; 38.375 / 38.390 / 38.345 s | Persistent existing missing partial-tip receipt with final lock 1.000; same 0/3 signature recorded under P901. Remains open and remains a Fast timing failure. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | pass / pass / pass; 3.222 / 3.272 / 3.172 s | Fast timing only (10.735 s); 3.2–3.3 s alone. Turret selection code unchanged. |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | pass / pass / pass; 4.095 + 2.990 / 2.972 + 4.120 / 4.019 + 2.957 s | Fast timing offender for civ 25 (10.341 s); both cases pass each run, 2.96–4.12 s alone. Selection/repair logic unchanged. |
 | `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | pass / pass / pass; 0.514 / 0.550 / 0.497 s | One affected-class run stopped after SIDE_INACTIVE before the later “is no more” chat had decoded; two further class runs and these exact-method runs pass. No assertion weakened. |
@@ -2160,7 +2198,7 @@ other tests. Receipts: `docs/reports/P900_assets/fast-summary.json` and
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail (1.210 / 1.259 / 1.259 s) | Existing null `DefendTarget` assertion at line 179, also 0/3 under P899. Remains open; no native NPC/sim logic changed. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / pass / fail | Existing receipt/tick boundary: sweep observed 32.5 against upper bound 31. The auto-seat implementation/fixture is unchanged. |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | All delay rows pass / delay 7 fails / all delay rows pass | Same floating boundary as P899/P898: `7.0000000000000009` exceeds 7. No timer source changed. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail (38.461 / 38.492 / 38.487 s) | Existing missing partial-tip receipt with final lock 1.000. Previously ledgered with 0/3 and intermittent results; remains open, not attributed solely to load. Also a Fast timing offender. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail (38.461 / 38.492 / 38.487 s) | Existing missing partial-tip receipt with final lock 1.000. Previously ledgered with 0/3 and intermittent results; remains open, not attributed solely to load. Also a Fast timing offender. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane` (passing timing offender) | pass / pass / pass (3.890 / 3.852 / 4.000 s) | Sweep passed in 11.375 s; below limit alone. Existing sweep timing sensitivity; renderer unchanged. |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` (passing timing offender) | pass / pass / pass (3.038 / 3.000 / 3.031 s); civ 3 also passes each time | Sweep passed in 11.080 s; below limit alone. Existing selector fixture timing sensitivity. |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (passing timing offender) | pass / pass / pass (3.197 / 3.258 / 3.236 s) | Sweep passed in 10.965 s; below limit alone. Existing selection fixture timing sensitivity. |
@@ -2235,7 +2273,7 @@ receipts are included with `docs/reports/P898_REPORT.md`.
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail/fail/fail with original environment; pass/pass/pass with scratch `XDG_CONFIG_HOME` (0.065 s each) | Filesystem sandbox makes the real `~/.config/AllegianceCore/player.json` read-only. The unchanged test writes/restores it at line 237. This is an environment obstruction, not a transport failure. No product/profile code changed. |
 | `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository(Artwork)`, `MissingDirectoryHasNoDefault(Artwork/NativeSource)`, `LocalConfigWinsOverBundleWithBlankEnvironment`, `NativeSourceNeverGuessesAnInstallSubdirectory` (five cases) | all five fail 3/3 with worktree-local `TMPDIR`; all nine class cases pass 3/3 when the same scratch storage is mounted outside `/work` in a local container | Lane rules place temporary fixtures under the real checkout. `ExternalPaths.FindRepoRoot` walks from the fake executable directory into the actual checkout and reads its `local.env`, defeating the tests' outside-repository premise. The container bind keeps physical scratch storage in the worktree while restoring the intended path topology. No resolver/test code changed. |
 | `BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast` | pass/pass/pass (0.193/0.192/0.177 s) | Sweep saw null `KilledEvidence` instead of `observed-lost` at `P896FinaleEvidenceTests.cs:244`. Unchanged bot/model fixture; specific shared-state or scheduling trigger not established. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass/pass/pass (1.797/1.736/1.844 s) | Sweep timed out after 38.179 s with full lock but without the partial tip. Also a Fast timing offender. No missile/lock/tip code changed; receipt timing intermittency. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass/pass/pass (1.797/1.736/1.844 s) | Sweep timed out after 38.179 s with full lock but without the partial tip. Also a Fast timing offender. No missile/lock/tip code changed; receipt timing intermittency. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | pass/pass/pass (0.901/1.762/0.866 s) | Sweep's diverter failed to rescue before its tick budget; unchanged rescue/Goto logic. No claim that CPU load alone is the cause. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail (0.830/0.805/0.809 s) | Same null `DefendTarget` failure previously reproduced on unmodified HEAD and recorded under P892c/P892d/P895. TCP batching defaults off and no wingman/simulation logic changed; existing failure remains open. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (passing timing offender) | pass/pass/pass (9.863/9.882/9.675 s) | Sweep passed in 10.510 s, just over its 10 s limit. Existing slow native-physics fixture; no warp code changed. |
@@ -2381,7 +2419,7 @@ the ClientCore P894 logon/wire/listing cases are Fast-tier and passed). Fast rec
 | Failure | Three isolated outcomes | Classification |
 |---|---|---|
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Persistent unchanged baseline failure already ledgered under P872/P887/P888 (see the P890 section); no NPC or side-select policy changed by P894. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / fail / fail (38 s each failure) | Already ledgered intermittent (P890: fail/pass/fail; another lane: 0/3). Missile-lock tip wire path untouched by P894. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / fail / fail (38 s each failure) | Already ledgered intermittent (P890: fail/pass/fail; another lane: 0/3). Missile-lock tip wire path untouched by P894. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | fail / pass / pass | Already ledgered float-boundary load flake (the upper bound was `7` vs `7.0000000000000009`); timer path untouched. |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | pass / pass / fail | Already ledgered status-roster fixture intermittency (P872/P890); dock path untouched. |
 | `P803TurretGunnerLoopbackLiveTests.Live_boarded_gunner_huds_name_the_right_turret_on_both_clients` | pass / pass / pass | Already ledgered receipt/timing intermittency; unchanged fixture and renderer. |
@@ -2491,7 +2529,7 @@ retains ordered pass/fail sequences, including failures that persist:
 | --- | --- | --- |
 | `P803TurretGunnerLoopbackLiveTests.Live_boarded_gunner_huds_name_the_right_turret_on_both_clients` | pass / pass / pass | Receipt/timing intermittency; unchanged fixture and renderer |
 | `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | pass / pass / pass | Sweep saw ChatTarget 0 instead of -2; unchanged source |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / pass / fail | Intermittent missing partial-tip observation even though final lock is 1.000; not claimed fixed or 3/3 passing |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / pass / fail | Intermittent missing partial-tip observation even though final lock is 1.000; not claimed fixed or 3/3 passing **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | Sweep measured 8.25 s against a 4–8 s fixture bound |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / pass / pass | Previously ledgered status-roster fixture intermittency; not claimed 3/3 passing |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Persistent unchanged baseline failure already recorded under P872/P887 |
@@ -2545,7 +2583,7 @@ non-task failures — none on a training path — isolated as follows:
 
 | test | sweep result | isolated |
 | --- | --- | --- |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | failed once (38.3 s, also the calibrated-limit offender) | **0/3 — fails 3/3 alone** (38 s each): a pre-existing baseline failure on the missile-lock-tips wire path, untouched by this lane's training-proof work |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | failed once (38.3 s, also the calibrated-limit offender) | **0/3 — fails 3/3 alone** (38 s each): a pre-existing baseline failure on the missile-lock-tips wire path, untouched by this lane's training-proof work **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment(kind: "chaff")` | failed once | flaky — passed 3rd isolated run (dispenser/chaff live path, untouched) |
 | `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | failed once | flaky — passed 3rd isolated run |
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` (MonoGame) | failed once | **3/3 pass** — the already-ledgered launcher-receipt load flake |
@@ -6607,7 +6645,7 @@ Fast sweep `tiers-20261030T035703` on the P893 tree: 11,763 tests, 4 failed + 1 
 - `P806OptionsMenuTests.Sound_submenu_lists_the_ports_real_music_controls` — real
   P893 change (the Sound submenu gained the 4th "Positional 3D Sound" row);
   test updated in the same lane, passes.
-- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` **Resolved by P1020** (test race, not load or product: see the P1020 section at the top).
   (38.2 s, the calibrated-limit offender) — the ledgered pre-existing baseline
   failure (see P893-era entries above); not retried here.
 - `NpcWingmanDefendLiveTests.Defender_disengages…` — the known deterministic
@@ -6625,7 +6663,7 @@ Confirming sweep `tiers-20261030T041824` (after the P806 test fix): 11,763
 
 - `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`
   (contention, the ledgered P885 case) — **3/3 pass alone**.
-- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+- `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` **Resolved by P1020** (test race, not load or product: see the P1020 section at the top).
   (38.3 s, limit offender) — ledgered baseline failure.
 - `NpcWingmanDefendLiveTests.Defender_disengages…` — ledgered baseline failure.
 - `NpcAsteroidContentionLiveTests.Two_same_side_idle_miners…` (18.4 s, limit
@@ -6652,7 +6690,7 @@ Single Fast-tier run (`tools/run-tests.sh --tier fast`, `TestResults/tiers-20261
 | Failure | Three isolated outcomes | Classification |
 |---|---|---|
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (ClientCore) | pass / pass / pass (2 s) | Load flake: Live TCP loopback test; fails under the concurrent fast-tier sweep, 3/3 alone. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / pass / pass | Already ledgered intermittent under P890/P894; passed 3/3 alone this session. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (ClientCore) | pass / pass / pass | Already ledgered intermittent under P890/P894; passed 3/3 alone this session. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | 18 `Allegiance.Lobby.Tests` cases | full project reproduced 13/122 on clean master | Not order-dependent and not P894: each test host's config file watcher hit the machine's `fs.inotify.max_user_instances` limit (128). Fixed by turning config reload off in the Lobby test assembly. |
 
 ## P895b gate (2026-10-30)
@@ -6749,7 +6787,7 @@ Additional P902 Fast observations, with each failed method isolated three times:
 | Test | Three isolation outcomes | Observation |
 |---|---|---|
 | `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim(training: False, model: "port")` | pass / fail / pass (all four theory cases run each time; the other three pass throughout) | Same skirmish/port sustained-aim assertion as the sweep. The failure includes large forward/shot drift. The P902 changes are in the Game/audio layer, which this client-core test does not execute; no prediction, server, sim or test code changed. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip, despite final lock 1.000. The failed isolation runs for 38 s; earlier gates already ledger this method. No wire/lock code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip, despite final lock 1.000. The failed isolation runs for 38 s; earlier gates already ledger this method. No wire/lock code changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing persistent baseline failure: expected charge ship, actual null at line 179. Previous ledger entries already reproduce it on unmodified HEAD; P902 changes no sim or NPC code. |
 
 Evidence: `.scratch/p902/{aim,missile,wingman}-isolation-{1,2,3}.log` and
@@ -6872,7 +6910,7 @@ names and all theory-case outcomes.
 | Test / family | Three-run isolation | Finding |
 |---|---|---|
 | `PlayerBundlePathsTests`: `UsesExecutableDirectoryOutsideRepository` (Artwork), `MissingDirectoryHasNoDefault` (Artwork / NativeSource), `NativeSourceNeverGuessesAnInstallSubdirectory`, `LocalConfigWinsOverBundleWithBlankEnvironment` | Each of the five failing cases fails 3/3; the other theory cases pass | Scratch-path harness constraint, not load-only. Lane rules place `TMPDIR` below the checkout. These fixtures assume their temporary base directory is outside any repository; `ExternalPaths.FindRepoRoot` therefore finds the real ancestor repository before considering the synthetic current-directory context. Real artwork/native config shadows their expected empty/bundled results; the synthetic sky config loses to the executable bundle. Resolver and fixtures are unchanged. Original failures retained. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail; 38.356 / 38.325 / 38.335 s | Previously ledgered missile-lock test remains failing here: full lock reaches 1.000 but the partial-tip edge is absent. Also a Fast budget offender (38.308 s in the sweep). This is not classified as a load flake. P910 chat changes require local training delegates, which are null in this normal multiplayer fixture; missile lock/feedback code is unchanged. Remains open. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail; 38.356 / 38.325 / 38.335 s | Previously ledgered missile-lock test remains failing here: full lock reaches 1.000 but the partial-tip edge is absent. Also a Fast budget offender (38.308 s in the sweep). This is not classified as a load flake. P910 chat changes require local training delegates, which are null in this normal multiplayer fixture; missile lock/feedback code is unchanged. Remains open. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `DockDockingTests.Ship_nowhere_near_a_station_is_unaffected` | fail / fail / fail | Previously ledgered all-status assertion includes another ship (8098) docked at station 1051; it is not scoped to the trainee/player. Reproduces under the baseline settings here; docking/status source is unchanged. Not classified as load-only. Remains open. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same persistent null defend-target failure already recorded under P872/P887/P895/P902/P905/P909. Core NPC code is unchanged. Remains open. |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | functional pass / pass / pass; 9.823 / 9.932 / 9.674 s | Sweep passed functionally at 10.524 s, above its calibrated 10 s limit. Existing near-boundary timing offender; no warp or timing-threshold changes. |
@@ -7345,7 +7383,7 @@ The failures below remain visible in the gate; the suite was not repeated.
 |---|---|---|
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | fail / fail / fail in original environment; pass / pass / pass with task-local `XDG_CONFIG_HOME` | Existing read-only default-profile restoration obstruction at line 237. |
 | Five failing `PlayerBundlePathsTests` cases: Artwork executable fallback, Artwork/NativeSource missing defaults, native subdirectory guessing, local config precedence | Each fails 3/3; four companion cases pass each run | Existing mandated in-checkout `TMPDIR` ancestor `local.env` discovery. Resolver and fixtures unchanged. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip at final lock 1.000; failed isolated run lasts 38 s. Not cleared as a load-only flake. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / pass | Existing intermittent missing partial-lock tip at final lock 1.000; failed isolated run lasts 38 s. Not cleared as a load-only flake. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / pass / pass | Sweep expected state 3, received 2; isolated durations 0.355 / 0.370 / 0.360 s. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Previously ledgered expected-charge / actual-null `AttackTarget`, line 179; remains open. |
 | `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | pass / pass / pass | Sweep clearance assertion: minObsDist 75.2, obstacle radius 60. No dodge/physics change. |
@@ -7551,7 +7589,7 @@ for sample IDs, server binary hashes and observed idle durations.
 
 One fast run: 13,100 tests, 6 main failures, none in showcase research/rotation code. Isolation 3×:
 `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` failed 3/3 (the
-pre-existing fixture failure, also failing on base in P930); `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire`
+pre-existing fixture failure, also failing on base in P930); `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` **Resolved by P1020** (test race, not load or product: see the P1020 section at the top).
 2/3 (known flaky); `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`,
 `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose`,
 `MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` and
@@ -7571,7 +7609,7 @@ per method (39 invocations, including theory companions):
 | --- | --- | --- |
 | Five `PlayerBundlePathsTests` cases: Artwork executable fallback; Artwork/NativeSource missing defaults; native install-subdirectory guessing; synthetic sky config precedence | Each failing case fails 3/3; included SkyPack companions pass | Existing in-checkout `TMPDIR` fixture obstruction: these simulated outside-repository installs discover the real ancestor `local.env`. Same constraint as P909–P930. Resolver and fixtures unchanged. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail/fail/fail (1.161/1.176/1.247 s) | Existing line-179 null-target assertion; already reproduced on dispatch/base in P918/P930 above. The P934 training guard is inactive in this fixture. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail/fail/fail (38.525/38.336/38.394 s); **dispatch Core control also fails 3/3** | Lock reaches 1.000 but expected partial-lock tip is absent, line 150. The same assertion reproduces with the four changed Core files replaced at compile time by HEAD originals and the new training helper excluded, using separate artifacts without altering the working tree. Existing missile feedback failure, not introduced by training. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail/fail/fail (38.525/38.336/38.394 s); **dispatch Core control also fails 3/3** | Lock reaches 1.000 but expected partial-lock tip is absent, line 150. The same assertion reproduces with the four changed Core files replaced at compile time by HEAD originals and the new training helper excluded, using separate artifacts without altering the working tree. Existing missile feedback failure, not introduced by training. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | pass/pass/pass (1.563/1.489/1.479 s) | Sweep timed out; warning/transport code unchanged. |
 | `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | pass/pass/pass (1.714/1.618/1.697 s) | Sweep read lobby side -2 before expected side 0 at line 167; existing side-seating race. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass/pass/pass (1.003/0.999/0.996 s) | Existing auto-seat timing fixture; no side-selection change. |
@@ -7614,7 +7652,7 @@ separate filtered invocations after the sweep, with no other task tests running.
 |---|---|---|
 | `PlayerBundlePathsTests` five failing cases: Artwork executable fallback, Artwork/NativeSource missing defaults, local config precedence, NativeSource install-subdirectory guessing | Every failing case fails 3/3; companion passing theory cases remain passing | Existing fixture-ancestry issue with mandatory worktree-local `TMPDIR`: fake executable folders discover the checkout's ancestor `local.env`. Same signature documented in P930 and earlier entries. No resolver changed. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Same null charge-target assertion already reproduced on unchanged-base controls in P930 and earlier entries; remains open. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail, 38.239 / 38.260 / 38.229 s | Lock reaches 1.000 but the expected full/partial tips do not both arrive. Existing intermittent failure recorded in P938; persistent in this cohort. Also the sweep's 38.185 s timing offender. No lock, tip or assertion code changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail, 38.239 / 38.260 / 38.229 s | Lock reaches 1.000 but the expected full/partial tips do not both arrive. Existing intermittent failure recorded in P938; persistent in this cohort. Also the sweep's 38.185 s timing offender. No lock, tip or assertion code changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | first invocation 3 passed / 1 failed; next two 4/4 passed | The disabled/off case reports 14.90 against [14.94, 15.06]. Mixed outcomes remain qualified; not relabeled three clean passes. No clock/countdown code changed. |
 | `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | pass / pass / pass | Sweep destruction receipt reports roughly 1.5 s of travel for a 2 s missile. Same terminal-position signature was qualified in P911; collision/broadcast source unchanged. |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / pass / pass | Sweep time 8.20 exceeds the fixture's upper bound 8.00. No roster/time accounting changed. |
@@ -7707,7 +7745,7 @@ Additional P935 Fast-sweep non-task isolations:
 | `PlayerBundlePathsTests`: Artwork executable fallback; Artwork/NativeSource missing default; local config precedence; NativeSource install-subdirectory guessing | Each failing case fails 3/3; four companion cases pass each time | Existing fixture-ancestry obstruction: mandatory in-worktree `TMPDIR` lets fake outside-repo bundles discover the ancestor `local.env`. Resolver and fixtures unchanged. |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | fail / fail / fail | Existing expected charge target / actual null at line 179, previously reproduced against dispatch-base sources. Remains open. |
 | `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | pass / pass / pass | Sweep-only repair-credit ratio failure (0.083); same intermittent family already ledgered. No repair/credit implementation changed. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail | Lock reaches 1.000 but the expected partial/full tip pair is absent. The approximately 38-second failure also exceeds the Fast budget; already persistent in the prior cohort. No lock/tip implementation changed. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail / fail | Lock reaches 1.000 but the expected partial/full tip pair is absent. The approximately 38-second failure also exceeds the Fast budget; already persistent in the prior cohort. No lock/tip implementation changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 
 Raw isolation files are `.scratch/p935/isolated/non-task-<method>-{1,2,3}.trx`.
 P935's raw timestamp compatibility checks and mission-assembly reflection check
@@ -7736,7 +7774,7 @@ family received three fresh, filtered processes; no broad Fast rerun was used.
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | Expected zero allocation; observed 6,504 bytes. Existing P918 allocation intermittency. | **pass / pass / pass**, zero skips |
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | Empty default `ExpandedPartData` instead of the granted launcher; existing receipt intermittency. | **fail / pass / pass**, zero skips; not a clean three-pass isolation |
 | `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | Timeout at line 116 waiting for the bot's own loadout; the helper's message says join. Same previously ledgered signature. | **pass / pass / pass**, zero skips |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Full lock 1.000 but the expected partial/full tip pair is absent. Persistent in P933/P935 as well. | **fail / fail / fail**, zero skips; remains open |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Full lock 1.000 but the expected partial/full tip pair is absent. Persistent in P933/P935 as well. | **fail / fail / fail**, zero skips; remains open **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P889PoolSizingTests.Explicit_config_still_wins_over_the_resolver_at_boot` | The lane runner's baseline environment overrode this fixture's explicit serial/thread-per-peer configuration. | **fail / fail / fail** with only the parallel-build override cleared; **pass / pass / pass** with both build and transport overrides cleared, zero skips |
 | `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | Terminal travel 1247.78 m versus the full-lifespan expectation 1848.56 m. Existing earlier-destruction signature. | **pass / pass / pass**, zero skips |
 | `WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands` | Expected delayed-blast receipt collection was empty. | **pass / pass / pass**, zero skips |
@@ -8147,7 +8185,7 @@ executions: **36 passed / 6 failed / 0 skipped**).
 | P960 Fast failure | Three exact-method standalone runs | Current disposition |
 |---|---|---|
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | pass / pass / pass | Existing launcher-grant receipt flake. |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / fail | Existing final lock 1.000 without the expected partial-tip receipt; still intermittent alone. |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | pass / fail / fail | Existing final lock 1.000 without the expected partial-tip receipt; still intermittent alone. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `ShipStatusServerTests.PeerReceivesItsOwnShipStatus_InJoinBurst` | pass / fail / fail | Existing state-3/state-2 join receipt intermittency; not cleared. Wire constants are flying=3, docked=2. |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail / fail / pass | Existing auto-seat clock/receipt boundary; one isolation saw 32.0, another missed the ready receipt. |
 | `BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it` | pass / pass / pass | **New exact-method entry**: empty receipt collection in sweep; existing ballot family. No ballot code changed. |
@@ -8269,7 +8307,7 @@ P976 (the task changes `src/Allegiance.Update/`, its tests and docs):
 | Second sweep: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` (quarantine tier) | runner retry passed | Existing quarantine flake (lines 609, 904); pickup/world code unchanged. |
 | Second sweep: `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` 10.037 s, `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` 10.750 s | — | Calibrated 10 s timing limit under load; both are runtime-only overruns, not assertions. |
 | Third sweep (final tree, host load 3.9→8): `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`, `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`, `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)`, `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | each 3/3 pass (all cases; 5 cases × 3 for the Core filter) | All are existing ledgered Live-tier receipt/timing families (see the entries above); none touches the updater. |
-| Third sweep: `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.6 s "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail**, 38 s signature, plus 1/1 pass alone | The known OPEN partial-tip receipt failure (P933/P935/P938/P961 entries; fails isolated cohorts too). No lock/missile/tip code changed by P976; not cleared. |
+| Third sweep: `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.6 s "lock never reached full + partial tip (lock 1.000)") | **1 pass / 2 fail**, 38 s signature, plus 1/1 pass alone | The known OPEN partial-tip receipt failure (P933/P935/P938/P961 entries; fails isolated cohorts too). No lock/missile/tip code changed by P976; not cleared. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 
 P976 also updates `tests/Allegiance.ClientCore.MonoGame.Tests/P944JoinLinkUiTests.cs`:
 the source-order guard now asserts the new branch (a link launch must not reach the
@@ -8312,7 +8350,7 @@ implementation. Full Fast remains **FAIL**.
 |---|---|---|
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 1,384 bytes allocated, expected zero | **pass / pass / pass**, 0.009 / 0.009 / 0.012 s |
 | `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | fighter credit 0.222 versus 0.500 | **pass / pass / pass**, 3.434 / 3.435 / 3.392 s |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without the required partial/full tip pair; 38.325 s Fast budget offender | **fail / pass / fail**, 38.517 / 1.666 / 38.456 s; known OPEN issue, not cleared |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without the required partial/full tip pair; 38.325 s Fast budget offender | **fail / pass / fail**, 38.517 / 1.666 / 38.456 s; known OPEN issue, not cleared **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | terminal travel 1663.70 m versus full-lifespan 1848.56 m | **pass / pass / pass**, 0.508 / 0.480 / 0.526 s |
 | `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | tick 139 drift 18.57 m | **pass / pass / pass**, 1.092 / 1.061 / 1.097 s |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | passing test, 10.378 s versus calibrated 10 s limit | **pass / pass / pass**, 9.309 / 9.883 / 9.941 s, all below the limit |
@@ -8345,7 +8383,7 @@ zero-allocation pins still pass, so none of these is on the P990 path.
 | `LiveCombatScoringTests.Real_two_peer_kill_updates_both_player_scores` | Fast sweep missed `KILL_SHIP` inside its observation budget | **pass / pass / pass** (in the batch with the P739/LiveSideSelect filters, 2 s total) — the ledgered receipt timeout |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | one-ULP upper bound `7.0000000000000009 > 7` | **pass / pass / pass** — the ledgered floating deadline-boundary family |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | `31.x` outside the fixture's [28, 31] window | **pass / fail / pass** — the ledgered receipt/simulation-clock boundary (recorded clean-base rate 2 pass / 3 fail) |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38 s (also a slow-Fast offender) | **pass / fail (38 s) / pass** — the long-ledgered OPEN partial-tip receipt family (clean-base rate 1 pass / 2 fail, same 38 s signature) |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38 s (also a slow-Fast offender) | **pass / fail (38 s) / pass** — the long-ledgered OPEN partial-tip receipt family (clean-base rate 1 pass / 2 fail, same 38 s signature) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, 10.264 s), `P814GunnerTests.P814b_…` (10.104 s), `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (11.313 s), `P942ResearchOrderingTests.Generated_research_never_waits_…` (10.029 s), `P750NativeAsteroidTypesTests.Research_showcase_rocks_…` (13.438 s) | slow-Fast executions, assertions passed | the same ledgered near-limit families the P989/P987 cohorts carry (isolated runs below 10 s in those cohorts) |
 
 Second Fast invocation on the final tree (after the last cosmetic `PoseStampTable` simplification, `--no-build`):
@@ -8355,7 +8393,7 @@ Second Fast invocation on the final tree (after the last cosmetic `PoseStampTabl
 |---|---|---|
 | `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | `Assert.Contains` on an empty decoded NotStarted list (`MissionRotationLiveTests.cs:181`) | **pass / pass / pass** (with the `LiveCombatWireTests` filter below) — the ledgered ~12 % receipt-order intermittent (stage precedes client decode), unchanged rotation/transport code |
 | `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | receipt order (`no shooter ship` family) | **pass / pass / pass** — ledgered receipt-order family |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38.302 s | **pass / fail (38 s) / pass** in the earlier isolated cohort — ledgered OPEN partial-tip family |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip (lock 1.000)`, 38.302 s | **pass / fail (38 s) / pass** in the earlier isolated cohort — ledgered OPEN partial-tip family **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | slow-Fast: `P750NativeAsteroidTypesTests…` 11.727 s, `P777WarpExitWobbleTests…` 10.685 s, `P942ResearchOrderingTests…` 10.348 s, `MissileLockLiveTests…` 38.302 s | assertions passed | the same ledgered near-limit families |
 
 Showcase never-parks on the final tree: **5/5 pass** (durations 3 m 11 s, 2 m 20 s, 2 m 40 s, 2 m 27 s, 6 m 03 s);
@@ -8370,7 +8408,7 @@ Fast sweep on this tree: **13,877 tests, 672.3 s, FAIL**. One test failed and th
 
 | Case | Sweep signature | Three serial isolated executions |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip in the client world (lock 1.000)`, 38.9 s (slow-Fast offender) | **fail / fail / fail**, 38.6 / 38.5 / 38.4 s — the long-ledgered OPEN partial-tip receipt family (P966/P982 rows above: clean-base rate 1 pass / 2 fail, same 38 s signature); not cleared by this task and not caused by it |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | `lock never reached full + partial tip in the client world (lock 1.000)`, 38.9 s (slow-Fast offender) | **fail / fail / fail**, 38.6 / 38.5 / 38.4 s — the long-ledgered OPEN partial-tip receipt family (P966/P982 rows above: clean-base rate 1 pass / 2 fail, same 38 s signature); not cleared by this task and not caused by it **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 11.496 s versus the 10 s limit | **pass / pass / pass**, 3 s each (isolated, after the sweep) |
 | `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | 12.541 s versus the 10 s limit | **pass / pass / pass**, 11 s per class run (8 cases each), after the sweep |
 
@@ -8424,7 +8462,7 @@ non-task; each re-run alone 3×:
 
 | Test | Sweep signature | 3× alone | Classification |
 |---|---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 38.4 s, and a SLOW FAST offender | **0 pass / 3 fail**, 38 s each — the ledgered partial-tip receipt (clean base 1 pass / 2 fail, P966 row) | Existing, no missile/lock/tip source on the P996 path |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 38.4 s, and a SLOW FAST offender | **0 pass / 3 fail**, 38 s each — the ledgered partial-tip receipt (clean base 1 pass / 2 fail, P966 row) | Existing, no missile/lock/tip source on the P996 path **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 802 ms; `32.1000000000003` against the fixture's [28, 31] | **0 pass / 3 fail**, same 32.1 s one-second boundary (clean base 2 pass / 3 fail, P966/P991 rows) | Existing auto-seat receipt/simulation-clock boundary; no side-select/auto-seat source changed |
 | `P832aMissionRulesInventoryTests.Every_native_mission_body_handler_and_local_rule_helper_has_a_matrix_row` | "stale bodies: [CshipIGC::SetBaseHullType …, CshipIGC::PurchaseShipLoadout …]" | **task failure, fixed**: the two new parity rows were in the audited `FedSrv mission rules` family with prose `native_body` values; SIM-0859 moved to the `updates` family with its real body key and SIM-0860 moved to `p977-eject-rescue.csv`. Re-checked: `p832a-mission-rules-audit.py --check` clean, the test passes 1/1 | mine |
 
@@ -8459,7 +8497,7 @@ isolated processes:
 | Case | Sweep signature | Isolated outcome |
 |---|---|---|
 | `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Default profile restoration hits the sandbox's read-only home config | **pass / pass / pass**, with writable task-local `XDG_CONFIG_HOME`; existing sandbox fixture signature, no profile code changed |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 with no partial tip, 39.126 s | **fail / fail / fail**, 38.380 / 38.342 / 38.309 s; existing OPEN receipt family, no missile/lock code changed |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 with no partial tip, 39.126 s | **fail / fail / fail**, 38.380 / 38.342 / 38.309 s; existing OPEN receipt family, no missile/lock code changed **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.55 sim seconds versus [28,31] bound | **fail / fail / fail**; existing OPEN auto-seat boundary family, no side-select code changed |
 | `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | travelled 83.531 units | **pass / pass / pass**, 2.383 / 2.313 / 2.300 s; existing load-sensitive idle-NPC family |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 8.04999924 versus upper bound 8 | **pass / pass / pass**, 0.610 / 0.561 / 0.638 s; existing stint-timing family, no scoring code changed |
@@ -8484,7 +8522,7 @@ One full Fast tier (`tools/run-tests.sh --tier fast --no-build`, 13 969 tests, 5
 
 | Test | Sweep | 3× alone (this tree) | Control | Classification |
 |---|---|---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s, `lock never reached full + partial tip (lock 1.000)`) | fail | **0 pass / 3 fail**, 38 s each | **pristine base commit (`git archive bdbf8423`, same test file): 0 pass / 2 fail, 38 s each** | the ledgered P933/P935/P966 partial-tip receipt family (clean-base 1/2 recorded above); no missile/lock/tip source on the P993 path and the flag is off in the sweep |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.1 s, `lock never reached full + partial tip (lock 1.000)`) | fail | **0 pass / 3 fail**, 38 s each | **pristine base commit (`git archive bdbf8423`, same test file): 0 pass / 2 fail, 38 s each** | the ledgered P933/P935/P966 partial-tip receipt family (clean-base 1/2 recorded above); no missile/lock/tip source on the P993 path and the flag is off in the sweep **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5,7)` | fail | **0/4 theory cases pass** on the widest run, values `5.0000000000000009` / `7.0000000000000009` against the inclusive `(delay−0.1, delay]` bound | base commit 4/4 pass in one run, the same one-ULP boundary is recorded in the entries above | the existing floating upper-bound family (P966/P977 rows: `5.0000000000000009 > 5`); no timer/Core code from P993 is on the deadline path |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.5 s vs `[28,31]`) | 3 runs alone: 32.15–32.60 s, the ledgered receipt/clock boundary | base commit: same failure (32.45 s) in one of two runs | the existing auto-seat receipt/simulation-clock boundary (P945/P948/P953/P960/P966/P967/P977 entries); no side-select/auto-seat source changed |
 | `SLOW FAST` 38.149 s `MissileLock…`, 10.357 s `P777WarpExitWobbleTests…`, 10.012 s `P942ResearchOrderingTests…(civ 201)` | 3 executions over the calibrated 10 s limit | the missile-lock one is the ledgered family above; the P777/P942 near-limit rows are already ledgered (P750 cohort) | — | the shared sweep runner was the only load (other lanes idle); re-running the whole tier is the only way past the fixed 10 s limit — these are the ledgered near-limit families, all < 1 s alone |
@@ -8505,7 +8543,7 @@ both arms log the same bot hits/kills, the same `[proj-diag]` shape and zero par
 | Test | Result | Isolation |
 |---|---|---|
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.3 s against [28,31], also when co-run with `MissileBroadcastTests`/`P994GunfireBatchTests` | passes alone with batching on and off; server log seats at 30 s — the ledgered FltBot receipt/simulation-clock boundary under co-running load |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed, 38 s | already ledgered by P997 (fails alone on the clean base) |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed, 38 s | already ledgered by P997 (fails alone on the clean base) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`, `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live`, `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | failed once in the sweep | 3/3 pass alone with batching default ON |
 
 ### 2026-11-11 — P998 dead-ship part strip, fast suite (`tools/test-tiers/runner.py --tier fast --no-build`)
@@ -8520,7 +8558,7 @@ on this tree:
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (5 s, "B never saw A's death (IsDead never latched on B)") | fail | **3 pass / 0 fail**, ~1 s each | the long-ledgered asynchronous remote death-receipt intermittency (P892c/P896/P899/P903/P996 rows); the fixture kills immediately after seating and allows only a 2,500-tick window (`DeadLatchRespawnLiveTests.cs:432-440`), and P998 does not touch the death latch, KILL_SHIP or EXPORT paths |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | fail (`5.0000000000000009` vs the inclusive `(4.9, 5]` bound) | **2 runs 3/3 pass, 1 run 2/3** (same delay:5 one-ULP value) | the existing floating upper-bound family (P966/P977/P993 rows); no timer/constant code on the P998 path |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | fail (32.4 s vs `[28,31]`) | **1 pass / 2 fail**, 32.15 / 32.20 s — the exact ledgered boundary | the existing auto-seat receipt/simulation-clock boundary (P945…P997 rows); no side-select/auto-seat code changed |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.2 s) | fail | **0 pass / 3 fail**, 38 s each | the ledgered persistent partial-tip receipt family (P933/P935/P966/P993/P997 rows: fails alone on the clean base too); it is also one of the two `SLOW FAST` executions (38.178 s), the other being the ledgered near-limit `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.566 s) |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` (38.2 s) | fail | **0 pass / 3 fail**, 38 s each | the ledgered persistent partial-tip receipt family (P933/P935/P966/P993/P997 rows: fails alone on the clean base too); it is also one of the two `SLOW FAST` executions (38.178 s), the other being the ledgered near-limit `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` (10.566 s) **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 
 Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`) on this
 tree: **five sequential runs, 5 pass / 0 fail** (278 s, 176 s, 165 s, 188 s, 360 s), plus two instrumented
@@ -8546,7 +8584,7 @@ tree, with artwork and the new flag OFF. Each cell below lists all three runs as
 |---|---|---|
 | `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
 | `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | 4/0/0; 4/0/0; 3/1/0 | 3/1/0; 4/0/0; 3/1/0 |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 0/1/0; 0/1/0 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | 0/1/0; 0/1/0; 0/1/0 | 0/1/0; 0/1/0; 0/1/0 **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 0/1/0; 0/1/0; 1/0/0 | 0/1/0; 1/0/0; 0/1/0 |
 | `MiningStateWireTests.Loopback_own_mining_state_reaches_client_and_clears_on_departure` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
 | `LiveShieldRegenBroadcastTests.Stationary_ship_streams_its_regenerating_shield_over_the_wire` | 1/0/0; 1/0/0; 1/0/0 | 1/0/0; 1/0/0; 1/0/0 |
@@ -8656,7 +8694,7 @@ selections retain every parameter case.
 | Case | Fast signature | Three isolated outcomes (test seconds) |
 |---|---|---|
 | `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | own-status missing; only initial miner 8098 statuses received, line 146; ledgered receipt family | **pass / pass / pass**, .285 / .292 / .290 |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without partial tip; 37.864 s, also timing offender | **fail / pass / pass**, 38.633 / 1.573 / 1.632; existing OPEN partial-tip issue remains open |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without partial tip; 37.864 s, also timing offender | **fail / pass / pass**, 38.633 / 1.573 / 1.632; existing OPEN partial-tip issue remains open **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 32.650 simulated seconds outside [28,31], line 192; ledgered boundary family | **pass / pass / pass**, .958 / .951 / .956 |
 | `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty; TreasureId 3 / Amount 0 remained; same P1002 signature | **pass / pass / pass**, .409 / .438 / .419 |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 12.879 s | **3/0/0 per invocation**, culprit case 3.430 / 3.435 / 3.433 s |
@@ -8685,7 +8723,7 @@ one case per invocation. Durations below are TRX test times, not process times.
 | Case | Fast failure / timing signature | Three isolated repetitions |
 |---|---|---|
 | `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (disabled/off) | 14.900000000054206 s against [14.94, 15.06], at line 134; recurring countdown receipt family | 4/0/0; 4/0/0; 4/0/0 (Passed/Failed/Skipped), all four cases per invocation |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without required partial tip, 37.849 s; also slow-Fast | **fail / fail / fail**, 38.652 / 38.593 / 38.587 s; existing OPEN partial-tip issue remains open |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | lock 1.000 without required partial tip, 37.849 s; also slow-Fast | **fail / fail / fail**, 38.652 / 38.593 / 38.587 s; existing OPEN partial-tip issue remains open **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | clearance assertion at line 258, minRockDist=70.2 | **pass / pass / fail**, 5.874 / 5.808 / 5.775 s; failed repeat minRockDist=68.6; clearance issue remains OPEN, not just suite load |
 | `DropPartTests.DropPart_drops_weapon_sectorwide_with_treasure_then_empty_pack_skips` | line 340 expected empty subject treasure list; one weapon treasure (TreasureId=3, Amount=0) remained after empty-pack phase | **pass / pass / pass**, 0.453 / 0.453 / 0.451 s; receive/reset race suspected: phase one waits for observer/enemy treasure, but not the subject's own treasure before clearing its list (lines 254–261, 325, 340). No drop behavior changed — **root-caused and fixed by P1008, see the 2026-11-14 entry below** |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | assertions passed, 11.725 s | **pass / pass / pass**, 3.476 / 3.286 / 3.286 s, below the original limit |
@@ -8713,7 +8751,7 @@ fresh process, one case per invocation unless stated.
 
 | Case | Runs A / B signature | Isolated repetitions |
 |---|---|---|
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail — lock 1.000 without the required partial tip, 37.8 / 38.2 s | **1 pass / 2 fail** (38 s, 38 s, 1 s): the OPEN partial-tip receipt failure ledgered since P933/P935/P966, not load |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | fail / fail — lock 1.000 without the required partial tip, 37.8 / 38.2 s | **1 pass / 2 fail** (38 s, 38 s, 1 s): the OPEN partial-tip receipt failure ledgered since P933/P935/P966, not load **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | pass / fail — the 32 s auto-seat boundary signature | **1 pass / 5 fail** over 6 isolated runs at load 11–21; the ledgered auto-seat receipt/simulation-clock boundary family (42 prior entries, also `fail/fail/fail` cohorts) |
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | pass / fail | **1 pass / 2 fail** (~0.6 s); ledgered roster-stint recommendation intermittency |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | pass / fail | **2 pass / 1 fail** (~1 s, 3 cases each); ledgered floating upper-bound signature (ledger records 1/2/0 and 2/1/0 cohorts) |
@@ -8810,7 +8848,7 @@ Every failed case was then selected in a fresh process three times.
 | Case | Fast signature | Three isolated repetitions |
 |---|---|---|
 | `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | allocation-counter reading non-zero under parallel load | **pass / pass / pass**, 13–14 ms |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | missing partial tip at lock 1.000, 37.9 s | **fail / pass / fail** (1 s passes, 38 s fails) — the recorded clean-base rate, existing receipt family |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | missing partial tip at lock 1.000, 37.9 s | **fail / pass / fail** (1 s passes, 38 s fails) — the recorded clean-base rate, existing receipt family **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | remote death latch missed in the sweep | **pass / pass / pass** |
 | `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | ledgered transit-receipt intermittency | **pass / pass / pass** |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5, 7) | `Assert.InRange` 7.0000000000000009 outside (6.9, 7] — the ledgered float upper-bound family | **pass / pass / pass** (all three cases per run) |
@@ -8846,7 +8884,7 @@ Every failed case was then run three times alone, one method per invocation:
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | ledgered roster-stint range | **pass / pass / pass**, 694–735 ms |
 | `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | ledgered receipt family, 36 s timeout | **pass / pass / pass**, 746–755 ms |
 | `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | ledgered receipt family | **pass / pass / pass**, ~1 s |
-| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | ledgered missing-partial-tip receipt, 38 s timeout | **0/1/0; 0/1/0; 0/1/0** — the persistent-alone family already recorded above (clean-base failing control in the P966 row), not load and unrelated to this task |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | ledgered missing-partial-tip receipt, 38 s timeout | **0/1/0; 0/1/0; 0/1/0** — the persistent-alone family already recorded above (clean-base failing control in the P966 row), not load and unrelated to this task **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 
 Timing-only offenders (assertions passed, over the calibrated limit under the
 sweep) are the same ledgered load-sensitive theory cases as before:

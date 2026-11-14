@@ -505,6 +505,12 @@ list in **reverse**.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and
   interest-tiered. `Server.Broadcast.cs`, `BroadcastSnapshot.cs`,
   `Server.InterestTiers.cs`.
+- **Lock-stepped pump (P1020)** — live-test pattern for a coalesced, latest-wins per-tick stream: tick the server
+  once, wait until the client world holds that tick's value, then tick again, so every edge the server crosses is
+  one the client observes (a free-running pump may deliver fewer frames than it ticks). Start the behaviour under
+  test only after the client is seated and in sync. `LockstepPumpUntil` in
+  `tests/Allegiance.ClientCore.Tests/MissileLockLiveTests.cs`; missile-lock tips are
+  `src/Allegiance.ClientCore/State/MissileLockFeedback.cs` (native `WinTrek/console.cpp:935-950`).
 - **Boarded source pose (P891)** — launch copies the parent's guaranteed
   `SET_CLUSTER` to its passengers (`src/Allegiance.Server/Server.Docking.cs`);
   `src/Allegiance.ClientCore/State/ClientWorld.cs` keeps child identity/cookie
