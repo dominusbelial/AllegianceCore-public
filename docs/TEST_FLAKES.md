@@ -4,6 +4,48 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1013 loadout geometry qualification — 2026-11-14 UTC
+
+The single full Fast sweep ran **14,313 cases in 609.6 s: 14,298 passed / 8 failed /
+7 skipped**. All **48 new P1013 cases passed**, with a maximum case time of
+**3.454 s**, below the calibrated **11.505 s** limit; all nine infrastructure
+checks passed. The same 48 cases passed three isolated runs (**144/0/0**).
+There were also 12 over-time executions in existing methods. The sweep remains
+**FAIL** and was not repeated.
+
+Every distinct failed or over-time method was run **three times alone**, with
+all theory rows included: **16 methods, 48 invocations, 166/8/0** total
+(Passed/Failed/Skipped). P1013 changes only game-layer layout/text-fit/touch
+geometry, its tests and debug proof; no Core, ClientCore, Server, network or
+simulation fixture source changed. The assertion signatures below are already
+ledgered; their underlying causes remain outside this story.
+
+| Method | Sweep observation | Isolated Passed/Failed/Skipped, three runs | Longest case seconds, three runs |
+|---|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never latched A's death after 2500 ticks; 4.930 s. Same assertion recurs alone. | **1/0/0; 0/1/0; 1/0/0** | 1.384 / 5.267 / 1.384 |
+| `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | Lock 1.000 without the partial tip; 37.931 s, also over time. Same assertion recurs alone. | **1/0/0; 0/1/0; 0/1/0** | 1.455 / 38.376 / 38.324 |
+| `P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | Passed; 15.640 s exceeded the limit. | **1/0/0; 1/0/0; 1/0/0** | 5.023 / 5.073 / 5.144 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | Passed; civ 25/35 took 16.979/13.748 s. | **3/0/0; 3/0/0; 3/0/0** | 5.613 / 5.714 / 5.729 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed; 14.482 s exceeded the limit. | **1/0/0; 1/0/0; 1/0/0** | 3.272 / 3.303 / 3.310 |
+| `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` | Skirmish/native sustained aim drift; 0.300 s. All four theory cases run per repeat. | **4/0/0; 4/0/0; 4/0/0** | 0.507 / 0.514 / 0.521 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed; civ 3/25 took 16.827/15.907 s. | **2/0/0; 2/0/0; 2/0/0** | 4.227 / 4.277 / 4.470 |
+| `ArmedProbeLiveTests.Armed_probe_spawns_hits_and_damages_enemy_with_ammo_decrement_live` | Enemy damage fraction stayed 1.0000; 33.485 s, also over time. | **1/0/0; 1/0/0; 1/0/0** | 0.593 / 0.597 / 0.617 |
+| `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` | 31.10 against [28,31]; 0.687 s. Isolated failures are the same boundary, 31.70 and 31.85. | **1/0/0; 0/1/0; 0/1/0** | 0.978 / 0.997 / 0.998 |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Target identity assertion at line 285; 1.048 s. | **1/0/0; 1/0/0; 1/0/0** | 0.768 / 0.746 / 0.738 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed; civ 3 took 13.558 s. | **10/0/0; 10/0/0; 10/0/0** | 2.017 / 2.026 / 1.896 |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | Delay 7 computed 7.0000000000000009 > 7; 0.201 s. Delay 5/7 floating upper-bound failures recur alone. | **1/2/0; 3/0/0; 2/1/0** | 0.410 / 0.598 / 0.737 |
+| `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable` | Passed; civ 201 took 12.494 s. | **10/0/0; 10/0/0; 10/0/0** | 1.535 / 1.270 / 1.487 |
+| `P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work` | Passed; 400 peers / index off / coalescing off took 14.794 s. | **8/0/0; 8/0/0; 8/0/0** | 1.593 / 1.642 / 1.488 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Passed; civ 5 took 20.284 s. | **10/0/0; 10/0/0; 10/0/0** | 4.826 / 5.797 / 4.710 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Destination SHIP_STATUS missing; collection held miner 8098 statuses; 0.018 s. | **1/0/0; 1/0/0; 1/0/0** | 0.289 / 0.287 / 0.290 |
+
+Passing isolated repeats do not clear the failed sweep. The four families that
+fail again alone remain open. All timing-only methods pass alone below the
+calibrated limit; missile-lock's repeated assertion failures also remain slow.
+No fixture was weakened or reclassified. Raw evidence:
+`.scratch/p1013/fast/`, `.scratch/p1013/retries/summary.json` and its per-run TRX
+files. Report: `docs/reports/LOADOUT_V2_LAYOUT_P1013.md`.
+
 ## P1004 lobby listing qualification — 2026-11-13 UTC
 
 The single full Fast sweep ran **14,167 cases in 561.9 s: 14,139 passed / 8 failed /

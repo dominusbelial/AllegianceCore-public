@@ -1201,6 +1201,17 @@ list in **reverse**.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,
   Game1.IntroScreen.cs, Game1.ConnectScreen.cs).
+- **Loadout V2 geometry (P1013)** — pure three-column rectangles, inline slot
+  expansion, row scroll offsets, text budgets and shared mouse/touch hit targets
+  in `src/Allegiance.ClientCore.Game/Rendering/LoadoutV2Layout.cs` and
+  `src/Allegiance.ClientCore.Game/Rendering/DockedTouchZones.cs`. Geometry is
+  identical for Classic and Modern and reserves the docked 84-pixel footer.
+  Native context: `WinTrek/load.cpp:785-790,797-820,2010-2043`; purchase/mount
+  rules remain in `src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs`.
+  Not yet wired into production (P1014/P1015 own renderer/flag/input).
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/LoadoutV2LayoutTests.cs`;
+  debug capture: `tools/p1013-layout-proof/Program.cs`;
+  report: `docs/reports/LOADOUT_V2_LAYOUT_P1013.md`.
 - **Screen input ownership (P1006)** — shared hangar/loadout view and hit-test gates in
   `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`; undock cleanup before modal
   returns and briefing visibility from the mission stage in
