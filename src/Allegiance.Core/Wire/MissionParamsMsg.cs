@@ -446,11 +446,51 @@ public sealed class MissionParamsMsg : IFedMessage
     /// 285-288,310-313,335-338,360-363,387-390,496-499,545-548</c>;
     /// Brawl/PinWheel/LargeSplit checks are commented out in native,
     /// <c>mapmakerigc.cpp:1695-1704,1810-1818,2243-2251</c>).
+    /// P1027 adds two deliberate port hardenings to the client leg that native
+    /// does not have (native's float checks are pure <c>&lt;</c>/<c>&gt;</c>
+    /// comparisons, which NaN fails — so NaN passes — and which ±Infinity
+    /// passes wherever the bound is open): a finite check on every float the
+    /// struct carries, and a 0..86400 s range on <c>dtGameLength</c>.
     /// </summary>
     public string? Invalid(bool bFromClient = false)
     {
         if (bFromClient)
         {
+            // P1027 — reject non-finite floats before any goal logic reads
+            // them (IsCountdownGame/IsProsperityGame treat NaN as "goal set",
+            // igc.h:1510-1548). Native's own float checks are pure </>
+            // comparisons (igc.h:1384-1390,1416-1428,1490), which NaN fails —
+            // so NaN passes all of them — and which ±Infinity passes wherever
+            // the bound is open. Without this a mission owner can store
+            // NaN/±Infinity goals via FM_CS_MISSIONPARAMS; the server
+            // re-broadcasts them in MISSIONDEF(38) and writes them into the
+            // lobby result report.
+            if (!float.IsFinite(FGoalTeamMoney))
+                return "GoalTeamMoney must be a finite number.";
+            if (!float.IsFinite(FStartingMoney))
+                return "StartingMoney must be a finite number.";
+            if (!float.IsFinite(FHe3Density))
+                return "He3Density must be a finite number.";
+            if (!float.IsFinite(NPlayerSectorTreasureRate))
+                return "PlayerSectorTreasureRate must be a finite number.";
+            if (!float.IsFinite(NNeutralSectorTreasureRate))
+                return "NeutralSectorTreasureRate must be a finite number.";
+            if (!float.IsFinite(DtGameLength))
+                return "GameLength must be a finite number.";
+            if (!float.IsFinite(FStartCountdown))
+                return "StartCountdown must be a finite number.";
+            if (!float.IsFinite(FRestartCountdown))
+                return "RestartCountdown must be a finite number.";
+            // P1027 — native range-checks dtGameLength nowhere (igc.h:1162:
+            // "Seconds till end of game, 0 == no limit"). Bound it to what the
+            // real producers make: 0 disables, the host-edit UI steps
+            // CountdownTimeValues 0..360 minutes (MissionSettingsForm.cs:72,193;
+            // artwork/newgamescreen.mdl:329, newgamescreen.cpp:1010) and the
+            // longest match the port itself hosts is a day (ServerConfig.cs:35
+            // MatchCapSeconds <= 86400).
+            if (DtGameLength < 0f || DtGameLength > 86400f)
+                return "GameLength must be between 0 and 86400.";
+
             if (NMaxPlayersPerTeam > 100 || NMaxPlayersPerTeam < 1)
                 return "Maximum number of players must be between 1 and 100.";
             if (IsNoWinningConditionsGame)
