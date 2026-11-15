@@ -8142,6 +8142,15 @@ tests; each was re-run 3× alone per the ledger rule. No product code changed
 - `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds`:
   pass / pass / fail — the known intermittent receipt/clock boundary [28,31]
   (recorded in P928/P931 sections). **Resolved by P1021** (see the P1021 section at the top).
+
+### 2026-11-14 — Claude Fast qualification after merging P1021 + P1018 (0917ac19)
+
+One full Fast run: **14,523 tests, 619.6 s, FAIL** (Core 2, ClientCore 1, MonoGame 2). `PackagingManifestTests` failed
+because P1018 names `loadoutpane.mdl` and five loadout button images; manifests regenerated → 3/3 pass. Repeated alone
+×3, all **3/3 pass**: `GameOverPlayersWireTests` rejoin stints (8.40 against [4, 8]), `P660NextMatchLiveTests` late
+rebuild countdown (14.90 against [14.94, 15.06]), `P909TrainingBindingsTests` production facilities
+(NullReferenceException under suite load only) and `P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live`
+(Muted vs Worse under suite load only). `LiveSideSelectTests` auto-seat passed (P1021).
 - `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over`:
   pass / pass / pass alone — the known receipt-ordering intermittency
   (line ~5043 above); it failed only inside the parallel sweep.

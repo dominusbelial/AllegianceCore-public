@@ -780,6 +780,7 @@ lizard09.ogg
 lizard10.ogg
 loading.mml
 loadout.mdl
+loadoutpane.mdl
 loadoutship.ogg
 lockedbmp.mdl
 logon.mdl

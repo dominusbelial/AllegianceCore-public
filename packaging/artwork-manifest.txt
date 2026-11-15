@@ -383,8 +383,11 @@ btnchangewing2.png
 btnchangewing3bmp.mdl
 btnchangewingbmp.mdl
 btnclosepanebmp.mdl
+btnconfirmchangebmp.mdl
+btndefaultbmp.mdl
 btndonate.png
 btndonatebmp.mdl
+btndrop2bmp.mdl
 btneventsplayzonebmp.mdl
 btnexitgamebmp.mdl
 btnexpandbmp.mdl
@@ -398,7 +401,9 @@ btnmission5bmp.mdl
 btnmission6bmp.mdl
 btnmission7bmp.mdl
 btnmission8bmp.mdl
+btnnextshipbmp.mdl
 btnokbmp.mdl
+btnpreviousshipbmp.mdl
 btnprevioustopicbmp.mdl
 btnsavepasswordbmp.mdl
 btnsignup2bmp.mdl
@@ -1493,6 +1498,7 @@ loadoutfrigate.mdl
 loadoutgaugebmp.mdl
 loadoutinclude.mdl
 loadoutlightfighter.mdl
+loadoutpane.mdl
 loadoutpanebmp.mdl
 loadoutrecovery.mdl
 loadoutscout.mdl
