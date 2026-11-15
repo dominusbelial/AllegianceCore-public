@@ -158,7 +158,21 @@ public sealed partial class Server
                 // a name+token match replays the join burst and this frame is
                 // done. With the feature off this is a constant false, so the
                 // path below is untouched.
-                if (_reconnectGraceEnabled && TryResumeParkedPeer(from, req))
+                //
+                // P1025 (R1 F8) — a connection that ALREADY OWNS A SHIP never
+                // resumes a parked seat. Native's logon is once per connection:
+                // "assert (pfm->fmid != FM_C_LOGONREQ); // shouldn't have a
+                // pfsPlayer yet if logging on" (FedSrv.CPP:4830-4831), and native
+                // has no resume flow at all (P813c is the port's experimental
+                // addition), so the reconnect-free model's answer is to REFUSE
+                // the resume rather than retire the seated ship to make room.
+                // Resuming would overwrite _peerShips[from] in
+                // CompleteJoinAndLaunch, leaving this connection's first ship in
+                // its sector owned by nobody and never parked — the P646 orphan.
+                // Refusing here costs no state: the parked entry stays for its
+                // owner, and the frame falls through to the P646 one-logon-per-
+                // connection refusal below (same rate-limited log).
+                if (_reconnectGraceEnabled && !_peerShips.ContainsKey(from) && TryResumeParkedPeer(from, req))
                     continue;
 
                 // P646 (review finding H3) — ONE LOGON PER CONNECTION. Native

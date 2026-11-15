@@ -24,6 +24,17 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     private const int MaxFrame = 16 * 1024 * 1024;
     private const int MaxKeys = 256;
     private const int MaxReorder = 4096;
+    // P1025 (R1 F5) — receive-side reassembly ceilings. A host admits inbound
+    // frames only up to TcpTransport.ServerInboundMaxFrame (64 KiB), so
+    // DefaultMaxReceiveBytes holds eight concurrent incomplete frames; the send
+    // queue's MaxBufferedBytes (32 MiB) was never a receive-side bound.
+    internal const int DefaultMaxReceiveBytes = 512 * 1024;
+    // One outstanding fragment set per stream key is the receive rule (a newer
+    // sequence supersedes the older assembly), so only the ordered window can
+    // hold many: the sender's congestion window is at most 256 x Mtu.
+    internal const int MaxAssemblies = 256;
+    private const long BestEffortAssemblyMs = 500;
+
     private enum Kind : byte { Hello = 1, Challenge, Confirm, Accept, Data, Ack, Ping, Pong, Close }
     private readonly ITransportSite _site;
     private readonly object _gate = new();
@@ -62,6 +73,19 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     public TimeSpan KeepAliveInterval { get; init; } = TimeSpan.FromSeconds(2);
     /// <summary>Per-peer absolute payload/reassembly memory ceiling.</summary>
     public int MaxBufferedBytes { get; init; } = 32 * 1024 * 1024;
+    /// <summary>P1025 (R1 F5) — per-peer ceiling on incomplete INBOUND
+    /// reassembly memory. Ignored by a client (which receives the server's large
+    /// frames and keeps the queue ceiling); always well under 1 MiB on a host.</summary>
+    public int MaxReceiveBytes { get; init; } = DefaultMaxReceiveBytes;
+    /// <summary>P1025 (R1 F5) — an incomplete reliable assembly is abandoned
+    /// after this long, so a lost fragment cannot pin memory for the life of a
+    /// keep-alive. Above the maximum retransmission RTO (3000 ms); tests shorten
+    /// it per instance.</summary>
+    public TimeSpan ReliableAssemblyTimeout { get; init; } = TimeSpan.FromSeconds(5);
+    /// <summary>P1025 (R1 F5) — the per-peer inbound reassembly ceiling. A host
+    /// uses its own small value; a client keeps the queue ceiling because it
+    /// receives the server's (up to 16 MiB) frames.</summary>
+    private int ReceiveCap => _host ? MaxReceiveBytes : MaxBufferedBytes;
     /// <summary>Pacing ceiling, including retransmissions; congestion control can reduce it.</summary>
     public int MaxBytesPerSecond { get; init; } = 2 * 1024 * 1024;
     public EgressAccounting? Egress { get; init; }
@@ -406,25 +430,48 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
         if (key != 0 && seq < p.Newest.GetValueOrDefault(key)) return;
         if (key != 0 && seq > p.Newest.GetValueOrDefault(key))
         {
-            p.AssemblyScratch.Clear();
-            foreach (var entry in p.Assemblies) if (entry.Key.Key == key) p.AssemblyScratch.Add(entry.Key);
-            foreach (var old in p.AssemblyScratch) { p.ReceiveBytes -= p.Assemblies[old].Data.Length; p.Assemblies.Remove(old); }
+            // P1025 (R1 F5, §4 lead "UDP assembly scan") — at most ONE assembly
+            // exists per stream key (seq < Newest is refused just above), so the
+            // one this sequence supersedes is an O(1) lookup. Walking every
+            // assembly here was O(#assemblies) per arrived record under the
+            // state lock: a cheap way to saturate the UDP worker.
+            var superseded = (Key: key, Seq: p.Newest.GetValueOrDefault(key));
+            if (p.Assemblies.Remove(superseded, out var older)) p.ReceiveBytes -= older.Data.Length;
             p.Newest[key] = seq;
         }
         var identity = (Key: key, Seq: seq);
         if (!p.Assemblies.TryGetValue(identity, out var assembly))
         {
-            if (p.ReceiveBytes + size > MaxBufferedBytes || p.Assemblies.Count >= MaxReorder) { Drop(p, "UDP reassembly cap"); return; }
-            assembly = new Assembly(size, count, greet, (record.Flags & 1) != 0, now);
+            // P1025 (R1 F5) — reserve only what has ARRIVED (this fragment's end
+            // offset), never the peer-declared frame size: a record that declares
+            // 64 KiB and delivers one 1144-byte fragment pins one fragment, not
+            // 64 KiB. The per-peer ceiling is the receive side's own (R1 F5),
+            // not the 32 MiB send-queue hard cap.
+            int reserve = index * Payload + d.Length;
+            if (p.ReceiveBytes + reserve > ReceiveCap || p.Assemblies.Count >= MaxAssemblies) { Drop(p, "UDP reassembly cap"); return; }
+            assembly = new Assembly(size, count, greet, (record.Flags & 1) != 0, now, reserve);
             p.Assemblies.Add(identity, assembly);
-            p.ReceiveBytes += size;
+            p.ReceiveBytes += reserve;
         }
-        if (assembly.Data.Length != size || assembly.Seen.Length != count || assembly.Greet != greet || assembly.Reliable != ((record.Flags & 1) != 0)) { Drop(p, "UDP inconsistent fragments"); return; }
+        if (assembly.Size != size || assembly.Seen.Length != count || assembly.Greet != greet || assembly.Reliable != ((record.Flags & 1) != 0)) { Drop(p, "UDP inconsistent fragments"); return; }
         if (!assembly.Seen[index])
         {
+            int end = index * Payload + d.Length;
+            if (end > assembly.Data.Length)
+            {
+                // Grow toward the fragments that actually arrive; the growth is
+                // charged to the same per-peer ceiling and refused here rather
+                // than at admission time. Doubling keeps the copies amortised.
+                int growTo = Math.Min(size, Math.Max(end, assembly.Data.Length * 2));
+                int added = growTo - assembly.Data.Length;
+                if (p.ReceiveBytes + added > ReceiveCap) { Drop(p, "UDP reassembly cap"); return; }
+                Array.Resize(ref assembly.Data, growTo);
+                p.ReceiveBytes += added;
+            }
             d.CopyTo(assembly.Data.AsSpan(index * Payload));
             assembly.Seen[index] = true;
             assembly.Remaining--;
+            assembly.LastProgress = now;
         }
         if (assembly.Remaining != 0) return;
         if (key == 0)
@@ -460,6 +507,20 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
         }
     }
 
+    /// <summary>P1025 (R1 F5) — whether an incomplete assembly has outlived its
+    /// window. Best-effort is measured from creation (the native 500 ms nonsequential
+    /// lifetime); a reliable assembly is measured from its last newly-received
+    /// fragment, so only a STALLED one expires (a large frame still arriving keeps
+    /// its reservation).</summary>
+    private bool AssemblyExpired(Assembly assembly, long now)
+        => now - (assembly.Reliable ? assembly.LastProgress : assembly.Created)
+           > (assembly.Reliable ? (long)ReliableAssemblyTimeout.TotalMilliseconds : BestEffortAssemblyMs);
+    /// <summary>P1025 (R1 F5) — the next moment <see cref="AssemblyExpired"/> can
+    /// turn true, for the worker's wake deadline.</summary>
+    private long AssemblyDeadline(Assembly assembly)
+        => (assembly.Reliable ? assembly.LastProgress : assembly.Created)
+           + (assembly.Reliable ? (long)ReliableAssemblyTimeout.TotalMilliseconds : BestEffortAssemblyMs) + 1;
+
     private void Tick(Peer p, long now)
     {
         if (now - p.LastReceive > IdleTimeout.TotalMilliseconds || (!_host && p.Closing && now > p.CloseDeadline) ||
@@ -472,8 +533,15 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             Drop(p, "UDP graceful close"); return;
         }
         if (now - p.LastSend >= KeepAliveInterval.TotalMilliseconds) { Control(p, Kind.Ping); p.LastSend = now; } // A failed send waits a full interval.
+        // P1025 (R1 F5) — EVERY incomplete assembly expires. Best-effort keeps
+        // the native 500 ms nonsequential lifetime (Messages.cpp:559-563);
+        // reliable gets the reorder window instead of never expiring, so a lost
+        // fragment can no longer be held for the life of a 30 s keep-alive. The
+        // reliable deadline measures NO PROGRESS (Assembly.LastProgress), so a
+        // legitimate large frame that is still arriving fragment by fragment
+        // keeps its assembly.
         p.AssemblyScratch.Clear();
-        foreach (var entry in p.Assemblies) if (!entry.Value.Reliable && now - entry.Value.Created > 500) p.AssemblyScratch.Add(entry.Key);
+        foreach (var entry in p.Assemblies) if (AssemblyExpired(entry.Value, now)) p.AssemblyScratch.Add(entry.Key);
         foreach (var key in p.AssemblyScratch) { p.ReceiveBytes -= p.Assemblies[key].Data.Length; p.Assemblies.Remove(key); }
         p.StreamScratch.Clear();
         foreach (var f in p.Streams.Values) if (!f.Reliable && now - f.Created > 500) p.StreamScratch.Add(f);
@@ -669,7 +737,14 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             if (_endpoints.TryGetValue(endpoint, out var peer)) peer.LastSend = Environment.TickCount64;
             return n == data.Length;
         }
-        catch (SocketException ex) when (ex.SocketErrorCode is SocketError.WouldBlock or SocketError.NoBufferSpaceAvailable or SocketError.ConnectionReset) { return false; }
+        // P1025 (R1 F4) — one refused destination is that peer's problem, never
+        // the listener's. Every SocketException here (EINVAL/EPERM/ENETUNREACH
+        // for an unverified return address, WouldBlock, a full conntrack table)
+        // means only "this datagram was not sent". Native parity: SendMessages
+        // discards the GenericSend HRESULT (_Utility/Messages.cpp:666-674), so a
+        // failed send never reaches the messaging loop. Only receive-side socket
+        // errors stay listener-fatal (Run, RunClient, ServiceClient).
+        catch (SocketException) { return false; }
     }
     private static void WriteMagic(Span<byte> data, Kind kind) { BinaryPrimitives.WriteUInt32LittleEndian(data, Magic); data[4] = (byte)kind; }
     private static IPEndPoint Normalize(IPEndPoint ep) => new(ep.Address.MapToIPv6(), ep.Port);
@@ -725,6 +800,18 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     }
     public IReadOnlyDictionary<DisconnectReason, int> DrainDisconnectCounts()
     { lock (_gate) { var result = new Dictionary<DisconnectReason, int>(_disconnectCounts); _disconnectCounts.Clear(); return result; } }
+    /// <summary>P1025 (R1 F5) test seam — the largest per-peer inbound
+    /// reassembly reservation (bytes actually reserved for arrived fragments)
+    /// and the largest concurrent incomplete assembly count, across peers.</summary>
+    internal (long Bytes, int Assemblies) SamplePeerReceive()
+    {
+        lock (_gate)
+        {
+            long bytes = 0; int count = 0;
+            foreach (var p in _peers.Values) { bytes = Math.Max(bytes, p.ReceiveBytes); count = Math.Max(count, p.Assemblies.Count); }
+            return (bytes, count);
+        }
+    }
     public (int Peers, int MaxOrderedPending, int MaxStreamPending, long MaxQueuedBytes, long TotalQueuedBytes, long MaxOldestGuaranteedMs) SamplePeerQueues()
     {
         lock (_gate)
@@ -796,12 +883,19 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
         public readonly long Created = Environment.TickCount64;
         public int NextFragment, Acked;
     }
-    private sealed class Assembly(int size, int count, bool greet, bool reliable, long now)
+    private sealed class Assembly(int size, int count, bool greet, bool reliable, long now, int reserve)
     {
-        public readonly byte[] Data = new byte[size];
+        public readonly int Size = size, Count = count;
+        /// <summary>Reassembly store, grown as fragments arrive (R1 F5): its
+        /// length is at most the highest byte offset received, never the
+        /// peer-declared <see cref="Size"/> up front.</summary>
+        public byte[] Data = new byte[reserve];
         public readonly bool[] Seen = new bool[count];
         public readonly bool Greet = greet, Reliable = reliable;
         public readonly long Created = now;
+        /// <summary>When a fragment was last newly stored (R1 F5): a reliable
+        /// assembly expires after a stall, not while it is still filling.</summary>
+        public long LastProgress = now;
         public int Remaining = count;
     }
     private sealed class Fragment(Frame frame, int index)

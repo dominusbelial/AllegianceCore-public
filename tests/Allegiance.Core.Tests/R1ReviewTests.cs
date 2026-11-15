@@ -219,7 +219,7 @@ public sealed class R1ReviewTests
     /// <summary>F4 — a send error other than WouldBlock/NoBufferSpace/ConnectionReset
     /// escapes RawSend and ends the UDP worker for everyone. The return address
     /// the OS refuses is simulated with the inbound-route test seam (port 0).</summary>
-    [Fact(Skip = "R1 finding F4 — pending fix")]
+    [Fact]   // P1025 — unskipped
     public void A_reply_the_OS_refuses_to_send_does_not_stop_the_UDP_listener()
     {
         var site = new NullSite();
@@ -292,7 +292,7 @@ public sealed class R1ReviewTests
     /// <summary>F8 — the reconnect resume runs before the one-logon-per-connection
     /// check, so a connection that already has a ship can take over a parked
     /// seat; its first ship stays in the sector with no owner (the P646 orphan).</summary>
-    [SkippableFact(Skip = "R1 finding F8 — pending fix")]
+    [SkippableFact]   // P1025 — unskipped
     public void A_seated_connection_cannot_resume_a_parked_seat()
     {
         using var w = new Booted(c => c.Reconnect = new ReconnectConfig { Enabled = true, GraceSeconds = 30 });
