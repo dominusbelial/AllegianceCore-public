@@ -599,6 +599,16 @@ list in **reverse**.
   Native: `FedSrv/fsmission.cpp:566,904-921,1120-1145,791-831,4583-4590`;
   proofs: `tests/Allegiance.Core.Tests/P1026SideDepartureTests.cs`,
   `docs/parity/p1026-side-departure.csv`.
+- **Initial squad side identity (P1033)** — initial selection carries its
+  verified joining peer into `src/Allegiance.Server/Server.Lobby.cs`
+  (`TryJoinSideCore`) and `src/Allegiance.Server/Server.Squads.cs`
+  (`EstablishSideSquadFromLeader`) before ship registration;
+  `src/Allegiance.Server/Server.SideIntegrity.cs` checks membership on explicit
+  and auto-picks. Squad-change boots include verified null/empty membership
+  lists, retaining the existing anonymous/bot exemption. Native:
+  `FedSrv/fsmission.cpp:684-686,1617-1641,4708-4721`;
+  proof: `tests/Allegiance.Core.Tests/P1033SquadSideTests.cs`,
+  report: `docs/reports/R1B_SQUAD_SIDES_P1033.md`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
 - **TCP small-write pressure (P898)** — fixed 8 KiB send buffers can exhaust

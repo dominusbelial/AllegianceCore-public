@@ -4,6 +4,38 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1033 gate observations — 2026-11-15 UTC
+
+The single full Fast sweep completed in **579.4 s** with **14,614 passed /
+2 failed / 17 skipped**. Six executions exceeded its calibrated **12.505 s**
+limit, including the failed native-miner case. This is a failed full-suite gate.
+All 22 new P1033 cases passed in that sweep and three isolated repeats; the
+194 targeted existing regression cases also passed.
+
+The two assertion signatures are already ledgered: P739's one-ULP floating
+upper bound and the P817 native-miner fixture's ore remaining zero at 30 s.
+None of the seven methods below enables the changed squad behavior. Timer,
+miner, profile, loadout, publisher-index code and their assertions are unchanged.
+Each failed or over-limit display name was run three times in its own test
+process, with artwork and no build, using its exact method plus display-argument
+filters. Each process ran exactly one case. All **21 isolated executions passed**
+and were below the calibrated limit; this does not turn the full sweep green.
+
+| Execution | Full-sweep observation | Isolated runs (Passed/Failed/Skipped) | Isolated seconds |
+| --- | --- | --- | --- |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | PASS; over limit (13.436 s) | 1/0/0; 1/0/0; 1/0/0 | 3.067 / 3.117 / 3.112 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | PASS; over limit (13.254 s) | 1/0/0; 1/0/0; 1/0/0 | 3.333 / 3.166 / 3.310 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | PASS; over limit (15.695 s) | 1/0/0; 1/0/0; 1/0/0 | 2.969 / 2.914 / 2.919 |
+| `P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)` | PASS; over limit (13.408 s) | 1/0/0; 1/0/0; 1/0/0 | 1.293 / 1.279 / 1.295 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | PASS; over limit (15.115 s) | 1/0/0; 1/0/0; 1/0/0 | 1.389 / 1.392 / 1.388 |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | FAIL: ore 0 (30.272 s; also over limit) | 1/0/0; 1/0/0; 1/0/0 | 1.181 / 1.742 / 1.634 |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | FAIL: one-ULP boundary (5.0000000000000009 > 5) | 1/0/0; 1/0/0; 1/0/0 | 0.568 / 0.557 / 0.597 |
+
+Evidence: ignored `.scratch/p1033/fast-suite/fast/summary.json`,
+`.scratch/p1033/isolation/results.json` and per-process TRX/logs under
+`.scratch/p1033/isolation/`. Report: `docs/reports/R1B_SQUAD_SIDES_P1033.md`.
+No unrelated product/test fix or limit adjustment is included.
+
 ## P1026 gate observations — 2026-11-15 UTC
 
 Final reviewed Fast result: **14,529 passed / 2 failed / 20 skipped**, 568.3 s.
