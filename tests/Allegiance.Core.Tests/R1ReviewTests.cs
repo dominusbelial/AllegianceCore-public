@@ -168,7 +168,7 @@ public sealed class R1ReviewTests
     /// <c>shipIGC.h:487-530</c>: no station, no cluster, no parts). The port
     /// leaves it docked where it was, so the player is now an enemy inside the
     /// old side's base and can buy and launch from it.</summary>
-    [SkippableFact(Skip = "R1 finding F2 — pending fix")]
+    [SkippableFact]
     public void A_player_who_switches_sides_mid_game_is_not_left_docked_in_the_old_sides_base()
     {
         using var w = new Booted();
@@ -186,7 +186,7 @@ public sealed class R1ReviewTests
     /// <summary>F2 — with defections disabled, QUIT_SIDE followed by POSITIONREQ
     /// still changes sides: the team-lobby exemption is all that is checked
     /// (native also remembers the last side, <c>fsmission.cpp:4583-4585</c>).</summary>
-    [SkippableFact(Skip = "R1 finding F2 — pending fix")]
+    [SkippableFact]
     public void No_defections_cannot_be_bypassed_by_quitting_to_the_team_lobby_first()
     {
         using var w = new World(); w.Mission.Stage = MissionStage.Started;

@@ -10,7 +10,8 @@ public sealed partial class Server
     // Native CheckPositionRequest: FedSrv/fsmission.cpp:4575-4649.
     // The P854 invitation gate (fsmission.cpp:4605) and squads match are the parts
     // that consult player identity (callsign + active squads), so those thread
-    // name/squads into the core check; the rest has no player state beyond the ship.
+    // name/squads into the core check. P1026 also consults the player's last side,
+    // including old-player memory before a reconnect has an assigned ship.
     private DelPositionReqReason? CheckPositionRequest(Mission mission, short sideId, Ship? ship)
         => CheckPositionRequestCore(mission, sideId, ship,
             ship is not null && ConnOf(ship) is { } conn && HarnessGrantFor(conn) is not null,
@@ -40,16 +41,16 @@ public sealed partial class Server
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
         if (side is null || !side.Active) return DelPositionReqReason.SideGone;
         var game = GameSettingsSafe(mission);
-        // Native's two no-defections gates (fsmission.cpp:4583-4590) both
-        // carry an explicit SIDE_TEAMLOBBY exemption (branch 1: lastSide !=
-        // TEAMLOBBY; branch 2: psideCurrent != TEAMLOBBY) — a player parked in
-        // the team lobby (the port's SideTeamLobby park, P852) may always
-        // request a side. Only the current-side branch (4587-4589) is portable:
-        // the port keeps no GetLastSide() state (fsmission.cpp:4584-4585's
-        // last-side branch is unportable — stated in the P852 report).
-        if (mission.Stage == MissionStage.Started && !game.AllowDefections
-            && ship?.SideId is { } currentSide && currentSide != SideTeamLobby && currentSide != sideId)
-            return DelPositionReqReason.NoDefections;
+        // Native checks remembered last side even after a quit to the lobby,
+        // then refuses requests from players still on a real side (:4583-4590).
+        short lastSide = ship is not null ? LiveOf(ship)?.LastSideId ?? ship.SideId ?? SideTeamLobby
+            : _oldPlayerLastSideIds.GetValueOrDefault((mission, PlayerInvitationName(peer, name)), SideTeamLobby);
+        if (mission.Stage == MissionStage.Started && !game.AllowDefections)
+        {
+            if (lastSide != SideTeamLobby && lastSide != sideId)
+                return DelPositionReqReason.NoDefections;
+            if (ship?.SideId is >= 0) return DelPositionReqReason.NoDefections;
+        }
         if (mission.LockSides) return DelPositionReqReason.SidesLocked;
         if (mission.Stage == MissionStage.Over) return DelPositionReqReason.ServerPaused;
         // P854 — native per-side invitation gate (fsmission.cpp:4605): in a private

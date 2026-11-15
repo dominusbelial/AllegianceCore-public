@@ -3189,12 +3189,18 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     /// <exception cref="InvalidOperationException">This ship is not boarded
     /// (<see cref="ParentShip"/> null) or has no turret mount
-    /// (<see cref="TurretId"/> null) — a promote is only valid for a genuine
-    /// boarded turret gunner.</exception>
-    public void Promote()
+    /// (<see cref="TurretId"/> null). The server's departure overload also
+    /// supports native observer promotion (fsmission.cpp:911).</exception>
+    public void Promote() => Promote(allowObserver: false);
+
+    // RemovePlayerFromSide promotes the first child even when it is an observer
+    // (FedSrv/fsmission.cpp:904-921; Igc/shipIGC.cpp:3510-3515).
+    internal void Promote(bool allowObserver)
     {
+        if (!allowObserver && TurretId is null)
+            throw new InvalidOperationException("cannot promote an observer (no turret mount)");
         var parent = ParentShip ?? throw new InvalidOperationException("cannot promote a ship with no parent");
-        var turretid = TurretId ?? throw new InvalidOperationException("cannot promote an observer (no turret mount)");
+        var turretid = TurretId;
 
         // 1. Gunner leaves the parent (SetParentShip(NULL), shipIGC.cpp:3513).
         parent.RemoveChildShip(this);

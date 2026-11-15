@@ -44,7 +44,11 @@ public sealed partial class Server
     /// crosses the dirty check and gets broadcast. Forward alone misses roll
     /// (rotation about the ship's own forward axis leaves forward unchanged),
     /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0, uint ResumeToken = 0);
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0, uint ResumeToken = 0)
+    {
+        // CFSPlayer::m_lastSide survives Reset(false), fsship.h:434-446.
+        public short LastSideId { get; set; } = Ship.SideId is >= 0 ? Ship.SideId.Value : SideTeamLobby;
+    }
 
     /// <summary>
     /// Load the config file, then <see cref="Boot(ServerConfig)"/>.
@@ -2527,6 +2531,7 @@ public sealed partial class Server
                     live.PlayerScore.TimePlayed + (float)Math.Max(0.0, _simNow - live.ConnectSimTime));
             _oldPlayerScores[(mission, name)] = live.PlayerScore;
             _oldPlayerSideIds[(mission, name)] = departedSideId;   // P844/SIM-0527 — OldPlayerInfo.sideID
+            _oldPlayerLastSideIds[(mission, name)] = live.LastSideId; // fsmission.cpp:2643
         }
 
         var ship = live.Ship;
@@ -2551,6 +2556,8 @@ public sealed partial class Server
     /// regardless of who paid for it.</summary>
     private long ShipFullValue(Ship ship)
     {
+        // Native boarded ships have no base hull or parts (shipIGC.cpp:3619-3633).
+        if (ship.ParentShip is not null) return 0;
         long value = ship.HullType.Price;
         foreach (var p in ship.Parts) value += PartValue(p.Type, p.Amount);
         foreach (var p in ship.CargoHold) if (p is { } part) value += PartValue(part.Type, part.Amount);

@@ -114,6 +114,8 @@ public sealed class P866RequestPositionSwitchTests
         var switcherShip = switcherLive.Ship;
         switcherShip.Flag = 1;              // carrying side 1's flag
         switcherLive.Wallet.Money = 250;    // money that must flow to the old side
+        long switcherShipValue = switcherShip.HullType.Price
+            + switcherShip.Parts.Sum(p => (long)p.Type.Price);
         observer.ResetPaydays();
         observer.ResetGainFlags();
         observer.ResetLeadershipSignals();   // clears the recorded QUIT_SIDE feed too
@@ -138,7 +140,8 @@ public sealed class P866RequestPositionSwitchTests
 
         // 3. Money to the old side, immediate payday to the remaining side-mate.
         Assert.Equal(0, switcherLive.Wallet.Money);          // pfsPlayer->SetMoney(0)
-        Assert.Contains(observer.Paydays, p => p.DMoney == 250);
+        // P1026: Reset(false) surrenders the hull too (fsmission.cpp:1120).
+        Assert.Contains(observer.Paydays, p => p.DMoney == 250 + switcherShipValue);
 
         // 4. Leader succession: the remaining player now leads the old side.
         Assert.Equal(observerId, mission.Sides.First(s => s.Id == 0).LeaderShipId);

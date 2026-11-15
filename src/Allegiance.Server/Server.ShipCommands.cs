@@ -2631,7 +2631,8 @@ public sealed partial class Server
             side = mission.Sides.FirstOrDefault(s => s.Id == sd);
             foreach (var sec in mission.Sectors)
                 foreach (var st in sec.Stations)
-                    if (st.StationId == dockId && mission.Core.StationTypes.TryGetValue(st.StationTypeId, out var dt))
+                    if (st.StationId == dockId && st.SideId == sd
+                        && mission.Core.StationTypes.TryGetValue(st.StationTypeId, out var dt))
                     {
                         stationType = dt;
                         break;

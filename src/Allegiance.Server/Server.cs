@@ -72,6 +72,10 @@ public sealed partial class Server : IDisposable
     private readonly Dictionary<(Mission Mission, string Name), short> _oldPlayerSideIds =
         new(OldPlayerKeyComparer.Instance);
 
+    // OldPlayerInfo.lastSide is distinct from the scoring side (fsmission.cpp:2643).
+    private readonly Dictionary<(Mission Mission, string Name), short> _oldPlayerLastSideIds =
+        new(OldPlayerKeyComparer.Instance);
+
     /// <summary>P844b/SIM-0526 — missions whose per-player scores have been
     /// finalized by <see cref="FinalizeMissionScores"/> (which folds the final
     /// open stint into each <c>PlayerScore.TimePlayed</c>). The game-over roster
