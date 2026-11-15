@@ -1,3 +1,4 @@
+using System.Reflection;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -346,6 +347,16 @@ public class LiveLogoffTests
         Assert.True(server.TryJoinSide(
             server.Ships.First(s => s.Ship.Id == lvId).Ship,
             server.Missions[0].Sides[1].Id));
+        // P1026: a running side switch now docks at the NEW side's base.
+        // Restore this test's same-sector observer precondition explicitly;
+        // the sector-scoped logoff contract and all assertions stay the same.
+        var observingShip = server.Ships.First(s => s.Ship.Id == obId).Ship;
+        var departureSector = server.Ships.First(s => s.Ship.Id == lvId).Ship.Sector!;
+        typeof(Srv).GetMethod("MoveShipToSector", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [observingShip, departureSector, false]);
+        typeof(Srv).GetMethod("UpdatePeerSectorSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(server, [observingShip, departureSector]);
+        Assert.Same(departureSector, observingShip.Sector);
         PumpUntil(server, () => false, 40);   // flush
 
         leaver.SendLogoff();

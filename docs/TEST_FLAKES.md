@@ -4,6 +4,78 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1026 gate observations — 2026-11-15 UTC
+
+Final reviewed Fast result: **14,529 passed / 2 failed / 20 skipped**, 568.3 s.
+The remaining failed assertions were the mining-receipt and remote-death tests
+below. Five passing executions exceeded the calibrated 11.545 s limit; all were
+among the exact-name reruns documented here. Task cases and the corrected logoff
+fixture passed. This records an unsuccessful full-suite gate, not an all-green run.
+
+The preliminary full Fast sweep reported these existing unrelated failures. None
+of these assertions exercises side departure. Each was rerun three times with its exact
+method filter in its own test process, with artwork and no build. Product code
+and assertions for these tests were left unchanged. Logs are retained in the
+ignored `.scratch/p1026/` directory; final sweep results are in the P1026 report.
+
+| Test | Full-sweep observation | Three isolated reruns (P/F/S each) |
+| --- | --- | --- |
+| `P994GunfireBatchTests.Record_build_has_no_steady_path_allocations` | 2,784 bytes allocated against zero; existing allocation-observation family | 1/0/0; 1/0/0; 1/0/0 |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never saw A's death / IsDead never latched after 2,500 ticks; existing receipt family | 1/0/0; 1/0/0; 1/0/0 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 8.40 s against [4,8]; existing simulation-clock/receipt family | 1/0/0; 1/0/0; 1/0/0 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Two queued ASTEROID_MINED reports after the capacity receipt check; existing mining family | 1/0/0; 1/0/0; 1/0/0 |
+| `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | NPC diverter did not reach and rescue the pod within the pump bound | 1/0/0; 1/0/0; 1/0/0 |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | 4.623-unit pose difference at tick 38 in the second sweep; existing independent-rollout family | 1/0/0; 1/0/0; 1/0/0 |
+
+
+The preliminary sweep also failed `LiveLogoffTests.An_observing_peer_witnesses_loggedoff_ship_delete`
+three times alone. This was a task-related fixture incompatibility, not ledgered as
+an unrelated flake: it switched the leaver's side and assumed its sector stayed
+unchanged. P1026 now correctly docks that player at the new side's base. The fixture
+explicitly restores its same-sector observer setup; all original logoff and migration
+assertions remain. The corrected class is repeated three times in the P1026 report.
+
+
+The preliminary sweep also exceeded its calibrated 11.563-second Fast limit in
+nine otherwise-passing executions. Each exact display name passed three isolated
+reruns (1/0/0 each); measured times follow. No test limit or assertion was changed.
+
+| Execution | Sweep seconds | Three isolated durations (seconds) |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)` | 14.975 | 7.216 / 4.951 / 4.928 |
+| `Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 18.290 | 3.286 / 3.327 / 3.401 |
+| `Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 18.586 | 3.111 / 3.180 / 3.235 |
+| `Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection` | 11.577 | 5.200 / 5.105 / 5.091 |
+| `Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 15.792 | 3.559 / 3.511 / 3.533 |
+| `Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)` | 13.473 | 5.044 / 5.182 / 5.124 |
+| `Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable(civ: 201)` | 11.876 | 0.747 / 0.742 / 0.738 |
+| `Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)` | 12.826 | 1.677 / 1.923 / 1.704 |
+| `Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | 15.188 | 3.201 / 2.982 / 3.065 |
+
+The second sweep added two timing-only observations (its calibrated limit was
+11.537 seconds); both also passed three exact-display-name reruns (1/0/0 each).
+
+| Execution | Sweep seconds | Three isolated durations (seconds) |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 12.364 | 1.687 / 1.722 / 1.679 |
+| `Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)` | 11.829 | 1.419 / 1.410 / 1.438 |
+
+`P700ShowcaseLiveTests.P924_swapped_showcase_never_parks_with_target_for_five_seconds`
+missed its objective-arrival count in the supplemental bot batch (26 passed / 1
+failed / 1 skipped). Three exact-method reruns with unchanged inputs/assertions:
+
+| Run | P/F/S | Observation |
+| --- | --- | --- |
+| 1 | 0/1/0 | 23/30 reached at 480.1 s; needs 24. Longest parked-with-target 2.004 s; 4,942 shots / 1,878 hits / 11 kills. |
+| 2 | 1/0/0 | 24/30 reached at 346.7 s; longest parked-with-target 0.706 s; 5,217 shots / 1,919 hits / 14 kills. |
+| 3 | 1/0/0 | 24/30 reached at 423.9 s; longest parked-with-target 1.904 s; 3,965 shots / 1,629 hits / 12 kills. |
+
+Same longstanding P700/P924 arrival-count family (see the existing P822/P817
+history below). All three traces had zero QUIT_SIDE broadcasts and zero purchase
+precondition refusals; the P1026 reset path was not exercised. The opt-in full P660
+rotation proof subsequently passed, as did SC4, side-switch/tech synchronization,
+and the supplemental skirmish cases. No deadline/count assertion was relaxed.
+
 ## P1021 side-select auto-seat test — RESOLVED — 2026-11-14 UTC
 
 `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` is **closed**; every row below

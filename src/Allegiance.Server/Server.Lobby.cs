@@ -710,6 +710,8 @@ public sealed partial class Server
             _oldPlayerScores.Remove(k);
         foreach (var k in _oldPlayerSideIds.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
             _oldPlayerSideIds.Remove(k);
+        foreach (var k in _oldPlayerLastSideIds.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
+            _oldPlayerLastSideIds.Remove(k);
         _scoresFinalized.Remove(mission);   // P844b/SIM-0526 — the finalized marker dies with the mission
         // P884b — retire every per-WORLD, ship-keyed cache of THIS world (the
         // P884 latches, HUD-17's Detected baseline, native's per-ship m_atu and
@@ -2419,11 +2421,10 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// <item><b>QUIT_SIDE</b> (<c>:1130-1137</c>) — whole mission, with the native
     /// reason (QSR_SwitchingSides for a switch).</item>
     /// <item><b>Money</b> (<c>:1042-1068,1141-1145</c>) — the leaver's wallet is
-    /// captured and zeroed, then credited to the old side's treasury with an
-    /// immediate payday once the leaver is off the side. The ship-value leg is
-    /// not applied: this port's side-quit keeps the ship alive (native resets and
-    /// re-seats the player, losing the hull to them), so crediting its value too
-    /// would mint credits.</item>
+    /// captured with the surrendered ship value and zeroed, then credited to the
+    /// old side with an immediate payday after the ship is reset and parked.</item>
+    /// <item><b>Reset(false)</b> (<c>:1139</c>) — detach from station/sector,
+    /// strip hardware and commands, and reset to a lifepod</item>
     /// <item><b>Team-lobby park</b> — <c>pfsPlayer-&gt;SetSide(SIDE_TEAMLOBBY)</c>
     /// (<c>:1140</c>): the ship is off its old side before the caller re-seats it,
     /// which is also what makes the immediate payday exclude the leaver (P847).</item>
@@ -2436,20 +2437,34 @@ private void CompleteStartCountdown(Mission mission, double now)
         LiveShip? live = LiveOf(ship);
         // :875-893 — flag drop, before the ship leaves the side.
         if (live is not null) DropFlagOnSideDeparture(mission, live, oldSideId);
+        // Native promotes the first child, including observers, BEFORE valuation
+        // (fsmission.cpp:904-921). The old pilot then owns no hardware.
+        if (mission.Stage is MissionStage.Started or MissionStage.Starting)
+            PromotePassengerOnSideDeparture(ship);
         HandleLeaderSuccession(ship);
+        if (live is not null) RePointDonationsAfterDeparture(mission, live, oldSideId);
+        if (live is not null)
+            live.LastSideId = mission.Stage == MissionStage.Started ? oldSideId : SideTeamLobby;
         long payday = 0;
         if (live is not null)
         {
             payday = mission.Stage is MissionStage.Started or MissionStage.Starting
-                ? Math.Max(0, live.Wallet.Money) : 0;
+                ? (long)live.Wallet.Money + ShipFullValue(ship) : 0;
             live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068
         }
         // Native quitter Reset(false) clears all command slots before SetSide
         // (FedSrv/fsmission.cpp:1139-1143; Igc/shipIGC.h:503-506).
-        // The helper is inert for ordinary multiplayer missions.
-        ship.RetireTrainingCommands();
-        ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
+        if (mission.Stage is MissionStage.Started or MissionStage.Starting)
+        {
+            if (live is not null) SetAutoDonate(live, null, 0, bSend: false);
+            _loadoutCommandDepth++;
+            try { ship.ResetForSideDeparture(); }
+            finally { _loadoutCommandDepth--; }
+        }
+        else ship.RetireTrainingCommands();
+        ship.SideId = SideTeamLobby;
+        OnShipSideChanged(ship);
         // P864d — a peer still on the side-select screen reads the SIDE_ROSTER
         // snapshot, not the mission-group QUIT_SIDE relay (pending peers are not
         // in _peerShips). Native has no such stage — a joining player is already a
@@ -3308,13 +3323,9 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// PickNewSide fsmission.cpp:4454-4524). Re-seat rides
     /// <see cref="TryJoinSide"/>'s JOIN_SIDE / SET_TEAM_LEADER /
     /// SET_MISSION_OWNER announcements exactly as native's AddPlayerToSide.
-    /// <para><b>Fidelity notes.</b> The banned-mask clear and SetLastSide are
-    /// represented in this port by parking the ship on <see cref="SideTeamLobby"/>
-    /// (-2): there is no separate banned-side-mask state and no GetLastSide()
-    /// state (both documented n/a), so "clear banned mask + set last side to
-    /// lobby" collapses to the park itself — the observable native effect (the
-    /// player is in the lobby, may re-request any side, and is exempt from the
-    /// no-defection gate). LockSides is deliberately NOT consulted:
+    /// <para><b>Fidelity notes.</b> Flushes explicitly clear LastSideId, as native
+    /// does (fsmission.cpp:5112,5182). Banned masks remain unrepresented.
+    /// LockSides is deliberately NOT consulted:
     /// RandomizeSides is a privileged owner-only mass reassignment and the P195
     /// decision (reaffirmed by P864, tested by
     /// Randomize_teams_bypasses_lock_sides) is that it bypasses the lock. AFK = a
@@ -3392,8 +3403,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// native RemovePlayerFromSide), broadcasting QUIT_SIDE. Leaders stay and
     /// anchor their side (GetLeader(sideID) != pfsPlayer, fsmission.cpp:5109-5112
     /// / 5178-5182). Already-lobby ships are skipped. The banned-mask clear +
-    /// SetLastSide(lobby) collapse to the park itself (see <see cref="RebalanceSides"/>
-    /// fidelity note).</summary>
+    /// SetLastSide(lobby) clears the remembered side (fsmission.cpp:5112,5182).</summary>
     private void FlushNonLeadersToLobby(Mission mission, QuitSideReason reason)
     {
         int flushed = 0;
@@ -3406,6 +3416,8 @@ private void CompleteStartCountdown(Mission mission, double now)
             if (sideId == SideTeamLobby) continue;                              // already in the lobby
             if (IsSideLeader(mission, ship)) continue;                          // leaders never flush
             MoveToTeamLobby(mission, ship, reason);
+            // Privileged flushes clear lastSide as well (fsmission.cpp:5112,5182).
+            kv.Value.LastSideId = SideTeamLobby;
             flushed++;
         }
         Console.WriteLine($"[teamlobby] flushed {flushed} non-leader player(s) to SIDE_TEAMLOBBY ({(int)reason} {reason}) (fsmission.cpp:5097-5117,5173-5185)");
@@ -3947,6 +3959,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
 
         ship.SideId = newSideId;
+        if (LiveOf(ship) is { } joinedLive) joinedLive.LastSideId = newSideId;
         // P991 — a real side change invalidates every status copy about this ship
         // and, for a seated peer, the picture that peer holds (see
         // OnShipSideChanged). Gate-off is a no-op, so today's wire is untouched.
@@ -4013,6 +4026,12 @@ private void CompleteStartCountdown(Mission mission, double now)
         // stores this CREATE_BUCKETS under that new side.
         if (oldSideId is { } prev && prev != newSideId && ConnOf(ship) is { } sideConn)
             SendSideTechToPeer(sideConn, targetSide);
+
+        // AddPlayerToSide docks the reset player at GetBase(pside) and sends
+        // the new side's world before ENTER_GAME (fsmission.cpp:736,791-831).
+        if (announce && oldSideId is not null && oldSideId != newSideId
+            && mission.Stage is MissionStage.Started or MissionStage.Starting)
+            DockSideJoiner(ship, mission, targetSide);
 
         // P852 — native RemovePlayerFromSide's readiness tail for the side the
         // switcher LEFT: `else CheckForSideAllReady(psideOld)`
@@ -4219,6 +4238,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // fsmission.cpp:378-401: kills/deaths/ejections/score carry over), and
         // the cache entry is consumed (native deletes the OldPlayerLink in
         // AddPlayerToSide, fsmission.cpp:572-577).
+        short lastSide = _oldPlayerLastSideIds.GetValueOrDefault((mission, req.CharacterName ?? ""), ship.SideId ?? SideTeamLobby);
         var playerScore = TryTakeOldPlayerScore(mission, req.CharacterName) ?? new PlayerScore();
 
         // Native fresh seats enter the hangar (fsmission.cpp:791-796).
@@ -4226,7 +4246,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // An explicitly replaced test hook still owns its placement/state.
         if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
             DockInitialLoadout(ship, sector);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), playerScore, new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), playerScore, new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow) { LastSideId = lastSide };
     }
 
     /// <summary>P841 — consume the cached old-player score for
@@ -4244,6 +4264,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         if (string.IsNullOrEmpty(characterName)) return null;
         if (!_oldPlayerScores.Remove((mission, characterName), out var score)) return null;
+        _oldPlayerLastSideIds.Remove((mission, characterName));
         _oldPlayerSideIds.Remove((mission, characterName));   // P844 — the side id dies with the entry
         return score;
     }
@@ -4611,6 +4632,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // Native CFSMission::SendMissionInfo is scoped to the joining player's
         // mission (FedSrv/fsmission.cpp:4108-4341), including goals/briefing.
         var goalMission = live.Ship.Mission ?? throw new InvalidOperationException("joined ship has no mission");
+        if (live.Ship.SideId is >= 0) live.LastSideId = live.Ship.SideId.Value;
         // P813c — a RESUMED seat (reconnect grace) keeps its ship and its
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
@@ -5197,160 +5219,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // P48: cached once (mission-wide, never changes) rather than
         // re-encoded per peer/per resend -- also reused by
         // BroadcastShipStates' periodic refresh below.
-        var clusterInfo = ClusterInfo.FromSectors(goalMission.Sectors);
-        if (!_clusterInfoBytes.TryGetValue(goalMission.Cookie, out var clusterInfoBytes))
-            _clusterInfoBytes[goalMission.Cookie] = clusterInfoBytes = clusterInfo.Encode();
-        SendPeer(from, FedPacket.Pack(new[] { clusterInfoBytes }));
-        _lastClusterInfoTick[from] = TickIndex;
-        Console.WriteLine($"[clusterinfo] peer {from} '{ConsoleText(req.CharacterName)}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
-
-        // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
-        // to the client. Placement (P33, moved here from right
-        // after JOINED_MISSION): the PLAYERINFO send just above
-        // moves the local player off SIDE_TEAMLOBBY onto its real
-        // side. On the native client that runs
-        // BaseClient::AddPlayerToSide (clintlib.cpp:4101), which —
-        // because this is the player's OWN PlayerInfo
-        // (pPlayerInfo == m_pPlayerInfo) — calls
-        // BaseClient::OnQuitSide() first (clintlib.cpp:4112-4115,
-        // matching the "leaving SIDE_TEAMLOBBY" half of the
-        // transition even on the very first join). OnQuitSide
-        // unconditionally nukes every registered cluster
-        // (clintlib.cpp:3781-3783: SetViewCluster(NULL);
-        // m_pCoreIGC->ResetMission(), which iterates
-        // GetClusters() and Terminate()s every one). Exporting
-        // clusters BEFORE PLAYERINFO (the original placement)
-        // meant they were all silently wiped moments later —
-        // confirmed directly via native P33dbg instrumentation
-        // (a live cluster-count probe read 13 right after the
-        // exports, then 0 by the time SET_CLUSTER ran) — which is
-        // what made m_pCoreIGC->GetCluster(sectorID)
-        // (appmsg.cpp:1006) return NULL and crash the very next
-        // line (pcluster->GetLastUpdate(), appmsg.cpp:1041, no
-        // null check) before pship->SetCluster(pcluster) could
-        // ever run — the actual, final blocker behind flyingF()
-        // (clintlib.h:1198) never becoming true. Sending the
-        // exports after PLAYERINFO's OnQuitSide instead means
-        // there is nothing left to wipe. We export ALL sectors
-        // (the reference approach, a trivial loop) rather than
-        // just the peer's starting sector, so the client can
-        // resolve any cluster id a later message references and
-        // there is no "which one" selection logic to get wrong;
-        // ~92 bytes × N sectors is negligible locally. Must land
-        // BEFORE SET_CLUSTER, below.
-        var clusterExports = goalMission.Sectors
-            .Select(s => ExportCluster.FromSector(s).Encode())
-            .ToArray();
-        SendPeer(from, FedPacket.Pack(clusterExports));
-        Console.WriteLine($"[export] peer {from} '{ConsoleText(req.CharacterName)}' -> {clusterExports.Length} cluster(s): " +
-                          string.Join(", ", goalMission.Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
-
-        // Same peer/session, immediately after the cluster exports,
-        // per sector, in the reference server's own order
-        // (fsmission.cpp:4170-4250): cluster → alephs (+ aleph bombs) →
-        // asteroids (+ building effects) → stations → treasures → mines →
-        // probes. This is what gives the native client's FindTarget
-        // (src/Igc/common.cpp:470, station search at :500-501, adjacent-cluster
-        // warp walk at :677-707) non-empty GetWarps()/GetStations() to search,
-        // closing the P34 finding that FindTarget always returned NULL because
-        // the client's clusters had empty lists.
-        //
-        // P797 — PER SIDE, exactly native: every entry in that list is exported
-        // only when the joining peer's side has SEEN it.
-        //   • alephs        fsmission.cpp:4175-4186  if (pwarplink->data()->SeenBySide(pside))
-        //   • asteroids     fsmission.cpp:4201-4213  if (pmdllink->data()->SeenBySide(pside))
-        //                   (+ GetBuildingEffect() → ExportObj(pbe, OT_buildingEffect))
-        //   • stations      fsmission.cpp:4215-4222
-        //   • treasures     fsmission.cpp:4224-4231
-        //   • mines         fsmission.cpp:4233-4240
-        //   • probes        fsmission.cpp:4242-4249
-        // Clusters above stay whole-mission (fsmission.cpp:4170), and
-        // CLUSTERINFO above gives the full sector graph without positions
-        // (fsmission.cpp:4122-4166), which is exactly what native does — the map
-        // preview is public knowledge, the objects in it are not.
-        //
-        // Where the seen-ness comes from: the same latched Per-side flags the
-        // live P132 sweep maintains (Sector.ResolveCrossSideVisibility), seeded
-        // first by Mission.SeedStartingVisibility so a peer joining before the
-        // first live sector tick still gets its own stations plus everything
-        // their scanners cover (native's own-side rule + first
-        // UpdateSeenBySide pass, FedSrv.CPP:10907-10912, clusterIGC.cpp:347-357).
-        // Ships' resolved destination sectors come for free: the warp's own
-        // ClusterId addresses its sector, and all sectors are already exported
-        // above. Each object also latches _crossSideDiscoverySent so the
-        // mid-game discovery sweep (SweepCrossSideDiscoveryExports) never
-        // re-sends what this burst already delivered.
-        var joinMission = goalMission;
-        int sentWarps = 0, sentStations = 0, sentAsteroids = 0, sentEffects = 0, sentProbes = 0;
-        if (live.Ship.SideId is { } joinSide)
-        {
-            joinMission.SeedStartingVisibility();
-            foreach (var sector in joinMission.Sectors)
-            {
-                foreach (var warp in sector.Warps)
-                {
-                    if (!warp.SeenBySide(joinSide)) continue;
-                    SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(warp).Encode() }));
-                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Warp, warp.Warp.WarpId));
-                    sentWarps++;
-                }
-                foreach (var asteroid in sector.Mineable)
-                {
-                    if (!asteroid.SeenBySide(joinSide)) continue;
-                    SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid.Data).Encode() }));
-                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Asteroid, asteroid.Data.AsteroidId));
-                    sentAsteroids++;
-                    // Native exports the rock's building effect in the same breath
-                    // (fsmission.cpp:4209-4211) — the client draws the construction
-                    // only from that export.
-                    if (asteroid.BuildingEffect is { } effect)
-                    {
-                        SendPeer(from, FedPacket.Pack(new[] { BuildingEffectExport(effect).Encode() }));
-                        _buildingEffectExportSent.Add((from, asteroid.Data.AsteroidId));
-                        sentEffects++;
-                    }
-                }
-                foreach (var station in sector.StationRuntimes)
-                {
-                    if (!station.SeenBySide(joinSide)) continue;
-                    SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station.Data).Encode() }));
-                    _stationIdentitySent.Add((from, joinMission, station.StationId, station.Data.StationTypeId));
-                    sentStations++;
-                }
-                foreach (var model in sector.Models)
-                {
-                    if (model is Probe probe)
-                    {
-                        if (!probe.SeenBySide(joinSide)) continue;
-                        SendPeer(from, ProbeDiscoveryPacket(probe));
-                        _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Probe, probe.Id));
-                        sentProbes++;
-                    }
-                    else if (model is Mine mine)
-                    {
-                        if (mine.SideId is not { } mineSide || !mine.SeenBySide(joinSide)) continue;
-                        short launcherId = (mine.Launcher as Ship)?.Id ?? -1;
-                        var mineExport = ExportMine.FromMine(mine, (uint)TickIndex, launcherId, mineSide);
-                        SendPeer(from, FedPacket.Pack(new[] { mineExport.Encode() }));
-                        _crossSideMineExportSent.Add((from, mine.Id));
-                    }
-                }
-            }
-        }
-        Console.WriteLine($"[export] peer {from} '{ConsoleText(req.CharacterName)}' side {live.Ship.SideId?.ToString() ?? "(none)"} -> " +
-                          $"{sentWarps}/{joinMission.Warps.Count} warp(s), {sentStations}/{joinMission.Sectors.Sum(s => s.Stations.Count)} station(s), " +
-                          $"{sentAsteroids}/{joinMission.Sectors.Sum(s => s.Asteroids.Count)} asteroid(s), {sentEffects} building effect(s), " +
-                          $"{sentProbes} probe(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5; seen/total); " +
-                          "treasures follow in the post-SET_CLUSTER snapshot + the discovery sweep");
-
-        var set = new SetCluster
-        {
-            SectorId = live.Sector.Id,
-            Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
-            Cookie = NextCookie(EnsurePeerUpdate(from)),   // P507 — native's NewCookie(): the client echoes this in SHIP_UPDATE (fsship.cpp:767)
-        };
-        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
-        SendTreasureSnapshot(from, live.Sector);
+        SendSideWorldSnapshot(from, goalMission, live.Ship, live.Sector, req.CharacterName ?? "");
 
         // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
         // its object (EXPORT 26) and its launch (SET_CLUSTER 7),
@@ -5573,6 +5442,167 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             Console.WriteLine($"[entergame] peer {from} '{ConsoleText(req.CharacterName)}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
         }
+    }
+
+    /// <summary>Initial seat and side re-entry share native SendMissionInfo's
+    /// side-visible world snapshot (FedSrv/fsmission.cpp:4170-4250).</summary>
+    private void SendSideWorldSnapshot(ConnectionId from, Mission goalMission, Ship ship, Sector home, string name)
+    {
+        var clusterInfo = ClusterInfo.FromSectors(goalMission.Sectors);
+        if (!_clusterInfoBytes.TryGetValue(goalMission.Cookie, out var clusterInfoBytes))
+            _clusterInfoBytes[goalMission.Cookie] = clusterInfoBytes = clusterInfo.Encode();
+        SendPeer(from, FedPacket.Pack(new[] { clusterInfoBytes }));
+        _lastClusterInfoTick[from] = TickIndex;
+        Console.WriteLine($"[clusterinfo] peer {from} '{ConsoleText(name)}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
+
+        // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
+        // to the client. Placement (P33, moved here from right
+        // after JOINED_MISSION): the PLAYERINFO send just above
+        // moves the local player off SIDE_TEAMLOBBY onto its real
+        // side. On the native client that runs
+        // BaseClient::AddPlayerToSide (clintlib.cpp:4101), which —
+        // because this is the player's OWN PlayerInfo
+        // (pPlayerInfo == m_pPlayerInfo) — calls
+        // BaseClient::OnQuitSide() first (clintlib.cpp:4112-4115,
+        // matching the "leaving SIDE_TEAMLOBBY" half of the
+        // transition even on the very first join). OnQuitSide
+        // unconditionally nukes every registered cluster
+        // (clintlib.cpp:3781-3783: SetViewCluster(NULL);
+        // m_pCoreIGC->ResetMission(), which iterates
+        // GetClusters() and Terminate()s every one). Exporting
+        // clusters BEFORE PLAYERINFO (the original placement)
+        // meant they were all silently wiped moments later —
+        // confirmed directly via native P33dbg instrumentation
+        // (a live cluster-count probe read 13 right after the
+        // exports, then 0 by the time SET_CLUSTER ran) — which is
+        // what made m_pCoreIGC->GetCluster(sectorID)
+        // (appmsg.cpp:1006) return NULL and crash the very next
+        // line (pcluster->GetLastUpdate(), appmsg.cpp:1041, no
+        // null check) before pship->SetCluster(pcluster) could
+        // ever run — the actual, final blocker behind flyingF()
+        // (clintlib.h:1198) never becoming true. Sending the
+        // exports after PLAYERINFO's OnQuitSide instead means
+        // there is nothing left to wipe. We export ALL sectors
+        // (the reference approach, a trivial loop) rather than
+        // just the peer's starting sector, so the client can
+        // resolve any cluster id a later message references and
+        // there is no "which one" selection logic to get wrong;
+        // ~92 bytes × N sectors is negligible locally. Must land
+        // BEFORE SET_CLUSTER, below.
+        var clusterExports = goalMission.Sectors
+            .Select(s => ExportCluster.FromSector(s).Encode())
+            .ToArray();
+        SendPeer(from, FedPacket.Pack(clusterExports));
+        Console.WriteLine($"[export] peer {from} '{ConsoleText(name)}' -> {clusterExports.Length} cluster(s): " +
+                          string.Join(", ", goalMission.Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
+
+        // Same peer/session, immediately after the cluster exports,
+        // per sector, in the reference server's own order
+        // (fsmission.cpp:4170-4250): cluster → alephs (+ aleph bombs) →
+        // asteroids (+ building effects) → stations → treasures → mines →
+        // probes. This is what gives the native client's FindTarget
+        // (src/Igc/common.cpp:470, station search at :500-501, adjacent-cluster
+        // warp walk at :677-707) non-empty GetWarps()/GetStations() to search,
+        // closing the P34 finding that FindTarget always returned NULL because
+        // the client's clusters had empty lists.
+        //
+        // P797 — PER SIDE, exactly native: every entry in that list is exported
+        // only when the joining peer's side has SEEN it.
+        //   • alephs        fsmission.cpp:4175-4186  if (pwarplink->data()->SeenBySide(pside))
+        //   • asteroids     fsmission.cpp:4201-4213  if (pmdllink->data()->SeenBySide(pside))
+        //                   (+ GetBuildingEffect() → ExportObj(pbe, OT_buildingEffect))
+        //   • stations      fsmission.cpp:4215-4222
+        //   • treasures     fsmission.cpp:4224-4231
+        //   • mines         fsmission.cpp:4233-4240
+        //   • probes        fsmission.cpp:4242-4249
+        // Clusters above stay whole-mission (fsmission.cpp:4170), and
+        // CLUSTERINFO above gives the full sector graph without positions
+        // (fsmission.cpp:4122-4166), which is exactly what native does — the map
+        // preview is public knowledge, the objects in it are not.
+        //
+        // Where the seen-ness comes from: the same latched Per-side flags the
+        // live P132 sweep maintains (Sector.ResolveCrossSideVisibility), seeded
+        // first by Mission.SeedStartingVisibility so a peer joining before the
+        // first live sector tick still gets its own stations plus everything
+        // their scanners cover (native's own-side rule + first
+        // UpdateSeenBySide pass, FedSrv.CPP:10907-10912, clusterIGC.cpp:347-357).
+        // Ships' resolved destination sectors come for free: the warp's own
+        // ClusterId addresses its sector, and all sectors are already exported
+        // above. Each object also latches _crossSideDiscoverySent so the
+        // mid-game discovery sweep (SweepCrossSideDiscoveryExports) never
+        // re-sends what this burst already delivered.
+        var joinMission = goalMission;
+        int sentWarps = 0, sentStations = 0, sentAsteroids = 0, sentEffects = 0, sentProbes = 0;
+        if (ship.SideId is { } joinSide)
+        {
+            joinMission.SeedStartingVisibility();
+            foreach (var sector in joinMission.Sectors)
+            {
+                foreach (var warp in sector.Warps)
+                {
+                    if (!warp.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(warp).Encode() }));
+                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Warp, warp.Warp.WarpId));
+                    sentWarps++;
+                }
+                foreach (var asteroid in sector.Mineable)
+                {
+                    if (!asteroid.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid.Data).Encode() }));
+                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Asteroid, asteroid.Data.AsteroidId));
+                    sentAsteroids++;
+                    // Native exports the rock's building effect in the same breath
+                    // (fsmission.cpp:4209-4211) — the client draws the construction
+                    // only from that export.
+                    if (asteroid.BuildingEffect is { } effect)
+                    {
+                        SendPeer(from, FedPacket.Pack(new[] { BuildingEffectExport(effect).Encode() }));
+                        _buildingEffectExportSent.Add((from, asteroid.Data.AsteroidId));
+                        sentEffects++;
+                    }
+                }
+                foreach (var station in sector.StationRuntimes)
+                {
+                    if (!station.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station.Data).Encode() }));
+                    _stationIdentitySent.Add((from, joinMission, station.StationId, station.Data.StationTypeId));
+                    sentStations++;
+                }
+                foreach (var model in sector.Models)
+                {
+                    if (model is Probe probe)
+                    {
+                        if (!probe.SeenBySide(joinSide)) continue;
+                        SendPeer(from, ProbeDiscoveryPacket(probe));
+                        _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Probe, probe.Id));
+                        sentProbes++;
+                    }
+                    else if (model is Mine mine)
+                    {
+                        if (mine.SideId is not { } mineSide || !mine.SeenBySide(joinSide)) continue;
+                        short launcherId = (mine.Launcher as Ship)?.Id ?? -1;
+                        var mineExport = ExportMine.FromMine(mine, (uint)TickIndex, launcherId, mineSide);
+                        SendPeer(from, FedPacket.Pack(new[] { mineExport.Encode() }));
+                        _crossSideMineExportSent.Add((from, mine.Id));
+                    }
+                }
+            }
+        }
+        Console.WriteLine($"[export] peer {from} '{ConsoleText(name)}' side {ship.SideId?.ToString() ?? "(none)"} -> " +
+                          $"{sentWarps}/{joinMission.Warps.Count} warp(s), {sentStations}/{joinMission.Sectors.Sum(s => s.Stations.Count)} station(s), " +
+                          $"{sentAsteroids}/{joinMission.Sectors.Sum(s => s.Asteroids.Count)} asteroid(s), {sentEffects} building effect(s), " +
+                          $"{sentProbes} probe(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5; seen/total); " +
+                          "treasures follow in the post-SET_CLUSTER snapshot + the discovery sweep");
+
+        var set = new SetCluster
+        {
+            SectorId = home.Id,
+            Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
+            Cookie = NextCookie(EnsurePeerUpdate(from)),   // P507 — native's NewCookie(): the client echoes this in SHIP_UPDATE (fsship.cpp:767)
+        };
+        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+        SendTreasureSnapshot(from, home);
+
     }
 
 /// <summary>P281 — send a fresh <see cref="SideRoster"/> snapshot to a

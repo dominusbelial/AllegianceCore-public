@@ -589,6 +589,16 @@ list in **reverse**.
   `src/Allegiance.Server/Server.cs` (`PendingSideSelect`).
 - **Ship commands** — client intent handlers (flight, firing, docking, buying).
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
+- **Running side departure / last side (P1026)** — `LeaveSideForSwitch` in
+  `src/Allegiance.Server/Server.Lobby.cs` promotes passengers, surrenders wallet
+  plus full hardware value, then calls `src/Allegiance.Core/Sim/Ship.SideDeparture.cs`
+  for native `Reset(false)`. `src/Allegiance.Server/Server.SideDeparture.cs`
+  docks the joiner at the new side's restart base and resends side-visible world
+  state. `LiveShip.LastSideId` survives lobby quits and old-player reconnects;
+  `src/Allegiance.Server/Server.SideIntegrity.cs` enforces no-defections against it.
+  Native: `FedSrv/fsmission.cpp:566,904-921,1120-1145,791-831,4583-4590`;
+  proofs: `tests/Allegiance.Core.Tests/P1026SideDepartureTests.cs`,
+  `docs/parity/p1026-side-departure.csv`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
 - **TCP small-write pressure (P898)** — fixed 8 KiB send buffers can exhaust
