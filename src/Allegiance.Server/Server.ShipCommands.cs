@@ -3136,7 +3136,11 @@ public sealed partial class Server
                     + $"(PartMask {hpMask}) has no PartMask-compatible weapon in core — left unmounted (a finding, not fabricated)");
                 continue;
             }
-            ship.MountWeapon(weaponRec.w, mount);   // the cheapest compatible weapon for THIS hardpoint
+            // Keep functional weapons in the same inventory the owning client
+            // receives. Native CreateAndAddPart owns both the mount and part
+            // list (Igc/shipIGC.h:1490-1516); the old bare MountWeapon helper
+            // created only a firing object, invisible to first-dock loadouts.
+            ship.MountPart(weaponRec.part, short.MaxValue, (byte)mount, ExpandedPartData.FullyMounted);
             Console.WriteLine($"[combat]   mount {mount}: '{weaponRec.part.Name}' (PartMask {weaponRec.part.PartMask}, {weaponRec.w.EnergyPerShot}/shot)");
             armed++;
         }

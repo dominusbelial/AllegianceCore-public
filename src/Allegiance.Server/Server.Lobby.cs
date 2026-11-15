@@ -5366,26 +5366,18 @@ private void CompleteStartCountdown(Mission mission, double now)
         // every fresh player on a hullID=NA dummy too; the buy is
         // the step that gives it a hull).
         //
-        // nParts=0 simplification (unchanged from P26/P27): the
-        // ShipLoadout carries only the 2-byte hullID, no
-        // ExpandedPartData[] tail. Real per-part purchase is the
-        // deferred BUY_LOADOUT/economy machinery.
-        //
-        // fBoughtEverything=false, fLaunch=false: we assign a hull
-        // but buy no parts (honest), and SET_CLUSTER has already
-        // launched the ship before this ACK, so no further launch
-        // messages will follow (claiming fLaunch would be false).
-        // fLaunch=false also releases any client-side lockdown via
-        // EndLockDown (appmsg.cpp:3180-3181); for a direct-connect
-        // bot IsLockedDown() is false anyway, making it a no-op.
+        // P1018: publish the inventory the server actually assigned, including
+        // cargo. Native load.cpp:535-538 copies the source ship into the shop;
+        // appmsg.cpp:3180-3185 applies the complete acknowledged loadout. A
+        // hull-only acknowledgement erased the port's equipped spawn ship on
+        // the client (native starts with hullID=NA, FedSrv.CPP:902-909).
+        // This is a state sync, not a purchase or launch.
         SendPeer(from, FedPacket.Pack(new[]
         {
             new BuyLoadoutAck
             {
                 HullId = live.Ship.HullType.HullId,
-                // Local native training shares the equipped ship (training/trainingmission.cpp:810-854).
-                // Our loopback client needs the same real parts through the ordinary loadout message.
-                Parts = LocalTraining ? live.Ship.ExportInventoryForAck() : [],
+                Parts = live.Ship.ExportInventoryForAck(),
                 FBoughtEverything = false,
                 FLaunch = false,
             }.Encode(),

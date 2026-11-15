@@ -26,6 +26,8 @@ public enum LoadoutV2Request
     Launch = 2,
     /// <summary>Back to the hangar (native <c>SetViewMode(vmHangar)</c>).</summary>
     Leave = 4,
+    /// <summary>Leave with the actual ship, through the existing docked action.</summary>
+    Undock = 8,
 }
 
 /// <summary>
@@ -232,6 +234,19 @@ public sealed class LoadoutV2Input
         return request;
     }
 
+    /// <summary>Discard screen-local state when leaving V2, retaining device
+    /// latches so a held button cannot fire when the screen returns.</summary>
+    public void Suspend(LoadoutV2Model? model)
+    {
+        model?.CloseSlot();
+        _model = null;
+        Hover = null;
+        _hoverKey = null;
+        Column = LoadoutV2Column.Hulls;
+        HullFocus = SlotFocus = OfferFocus = ActionFocus = 0;
+        HullScroll = SlotScroll = OfferScroll = 0;
+    }
+
     /// <summary>Escape's first step: close the open picker. False when none was
     /// open, so the caller leaves the screen as it does today.</summary>
     public bool ClosePicker(LoadoutV2Model model)
@@ -302,7 +317,8 @@ public sealed class LoadoutV2Input
     private static LoadoutV2Layout.Element? Interactive(LoadoutV2Layout.Element? element) =>
         element is { Kind: LoadoutV2Layout.Kind.Hull or LoadoutV2Layout.Kind.Slot or LoadoutV2Layout.Kind.Offer
             or LoadoutV2Layout.Kind.Default or LoadoutV2Layout.Kind.Revert
-            or LoadoutV2Layout.Kind.Buy or LoadoutV2Layout.Kind.Launch } ? element : null;
+            or LoadoutV2Layout.Kind.Buy or LoadoutV2Layout.Kind.Launch
+            or LoadoutV2Layout.Kind.Back or LoadoutV2Layout.Kind.Undock } ? element : null;
 
     /// <summary>Clamp the view state to the model's current rows; a new model
     /// (new dock, or the same shop after a tech change) starts on the chosen hull
@@ -402,6 +418,10 @@ public sealed class LoadoutV2Input
     {
         switch (target.Kind)
         {
+            case LoadoutV2Layout.Kind.Back:
+                return ClosePicker(model) ? LoadoutV2Request.None : LoadoutV2Request.Leave;
+            case LoadoutV2Layout.Kind.Undock:
+                return LoadoutV2Request.Undock;
             case LoadoutV2Layout.Kind.Hull:
                 ClosePicker(model);
                 Column = LoadoutV2Column.Hulls;

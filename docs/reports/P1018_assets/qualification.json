@@ -1,0 +1,211 @@
+{
+  "base": "7254ffcc",
+  "flagDefault": "off",
+  "retainedPngCount": 10,
+  "allGeneratedPngCount": 38,
+  "allGeneratedUniqueImages": 23,
+  "allGeneratedImagesReviewed": true,
+  "duplicateReview": "Byte-identical PNGs share their reviewed image",
+  "realWindowRuns": [
+    {
+      "scene": "classic-bomber",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 11.0
+    },
+    {
+      "scene": "classic-capital",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 11.3
+    },
+    {
+      "scene": "classic-fighter",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 13.4
+    },
+    {
+      "scene": "classic-off",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 11.4
+    },
+    {
+      "scene": "classic-walk",
+      "passed": 51,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 120.4
+    },
+    {
+      "scene": "compact-walk",
+      "passed": 51,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 120.4
+    },
+    {
+      "scene": "modern-bomber",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 10.8
+    },
+    {
+      "scene": "modern-capital",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 11.2
+    },
+    {
+      "scene": "modern-fighter",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 13.4
+    },
+    {
+      "scene": "modern-off",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 11.2
+    },
+    {
+      "scene": "modern-walk",
+      "passed": 51,
+      "failed": 0,
+      "skipped": 0,
+      "completed": true,
+      "wallSeconds": 120.4
+    }
+  ],
+  "retained": [
+    {
+      "name": "classic-1920x1080-hardpoint-bomber.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 441106,
+      "sha256": "fabde92284e64b98c5a7f76e363a3c9d54926fc8b10945cd853cab714c13669f",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Missing UI glyph/draw runs in some headings, stats or footer; marker/gunner visible"
+    },
+    {
+      "name": "classic-1920x1080-hardpoint-capital.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 345256,
+      "sha256": "848d16591eaf8e2c7f9084ccd4c8566b5f87a7ab83ad4d339fa977c97d287f1d",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Missing UI glyph/draw runs in some headings, stats or footer; marker/gunner visible"
+    },
+    {
+      "name": "classic-1920x1080-hardpoint-fighter.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 418535,
+      "sha256": "4d8086a3c328010f2a6fa1d66d40bd6a05c1ad4b09ca4f0db9fa4f9e47e424f9",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    },
+    {
+      "name": "classic-1920x1080-p1017-1-cannot-afford.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 421208,
+      "sha256": "f39fdd123582ee9b5bc67229eb24080bd65360a91cf4fff9268fa5a67131e26e",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    },
+    {
+      "name": "modern-1280x720-6-redocked.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 205256,
+      "sha256": "466108ac4da77d2dddfe6401cf952840fdde10a5d178d50fd2948b1a59fe31b2",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    },
+    {
+      "name": "modern-1920x1080-1-click-slot-picker.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 409551,
+      "sha256": "a5ae14e98cb164494614440fd09980e2cc3d5c2da9a0acc9279092d0e9a9984c",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    },
+    {
+      "name": "modern-1920x1080-hardpoint-bomber.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 441770,
+      "sha256": "84978fd8dcbb3fcd387a2c5ce75318e841dd0e1eb5367c718ea5f71ddd48b596",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Missing UI glyph/draw runs in some headings, stats or footer; marker/gunner visible"
+    },
+    {
+      "name": "modern-1920x1080-hardpoint-capital.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 345714,
+      "sha256": "74f9646295ab034d6691af3ead714a1d571342a522932de71796394eb11d140d",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Missing UI glyph/draw runs in some headings, stats or footer; marker/gunner visible"
+    },
+    {
+      "name": "modern-1920x1080-hardpoint-fighter.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 418954,
+      "sha256": "0c7722b2ef76b02f975084f7a87ada271c4beb318ca3c89d330f55a6a7892e71",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    },
+    {
+      "name": "modern-1920x1080-p1017-3-bought.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 410322,
+      "sha256": "530558be5691d251e4756095c364a52c206dca1489da9031b5c9a66c7b0ae8a7",
+      "pngCrc": "pass",
+      "decompression": "pass",
+      "viewed": true,
+      "visualQualification": "Layout, labels and relevant state reviewed"
+    }
+  ]
+}

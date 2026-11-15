@@ -116,11 +116,14 @@ public class TeammateLoadoutBroadcastTests
             var obsBot = bots[observer];
 
             // Wait for the observer to learn about the subject at all (the
-            // initial, one-shot P62 export — nParts=0 at this point, nothing
-            // mounted yet).
+            // initial, one-shot P62 export. P1018 registers the existing spawn
+            // weapon in Parts, so this already carries the real inventory).
             PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId), 4000);
             Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
-            Assert.Empty(obsBot.Exports.First(e => e.ShipId == subjectId).Parts);
+            var initialInventory = server.Ships.Single(s => s.Ship.Id == subjectId).Ship.ExportInventoryForAck()
+                .Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
+            Assert.NotEmpty(initialInventory);
+            Assert.Equal(initialInventory, obsBot.Exports.First(e => e.ShipId == subjectId).Parts);
 
             // Real, non-hull-only loadout requests on both the subject
             // (teammate) and the enemy — same weapon part, real mount/amount.
@@ -141,7 +144,8 @@ public class TeammateLoadoutBroadcastTests
 
             // The observer must receive a SECOND export for the subject, this
             // time carrying the real mounted part.
-            PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId && e.Parts.Count > 0), 4000);
+            PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId
+                && e.Parts.Count == 1 && e.Parts[0].PartId == partId && e.Parts[0].Amount == 20), 4000);
             var loadoutExports = obsBot.Exports.Where(e => e.ShipId == subjectId).ToList();
             Assert.True(loadoutExports.Count >= 2, "subject's loadout change must trigger a re-export, not just the initial one-shot EXPORT");
             var withParts = loadoutExports.Last();

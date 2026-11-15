@@ -1265,6 +1265,16 @@ list in **reverse**.
   native `CanMount` masks, prices/`GetValue`, Default/Revert/custom loadouts), rendered by
   `src/Allegiance.ClientCore.Game/Rendering/ShopLayout.cs` and driven from
   `src/Allegiance.ClientCore.Game/Game1.Hangar.cs`. *Native:* `WinTrek/load.cpp`.
+- **Loadout V2 integration (P1018)** — `docs/LOADOUT_V2.md` documents enabling,
+  controls and retained parity gaps. Visible Back/Undock header targets share
+  `src/Allegiance.ClientCore.Game/Rendering/DockedTouchZones.cs` geometry; hidden
+  V2 state is suspended in `src/Allegiance.ClientCore.Game/Game1.LoadoutV2Input.cs`.
+  First-seat inventory is complete in `src/Allegiance.Server/Server.Lobby.cs`;
+  default player weapons enter the part registry in
+  `src/Allegiance.Server/Server.ShipCommands.cs`. Integration tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1018LoadoutIntegrationTests.cs`;
+  real-window walkthrough and restored hardpoint modes: `tools/p1014-ui-proof/`.
+  Report: `docs/reports/LOADOUT_V2_INTEGRATION_P1018.md`.
 - **Loadout V2 renderer (P1014, default off)** — `visuals.hangar.loadoutV2` in
   `src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs` routes the active loadout
   through `src/Allegiance.ClientCore.Game/Game1.LoadoutV2.cs` and

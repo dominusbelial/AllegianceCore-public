@@ -271,6 +271,9 @@ public sealed class P1015LoadoutScreenRoutingTests
         Assert.Equal(7, shop.EffectiveHullId);
         Assert.Equal((LoadoutV2Column.Hulls, 0), (router.Column, router.HullFocus));
         Assert.False(Get<bool>(game, "_hangarOnly"));
+        // A replaced screen needs a fresh production draw before its targets
+        // become live again; hidden V2 geometry is deliberately discarded.
+        draw();
         // Released and pressed again, the same click selects the hull.
         Set(game, "_hangarScriptMouse", Pointer(row.Bounds.CenterX, row.Bounds.CenterY, false));
         Call(game, "UpdateLoadoutV2Input", new KeyboardState(), default(Game1.PadNav), false, ship);

@@ -528,7 +528,9 @@ public class CargoBayReloadTests
         using var seat = SeatThree();
         var ship = seat.Subject;
         ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
-        Assert.Equal(1, ship.Parts.Count(p => p.EquipmentType == EquipmentType.Weapon));
+        // P1018: a registered spawn gun already occupies Weapon/0. The
+        // precondition concerns this fixture's Weapon/1; both must survive.
+        Assert.Single(ship.Parts, p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1);
 
         foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetSwapPartsReceived();
         var before = ship.Parts.Select(p => (p.MountId, p.PartId)).OrderBy(x => x.MountId).ToList();

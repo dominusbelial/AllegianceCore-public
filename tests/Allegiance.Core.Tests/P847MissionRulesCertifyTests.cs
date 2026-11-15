@@ -485,6 +485,9 @@ public class P847MissionRulesCertifyTests
         server.Missions[0].Stage = MissionStage.Started;
 
         var weapon = WeaponType(ship.Mission!.Core);
+        // P1018: the spawn weapon is now a real inventory part. This fixture
+        // drops the specific weapon mounted below, not the existing occupant.
+        ship.ClearLoadout();
         Assert.True(ship.MountPart(weapon, 1, 0, byte.MaxValue) is not null, "precondition: mount the weapon");
         ship.StationId = null;   // the fresh seat starts docked; DROP_PART needs a flying ship (FedSrv.CPP:6302)
         var sector = ship.Sector!;
@@ -527,8 +530,11 @@ public class P847MissionRulesCertifyTests
             PartId: 907, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
             Type: new DataPartTypeIGC.MineLauncher(mineType.ExpendableTypeId));
         Assert.True(ship.MountPart(launcher, 1, 0, byte.MaxValue) is not null, "precondition: mount the mine launcher");
-        ship.SetPartAmount(ship.Parts.First(p => p.MountId == 0), 0);   // fired down to zero rounds
-        Assert.Equal(0, ship.Parts.First(p => p.MountId == 0).Amount);
+        var mountedLauncher = ship.Parts.Single(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0);
+        ship.SetPartAmount(mountedLauncher, 0);   // fired down to zero rounds, not the spawn gun at Weapon/0
+        // SetPartAmount replaces the immutable inventory entry.
+        Assert.Equal(0, Assert.Single(ship.Parts,
+            p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0).Amount);
         ship.StationId = null;   // the fresh seat starts docked; DROP_PART needs a flying ship (FedSrv.CPP:6302)
         var sector = ship.Sector!;
         int before = sector.Models.OfType<Treasure>().Count();
