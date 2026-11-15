@@ -217,6 +217,12 @@ public sealed partial class Server
         // native immediate removal, today's behaviour untouched.
         ResolveReconnectGrace();
 
+        // P1022 (R1 F7) — resolve `credentialGuessLimits` (default ON) and print
+        // the active guessing limits: 3 failures close the connection, 5 per
+        // source address in the window start a doubling back-off. Deliberate
+        // port hardening — native answers a wrong password/secret at once.
+        ResolveCredentialGuessLimits();
+
         // P667 — the intra-sector parallel sim (sim.parallelSectorCells) and the
         // P835 spotter-cache flag (sim.visibilitySpotterCache) were REMOVED in
         // P858: the 200v200 rig A/B (2026-10-27) showed no gain over control for
@@ -2242,6 +2248,11 @@ public sealed partial class Server
         // LOGOFF, reconnect-grace park, second idempotent release) retires it
         // exactly once.
         RemoveChatBudget(id);
+        // P1022 (R1 F7) — the credential-guessing counter is connection-scoped
+        // state as well; retire it on every release path so the table stays
+        // bounded by the live peer set (the per-address entries expire on their
+        // own, see CredentialGuessGuard).
+        _credentialGuesses.ForgetPeer(id);
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own

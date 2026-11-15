@@ -142,7 +142,7 @@ public sealed class R1ReviewTests
     /// is answered with a whole-mission broadcast per copy. Every other relay in
     /// the dispatcher is charged to the P654 budget (about 50 from a full
     /// budget); this one is not.</summary>
-    [SkippableFact(Skip = "R1 finding F1 — pending fix")]
+    [SkippableFact]   // P1022 — unskipped (no Skip=): executed, and skippable on a clean clone
     public void One_packet_of_POSITIONREQs_does_not_broadcast_once_per_copy()
     {
         using var w = new World();
@@ -152,7 +152,7 @@ public sealed class R1ReviewTests
     }
 
     /// <summary>F1 — the same for SET_WINGID: a side-wide relay per copy.</summary>
-    [SkippableFact(Skip = "R1 finding F1 — pending fix")]
+    [SkippableFact]   // P1022 — unskipped (no Skip=): executed, and skippable on a clean clone
     public void One_packet_of_SET_WINGIDs_does_not_broadcast_once_per_copy()
     {
         using var w = new World();
@@ -278,7 +278,7 @@ public sealed class R1ReviewTests
 
     /// <summary>F7 — every LOGONREQ on one connection is a fresh password
     /// attempt with an immediate answer; nothing slows, counts or closes.</summary>
-    [SkippableFact(Skip = "R1 finding F7 — pending fix")]
+    [SkippableFact]   // P1022 — unskipped (no Skip=): executed, and skippable on a clean clone
     public void Wrong_game_passwords_on_one_connection_are_throttled()
     {
         using var w = new Booted(c => c.Games[0].Password = "s3cret");

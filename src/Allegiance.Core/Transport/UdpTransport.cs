@@ -675,6 +675,18 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     private static IPEndPoint Normalize(IPEndPoint ep) => new(ep.Address.MapToIPv6(), ep.Port);
 
     public bool IsPeerLoopback(ConnectionId id) { lock (_gate) return _peers.TryGetValue(id, out var p) && (IPAddress.IsLoopback(p.Endpoint.Address) || p.Endpoint.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(p.Endpoint.Address.MapToIPv4())); }
+    /// <summary>P1022 — the source address recorded for this UDP peer (the
+    /// credential-guessing address key), or <c>null</c> for an unknown/retired
+    /// peer. Endpoints are stored IPv6-normalised, so an IPv4 peer is mapped
+    /// back to its IPv4 form.</summary>
+    public IPAddress? PeerAddress(ConnectionId id)
+    {
+        lock (_gate)
+        {
+            if (!_peers.TryGetValue(id, out var p)) return null;
+            return p.Endpoint.Address.IsIPv4MappedToIPv6 ? p.Endpoint.Address.MapToIPv4() : p.Endpoint.Address;
+        }
+    }
     public void SetPeerHuman(ConnectionId id, bool human) { lock (_gate) if (_peers.TryGetValue(id, out var p)) p.Human = human; }
     public bool IsPeerClosed(ConnectionId id) { lock (_gate) return !_peers.TryGetValue(id, out var p) || p.Closing; }
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown)

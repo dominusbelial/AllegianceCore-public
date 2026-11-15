@@ -415,6 +415,21 @@ public sealed partial class Server
             return;
         }
 
+        // P1022 (R1 F1) — charge the sector-wide SWAP_PART(34) relay to the P654
+        // per-peer budget BEFORE the swap mutates the ship, so a denied charge is
+        // a complete no-op (no state change without the announcement). Native
+        // charges only chat/REQUEST_MONEY; a legitimate client swaps a handful of
+        // times per minute, well inside the bucket.
+        // NATIVE CHECK: native DOES relay a mountOld == mountNew swap — ppart and
+        // ppartNew are the same part, SetMountID runs (net no-op) and
+        // ForwardMessage still fires (FedSrv.CPP:6480-6498). So the no-op case is
+        // charged, never dropped (parity).
+        if (!TryChargeChatBudget(from))
+        {
+            ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: chat budget exhausted — SWAP_PART relay dropped (R1 F1 / H-24)");
+            return;
+        }
+
         // The swap-or-move; false means the source mount held no part, which
         // native treats as a silent no-op (FedSrv.CPP:6485-6486). The dispatch
         // is cargo-aware (P192): a negative mountOld/mountNew addresses the
@@ -923,6 +938,16 @@ public sealed partial class Server
         if (target is null)
         {
             ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: no assignable teammate {req.ShipID} — ignored");
+            return;
+        }
+
+        // P1022 (R1 F1) — the side-wide relay below is charged to the P654
+        // per-peer budget BEFORE it is built (native charges only chat and
+        // REQUEST_MONEY, so an uncharged SET_WINGID was the H-05 amplification
+        // this finding reports: 256 copies in one packet -> 512 side-wide frames).
+        if (!TryChargeChatBudget(from))
+        {
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: chat budget exhausted — SET_WINGID relay dropped (R1 F1 / H-24)");
             return;
         }
 

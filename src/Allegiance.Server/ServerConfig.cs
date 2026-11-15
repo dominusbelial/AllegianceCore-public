@@ -1403,6 +1403,16 @@ public sealed class ServerConfig
     /// </summary>
     public ReconnectConfig Reconnect { get; set; } = new();
 
+    /// <summary>
+    /// P1022 (R1 F7) — limits on guessing the game password and the
+    /// admin/bot/harness bearer secrets. An absent section keeps the DEFAULT ON
+    /// values (3 failures close the connection, 5 per source address in 60 s
+    /// start a 15 s back-off that doubles to 300 s), so every server bounds
+    /// guessing without configuration; <c>enabled=false</c> restores the
+    /// unthrottled native path. See <see cref="CredentialGuessLimitsConfig"/>.
+    /// </summary>
+    public CredentialGuessLimitsConfig? CredentialGuessLimits { get; set; }
+
     /// P810 — the opt-in server self-update (the modernised native
     /// <c>AllSrvUpdate</c> role, <c>AutoUpdate/AutoUpdate.cpp:325-356</c>).
     /// Null/absent (the default) = fully opt-out: no feed is ever contacted and

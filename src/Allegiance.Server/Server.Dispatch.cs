@@ -118,6 +118,23 @@ public sealed partial class Server
 
                 if (LocalTraining) req.CharacterName = "Cadet"; // training/trainingmission.cpp:775-779
 
+                // P1022 (R1 F7) — a connection (or a source address) already
+                // spent on failed credentials is not evaluated at all: the frame
+                // is dropped with NO comparison and NO reply, so guessing has no
+                // oracle for the duration of the back-off. Loopback is not
+                // exempt from the counting, but a correct credential is never
+                // slowed (nothing is recorded on success), so bots, the harness,
+                // local skirmish/training and the rig are unaffected.
+                if (CredentialGuessBlocked(from))
+                {
+                    var bt = _lockoutLog.Ticket(from.Value);
+                    if (bt.Emit)
+                        Console.WriteLine($"[lockout] {from}: LOGONREQ dropped — credential back-off in force (R1 F7; native has no throttle)");
+                    else if (bt.Summarize)
+                        Console.WriteLine($"[lockout] {from}: {bt.Suppressed} more LOGONREQs dropped during a credential back-off (rate-limited)");
+                    continue;
+                }
+
                 // P654 (H-28) — reject an out-of-range / control-character
                 // CharacterName up front (before any allocation or seating).
                 // Native: c_cbName = c_cbNameDB + 1 = 25, usable name = 24
@@ -351,8 +368,22 @@ public sealed partial class Server
                     // P970 — the password gate runs at the JOIN (native FedSrv.CPP:648-661),
                     // before any side selection: a wrong password gets DPR_BadPassword here,
                     // while the client is still on its join screen.
-                    if (JoinMission(from, req.DwCookie, shipId, out _, req.MissionPassword, req.CharacterName)) SendSideRoster(from);
-                    else _pendingSideSelect.Remove(from);
+                    if (JoinMission(from, req.DwCookie, shipId, out _, out var joinRefusal, req.MissionPassword, req.CharacterName))
+                    {
+                        // P1022 (R1 F7) — a correct password clears the counters, so
+                        // a player who mistyped earlier is never slowed afterwards.
+                        RecordCredentialGuessSuccess(from);
+                        SendSideRoster(from);
+                    }
+                    else
+                    {
+                        _pendingSideSelect.Remove(from);
+                        // Only a WRONG PASSWORD is a guess (a no-mission/paused
+                        // refusal is not); it counts per connection and per source
+                        // address (R1 F7).
+                        if (joinRefusal == DelPositionReqReason.BadPassword)
+                            RecordCredentialGuessFailure(from, "game-password");
+                    }
                 }
 
                 // P281 — the join/launch burst is deferred to
@@ -1009,6 +1040,18 @@ public sealed partial class Server
                             SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
                             ConsoleLog.Write($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SidesLocked) to requester only — sides locked");
                         }
+                        else if (!TryChargeChatBudget(from))
+                        {
+                            // P1022 (R1 F1) — the whole relay this request would
+                            // produce (QUIT_SIDE/JOIN_SIDE/SET_TEAM_LEADER/
+                            // SET_MISSION_OWNER or the pending POSITIONREQ(40))
+                            // is charged to the P654 per-peer budget BEFORE any
+                            // of it is built: native charges only chat and
+                            // REQUEST_MONEY, so an unbudgeted POSITIONREQ was the
+                            // H-05 amplification this finding reports (256 copies
+                            // in one packet -> 1024 whole-mission frames).
+                            ConsoleLog.Write($"[posreq] {from}: chat budget exhausted — POSITIONREQ relay dropped (R1 F1 / H-24)");
+                        }
                         else if (targetSide.LeaderShipId is null || targetSide.AutoAccept)
                         {
                             // No leader on the target side yet (hence empty) → auto-
@@ -1550,6 +1593,14 @@ public sealed partial class Server
                         if (side is null)
                         {
                             ConsoleLog.Write($"[sideinactive] ship {siLive.Ship.Id}: side {si.SideId} not in this mission — SIDE_INACTIVE ignored");
+                        }
+                        else if (!TryChargeChatBudget(from))
+                        {
+                            // P1022 (R1 F1) — the whole-mission SIDE_INACTIVE
+                            // relay is charged to the P654 budget before any state
+                            // changes; native charges only chat/REQUEST_MONEY, so
+                            // this owner-only relay was unbudgeted (R1 F1).
+                            ConsoleLog.Write($"[sideinactive] {from}: chat budget exhausted — SIDE_INACTIVE relay dropped (R1 F1 / H-24)");
                         }
                         else
                         {

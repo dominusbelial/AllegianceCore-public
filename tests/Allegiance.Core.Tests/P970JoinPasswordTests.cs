@@ -186,6 +186,12 @@ public sealed class P970JoinPasswordTests
     /// <summary>
     /// One operator log line per refusal, naming the peer and callsign — and NEVER
     /// the attempted or the real password.
+    /// <para>P1022 (R1 F7) — the server's credential-guessing limits are turned OFF
+    /// for this test only: its subject is the P970 log gate, and 13 refusals all
+    /// arriving from loopback would (correctly, by design) put 127.0.0.1 into the
+    /// new per-address back-off, which stops evaluating the 6th attempt onwards.
+    /// The guessing limit has its own P1022 tests; the assertions here are
+    /// unchanged.</para>
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -193,7 +199,9 @@ public sealed class P970JoinPasswordTests
     {
         Require.Artwork();
         using var server = new Srv();
-        server.Boot(Config());
+        var cfg = Config();
+        cfg.CredentialGuessLimits = new CredentialGuessLimitsConfig { Enabled = false };   // P1022: see the summary
+        server.Boot(cfg);
 
         var log = new StringBuilder();
         var saved = Console.Out;

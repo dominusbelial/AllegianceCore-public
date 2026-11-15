@@ -796,6 +796,22 @@ list in **reverse**.
   `OpenProbeForTest` (per-thread attribution of `Write` attempts/emissions — use
   it instead of asserting deltas of the process-global counters). Report:
   `docs/reports/VERBOSE_GATE_FLAKE_P964.md`.
+- **Credential guess limits (P1022, default ON) + the extended relay budget** — every server (password-protected
+  or not) bounds guessing of the game password and the admin/harness bearer secrets: `server.json`
+  `credentialGuessLimits` is resolved and bannered at boot by
+  `src/Allegiance.Server/Server.CredentialLimits.cs` (`ResolveCredentialGuessLimits`,
+  `CredentialGuessBlocked`, `RecordCredentialGuessFailure`), with the counter itself (per connection, per source
+  address, doubling back-off, bounded/expiring address table, caller-supplied clock) in
+  `src/Allegiance.Server/CredentialGuessGuard.cs`. Counted at the logon gate and the join refusal
+  (`src/Allegiance.Server/Server.Dispatch.cs`, `src/Allegiance.Server/Server.MissionCookies.cs`), at the bearer
+  comparisons (`src/Allegiance.Server/Server.Privileges.cs`) and for a wrong bearer in front of a known cheat
+  command (`src/Allegiance.Server/Server.AdminCheats.cs`). Native has no throttle
+  (`FedSrv/FedSrv.CPP:648-661`, `:664`) — deliberate port hardening, logged as `[lockout]`. The same work charges
+  the relays R1 found uncharged (POSITIONREQ, SET_WINGID, SWAP_PART, PLAYER_DONATE, BUCKET_DONATE, the leader's
+  `#autoaccept`/`#autobalance` MISSIONDEF and SIDE_INACTIVE) to the existing P654 per-peer budget
+  (`TryChargeChatBudget`, `src/Allegiance.Server/Server.Dispatch.cs`). Tests
+  `tests/Allegiance.Core.Tests/P1022CredentialGuessTests.cs`,
+  `tests/Allegiance.Core.Tests/P1022RelayBudgetTests.cs`; report `docs/reports/R1_DISPATCH_LIMITS_P1022.md`.
 - **Cheats / debug** — `Server.AdminCheats.cs`, `Server.Privileges.cs`;
   debug mode `docs/reports/P378_DEBUG_MODE.md`.
 - **Showcase / scenario hosting** — `Server.Showcase.cs`,
