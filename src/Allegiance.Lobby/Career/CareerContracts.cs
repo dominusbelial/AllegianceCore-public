@@ -32,6 +32,45 @@ public static class CareerContracts
         CommanderWins,
     }
 
+    /// <summary>P1028 — per-match admission limits for result ingestion.
+    /// Defence in depth against a buggy or compromised enrolled game server:
+    /// native had no such surface (the club DB was fed by the operator-run
+    /// server itself, FedSrv.CPP:1045-1140), so no native values exist to
+    /// mirror — the caps are chosen well above anything a real Allegiance
+    /// match can produce (see each constant's rationale).</summary>
+    public static class Limits
+    {
+        /// <summary>A match cannot outlast a day — Allegiance games end on
+        /// goals or server-side time limits well under three hours.</summary>
+        public const int MaxMinutes = 1440;
+
+        /// <summary>The rank ladder tops out at 1,000,000 career score
+        /// (CareerRankTable); one match cannot award a tenth of that.</summary>
+        public const float MaxScore = 100_000f;
+
+        /// <summary>Per-match combat rating, same magnitude bound as the score.</summary>
+        public const float MaxCombatRating = 100_000f;
+
+        /// <summary>Kills/deaths/ejections/rescues/warps: with respawn cycles
+        /// alone eating minutes, no pilot reaches a thousand in one sitting.</summary>
+        public const int MaxKills = 1000;
+        public const int MaxDeaths = 1000;
+        public const int MaxEjections = 1000;
+        public const int MaxRescues = 1000;
+        public const int MaxWarpsSpotted = 1000;
+
+        /// <summary>Bases, flags, artifacts and techs are map-limited: sectors
+        /// hold a handful of bases and at most dozens of flaggable objects.</summary>
+        public const int MaxBaseKills = 100;
+        public const int MaxBaseCaptures = 100;
+        public const int MaxFlags = 100;
+        public const int MaxArtifacts = 100;
+        public const int MaxTechsRecovered = 100;
+
+        /// <summary>A sector holds at most hundreds of asteroids.</summary>
+        public const int MaxAsteroidsSpotted = 10_000;
+    }
+
     /// <summary>One verified player's end-of-match result, reported by the game
     /// server (the port of native <c>SetCharStats</c>' per-game
     /// <c>PlayerScoreObject</c>, <c>FedSrv/FedSrv.CPP:1045-1140</c>).</summary>
@@ -61,7 +100,38 @@ public static class CareerContracts
         int TechsRecovered = 0,
         int WarpsSpotted = 0,
         int AsteroidsSpotted = 0,
-        float TimePlayedSeconds = 0f);
+        float TimePlayedSeconds = 0f)
+    {
+        /// <summary>P1028 — admission check for a server-reported result:
+        /// <c>null</c> when every numeric field is within
+        /// <see cref="Limits"/>, otherwise a short rejection reason naming the
+        /// offending field (the caller turns this into a 4xx).</summary>
+        public string? Validate()
+        {
+            if (!float.IsFinite(Score) || Score < 0 || Score > Limits.MaxScore)
+                return $"score {Score} must be between 0 and {Limits.MaxScore}";
+            if (!float.IsFinite(CombatRating) || CombatRating < 0 || CombatRating > Limits.MaxCombatRating)
+                return $"combat rating {CombatRating} must be between 0 and {Limits.MaxCombatRating}";
+            if (Minutes < 0) return "minutes must not be negative";
+            if (Minutes > Limits.MaxMinutes) return $"minutes {Minutes} exceed the per-match limit of {Limits.MaxMinutes}";
+            if (Kills < 0 || Kills > Limits.MaxKills) return $"kills {Kills} must be between 0 and {Limits.MaxKills}";
+            if (Deaths < 0 || Deaths > Limits.MaxDeaths) return $"deaths {Deaths} must be between 0 and {Limits.MaxDeaths}";
+            if (!float.IsFinite(BaseKills) || BaseKills < 0 || BaseKills > Limits.MaxBaseKills)
+                return $"base kills {BaseKills} must be between 0 and {Limits.MaxBaseKills}";
+            if (!float.IsFinite(BaseCaptures) || BaseCaptures < 0 || BaseCaptures > Limits.MaxBaseCaptures)
+                return $"base captures {BaseCaptures} must be between 0 and {Limits.MaxBaseCaptures}";
+            if (Ejections < 0 || Ejections > Limits.MaxEjections) return $"ejections {Ejections} must be between 0 and {Limits.MaxEjections}";
+            if (Rescues < 0 || Rescues > Limits.MaxRescues) return $"rescues {Rescues} must be between 0 and {Limits.MaxRescues}";
+            if (Flags < 0 || Flags > Limits.MaxFlags) return $"flags {Flags} must be between 0 and {Limits.MaxFlags}";
+            if (Artifacts < 0 || Artifacts > Limits.MaxArtifacts) return $"artifacts {Artifacts} must be between 0 and {Limits.MaxArtifacts}";
+            if (TechsRecovered < 0 || TechsRecovered > Limits.MaxTechsRecovered) return $"techs recovered {TechsRecovered} must be between 0 and {Limits.MaxTechsRecovered}";
+            if (WarpsSpotted < 0 || WarpsSpotted > Limits.MaxWarpsSpotted) return $"warps spotted {WarpsSpotted} must be between 0 and {Limits.MaxWarpsSpotted}";
+            if (AsteroidsSpotted < 0 || AsteroidsSpotted > Limits.MaxAsteroidsSpotted) return $"asteroids spotted {AsteroidsSpotted} must be between 0 and {Limits.MaxAsteroidsSpotted}";
+            if (!float.IsFinite(TimePlayedSeconds) || TimePlayedSeconds < 0 || TimePlayedSeconds > Limits.MaxMinutes * 60)
+                return $"time played {TimePlayedSeconds}s must be between 0 and {Limits.MaxMinutes * 60}";
+            return null;
+        }
+    }
 
     /// <summary>Whole-match report: one <see cref="MatchResultEntry"/> per
     /// verified player who sat out that match. <c>MatchId</c> is the server's

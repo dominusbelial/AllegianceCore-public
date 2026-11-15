@@ -27,7 +27,17 @@ public static class CareerEndpoints
         {
             var context = identities.VerifyServer(report.ServerId, report.ServerSecret);
             if (context is null) return Results.Unauthorized();
-            return Results.Ok(career.ApplyMatchReport(report, context, identities.Now, squads));
+            // P1028 — a rejected report (out-of-limits field or an overflowing
+            // career total) is a 4xx with the reason; ApplyMatchReport validates
+            // before opening its transaction, so nothing partially applies.
+            try
+            {
+                return Results.Ok(career.ApplyMatchReport(report, context, identities.Now, squads));
+            }
+            catch (ReportRejectedException e)
+            {
+                return Results.BadRequest(new { error = e.Message });
+            }
         }).RequireRateLimiting(RateLimiting.RegisterPolicy);
 
         // Public read: a player's full character info (per-civ career lines).
