@@ -511,6 +511,12 @@ list in **reverse**.
   test only after the client is seated and in sync. `LockstepPumpUntil` in
   `tests/Allegiance.ClientCore.Tests/MissileLockLiveTests.cs`; missile-lock tips are
   `src/Allegiance.ClientCore/State/MissileLockFeedback.cs` (native `WinTrek/console.cpp:935-950`).
+- **Server-clock deadline check (P1021)** — live-test pattern for a server timer: step `TickSim` alone and judge the
+  deadline from server state on the server's sim clock (last tick still short of it, next tick at or past it);
+  check the client's receipt separately as delivery. Never read the sim clock when a client receive thread
+  surfaces the result — a fast pump runs ~40 sim-seconds per wall-second. Side-select auto-seat (P763):
+  `tests/Allegiance.Core.Tests/LiveSideSelectTests.cs`, seam `TestPendingSideSelectConnectSimTime` in
+  `src/Allegiance.Server/Server.cs`.
 - **Boarded source pose (P891)** — launch copies the parent's guaranteed
   `SET_CLUSTER` to its passengers (`src/Allegiance.Server/Server.Docking.cs`);
   `src/Allegiance.ClientCore/State/ClientWorld.cs` keeps child identity/cookie

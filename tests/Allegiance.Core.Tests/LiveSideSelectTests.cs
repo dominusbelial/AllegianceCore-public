@@ -164,35 +164,81 @@ public class LiveSideSelectTests
     }
 
     /// <summary>P763 — the auto-seat is opt-in: with the flag ON (30 s), a
-    /// silent peer is seated at the configured deadline, not before it.</summary>
+    /// silent peer is seated at the configured deadline, not before it.
+    /// P1021 — the deadline is judged on the server's own clock, one sim tick
+    /// at a time, from the pending peer's recorded logon time: the tick before
+    /// the seat is still short of 30 s and the seating tick is the first one
+    /// at or past it. The client's receipt of the join burst is then checked
+    /// as delivery only. (The old form read the sim clock when the bot's
+    /// receive thread surfaced SET_CLUSTER; the fast pump runs ~40 sim-seconds
+    /// per wall-second, so a 10–60 ms delivery read as 30.4–32.7 "seconds".)</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds()
     {
         Require.Artwork();
+        const double AutoSeatSeconds = 30.0;
+        const int UpdatesPerSecond = 20;   // Config()
+        const double Period = 1.0 / UpdatesPerSecond;
         using var server = new Srv();
-        server.Boot(Config(30));
+        server.Boot(Config(AutoSeatSeconds));
         using var b = new FltBot();
 
         ConnectPending(server, b, "SELON30");
-        double start = server.SimNow;
-
-        // 29 simulation seconds: still pending. This proves the timer is not
-        // "seat immediately" and pins the configured deadline.
-        int early = PumpUntil(server, () => b.ShipAssignment is not null || server.SimNow - start >= 29.0, 800);
-        Assert.True(early < 800, "server did not advance 29 simulation seconds");
+        // The instant the server's deadline is measured from (set when the
+        // LOGONREQ was handled), not the later moment the roster reached us.
+        double? pendingSince = server.TestPendingSideSelectConnectSimTime("SELON30");
+        Assert.True(pendingSince.HasValue, "the silent peer is not pending side-select after logon");
+        double connect = pendingSince!.Value;
         Assert.Null(b.ShipAssignment);
         Assert.Empty(server.Ships);
 
-        int got = PumpUntil(server, () => b.ShipAssignment is not null, 100);
-        Assert.True(got < 100, "silent peer was not auto-seated at the 30 s flag");
-        double elapsed = server.SimNow - start;
-        // ConnectSimTime is recorded a tick or two before ConnectPending
-        // returns; allow that slack while still pinning ~30 s (not 0/15/31+).
-        Assert.InRange(elapsed, 28.0, 31.0);
+        // Step the server alone (no wall-clock pacing) until it seats the
+        // peer, remembering the clock of the last tick that left it pending.
+        double lastPendingNow = server.SimNow;
+        int ticks = 0;
+        const int MaxTicks = 800;   // 40 sim-seconds: a missing timer fails here
+        while (server.Ships.Count == 0 && ticks < MaxTicks)
+        {
+            lastPendingNow = server.SimNow;
+            server.TickSim();
+            ticks++;
+            if (server.Ships.Count == 0)
+                Assert.Equal(connect, server.TestPendingSideSelectConnectSimTime("SELON30"));   // still pending, deadline not re-armed
+        }
+        Assert.True(server.Ships.Count > 0, $"silent peer was not auto-seated within {MaxTicks} ticks of the 30 s flag");
+        double seatNow = server.SimNow;
 
-        short bId = b.ShipAssignment!.Ship.ShipId;
-        Assert.NotNull(server.Ships.First(s => s.Ship.Id == bId).Ship.SideId);
+        // Not before: the tick before the seat was short of the deadline (the
+        // same double comparison AdvanceSideSelection makes), and that was the
+        // immediately preceding tick. At: the seating tick is at or past it.
+        // Together: seated on the first tick at/after connect + 30 s, i.e. in
+        // [30, 30 + one tick).
+        Assert.True(lastPendingNow - connect < AutoSeatSeconds,
+            $"seated late: still pending at {lastPendingNow - connect:R} s after logon");
+        Assert.True(seatNow - connect >= AutoSeatSeconds,
+            $"seated early: {seatNow - connect:R} s after logon");
+        Assert.Equal(Period, seatNow - lastPendingNow, 9);
+        Assert.InRange(seatNow - connect, AutoSeatSeconds, AutoSeatSeconds + Period);
+        Assert.Null(server.TestPendingSideSelectConnectSimTime("SELON30"));   // no longer pending
+
+        // Exactly one ship, on a real side, seated by the timer (no POSITIONREQ
+        // was ever sent).
+        var seated = Assert.Single(server.Ships).Ship;
+        Assert.NotNull(seated.SideId);
+
+        // Delivery: the join burst reaches the silent client and names that
+        // ship. This is transport latency, not the timer, so it is bounded in
+        // wall-clock time and never read against the sim clock.
+        var deadline = System.Diagnostics.Stopwatch.StartNew();
+        while (b.ShipAssignment is null && deadline.Elapsed < TimeSpan.FromSeconds(10))
+        {
+            server.TickSim();
+            Thread.Sleep(1);
+        }
+        Assert.True(b.ShipAssignment is not null, "auto-seated peer never received its SET_CLUSTER");
+        Assert.Equal(seated.Id, b.ShipAssignment!.Ship.ShipId);
+        Assert.Single(server.Ships);
     }
 
     /// <summary>P763 — native has no timeout: with the flag off (null/absent,

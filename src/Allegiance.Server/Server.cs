@@ -1107,6 +1107,21 @@ public sealed partial class Server : IDisposable
     /// which tracks an ALREADY-SPAWNED peer's request to switch sides.</summary>
     private readonly Dictionary<ConnectionId, PendingSideSelect> _pendingSideSelect = new();
 
+    /// <summary>P1021 — internal test seam (InternalsVisibleTo): the sim time the
+    /// opt-in <see cref="ServerConfig.SideSelectAutoSeatSeconds"/> deadline of the
+    /// pending side-select peer logged on as <paramref name="characterName"/> is
+    /// measured from (<see cref="PendingSideSelect.ConnectSimTime"/>), or null
+    /// when no such peer is pending (never logged on, or already seated). Read
+    /// only; lets a live test pin the auto-seat to the exact sim tick on the
+    /// server's own clock instead of timing a client receive thread.</summary>
+    internal double? TestPendingSideSelectConnectSimTime(string characterName)
+    {
+        foreach (var pending in _pendingSideSelect.Values)
+            if (string.Equals(pending.Request.CharacterName, characterName, StringComparison.Ordinal))
+                return pending.ConnectSimTime;
+        return null;
+    }
+
     /// <summary>P281 — logon-order counter for <see cref="PendingSideSelect.JoinSeq"/>.</summary>
     private long _nextJoinSeq;
 
