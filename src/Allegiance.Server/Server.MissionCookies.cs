@@ -27,8 +27,11 @@ public sealed partial class Server
     /// </summary>
     /// <param name="callsign">The name to log; the caller may already hold it (the
     /// side-select path removes the pending entry before this check).</param>
-    private bool JoinMission(ConnectionId peer, uint cookie, short shipId, out Mission? mission, string? password = null,
-        string? callsign = null)
+    /// <param name="refusal">P1022 — which refusal was sent (null on success), so
+    /// the logon gate can count ONLY a wrong password toward the credential
+    /// guessing limits (a no-mission / paused refusal is not a guess).</param>
+    private bool JoinMission(ConnectionId peer, uint cookie, short shipId, out Mission? mission,
+        out DelPositionReqReason? refusal, string? password = null, string? callsign = null)
     {
         mission = ResolveJoinMission(cookie);
         var reason = mission is null ? DelPositionReqReason.NoMission
@@ -41,11 +44,22 @@ public sealed partial class Server
             reason = DelPositionReqReason.BadPassword;
             ReportPasswordRefusal(peer, callsign);
         }
+        refusal = reason;
         if (reason is null) return true;
         SendPeer(peer, FedPacket.Pack([new DelPositionReq
         { ShipId = shipId, SideId = -1, Reason = reason.Value }.Encode()]));
         return false;
     }
+
+    /// <summary>
+    /// P1022 (R1 F7) — the same gate without the refusal out-parameter, for the
+    /// internal seat paths (side-select timeout, CompleteSideSelection) that
+    /// re-run it for an already-validated peer: those are not a fresh guess, so
+    /// they never count toward the credential guessing limits.
+    /// </summary>
+    private bool JoinMission(ConnectionId peer, uint cookie, short shipId, out Mission? mission, string? password = null,
+        string? callsign = null)
+        => JoinMission(peer, cookie, shipId, out mission, out _, password, callsign);
 
     /// <summary>
     /// P970 — one rate-limited log line per bad-password refusal, with the peer id

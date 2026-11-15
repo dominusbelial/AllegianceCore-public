@@ -4,6 +4,29 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1022 credential-guessing limits + relay budget — 2026-11-15 UTC
+
+Two full Fast sweeps on the P1022 tree (`tools/run-tests.sh --tier fast --no-build`). **The final sweep had zero
+assertion failures**: 14,561 executions, 14,542 passed, 0 failed, 19 not executed (Live/Perf rows outside the Fast
+selection). Verdict `FAIL` on **timing only** — five Fast executions over the calibrated 11.543 s limit, all
+already-ledgered families (`SC2NaniteSupportTests` civ 25, `P814GunnerTests.P814b`, `P968PublisherStreamIndexTests`
+400 peers, `P999CivStrategyTests` civ 5, `P750NativeAsteroidTypesTests`); the runner's quarantine retried each one
+alone and every one passed.
+
+| Method | Sweep trigger | Isolated runs | Isolated time |
+| --- | --- | --- | --- |
+| `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` (`model: "native"`) | "skirmish/native sustained aim drift"; 0.284 s | **4/0/0; 4/0/0; 4/0/0** at load average 0.74 | 1 s per run (4 cases) |
+
+It passed in the second sweep as well. Already ledgered below (P1013 section, same signature). P1022 touches
+dispatch, the credential paths and the P654 budget only — no aim, ship-update or simulation code — so this is the
+recorded load flake, not a new family.
+
+Two first-sweep failures were **task-caused and fixed, not flakes**: `CleanCloneSkipGuardTests` rejected the three
+unskipped R1 proof tests because they were plain `[Fact]`s calling `Require.Artwork()` (now `[SkippableFact]` with no
+`Skip=`), and `P970JoinPasswordTests.A_refusal_is_logged_once_with_the_pilot_and_no_password_text` pumped 13
+loopback refusals through the new per-address back-off (that test now runs with `credentialGuessLimits.enabled=false`;
+its subject is the P970 log gate). Both explanations are in `docs/reports/R1_DISPATCH_LIMITS_P1022.md` §2.7.
+
 ## P1021 side-select auto-seat test — RESOLVED — 2026-11-14 UTC
 
 `LiveSideSelectTests.Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds` is **closed**; every row below

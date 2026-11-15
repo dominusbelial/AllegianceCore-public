@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -39,6 +40,16 @@ public sealed partial class Server
         // after launch. It forwards the original chat and then the mission def.
         if (side.LeaderShipId == ship.Id && IsBallotCommand(text, "#autoaccept"))
         {
+            // P1022 (R1 F1) — the whole-mission MISSIONDEF (plus every JOIN_SIDE
+            // the auto-accept sweep seats) is charged to the P654 per-peer budget
+            // BEFORE it is built; native charges only chat/REQUEST_MONEY, so this
+            // was the uncharged whole-mission relay the finding lists. A denied
+            // charge consumes the line: no mission def and no chat relay.
+            if (!TryChargeChatBudget(from))
+            {
+                ConsoleLog.Write($"[autoaccept] {from}: chat budget exhausted — #autoaccept MISSIONDEF dropped (R1 F1 / H-24)");
+                return true;
+            }
             side.AutoAccept = !side.AutoAccept;
             if (side.AutoAccept) SweepAutoAcceptPending(mission, side.Id);
             SendMissionDef(mission);
@@ -48,6 +59,12 @@ public sealed partial class Server
         else if (IsMissionOwnerPlayer(ship, mission)
             && text.Length >= "#autobalance  ".Length && IsBallotCommand(text, "#autobalance"))
         {
+            // P1022 (R1 F1) — same whole-mission MISSIONDEF relay, same charge.
+            if (!TryChargeChatBudget(from))
+            {
+                ConsoleLog.Write($"[autobalance] {from}: chat budget exhausted — #autobalance MISSIONDEF dropped (R1 F1 / H-24)");
+                return true;
+            }
             int? value = IsBallotCommand(text, "#autobalance 1") ? 1
                 : IsBallotCommand(text, "#autobalance 2") ? 2
                 : IsBallotCommand(text, "#autobalance a") ? 0x7ffe

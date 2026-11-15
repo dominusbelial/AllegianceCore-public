@@ -362,6 +362,20 @@ public sealed partial class Server
             // Validate both balances before any mutation, using a wider sum.
             if (LiveOf(pfssTo) is { } recipient && !ReferenceEquals(recipient.Ship, live.Ship)
                 && (recipient.Wallet.Money < 0 || (long)recipient.Wallet.Money + req.MoneyGiven > int.MaxValue)) return;
+            // P1022 (R1 F1) — charge the side-wide MONEY_CHANGE(60) relay to the
+            // P654 per-peer budget BEFORE the wallets move, so a denied charge
+            // leaves no state change without its announcement. NATIVE CHECK: a
+            // self-donation (moneyGiven > 0 to own ship) passes native's
+            // same-side/allied test and DOES send the MONEY_CHANGE to the sender's
+            // side group (FedSrv.CPP:7226-7245, net wallet zero), so it is charged
+            // here, never dropped (parity). A bounce-back echo to the requester
+            // alone in the else branch is one frame, not a fan-out, so it is not
+            // charged.
+            if (!TryChargeChatBudget(from))
+            {
+                ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: chat budget exhausted — PLAYER_DONATE relay dropped (R1 F1 / H-24)");
+                return;
+            }
             // Real transfer (FedSrv.CPP:7236-7240).
             mc.SidTo = req.ShipID;
             mc.SidFrom = ship.Id;
@@ -580,6 +594,18 @@ public sealed partial class Server
         long refund = donate.MoneyGiven;   // native mnyRefund (FedSrv.CPP:7151)
         if (side.CanBuy(bucket))
         {
+            // P1022 (R1 F1) — charge the side-wide MONEY_CHANGE(60) +
+            // BUCKET_STATUS(65) pair to the P654 per-peer budget BEFORE the
+            // spend, so a denied charge changes nothing. NATIVE CHECK: a
+            // moneyGiven == 0 donation passes native's `moneyGiven >= 0` trap and
+            // DOES relay both frames (MONEY_CHANGE dMoney=0 to the side group and
+            // the bucket status, FedSrv.CPP:7146-7200), so it is charged, never
+            // dropped (parity).
+            if (!TryChargeChatBudget(from))
+            {
+                ConsoleLog.Write($"[bucketdonate] {from}: chat budget exhausted — BUCKET_DONATE relay dropped (R1 F1 / H-24)");
+                return;
+            }
             // P551: the whole spend is gated on the side being ABLE to buy the
             // bucket (native `if (pside->CanBuy(pbucket))`, FedSrv.CPP:7152) —
             // an unbuyable bucket accepts nothing. The bucket caps at what it

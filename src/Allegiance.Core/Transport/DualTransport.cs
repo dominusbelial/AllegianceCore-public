@@ -45,6 +45,15 @@ public sealed class DualTransport : IServerTransport
     public void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey) => Route(target).SendCoalescing(Inner(target), data, coalesceKey);
     public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey) => Route(target).SendGuaranteedCoalescing(Inner(target), data, coalesceKey);
     public bool IsPeerLoopback(ConnectionId id) => Route(id).IsPeerLoopback(Inner(id));
+    /// <summary>P1022 — the peer's source address on whichever half owns it
+    /// (the credential-guessing address key), or <c>null</c> when unknown.</summary>
+    public IPAddress? PeerAddress(ConnectionId id)
+        => Route(id) switch
+        {
+            TcpTransport tcp => tcp.PeerAddress(Inner(id)),
+            UdpTransport udp => udp.PeerAddress(Inner(id)),
+            _ => null,
+        };
     public void SetPeerHuman(ConnectionId id, bool human) => Route(id).SetPeerHuman(Inner(id), human);
     public bool IsPeerClosed(ConnectionId id) => Route(id).IsPeerClosed(Inner(id));
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown) => Route(id).ClosePeer(Inner(id), reason);

@@ -86,6 +86,35 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P1022 (R1 F7) — the cheat tokens this port recognises, used only to tell a
+    /// wrong-bearer GUESS (<c>"&lt;guess&gt; relocate …"</c>) from ordinary chat.
+    /// Keep in sync with <see cref="TryHandleAdminCheat"/>'s token table.
+    /// </summary>
+    private static readonly string[] AdminCheatTokens = ["relocate", "timescale", "egress"];
+
+    /// <summary>
+    /// P1022 (R1 F7) — is this chat line a bearer presented in front of a known
+    /// cheat command? True only when the first whitespace token is a non-empty
+    /// bearer candidate AND the second token is a recognised cheat: that is the
+    /// exact shape of a secret guess. Ordinary chat ("go north", "relocate now"
+    /// after authenticating) never matches, which is why a privileged player's
+    /// normal lines are never counted as failures.
+    /// </summary>
+    internal static bool LooksLikeSecretPrefixedCommand(string message)
+    {
+        string trimmed = message.TrimStart();
+        int first = IndexWhitespace(trimmed);
+        if (first <= 0) return false;
+        string rest = trimmed[(first + 1)..].TrimStart();
+        if (rest.Length == 0) return false;
+        int second = IndexWhitespace(rest);
+        string token = second < 0 ? rest : rest[..second];
+        foreach (var cheat in AdminCheatTokens)
+            if (token.Equals(cheat, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    /// <summary>
     /// P602 — the boot banner for the admin-cheat hook. Returns null when admin
     /// cheats are not enabled (nothing printed, matching P554's silent default).
     /// When enabled, returns the active banner; when additionally bound to a
@@ -134,8 +163,24 @@ public sealed partial class Server
         var authCfg = _config.LiveSettings?.AdminCheats;
         // Authenticate a secret-bearing command before enabling passive viewing.
         // Only enabled, allow-listed peers may use this bootstrap.
-        if (AdminSpectatorAllowed(authCfg, _peerNames.GetValueOrDefault(from))
-            && ConsumeSecretPrefix(authCfg?.Secret, msg, out _)) _adminAuthenticated.Add(from);
+        bool bootstrapEligible = AdminSpectatorAllowed(authCfg, _peerNames.GetValueOrDefault(from));
+        if (bootstrapEligible && ConsumeSecretPrefix(authCfg?.Secret, msg, out _))
+        {
+            _adminAuthenticated.Add(from);
+            // A correct secret is never slowed (P1022 R1 F7).
+            RecordCredentialGuessSuccess(from);
+        }
+        else if (bootstrapEligible && authCfg?.Secret is { Length: > 0 }
+                 && !_adminAuthenticated.Contains(from) && LooksLikeSecretPrefixedCommand(msg))
+        {
+            // P1022 (R1 F7) — a WRONG bearer presented in front of a known cheat
+            // command is a guessing attempt: count it per connection and per
+            // source address, exactly like a wrong game password. Ordinary chat
+            // never counts (its first token is not a bearer before a cheat), so
+            // an allow-listed player's normal lines are unaffected; once the peer
+            // authenticates nothing is counted at all.
+            if (RecordCredentialGuessFailure(from, "admin-secret-chat")) return true;
+        }
         if (!CanUseAdminCheats(from, ship)) return false;
 
         // Strip a presented bearer. Authenticated logon sessions may also send

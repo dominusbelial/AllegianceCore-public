@@ -7,6 +7,16 @@
   "comment": "P889 — worker-pool sizing: hostProfile is 'dedicated' (default; the server owns the box) or 'shared' (a game client/bot driver shares it, as in single-player skirmish). expectedPlayers defaults to the configured capacity (teams x maxPlayersPerTeam); set it to the real count on a small server, e.g. 20. ALLEGIANCE_HOST_PROFILE / ALLEGIANCE_EXPECTED_PLAYERS override these. See docs/PERFORMANCE.md, 'Running on your own hardware'.",
   "hostProfile": "dedicated",
   "expectedPlayers": 200,
+  "credentialGuessLimits": {
+    "comment": "P1022 (R1 F7) — limits on guessing the game password and the admin/test-harness bearer secrets. ON by default on EVERY server, password-protected or not; a correct credential is never slowed, so normal play, bots, the harness and local skirmish/training are unaffected. maxFailuresPerConnection failed credentials retire that connection; failuresPerWindow from one source address inside windowSeconds start a back-off that doubles each time it re-arms (baseLockoutSeconds -> maxLockoutSeconds). maxTrackedAddresses caps the per-address table (expired entries are pruned). Set enabled=false to restore the unthrottled native behaviour (native answers a wrong password/secret at once, FedSrv.CPP:648-661). See docs/reports/R1_DISPATCH_LIMITS_P1022.md.",
+    "enabled": true,
+    "maxFailuresPerConnection": 3,
+    "failuresPerWindow": 5,
+    "windowSeconds": 60,
+    "baseLockoutSeconds": 15,
+    "maxLockoutSeconds": 300,
+    "maxTrackedAddresses": 4096
+  },
   "sim": {
     "comment": "P629 native crowding damage and warnings are on by default. Use off for single-sector stress tests/showcases; out-of-bounds damage remains enabled.",
     "crowdingPenalty": "native"
