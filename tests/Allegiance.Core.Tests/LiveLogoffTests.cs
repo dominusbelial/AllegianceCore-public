@@ -352,8 +352,8 @@ public class LiveLogoffTests
         // the sector-scoped logoff contract and all assertions stay the same.
         var observingShip = server.Ships.First(s => s.Ship.Id == obId).Ship;
         var departureSector = server.Ships.First(s => s.Ship.Id == lvId).Ship.Sector!;
-        typeof(Srv).GetMethod("MoveShipToSector", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, [observingShip, departureSector, false]);
+        typeof(Srv).GetMethod("MoveShipToSector", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(server, [observingShip, departureSector, false]);
         typeof(Srv).GetMethod("UpdatePeerSectorSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(server, [observingShip, departureSector]);
         Assert.Same(departureSector, observingShip.Sector);

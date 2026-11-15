@@ -4,6 +4,45 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1034 gate observations — 2026-11-15 UTC
+
+One full Fast sweep: **14,595 passed / 12 failed / 17 skipped**, 611.9 s;
+9/9 infrastructure checks. Nine executions exceeded the calibrated 11.542 s
+limit. This is a failed full gate, not an all-green result.
+
+Seven failures were boarding fixture assumptions exposed by restoring native's
+admin-only observer permission: four cases in `P653EconomyLoadoutIntegrityTests`,
+two in `P1017BuyFlowLiveTests`, and the `LiveMoneyTests` boarding refund case.
+The fixtures now use an equipped turret for ordinary players/bots or verified
+loopback admin permission for intentional observers. All original assertions
+remain. After correction, each complete class passed three isolated runs:
+**31/0/0**, **7/0/0**, and **2/0/0**, respectively. The final P1034 regression
+class passed **14/0/0** three times. These task-related failures are resolved and
+are not being classified as unrelated flakes.
+
+The five unrelated failed methods and five passing timing offenders below were
+each run three times by exact method filter, one test process at a time, with
+artwork and no build. Every case passed every rerun, below the calibrated limit.
+Identity, ordnance, mining and strategy product code, and these test methods,
+were not changed. Full theory groups were selected for parameterized methods.
+
+| Test | Full-sweep observation | Three isolated runs (P/F/S; maximum case seconds) |
+| --- | --- | --- |
+| `P808IdentityTests.Grants_expire_and_only_one_concurrent_poll_consumes_approval` | SQLite error 5: database locked during two concurrent approval polls | 1/0/0 (0.426s); 1/0/0 (0.429s); 1/0/0 (0.423s) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | Delay 5 computed 5.0000000000000009 above its inclusive 5 s bound (existing floating-point deadline family) | 3/0/0 (0.468s); 3/0/0 (0.557s); 3/0/0 (0.575s) |
+| `P591dMinefieldExportAudienceTests.Opposite_side_peer_does_not_receive_the_deploy_mine_export` | Layer did not finish within 60,000 ticks (30.158 s) | 1/0/0 (0.497s); 1/0/0 (0.492s); 1/0/0 (0.507s) |
+| `ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts` | Expected mine export absent from the receipt collection | 1/0/0 (0.400s); 1/0/0 (0.361s); 1/0/0 (0.395s) |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Two queued ASTEROID_MINED receipts after capacity (existing mining receipt family) | 1/0/0 (1.745s); 1/0/0 (1.768s); 1/0/0 (1.723s) |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed in 12.990 s, above the calibrated 11.542 s limit | 1/0/0 (3.099s); 1/0/0 (3.067s); 1/0/0 (3.069s) |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed civ 25 in 13.437 s, above the limit | 2/0/0 (3.982s); 2/0/0 (3.995s); 2/0/0 (3.992s) |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed civ 3 in 13.023 s, above the limit | 10/0/0 (1.899s); 10/0/0 (1.720s); 10/0/0 (1.592s) |
+| `P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work` | Passed 400 peers / no index / no coalescing in 13.868 s, above the limit | 8/0/0 (1.368s); 8/0/0 (1.361s); 8/0/0 (1.362s) |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Passed civ 5 in 16.920 s, above the limit | 10/0/0 (4.280s); 10/0/0 (4.288s); 10/0/0 (4.264s) |
+
+Raw receipts: ignored `.scratch/p1034/fast/`,
+`.scratch/p1034/non-task-reruns.json` and per-method TRX/log files.
+Report: `docs/reports/R1B_BOARDING_PARITY_P1034.md`.
+
 ## P1026 gate observations — 2026-11-15 UTC
 
 Final reviewed Fast result: **14,529 passed / 2 failed / 20 skipped**, 568.3 s.

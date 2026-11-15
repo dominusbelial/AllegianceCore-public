@@ -68,10 +68,8 @@ public sealed partial class Server
     /// faithful to the native walk (<c>FedSrv.CPP:2347-2402</c>): no turret
     /// slots ⇒ observer; else pick the first unoccupied, equipped
     /// <c>[MaxFixedWeapons, MaxWeapons)</c> slot, falling back to observer.</item>
-    /// <item><b>Observer gate collapsed</b> — native
-    /// <c>(turret != NA) || CanCheat()</c> (<c>FedSrv.CPP:2406</c>); this port
-    /// has no cheat/admin concept, so per the P100/P103 precedent the gate
-    /// collapses to always-true — observer boarding is allowed unconditionally.</item>
+    /// <item><b>Observer gate</b> — native <c>(turret != NA) || CanCheat()</c>
+    /// (<c>FedSrv.CPP:2405-2406</c>), using the port's authenticated admin permission.</item>
     /// <item><b>Defensive detach of the boarder's own children</b> — the native
     /// <c>while (psl = pchildren-&gt;first()) LeaveShip(...)</c>
     /// (<c>FedSrv.CPP:2415-2420</c>). No nested boarding exists in this port, so
@@ -123,7 +121,10 @@ public sealed partial class Server
 
         // Turret-slot search (FedSrv.CPP:2347-2402); null = observer.
         short? turret = ChooseTurretSlot(boarder, carrier);
-        // Observer gate collapsed (no cheat/admin concept) — proceed regardless.
+        // Native FedSrv/FedSrv.CPP:2405-2406: only a player who can cheat
+        // may fall back to an observer. Refuse before refunding or detaching.
+        if (turret is null && !_peerShips.Any(kv => ReferenceEquals(kv.Value.Ship, boarder)
+            && CanUseAdminCheats(kv.Key, boarder))) return false;
 
         // Defensive detach of the boarder's own existing children
         // (FedSrv.CPP:2415-2420): anyone riding on the boarder must fend for
@@ -195,6 +196,10 @@ public sealed partial class Server
             boarder.StationId = cs;
             boarder.LastDockTime = _simNow;   // P381: stamp the dock clock on the inheriting boarder too
         }
+        // Native SetStation(pstationBoard), FedSrv.CPP:2456-2457. Docked
+        // models retain a sector in this port, so it must be the station's sector.
+        if (carrier.Sector is { } carrierSector)
+            MoveShipToSector(boarder, carrierSector, announceExit: false);
 
         Console.WriteLine($"[boardship] ship {boarder.Id} boarded {carrier.Id} as " +
             $"{(turret is null ? "observer (no turret slot)" : $"turret gunner slot {turret}")} — no ack, rides SHIP_STATUS refresh");
@@ -277,7 +282,8 @@ public sealed partial class Server
             byte[] packet = FedPacket.Pack(new[] { leave.Encode() });
             int recipients = 0;
             foreach (var kv in _peerShips)
-                if (kv.Value.Ship.SideId == sideId2) { SendPeer(kv.Key, packet); recipients++; }
+                if (kv.Value.Ship.SideId == sideId2 && ReferenceEquals(kv.Value.Ship.Mission, boarder.Mission))
+                { SendPeer(kv.Key, packet); recipients++; }
             Console.WriteLine($"[leaveship] ship {boarder.Id} left {carrier.Id} — LEAVE_SHIP(94) sidChild={boarder.Id} -> side {sideId2} ({recipients} peer(s))");
         }
         else
@@ -672,6 +678,19 @@ public sealed partial class Server
         StrategyEvent(rip, "completed:ripcord", rip.HullType.HullId);
         rip.SetRipcordModel(null);
         UpdatePeerSectorSnapshot(rip, targetSector);
+        // P1034: forward the source-ship arrival to its passengers. The owner's
+        // ripcord SET_CLUSTER/cookie transition is handled separately by P1029.
+        if (rip.ChildShips.Count > 0)
+        {
+            var owner = _peerShips.FirstOrDefault(kv => ReferenceEquals(kv.Value.Ship, rip));
+            var set = new SetCluster
+            {
+                SectorId = targetSector.Id,
+                Ship = ServerShipUpdate.FromModel(rip.Id, rip, (uint)TickIndex),
+                Cookie = owner.Value is null ? (byte)0 : EnsurePeerUpdate(owner.Key).Cookie,
+            };
+            SendBoardedCluster(rip, targetSector, FedPacket.Pack([set.Encode()]));
+        }
     }
 
     /// <summary>
@@ -1589,7 +1608,7 @@ public sealed partial class Server
     /// (<c>SetCluster(pcluster)</c>, FedSrv.CPP:13474-13476): out of its old
     /// sector's model list, into the target's, and update its <see cref="Ship.Sector"/>
     /// back-ref so it ticks with the new sector next pass.</summary>
-    private static void MoveShipToSector(Ship ship, Sector target, bool announceExit = true)
+    private void MoveShipToSector(Ship ship, Sector target, bool announceExit = true)
     {
         // P307 hardening (ghost-ship sector-membership desync): make the
         // relocation exact-once-safe so every call site converges on the same
@@ -1607,6 +1626,17 @@ public sealed partial class Server
         if (!target.Models.Contains(ship))
             target.Add(ship);
         ship.Sector = target;
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, ship))
+            {
+                _peerShips[kv.Key] = kv.Value with { Sector = target };
+                break;
+            }
+        // Native Igc/shipIGC.h:245-252 recursively changes every child's
+        // cluster; CFSPlayer::SetCluster (FedSrv/fsship.cpp:745-749) updates
+        // its broadcast group. This is shared by every server relocation path.
+        foreach (var child in ship.ChildShips)
+            MoveShipToSector(child, target, announceExit);
         // P760b/SIM-0220 — native's IshipIGC::SetCluster routes EVERY cluster
         // move through the site's ChangeCluster (shipIGC.h:254), which announces
         // the exit from the old cluster with SDR_LEFTSECTOR when both clusters
@@ -1629,13 +1659,24 @@ public sealed partial class Server
     /// LiveShip snapshot, so point it at the anchor's cluster exactly like
     /// PerformTeleport / the lifepod respawn do (Server.cs:3072, 3929).</summary>
     private void UpdatePeerSectorSnapshot(Ship rip, Sector target)
+        => MoveShipToSector(rip, target, announceExit: false);
+
+    /// <summary>Forward the identical source-ship arrival to its passengers,
+    /// with the destination snapshot (native FedSrv/fsship.cpp:918-929).
+    /// Docked relocations only update membership; they send no flying burst.</summary>
+    private void SendBoardedCluster(Ship parent, Sector target, byte[] packet)
     {
-        foreach (var kv in _peerShips)
-            if (ReferenceEquals(kv.Value.Ship, rip))
-            {
-                _peerShips[kv.Key] = kv.Value with { Sector = target };
-                break;
-            }
+        foreach (var child in parent.ChildShips)
+        {
+            foreach (var peer in _peerShips)
+                if (ReferenceEquals(peer.Value.Ship, child))
+                {
+                    SendPeer(peer.Key, packet);
+                    SendTreasureSnapshot(peer.Key, target);
+                    break;
+                }
+            SendBoardedCluster(child, target, packet);
+        }
     }
 
     /// <summary>Pick a turret slot for <paramref name="boarder"/> on
@@ -2291,8 +2332,15 @@ public sealed partial class Server
 
         // Use the station's native slot rotation, offsets, jitter, and velocity.
         DataStationIGC? stationModel = null;
-        foreach (var st in sector.Stations)
-            if (st.StationId == station) { stationModel = st; break; }
+        foreach (var candidate in ship.Mission?.Sectors ?? [sector])
+        {
+            foreach (var st in candidate.Stations)
+                if (st.StationId == station) { stationModel = st; sector = candidate; break; }
+            if (stationModel is not null) break;
+        }
+        // Native stationIGC.cpp:379 launches into the STATION's cluster.
+        // Repair any stale docked model/peer sector before launching, including crew.
+        MoveShipToSector(ship, sector, announceExit: false);
 
         // P760 — route the launch through ChangeStation so RepairAndRefuel and
         // the STAGE_STARTED / not-a-turret gates flow through the native callback
@@ -2363,6 +2411,7 @@ public sealed partial class Server
         // remains here.
         UndockShipState(live.Ship, live.Sector);
         StrategyEvent(live.Ship, "launched", live.Ship.HullType.HullId);
+        var launchSector = live.Ship.Sector!;
 
         // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the only place
         // that calls m_ship->SetStation(NULL) client-side (appmsg.cpp:1044-1049).
@@ -2371,7 +2420,7 @@ public sealed partial class Server
         // the real client) the Hangar launch lockdown never clears either.
         var set = new SetCluster
         {
-            SectorId = live.Sector.Id,
+            SectorId = launchSector.Id,
             Ship = ServerShipUpdate.FromModel(live.Ship.Id, live.Ship, (uint)TickIndex),
             // P518 — this SET_CLUSTER must rotate the per-player cookie with
             // NextCookie (native CFSPlayer::SetCluster ALWAYS stamps
@@ -2391,10 +2440,8 @@ public sealed partial class Server
         // burst to every child (FedSrv/fsship.cpp:918-929). A child's own pose
         // never substitutes for its source ship's launch pose. This scan runs
         // only on launch, not in the periodic ranked broadcast.
-        foreach (var peer in _peerShips)
-            if (ReferenceEquals(peer.Value.Ship.ParentShip, live.Ship))
-                SendPeer(peer.Key, launchPacket);
-        SendTreasureSnapshot(from, live.Sector);
+        SendBoardedCluster(live.Ship, launchSector, launchPacket);
+        SendTreasureSnapshot(from, launchSector);
 
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);

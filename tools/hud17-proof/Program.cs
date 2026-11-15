@@ -110,7 +110,7 @@ try
         }
     });
     game.Content.RootDirectory = content;
-    game.Components.Add(new Hud17Proof(game, mission, teammateServerShip, enemyServerShip, output, gate));
+    game.Components.Add(new Hud17Proof(game, server, mission, teammateServerShip, enemyServerShip, output, gate));
     game.Run();
 }
 finally { stop.Cancel(); ticker.Join(); }
@@ -132,13 +132,13 @@ static LogonRequest Logon(string name, ulong steam) => new()
 
 sealed class SimGate { public volatile bool Paused; }
 
-sealed class Hud17Proof(Game1 game, Mission mission, Ship teammateServerShip, Ship enemyServerShip,
+sealed class Hud17Proof(Game1 game, Srv server, Mission mission, Ship teammateServerShip, Ship enemyServerShip,
     string output, SimGate gate) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     private static readonly MethodInfo MoveShipMethod = typeof(Srv)
-        .GetMethod("MoveShipToSector", BindingFlags.Static | BindingFlags.NonPublic)
+        .GetMethod("MoveShipToSector", Hidden)
         ?? throw new MissingMethodException("Server.MoveShipToSector");
     private readonly Stopwatch _watch = Stopwatch.StartNew();
     private double _next;
@@ -218,9 +218,9 @@ sealed class Hud17Proof(Game1 game, Mission mission, Ship teammateServerShip, Sh
             gate.Paused = true;
             Thread.Sleep(8);
             if (!ReferenceEquals(teammateServerShip.Sector, sector))
-                MoveShipMethod.Invoke(null, [teammateServerShip, sector, false]);
+                MoveShipMethod.Invoke(server, [teammateServerShip, sector, false]);
             if (!ReferenceEquals(enemyServerShip.Sector, sector))
-                MoveShipMethod.Invoke(null, [enemyServerShip, sector, false]);
+                MoveShipMethod.Invoke(server, [enemyServerShip, sector, false]);
             gate.Paused = false;
         }
         // The teammate sits inside radar-label range and inside the enemy ship's
@@ -240,7 +240,7 @@ sealed class Hud17Proof(Game1 game, Mission mission, Ship teammateServerShip, Sh
         {
             gate.Paused = true;
             Thread.Sleep(8);
-            MoveShipMethod.Invoke(null, [enemyServerShip, enemySector, false]);
+            MoveShipMethod.Invoke(server, [enemyServerShip, enemySector, false]);
             gate.Paused = false;
         }
         enemyServerShip.Position = enemyNear

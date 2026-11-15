@@ -152,6 +152,10 @@ public class LiveMoneyTests
             if (n == 0)
             {
                 ship = new Ship(id, core.HullTypes[CarrierHullId], StationPos(station) + new Vector3(25f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = friendly };
+                // Ordinary bots need an equipped turret seat; observer fallback
+                // is admin-only (native FedSrv/FedSrv.CPP:2405-2406).
+                var gun = core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon);
+                Assert.NotNull(ship.MountPart(gun, 1, (byte)ship.HullType.MaxFixedWeapons, 255));
                 sp.Carrier = ship;
             }
             else if (n == 1)
@@ -242,8 +246,8 @@ public class LiveMoneyTests
         int walletBefore = boarderLive.Wallet.Money;
         long treasuryBefore = sp.Boarder.Mission!.Sides.First(s => s.Id == sp.Boarder.SideId).Money;
 
-        // The boarder boards the carrier (as an observer — no equipped turret,
-        // but boarding still succeeds and the refund fires, FedSrv.CPP:2426-2443).
+        // The ordinary bot boards the equipped turret, and the refund fires
+        // (native FedSrv.CPP:2405-2406,2426-2443).
         boarderBot.SendBoard(carrierId);
         // P472 — condition-wait with a generous ceiling: the MONEY_CHANGE reaches
         // the two same-side peers asynchronously over their own socket receive
