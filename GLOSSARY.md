@@ -2113,6 +2113,22 @@ list in **reverse**.
   base64 of the native packed struct (`paramsWire`), never as JSON fields. Key:
   `src/Allegiance.Lobby/Games/`,
   `src/Allegiance.ClientCore.Game/Games/`.
+- **Lobby limits (P1024)** — the five R1 lobby bounds. Callsign registration
+  rejects invisible (Format) and non-ASCII-space characters while the account
+  table and the game server's reserved-name cache key on one shared
+  **callsign skeleton** (`src/Allegiance.Core/Identity/JoinTokens.cs`,
+  `src/Allegiance.Lobby/Identity/IdentityStore.cs`,
+  `src/Allegiance.Server/RegisteredCallsignCache.cs`); create-game requests
+  expire by age/state, are dropped when their listing disappears and cancel
+  removes the row (`src/Allegiance.Lobby/Games/GameCreationStore.cs`); the STUN
+  responder charges the per-source limit before the shared bucket
+  (`src/Allegiance.Lobby/NatObservationStore.cs`); chat mutes accept only
+  well-formed account ids and are bounded, and a channel keeps a slot only while
+  it still has a line in the bounded history
+  (`src/Allegiance.Lobby/Chat/DirectoryChat.cs`); advertised listing counters are
+  clamped and the stats sums saturate (`src/Allegiance.Lobby/ServerRegistry.cs`).
+  `docs/parity/p1024-lobby-limits.csv`. Report:
+  `docs/reports/R1_LOBBY_LIMITS_P1024.md`.
 - **Per-server game capacity (P883b)** — `ServerConfig.MaxGames` defaults to
   native's 99 (minimum 1); configured and player-created missions count toward
   admission in `src/Allegiance.Server/Server.Provisioning.cs`. The heartbeat's

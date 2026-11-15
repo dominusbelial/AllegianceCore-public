@@ -12,9 +12,9 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Allegiance.Lobby.Tests;
 
-/// <summary>R1 review (public lobby inbound handling) — one failing proof per
-/// lobby finding in <c>R1_REPORT.md</c>. Each is skipped until its finding is
-/// fixed; the report records how it failed when run unskipped.</summary>
+/// <summary>R1 review (public lobby inbound handling) — one proof per lobby
+/// finding in <c>R1_REPORT.md</c>. Each was skipped until its finding was fixed;
+/// P1024 unskips them all with the inputs and assertion meanings unchanged.</summary>
 public sealed class R1LobbyReviewTests
 {
     private static (HttpClient Http, IdentityAccount Account) SignIn(LobbyTestApp app, string callsign)
@@ -38,7 +38,7 @@ public sealed class R1LobbyReviewTests
     /// makes a second account whose callsign renders exactly like a registered
     /// one; the lobby signs join tokens for it and the game server seats it under
     /// that name.</summary>
-    [Theory(Skip = "R1 finding F9 — pending fix")]
+    [Theory]
     [InlineData("Ad\u00admin")]
     [InlineData("Admin\u00a0")]
     public void A_callsign_that_renders_like_a_registered_one_is_refused(string lookalike)
@@ -51,8 +51,13 @@ public sealed class R1LobbyReviewTests
     }
 
     /// <summary>F10 — game-creation requests are never removed: after 128 of them
-    /// (from anyone, ever) every later create is refused until the lobby restarts.</summary>
-    [Fact(Skip = "R1 finding F10 — pending fix")]
+    /// (from anyone, ever) every later create is refused until the lobby restarts.
+    /// P1024 (R1 F10) — the directory cap is still filled to <c>MaxRequests</c> from
+    /// one burst, but each account now holds only its small in-flight allowance
+    /// (<c>MaxLiveRequestsPerAccount</c>), so the fill is spread over the accounts a
+    /// real directory would have. The scenario, the 24-hour jump, the refreshed
+    /// listing and the final assertion are unchanged.</summary>
+    [Fact]
     public async Task Stale_game_requests_do_not_block_new_games_forever()
     {
         var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
@@ -65,11 +70,17 @@ public sealed class R1LobbyReviewTests
             Name = "R1Host", Address = "127.0.0.1", Port = 6073, PlayerCount = 0, MaxPlayers = 0,
             MissionName = "R1", CoreFile = "PCore001.igc", Version = "1.0.0",
         })!;
-        var spammer = SignIn(app, "Spammer");
         var catalog = new GameCreationStore.Catalog(settings.GameCores.ToArray(), settings.GameMaps.ToArray());
+        int accounts = (GameCreationStore.MaxRequests + GameCreationStore.MaxLiveRequestsPerAccount - 1)
+            / GameCreationStore.MaxLiveRequestsPerAccount;
+        var owners = new List<(HttpClient Http, IdentityAccount Account)>();
+        for (int a = 0; a < accounts; a++) owners.Add(SignIn(app, "Spammer" + a));
         for (int i = 0; i < GameCreationStore.MaxRequests; i++)
-            Assert.NotNull(games.Create(spammer.Account.Id, "Spammer", registry.Get(listed.Id)!, "PCore001.igc",
-                "XXV_simple.igc", "junk" + i, ValidParams(), catalog, out _));
+        {
+            var owner = owners[i % accounts];
+            Assert.NotNull(games.Create(owner.Account.Id, owner.Account.Callsign, registry.Get(listed.Id)!,
+                "PCore001.igc", "XXV_simple.igc", "junk" + i, ValidParams(), catalog, out _));
+        }
 
         // A day later nobody has claimed any of them; the listing is refreshed.
         time.Advance(TimeSpan.FromHours(24));
@@ -89,7 +100,7 @@ public sealed class R1LobbyReviewTests
 
     /// <summary>F12a — the mute list stores any caller-supplied string (up to the
     /// 16 KB body cap), 256 per account, for the life of the process.</summary>
-    [Fact(Skip = "R1 finding F12 — pending fix")]
+    [Fact]
     public async Task Mute_accepts_only_an_account_id()
     {
         using var app = new LobbyTestApp();
@@ -100,7 +111,7 @@ public sealed class R1LobbyReviewTests
 
     /// <summary>F12b — one account can occupy all 512 channel slots with made-up
     /// names; afterwards a real server's channel is refused until restart.</summary>
-    [Fact(Skip = "R1 finding F12 — pending fix")]
+    [Fact]
     public void Made_up_channels_cannot_lock_out_a_real_servers_channel()
     {
         var chat = new DirectoryChat(new FakeTimeProvider(DateTimeOffset.UtcNow));
@@ -111,7 +122,7 @@ public sealed class R1LobbyReviewTests
 
     /// <summary>F13 — listing counts are unbounded, and the stats endpoint sums
     /// them with overflow checking: two listings make it answer 500.</summary>
-    [Fact(Skip = "R1 finding F13 — pending fix")]
+    [Fact]
     public async Task Absurd_player_counts_do_not_break_the_stats_endpoint()
     {
         using var app = new LobbyTestApp();
@@ -132,7 +143,7 @@ public sealed class R1LobbyReviewTests
     /// <summary>F11 — the STUN responder spends its global budget before it
     /// checks the per-source limit, so one source's refused requests starve
     /// everyone else.</summary>
-    [Fact(Skip = "R1 finding F11 — pending fix")]
+    [Fact]
     public void One_noisy_source_cannot_exhaust_the_global_STUN_budget()
     {
         var observations = new NatObservationStore(new FakeTimeProvider(DateTimeOffset.UtcNow));

@@ -8,6 +8,21 @@ namespace Allegiance.Lobby;
 /// they authorize and are never exposed in listings. No client supplied target.</summary>
 public sealed class NatObservationStore(TimeProvider time)
 {
+    /// <summary>P1024 (R1 F11) — the global answered-request budget per second
+    /// (the port's STUN responder; native has no STUN, see P936).</summary>
+    public const int GlobalPerSecond = 512;
+    /// <summary>P1024 (R1 F11) — one source's answered-request budget per second.</summary>
+    public const int SourcePerSecond = 16;
+    /// <summary>Bound on tracked source addresses / live receipts.</summary>
+    public const int MaxSources = 4096;
+    public const int MaxObservations = 8192;
+    /// <summary>How long a source's window and a receipt live.</summary>
+    public const int SourceWindowMilliseconds = 1000;
+    public const int SourceRetentionMilliseconds = 10000;
+    public const int ObservationMilliseconds = 30000;
+    /// <summary>P1024 (R1 F11) — window width of the global answered-request budget.</summary>
+    public const int GlobalWindowMilliseconds = 1000;
+
     private readonly object _gate = new();
     private readonly Dictionary<string, Observation> _observations = new(StringComparer.Ordinal);
     private readonly Dictionary<IPAddress, Window> _sources = new();
@@ -24,19 +39,23 @@ public sealed class NatObservationStore(TimeProvider time)
             {
                 _lastSweep = now;
                 foreach (var key in _observations.Where(x => x.Value.Expires <= now).Select(x => x.Key).ToArray()) _observations.Remove(key);
-                foreach (var key in _sources.Where(x => now - x.Value.Start > 10000).Select(x => x.Key).ToArray()) _sources.Remove(key);
+                foreach (var key in _sources.Where(x => now - x.Value.Start > SourceRetentionMilliseconds).Select(x => x.Key).ToArray()) _sources.Remove(key);
             }
-            if (!_sources.ContainsKey(source.Address) && _sources.Count >= 4096 || _observations.Count >= 8192) return 0;
-            if (!Take(ref _global, now, 512, 1000)) return 0;
+            if (!_sources.ContainsKey(source.Address) && _sources.Count >= MaxSources || _observations.Count >= MaxObservations) return 0;
+            // P1024 (R1 F11) — the PER-SOURCE limit first, then the global bucket:
+            // a request this source may not have answered must not spend a global
+            // token, or one noisy address (its own 16/s refused 496 times) drains
+            // the shared 512/s budget and no other client gets a reply. Only a
+            // request that will actually be answered is charged to the shared bucket.
             var window = _sources.GetValueOrDefault(source.Address, new(now, 0));
-            bool allowed = Take(ref window, now, 16, 1000);
+            bool allowed = Take(ref window, now, SourcePerSecond, SourceWindowMilliseconds);
             _sources[source.Address] = window;
-            if (!allowed) return 0;
+            if (!allowed || !Take(ref _global, now, GlobalPerSecond, GlobalWindowMilliseconds)) return 0;
             Span<byte> receipt = stackalloc byte[16];
             RandomNumberGenerator.Fill(receipt);
             int written = StunBinding.WriteSuccess(packet, source, receipt, response);
             if (written != 0 && packet.Length >= StunBinding.RequestSize)
-                _observations[Convert.ToHexString(receipt)] = new(source, primary, now + 30000);
+                _observations[Convert.ToHexString(receipt)] = new(source, primary, now + ObservationMilliseconds);
             return written;
         }
     }

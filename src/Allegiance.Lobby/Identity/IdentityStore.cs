@@ -91,17 +91,77 @@ public sealed class IdentityStore
             """);
         migration.Transaction = tx; migration.ExecuteNonQuery(); tx.Commit();
     }
+    /// <summary>
+    /// P1024 (R1 F9) — is any account already holding this callsign's skeleton?
+    /// The <c>normalized</c> unique column answers that for every row written by
+    /// this code, but a database created before this rule still carries the old
+    /// upper-case-only keys. Registration is rare and rate limited, so the linear
+    /// scan over stored callsigns is cheap; it is what makes a legacy name keep
+    /// blocking a lookalike of itself. A pre-rule owner's key is upgraded in place, so
+    /// the answer is the same whether or not the database has been touched yet.
+    /// </summary>
+    public bool CallsignTaken(string callsign)
+    {
+        using var c = Open();
+        return UpholdSkeleton(c, null, callsign);
+    }
+
+    /// <summary>
+    /// P1024 (R1 F9) — does a stored account already own <paramref name="callsign"/>'s
+    /// skeleton? If its <c>normalized</c> value is still a pre-rule (upper-case-only)
+    /// key, it is upgraded to the skeleton in place, so the unique column then refuses
+    /// the caller's insert exactly as it refused every duplicate before this change
+    /// (the identity endpoints keep reporting it as "already registered"). Returns
+    /// true when an owner exists.
+    /// </summary>
+    private static bool UpholdSkeleton(DbConnection c, DbTransaction? tx, string callsign)
+    {
+        string skeleton = JoinTokens.CallsignSkeleton(callsign);
+        if (skeleton.Length == 0) return false;
+        string? owner = null, ownerKey = null;
+        using (var read = Command(c, "SELECT id,callsign,normalized FROM accounts"))
+        {
+            read.Transaction = tx;
+            using var reader = read.ExecuteReader();
+            while (reader.Read())
+            {
+                if (JoinTokens.CallsignSkeleton(reader.IsDBNull(1) ? "" : Convert.ToString(reader.GetValue(1), System.Globalization.CultureInfo.InvariantCulture)) != skeleton)
+                    continue;
+                owner = Convert.ToString(reader.GetValue(0), System.Globalization.CultureInfo.InvariantCulture);
+                ownerKey = reader.IsDBNull(2) ? "" : Convert.ToString(reader.GetValue(2), System.Globalization.CultureInfo.InvariantCulture);
+                break;
+            }
+        }
+        if (owner is null) return false;
+        if (!string.Equals(ownerKey, skeleton, StringComparison.Ordinal))
+        {
+            using var upgrade = Command(c, "UPDATE accounts SET normalized=@p0 WHERE id=@p1", skeleton, owner);
+            upgrade.Transaction = tx;
+            upgrade.ExecuteNonQuery();
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// P1024 (R1 F9) — the uniqueness key is the shared <see cref="JoinTokens.CallsignSkeleton"/>
+    /// (strip invisibles, collapse whitespace, case-fold), not a bare upper-case.
+    /// A soft hyphen or a no-break space therefore collides with the name it renders as,
+    /// so a lookalike cannot become a second account; names stored before this rule keep
+    /// their exact bytes and still log in (see <see cref="JoinTokens.IsSeatableCallsign"/>).
+    /// </summary>
     public IdentityAccount CreateAccount(string callsign, string? id = null)
     {
         if (!JoinTokens.ValidCallsign(callsign)) throw new ArgumentException("Callsign must be 1–24 printable Latin-1 characters, without outer spaces");
         id ??= Guid.NewGuid().ToString("N");
-        Execute("INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, callsign.ToUpperInvariant());
+        using (var gate = Open()) UpholdSkeleton(gate, null, callsign);
+        Execute("INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, JoinTokens.CallsignSkeleton(callsign));
         return new(id, callsign);
     }
     public IdentityAccount CreatePasskeyAccount(string id, string callsign, string credentialId, string publicKey, uint counter)
     {
         using var c = Open(); using var tx = c.BeginTransaction();
-        using var account = Command(c, "INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, callsign.ToUpperInvariant());
+        UpholdSkeleton(c, tx, callsign);
+        using var account = Command(c, "INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, JoinTokens.CallsignSkeleton(callsign));
         account.Transaction = tx; account.ExecuteNonQuery();
         using var credential = Command(c, "INSERT INTO credentials(id,account_id,public_key,counter) VALUES(@p0,@p1,@p2,@p3)", credentialId, id, publicKey, (long)counter);
         credential.Transaction = tx; credential.ExecuteNonQuery(); tx.Commit();
@@ -114,7 +174,8 @@ public sealed class IdentityStore
         if (!JoinTokens.ValidCallsign(callsign)) throw new ArgumentException("Choose an unused callsign first");
         string id = Guid.NewGuid().ToString("N");
         using var c = Open(); using var tx = c.BeginTransaction();
-        using var account = Command(c, "INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, callsign.ToUpperInvariant());
+        UpholdSkeleton(c, tx, callsign);
+        using var account = Command(c, "INSERT INTO accounts(id,callsign,normalized) VALUES(@p0,@p1,@p2)", id, callsign, JoinTokens.CallsignSkeleton(callsign));
         account.Transaction = tx; account.ExecuteNonQuery();
         using var link = Command(c, "INSERT INTO external_subjects(provider,subject,account_id) VALUES(@p0,@p1,@p2)", provider, subject, id);
         link.Transaction = tx; link.ExecuteNonQuery(); tx.Commit();

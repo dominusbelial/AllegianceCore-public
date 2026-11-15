@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Allegiance.Core.Identity;
 
 namespace Allegiance.Server;
 
@@ -99,7 +100,12 @@ public sealed class RegisteredCallsignCache : IDisposable
                 return;
             }
             if (names is null) return;
-            _normalized = new HashSet<string>(names.Where(n => n.Length > 0).Select(n => n.ToUpperInvariant()), StringComparer.Ordinal);
+            // P1024 (R1 F9) — the lobby's account table uses the same skeleton as the
+            // uniqueness key, so the reserved-name test cannot be fooled by an invisible
+            // character (a trailing no-break space renders exactly like the registered
+            // name). A legacy name stored before the strict rule keeps exactly its
+            // callsign bytes and still protects its skeleton.
+            _normalized = new HashSet<string>(names.Where(n => n.Length > 0).Select(JoinTokens.CallsignSkeleton), StringComparer.Ordinal);
             Console.WriteLine($"[identity] reserved-callsign cache refreshed with {names.Length} registered callsign(s)");
         }
         finally
@@ -108,9 +114,11 @@ public sealed class RegisteredCallsignCache : IDisposable
         }
     }
 
-    /// <summary>Whether the given (case-insensitive) name is a registered callsign.
-    /// False when the cache is empty (never fetched / lobby unreachable) — fail open.</summary>
-    public bool Contains(string name) => name.Length > 0 && _normalized.Contains(name.ToUpperInvariant());
+    /// <summary>Whether the given name is a registered callsign. The comparison uses the
+    /// shared skeleton (<see cref="JoinTokens.CallsignSkeleton"/>) so case, invisibles
+    /// and whitespace runs can never hide a registered name. False when the cache is empty
+    /// (never fetched / lobby unreachable) — fail open.</summary>
+    public bool Contains(string name) => name.Length > 0 && _normalized.Contains(JoinTokens.CallsignSkeleton(name));
 
     /// <summary>Immutable snapshot of the currently-known normalized names (tests / diagnostics).</summary>
     public IReadOnlyCollection<string> Snapshot => _normalized;

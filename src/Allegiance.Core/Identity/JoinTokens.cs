@@ -49,13 +49,94 @@ public static class JoinTokens
     /// </summary>
     public const int MaxTokenLength = 5728;
 
-    public static bool ValidCallsign(string? name) => name is { Length: >= 1 and <= 24 } && name[0] != ' ' && name[^1] != ' '
+    /// <summary>
+    /// P1024 (R1 F9) — the length of the native callsign field: native's database
+    /// name is <c>c_cbNameDB = 24</c> usable characters in a 25-byte buffer
+    /// (<c>_Utility/Utility.h:59,64</c>), the same window the port's logon check
+    /// enforces (<c>Server.Dispatch.cs</c> H-28).
+    /// </summary>
+    public const int MaxCallsignLength = 24;
+
+    /// <summary>
+    /// P1024 (R1 F9) — what may be REGISTERED as a callsign. Strict on purpose:
+    /// the native club/LOGON name is compared and displayed as a byte string
+    /// (<c>Inc/ClubMessages.h:42-45</c>), so a name that renders exactly like an
+    /// existing one must never become a second account. Two invisible families
+    /// inside the accepted Latin-1 range are rejected outright:
+    /// <list type="bullet">
+    /// <item><see cref="System.Globalization.UnicodeCategory.Format"/> characters —
+    ///      the soft hyphen U+00AD (<c>Ad&#173;min</c>) and every other zero-width
+    ///      or bidi control;</item>
+    /// <item>whitespace other than the ordinary space — the no-break space U+00A0
+    ///      (<c>Admin&#160;</c>), plus the C1 controls <see cref="char.IsControl"/>
+    ///      already covers.</item>
+    /// </list>
+    /// Leading/trailing spaces stay refused (they are invisible in a roster), and
+    /// the 1–24 printable Latin-1 window is unchanged from P808a.
+    /// </summary>
+    public static bool ValidCallsign(string? name) => name is { Length: >= 1 and <= MaxCallsignLength }
+        && name[0] != ' ' && name[^1] != ' '
+        && name.All(c => c is >= ' ' and <= '\u00ff' && !char.IsControl(c)
+            && (c == ' ' || !char.IsWhiteSpace(c))
+            && char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.Format);
+
+    /// <summary>
+    /// P1024 (R1 F9) — what a join token may CARRY. Deliberately looser than
+    /// <see cref="ValidCallsign"/>: <see cref="Issue"/> and <see cref="Verify"/>
+    /// must keep working for an account whose callsign was stored before the
+    /// strict rule (a legacy <c>Ad&#173;min</c> must still be able to log in —
+    /// native never re-validated the ticket's canonical name, it used it as-is,
+    /// <c>FedSrv/FedSrv.CPP:5877-5878</c>). The check here is only what the wire
+    /// and the roster can hold safely: 1–24 bytes, printable Latin-1, no
+    /// control characters, no leading/trailing space.
+    /// </summary>
+    public static bool IsSeatableCallsign(string? name) => name is { Length: >= 1 and <= MaxCallsignLength }
+        && name[0] != ' ' && name[^1] != ' '
         && name.All(c => c is >= ' ' and <= '\u00ff' && !char.IsControl(c));
+
+    /// <summary>
+    /// P1024 (R1 F9) — the shared uniqueness key ("skeleton") for a callsign:
+    /// strip invisible characters (controls and every <c>Format</c> character,
+    /// which includes the soft hyphen and the zero-width family), collapse any
+    /// run of whitespace to one ordinary space, trim the ends and case-fold with
+    /// <see cref="string.ToUpperInvariant"/>. <see cref="ValidCallsign"/> and the
+    /// skeleton are two halves of one rule: nothing that <see cref="ValidCallsign"/>
+    /// accepts can share a skeleton with a different accepted name, so no new
+    /// lookalike can be registered; a name stored before the rule keeps working
+    /// and still blocks a new name that would render like it.
+    /// The lobby's account table and the game server's reserved-name cache both
+    /// use this one function so the two can never disagree.
+    /// </summary>
+    public static string CallsignSkeleton(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return string.Empty;
+        var skeleton = new System.Text.StringBuilder(name.Length);
+        bool pendingSpace = false;
+        foreach (char c in name)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                // Any whitespace — a tab, a no-break space, a control newline — reads
+                // as a word break, so it becomes one ordinary space in the skeleton.
+                pendingSpace = skeleton.Length > 0;
+                continue;
+            }
+            if (char.IsControl(c) || char.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.Format)
+                continue;
+            if (pendingSpace) { skeleton.Append(' '); pendingSpace = false; }
+            skeleton.Append(c);
+        }
+        return skeleton.ToString().ToUpperInvariant();
+    }
 
     public static string Issue(ECDsa key, string issuer, string audience, string accountId, string callsign, DateTimeOffset now,
         IReadOnlyList<SquadClaim>? squads = null)
     {
-        if (!ValidCallsign(callsign) || !Guid.TryParseExact(accountId, "N", out _) || string.IsNullOrWhiteSpace(audience))
+        // P1024 (R1 F9) — the SEATABLE rule, not the registration rule: an account
+        // stored before the strict callsign rule still receives its ticket (native
+        // seated the ticket's canonical name as-is, FedSrv/FedSrv.CPP:5877-5878);
+        // new lookalikes can no longer be registered, so no new name reaches here.
+        if (!IsSeatableCallsign(callsign) || !Guid.TryParseExact(accountId, "N", out _) || string.IsNullOrWhiteSpace(audience))
             throw new ArgumentException("Invalid identity");
         var claims = new JoinIdentity(issuer, audience, accountId, callsign, now.ToUnixTimeSeconds(),
             now.ToUnixTimeSeconds() + LifetimeSeconds, Guid.NewGuid().ToString("N"), squads);
@@ -77,7 +158,7 @@ public static class JoinTokens
             var c = JsonSerializer.Deserialize(FromBase64Url(parts[1]), IdentityJsonContext.Default.JoinIdentity);
             long seconds = now.ToUnixTimeSeconds();
             return c is not null && c.Iss == issuer && c.Aud == audience && c.Exp > seconds && c.Iat <= seconds + 5
-                && c.Exp > c.Iat && c.Exp - c.Iat <= LifetimeSeconds && ValidCallsign(c.Callsign)
+                && c.Exp > c.Iat && c.Exp - c.Iat <= LifetimeSeconds && IsSeatableCallsign(c.Callsign)
                 && Guid.TryParseExact(c.Sub, "N", out _) && Guid.TryParseExact(c.Jti, "N", out _) ? c : null;
         }
         catch (Exception e) when (e is FormatException or CryptographicException or JsonException or ArgumentException) { return null; }
