@@ -9115,3 +9115,30 @@ player spawners; this story does not change their missile, mining or collision
 rules. No timing allowance, tier, simulation rule or assertion was relaxed for
 these failures. Portable per-case outcomes/timings are retained in
 `docs/reports/P1018_assets/verification.json`; raw logs/TRX are in ignored scratch.
+
+## P1023 Fast sweeps (R1 F3/F6 transport bounds) — 2026-11-15 UTC
+
+Two complete Fast sweeps on the task tree, **14,552 cases** each: A
+`tiers-20261115T192143Z` **14,528 passed / 4 failed / 20 not executed**, 532.8 s; B
+`tiers-20261115T193227Z` **14,527 / 5 / 20**, 540.8 s. Both remain FAIL, and **no failing
+or slow case is on the touched paths** (server inbound queue, TCP framing/greeting,
+pre-logon deadline). Task-caused in A and fixed before B: `CleanCloneSkipGuardTests`
+rejected the three new pre-logon tests for calling `Require.Artwork()` in a plain `[Fact]`
+(now `[SkippableFact]`; guard green in B and 3/3 alone). Every non-task method below was
+run **three times alone** — **all pass**, so load flakes, matching their existing rows.
+
+| Method | Sweep hits | 3× alone | Existing row |
+| --- | --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | A, B (destination SHIP_STATUS missing) | **3/3 pass** | `:225`, `:421` |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | A (delay 7 → 7.0000000000000009) | **3/3 pass** | `:221`, `:419` |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | A (IsDead latch) | **3/3 pass** | `:79`, `:300` |
+| `P780PodRescueProbeLiveTests.Probe_rescue_cancels_oxygen_timer` | B | **3/3 pass** | `:6569` |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | B | **3/3 pass** | `:384`, `:2637` |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | B | **3/3 pass** | `:822`, `:946` |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | B | **3/3 pass** | `:386`, `:910` |
+
+Slow-Fast offenders (A: P814 13.0 s, P999 15.3 s, P1000 12.0 s; B: P814 13.3 s, P796
+13.4 s, SC2 13.0 s, P999 14.1 s) are each the ledgered slow entries at `:44-49`, `:81-85`,
+`:116-117` under concurrent lane load (load average 2.4-4.3). The showcase never-parks
+test passed **10/10** runs (two 5-run sets) with 24/30 reach and longest idle-with-target
+0.2-2.2 s. Report: `docs/reports/R1_TRANSPORT_LIMITS_P1023.md`.

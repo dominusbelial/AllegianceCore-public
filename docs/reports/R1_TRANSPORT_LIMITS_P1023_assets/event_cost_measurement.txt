@@ -1,0 +1,22 @@
+P1023 — per-event cost measurement (scratch probe, .NET 10, workstation GC)
+Probe: replicate ReceivedEvt (ConnectionId + byte[] Data + Prepared ref + ReadySequence),
+enqueue 200,000 events through the production shape (ConcurrentQueue -> per-peer lane
+Queue + per-peer dictionary AddOrUpdate), then GC.GetTotalMemory(true) delta (retained)
+and GC.GetAllocatedBytesForCurrentThread delta (allocated), divided by N. One peer.
+
+events=200000 per measurement, one peer, retained through FIFO->lane + dict entry
+empty frame (Array.Empty, 0 B): retained 57.8 B/evt, allocated 90.0 B/evt
+CRC-only frame   (4 B)        : retained 89.5 B/evt, allocated 122.0 B/evt
+typical frame  (1100 B)       : retained 1174.5 B/evt, allocated 1218.0 B/evt
+=> fixed per-event cost = 57.8 B (empty frame) / 89.5 B (4 B CRC-only frame), payload adds ~1 B/B
+=> the P1023 charge (96 B/event) covers the measured fixed cost with margin
+
+Interpretation: the fixed cost is the ReceivedEvt object (48 B) + the queue slot (8 B)
++ the accounting entry (~2 B amortised); a 4-byte frame adds its 32-byte array object.
+These are exactly the terms the old byte-only reservation (len) ignored.
+
+Legit-traffic headroom (P1023InboundQueueTests.Two_hundred_peers_at_tick_cadence_never_touch_the_new_bounds):
+[p1023-legit] 200 peers x 2 frames/tick x 50 ticks: delivered=20000 deferred=0 maxQueuedPerPeer=0 (cap 2048)
+
+Previous full-scale measurement (docs/reports/P646_RECEIVE_DRAIN_LOGON_HARDENING.md, 195v195,
+391 peers, 20 Hz): max per-peer queued 17,820 B / total 350,503 B; deferred +0 in every window.

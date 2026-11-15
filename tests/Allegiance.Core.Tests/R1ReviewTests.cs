@@ -201,8 +201,10 @@ public sealed class R1ReviewTests
 
     /// <summary>F3 — the per-peer receive budget counts payload bytes only, so
     /// CRC-only packets (4 bytes, valid, zero messages) and zero-length frames
-    /// (0 bytes) pile up almost for free; nothing here needs a logon.</summary>
-    [Fact(Skip = "R1 finding F3 — pending fix")]
+    /// (0 bytes) pile up almost for free; nothing here needs a logon. P1023 —
+    /// every event now also costs a fixed per-event overhead, and a per-peer
+    /// event cap bounds the count outright.</summary>
+    [Fact]
     public void Tiny_frames_from_one_peer_cannot_queue_without_bound()
     {
         var host = new ServerHost();
@@ -251,8 +253,9 @@ public sealed class R1ReviewTests
 
     /// <summary>F6 — a peer that sends a greeting header and then one body byte
     /// at a time is never timed out: the only bound is the socket's per-read
-    /// timeout.</summary>
-    [Fact(Skip = "R1 finding F6 — pending fix")]
+    /// timeout. P1023 — the greeting now carries one absolute deadline for the
+    /// whole handshake.</summary>
+    [Fact]
     public void A_dribbled_greeting_is_dropped_at_the_greet_timeout()
     {
         var orig = TcpTransport.GreetTimeout;

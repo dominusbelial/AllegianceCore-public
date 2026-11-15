@@ -292,6 +292,13 @@ public sealed partial class Server
                 {
                     AuthenticatePrivileges(from, req);
                     if (AccountId(from) is null) _peerStandaloneIds[from] = StandaloneCharacterIds.Get(req.CharacterName ?? "");
+                    // P1023 (R1-F6 lead) — the peer logged on: it is no longer a
+                    // pre-logon connection, so the connection-phase deadline
+                    // (Server.SweepPreLogonConnections) must never cut it. Any
+                    // validated logon counts, including one whose mission/password
+                    // gate answer is a refusal — the peer is a real client by then
+                    // (that separate retry policy belongs to the logon handlers).
+                    _preLogonSinceMs.Remove(from);
                 }
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness

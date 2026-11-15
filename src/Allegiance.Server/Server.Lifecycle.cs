@@ -1890,6 +1890,10 @@ public sealed partial class Server
         int pendHs = tc?.MaxPendingHandshake is { } ph && ph > 0 ? ph : 256;
         uint maxFrame = tc?.MaxFrameBytes is { } mf && mf > 0 ? (uint)mf : 64u * 1024;
         int dataFrameTo = tc?.DataFrameReadTimeoutSeconds is { } dt && dt > 0 ? dt : 30;
+        // P1023 (R1-F6 lead) — the pre-logon deadline. Explicitly 0 disables it;
+        // absent → 60 s. (Parsed as >= 0 so the "off" switch is honoured while an
+        // absent/negative value falls back to the default.)
+        int preLogonTo = tc?.PreLogonTimeoutSeconds is { } plt && plt >= 0 ? plt : 60;
         // P671 — the separate IDLE timeout (silence between frames), default 30 s
         // (native g_sDeadTime, clintlib.cpp:2047). A healthy client never hits it
         // because the shared client session keep-alive pings every 6 s.
@@ -1906,12 +1910,15 @@ public sealed partial class Server
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var edt) && edt > 0) dataFrameTo = edt;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_IDLE_TIMEOUT_SECONDS");
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var eil) && eil > 0) idleTo = eil;
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PRELOGON_TIMEOUT_SECONDS");
+        if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var eplt) && eplt >= 0) preLogonTo = eplt;
         TcpTransport.MaxConnections = maxConn;
         TcpTransport.MaxConnectionsPerIp = perIp;
         TcpTransport.MaxPendingHandshake = pendHs;
         TcpTransport.ServerInboundMaxFrame = maxFrame;
         TcpTransport.DataFrameReadTimeout = TimeSpan.FromSeconds(dataFrameTo);
         TcpTransport.DataLinkIdleTimeout = TimeSpan.FromSeconds(idleTo);
+        _preLogonTimeoutSeconds = preLogonTo;   // P1023 — 0 disables the pre-logon deadline
 
         // P654 (H-24) — bind the per-peer message/chat token-bucket (native's
         // chat budget) from config (env wins). Cited: c_chatBudgetMax=100 /
@@ -2096,17 +2103,65 @@ public sealed partial class Server
         return LoopIterations;
     }
 
+    // P1023 (R1-F6 lead) — a peer that completed the transport greeting but has
+    // not yet sent a VALIDATED logon is a pre-logon connection. The data-link
+    // idle bound (TcpTransport.DataLinkIdleTimeout, 30 s) drops a peer that goes
+    // silent, but a peer that keeps a trickle of VALID frames flowing (one every
+    // ~29 s) restarts that bound forever: nothing in the port ever required a
+    // logon, so such a connection holds a connection slot, a reader/pool slot, a
+    // per-IP slot and per-peer state indefinitely without playing (verified by
+    // P1023PreLogonTimeoutTests). Native keeps such a connection too —
+    // FedSrvSiteBase::OnNewConnection is a debug log and "we don't do anything
+    // until they login" (FedSrv.CPP:4536-4544), its only liveness bound being the
+    // CLIENT-side ping watchdog g_sDeadTime = 30 (clintlib.cpp:2047,2063-2064),
+    // which a non-client never honours — so this deadline is deliberate PORT
+    // HARDENING, not parity. Default 60 s: a modern client (or MCP bot) logs on
+    // within milliseconds of connecting, so 60 s never cuts a legitimate join;
+    // it is twice native's link-dead tolerance, consistent with the existing
+    // HumanGrace default. `transport.preLogonTimeoutSeconds: 0`
+    // disables it. Owned by the simulation thread (set on the drain's
+    // PeerJoinedEvt, cleared on a validated LOGONREQ / peer release).
+    private readonly Dictionary<ConnectionId, long> _preLogonSinceMs = [];
+    private int _preLogonTimeoutSeconds = 60;
+    /// <summary>P1023 test seam — greeted peers still waiting for their first
+    /// validated logon.</summary>
+    internal int PreLogonPendingCount => _preLogonSinceMs.Count;
+    /// <summary>P1023 — the effective pre-logon deadline in seconds (0 = off).</summary>
+    internal int PreLogonTimeoutSeconds => _preLogonTimeoutSeconds;
+
+    /// <summary>P1023 — drop every greeted peer that has not logged on within
+    /// <see cref="_preLogonTimeoutSeconds"/>. Bounded by the live connection
+    /// count (the accept path caps it), allocation-free when nothing expired.</summary>
+    private void SweepPreLogonConnections()
+    {
+        if (_preLogonTimeoutSeconds <= 0 || _preLogonSinceMs.Count == 0) return;
+        long now = Environment.TickCount64;
+        long deadlineMs = _preLogonTimeoutSeconds * 1000L;
+        List<ConnectionId>? expired = null;
+        foreach (var (peer, since) in _preLogonSinceMs)
+            if (now - since >= deadlineMs) (expired ??= []).Add(peer);
+        if (expired is null) return;
+        foreach (var peer in expired)
+        {
+            _preLogonSinceMs.Remove(peer);
+            Console.WriteLine($"[conn] peer {peer} greeted but never logged on within {_preLogonTimeoutSeconds}s — dropping (P1023 pre-logon deadline; native keeps it: FedSrv.CPP:4536-4544)");
+            _host.Transport?.ClosePeer(peer, DisconnectReason.PreLogonTimeout);
+        }
+    }
+
     private void HandleTransportEvent(ITransportEvent evt)
     {
         switch (evt)
         {
             case PeerJoinedEvt j:
                 _consoleConnections.Add(j.Id);
+                _preLogonSinceMs[j.Id] = Environment.TickCount64;   // P1023 — start its logon clock
                 Console.WriteLine($"[conn] peer {j.Id} '{ConsoleText(j.Name)}' joined");
                 lock (_statsLock) _connectionsJoined++;
                 break;
             case PeerLeftEvt l:
                 _consoleConnections.Remove(l.Id);
+                _preLogonSinceMs.Remove(l.Id);   // P1023 — the logon clock dies with the peer
                 // A disconnected peer can no longer command its ship, so it is
                 // released from the broadcast set. P128: its ship is then
                 // retired from the sector (SDR_LOGGEDOFF + removed) so it no
@@ -2203,6 +2258,7 @@ public sealed partial class Server
         // receive queued just before the leave re-created the entry. Idempotent:
         // a second release (LOGOFF then OnPeerLeft) is a harmless no-op.
         _host.RemovePeerAccounting(id);
+        _preLogonSinceMs.Remove(id);   // P1023 — retire the peer's logon clock on every release path
         // P315 — drop this peer's unsupported-fmid log-gate state so the
         // rate-limit table stays bounded by the live peer set.
         _unsupportedLog.Remove(id.Value);

@@ -613,6 +613,23 @@ list in **reverse**.
   `src/Allegiance.Server/Server.Lifecycle.cs`; proof `tools/p967-shutdown-proof/`,
   tests `tests/Allegiance.Core.Tests/Transport/P967ShutdownOwnershipTests.cs`;
   report `docs/reports/TRANSPORT_SHUTDOWN_LEAKS_P967.md`.
+- **Inbound queue event accounting + connection-phase deadlines (P1023)** — the
+  per-peer receive budget charges every queued event a fixed per-event overhead on
+  top of its payload (`PerEventOverheadBytes`) and caps un-handled events per peer
+  (`MaxQueuedEventsPerPeer`), so CRC-only and zero-length frames cost budget
+  instead of queueing for free; a data frame shorter than the 4-byte packet CRC is
+  rejected at the framing layer and the peer dropped as `BadCrc` (native deletes
+  the connection on the underflowed CRC compare, `FedSrv.CPP:4591-4603`). The TCP
+  greeting read carries one absolute deadline instead of a per-read socket
+  timeout, and a greeted peer that never validates a logon is dropped after
+  `transport.preLogonTimeoutSeconds` (default 60, 0 disables) — port hardening,
+  since native keeps such a connection (`FedSrv.CPP:4536-4544`).
+  `src/Allegiance.Server/ServerHost.cs`, `src/Allegiance.Core/Transport/TcpTransport.cs`,
+  `src/Allegiance.Server/Server.Lifecycle.cs` (`SweepPreLogonConnections`),
+  `src/Allegiance.Server/ServerConfig.cs`; tests
+  `tests/Allegiance.Core.Tests/Transport/P1023InboundQueueAndDeadlinesTests.cs`;
+  parity rows `docs/parity/p1023-transport-limits.csv`; report
+  `docs/reports/R1_TRANSPORT_LIMITS_P1023.md`.
 - **Worker-pool sizing / host profile (P889)** — one resolver turns logical
   cores × expected players × `hostProfile` (`dedicated` | `shared`) into the
   parallel-build and transport-pool sizes, replacing the independent

@@ -88,14 +88,15 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     //     which are appended AFTER them, never interleaved);
     //   * P673 selects round-robin in sorted peer-id order, rotating its start
     //     across ticks, then applies the selected batch by peer id / FIFO.
-    // Worst-case growth is bounded by the receive-side byte reservation (P315):
-    // a ReceivedEvt is enqueued only while its peer's reserved in-flight bytes
-    // stay under MaxBufferedBytesPerPeer, and a reservation is released only
-    // when the event is handled — so at any instant the sum of un-handled
-    // ReceivedEvt lengths per peer is ≤ MaxBufferedBytesPerPeer. The lane can
-    // therefore never hold more than MaxBufferedBytesPerPeer/min-frame-length
-    // receives per peer (plus its one PeerLeftEvt/PeerJoinedEvt), regardless
-    // of how aggressively the peer floods.
+    // Worst-case growth is bounded by the receive-side reservation (P315, and
+    // P1023's per-event charge): a ReceivedEvt is enqueued only while its
+    // peer's reserved bytes (payload + fixed per-event overhead) stay under
+    // MaxBufferedBytesPerPeer, and a reservation is released only when the
+    // event is handled. P1023 additionally caps the number of un-handled events
+    // per peer (MaxQueuedEventsPerPeer) so the bound never depends on frame
+    // size: the lane can hold at most that many receives per peer (plus its one
+    // PeerLeftEvt/PeerJoinedEvt), regardless of how aggressively the peer
+    // floods, and however small or empty its frames are.
     private readonly Dictionary<uint, Queue<ITransportEvent>> _pendingLanes = new();
     private readonly List<uint> _pendingOrder = new();
 
@@ -108,7 +109,39 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     // O(#peers × MaxBufferedBytesPerPeer). A legitimate peer at tick cadence
     // sits at a few frames of buffering and never approaches the budget.
     internal static long MaxBufferedBytesPerPeer { get; set; } = 4L * 1024 * 1024;
+
+    // P1023 (R1 finding F3) — the P315 budget counted PAYLOAD bytes only, but a
+    // queued event costs far more than its payload: the ReceivedEvt object, the
+    // copied frame array's header, its queue slot (shared FIFO + per-peer lane)
+    // and its per-peer accounting entry. Measured on this runtime at 200k
+    // events through the real path: an EMPTY frame retains 58 B/event and a
+    // 4-byte CRC-only frame 90 B/event (a 1100-byte frame retains 1174 B, i.e.
+    // payload + ~50 B). Without a fixed charge, a 4-byte CRC-only packet
+    // reserved 4 B and a zero-length frame reserved 0 B, so ~1M events (about
+    // 90 MB of objects) queued under the 4 MiB budget with no logon at all.
+    // PerEventOverheadBytes therefore charges every queued event a fixed
+    // overhead IN ADDITION to its payload — 96 B covers the measured 58-90 B
+    // fixed cost with margin and keeps the charge a cache-line-sized number. A
+    // CRC-only packet stays valid on the wire but now costs 100 B of budget and
+    // a zero-length frame 96 B. Internal/settable so tests can shrink it.
+    internal static long PerEventOverheadBytes { get; set; } = 96;
+
+    // P1023 (R1 finding F3) — a hard cap on UN-HANDLED events per peer, so the
+    // bound is independent of frame size (the byte budget alone would still
+    // allow MaxBufferedBytesPerPeer/(4+96) ≈ 41,900 tiny events). 2048 is 8×
+    // the drain's per-peer fair share (256) and a quarter of the whole per-tick
+    // drain budget (8192); a legitimate peer holds a handful — at 391 peers /
+    // 20 Hz the P646 195v195 baseline measured max 17,820 B queued per peer and
+    // +0 deferred events in every window. Internal/settable so tests can shrink
+    // it.
+    internal static int MaxQueuedEventsPerPeer { get; set; } = 2048;
+
     private readonly ConcurrentDictionary<uint, long> _bufferedPerPeer = new();
+    private readonly ConcurrentDictionary<uint, int> _queuedEventsPerPeer = new();
+    /// <summary>P1023 test seam — un-handled queued events currently charged to
+    /// one peer (0 once the peer is released or every event was handled).</summary>
+    internal int QueuedEventsForPeer(ConnectionId id)
+        => _queuedEventsPerPeer.TryGetValue(id.Value, out var n) ? n : 0;
     private readonly PerPeerRateLimiter _dropLog = new();
 
     // P646 (review finding H4) — bound the WORK each Drain does in one tick.
@@ -140,9 +173,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <summary>P646 — release one peer's byte reservation WITHOUT ever
     /// inserting an entry (a departed peer's entry must not be re-created by a
     /// late receive — see OnPeerLeft/PeerLeftEvt ordering). Atomic update of an
-    /// existing entry only.</summary>
+    /// existing entry only. P1023 — the peer's queued-event count is retired with
+    /// it (same never-insert rule, same bounded-by-live-peers table).</summary>
     internal void RemovePeerAccounting(ConnectionId id)
-        => _bufferedPerPeer.TryRemove(id.Value, out _);
+    {
+        _bufferedPerPeer.TryRemove(id.Value, out _);
+        _queuedEventsPerPeer.TryRemove(id.Value, out _);
+    }
     /// <summary>P646 — number of peers currently holding a buffered-byte
     /// accounting entry (test seam; asserts churn leaves 0).</summary>
     internal int BufferedPeerCount => _bufferedPerPeer.Count;
@@ -2274,16 +2311,31 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // frame ever reaching ProcessDatagram. This trades a peer's excess
         // input for bounded memory, per the task's allowance to "drop that
         // peer's excess traffic".
+        //
+        // P1023 (R1 finding F3): the reservation is the frame's PAYLOAD plus a
+        // fixed PER-EVENT overhead (PerEventOverheadBytes), because every queued
+        // event costs the ReceivedEvt object, its array header, its queue slots
+        // and its accounting entry no matter how few bytes it carries. Without
+        // that charge a 4-byte CRC-only packet reserved 4 B and a zero-length
+        // frame reserved nothing at all, so tiny/empty frames queued without
+        // limit (and, being 0 B, were never refused). A second, size-independent
+        // cap (MaxQueuedEventsPerPeer) bounds the number of un-handled events
+        // per peer.
         long len = data.Length;   // hoist: ReadOnlySpan is ref-like, unusable in lambdas
-        long reserved = _bufferedPerPeer.AddOrUpdate(from.Value, len, (_, old) => old + len);
+        long charge = len + PerEventOverheadBytes;
+        long reserved = _bufferedPerPeer.AddOrUpdate(from.Value, charge, (_, old) => old + charge);
         if (reserved > MaxBufferedBytesPerPeer)
         {
-            _bufferedPerPeer.AddOrUpdate(from.Value, 0L, (_, old) => Math.Max(0, old - len));
-            var t = _dropLog.Ticket(from.Value);
-            if (t.Emit)
-                Console.WriteLine($"[rx] peer {from} inbound buffered > {MaxBufferedBytesPerPeer} B — dropping excess (P315 queue bound)");
-            else if (t.Summarize)
-                Console.WriteLine($"[rx] peer {from}: {t.Suppressed} more inbound frames dropped under the P315 queue bound (rate-limited)");
+            ReleaseBytes(from.Value, charge);
+            LogInboundDrop(from, $"inbound buffered > {MaxBufferedBytesPerPeer} B (payload + {PerEventOverheadBytes} B/event)");
+            return null;
+        }
+        int queued = _queuedEventsPerPeer.AddOrUpdate(from.Value, 1, (_, old) => old + 1);
+        if (queued > MaxQueuedEventsPerPeer)
+        {
+            ReleaseQueuedEvent(from.Value);
+            ReleaseBytes(from.Value, charge);
+            LogInboundDrop(from, $"has > {MaxQueuedEventsPerPeer} un-handled events queued");
             return null;
         }
         // Publish a placeholder before decoding. Drain never waits: an
@@ -2292,6 +2344,17 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         var received = new ReceivedEvt(from, data.ToArray(), pending);
         _events.Enqueue(received);
         return received;
+    }
+
+    /// <summary>P1023 — one rate-limited console line for a frame refused by the
+    /// inbound queue bound (P315 byte budget or the per-peer event cap).</summary>
+    private void LogInboundDrop(ConnectionId from, string why)
+    {
+        var t = _dropLog.Ticket(from.Value);
+        if (t.Emit)
+            Console.WriteLine($"[rx] peer {from} {why} — dropping excess (P315/P1023 queue bound)");
+        else if (t.Summarize)
+            Console.WriteLine($"[rx] peer {from}: {t.Suppressed} more inbound frames dropped under the P315/P1023 queue bound (rate-limited)");
     }
 
     /// <summary>
@@ -2450,23 +2513,47 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         _ => uint.MaxValue,
     };
 
-    /// <summary>P646 (review finding M2) — a handled <see cref="ReceivedEvt"/>
-    /// releases its reserved bytes back to the peer's budget, but ONLY by
-    /// updating an EXISTING accounting entry (never inserting). Inserting here
-    /// is what re-created entries for departed peers whose receive was queued
-    /// just before their leave; the peer's entry is finally removed when its
-    /// ordered <see cref="PeerLeftEvt"/> drains (ReleasePeer → RemovePeerAccounting).
-    /// </summary>
+    /// <summary>P646 (review finding M2) / P1023 — a handled
+    /// <see cref="ReceivedEvt"/> releases its reserved bytes back to the peer's
+    /// budget, but ONLY by updating an EXISTING accounting entry (never
+    /// inserting). Inserting here is what re-created entries for departed peers
+    /// whose receive was queued just before their leave; the peer's entry is
+    /// finally removed when its ordered <see cref="PeerLeftEvt"/> drains
+    /// (ReleasePeer → RemovePeerAccounting). The reservation released is the
+    /// same charge the frame took on arrival: payload + the fixed per-event
+    /// overhead (P1023), so the byte and event accounts stay in step.</summary>
     private void ReleaseReservation(ReceivedEvt r)
+    {
+        ReleaseBytes(r.From.Value, r.Data.Length + PerEventOverheadBytes);
+        ReleaseQueuedEvent(r.From.Value);
+    }
+
+    /// <summary>P1023 — release <paramref name="charge"/> bytes of one peer's
+    /// inbound reservation, updating an existing entry only (never inserting a
+    /// departed peer's entry back into the table).</summary>
+    private void ReleaseBytes(uint key, long charge)
     {
         for (;;)
         {
-            if (!_bufferedPerPeer.TryGetValue(r.From.Value, out long cur))
+            if (!_bufferedPerPeer.TryGetValue(key, out long cur))
                 return;                       // entry gone (peer released) — do NOT insert
-            long next = Math.Max(0, cur - r.Data.Length);
-            if (_bufferedPerPeer.TryUpdate(r.From.Value, next, cur))
+            long next = Math.Max(0, cur - charge);
+            if (_bufferedPerPeer.TryUpdate(key, next, cur))
                 return;                       // released
             // lost a race with a concurrent insert — retry
+        }
+    }
+
+    /// <summary>P1023 — decrement one peer's un-handled event count, never
+    /// inserting an entry (same departed-peer rule as <see cref="ReleaseBytes"/>).</summary>
+    private void ReleaseQueuedEvent(uint key)
+    {
+        for (;;)
+        {
+            if (!_queuedEventsPerPeer.TryGetValue(key, out int cur))
+                return;
+            if (_queuedEventsPerPeer.TryUpdate(key, cur > 1 ? cur - 1 : 0, cur))
+                return;
         }
     }
 

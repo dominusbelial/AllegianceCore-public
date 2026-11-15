@@ -1074,10 +1074,22 @@ public sealed class TransportConfig
     /// session: a connected peer that sends NO bytes for this long is dropped
     /// as link-dead (native's 30 s g_sDeadTime, clintlib.cpp:2047). A healthy
     /// client never hits it because the shared client session keep-alive sends
-    /// a CS_PING every 6 s (clintlib.cpp:2050-2087). Absent → 30. Overridable
+    /// a <c>CS_PING</c> every 6 s (clintlib.cpp:2050-2087). Absent → 30. Overridable
     /// by <c>ALLEGIANCE_TRANSPORT_IDLE_TIMEOUT_SECONDS</c>. Before P671 the
     /// frame deadline doubled as this idle grace; the two are now separate.</summary>
     public int? DataLinkIdleTimeoutSeconds { get; set; }
+
+    /// <summary>P1023 (R1-F6 lead) — how long a peer that completed the transport
+    /// greeting but has not yet sent a validated logon may hold its connection.
+    /// Absent → 60 s; an explicit 0 disables the deadline. Overridable by
+    /// <c>ALLEGIANCE_TRANSPORT_PRELOGON_TIMEOUT_SECONDS</c>. Port hardening: the
+    /// data-link idle bound only sees SILENCE, so a peer that keeps a trickle of
+    /// valid frames flowing without ever logging on is otherwise kept forever.
+    /// Native never expires such a connection either — FedSrvSiteBase::OnNewConnection
+    /// is "we don't do anything until they login" (FedSrv.CPP:4536-4544) — so this
+    /// is a deliberate modern bound, not parity. A real client (or MCP bot) logs
+    /// on within milliseconds of connecting, so 60 s never cuts a legitimate join.</summary>
+    public int? PreLogonTimeoutSeconds { get; set; }
 
     // ---- P654 (H-24) per-peer message/chat budget (native's chat budget) ----
 
