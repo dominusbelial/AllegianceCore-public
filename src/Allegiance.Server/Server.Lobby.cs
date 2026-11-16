@@ -3888,7 +3888,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// SET_TEAM_LEADER / SET_MISSION_OWNER fan-out: the peer's own phase-3 join
     /// burst carries that lobby state, and native re-announces nothing at a
     /// reset (fsmission.cpp:2604-2622, 3804-3828).</summary>
-    private bool TryJoinSideCore(Ship ship, short newSideId, bool announce)
+    private bool TryJoinSideCore(Ship ship, short newSideId, bool announce, ConnectionId? joiningPeer = null)
     {
         if (ship.Mission is not Mission mission) return false;
         var targetSide = mission.Sides.FirstOrDefault(s => s.Id == newSideId);
@@ -3953,7 +3953,10 @@ private void CompleteStartCountdown(Mission mission, double now)
             // This also covers the announce:false rotation reseat, where the
             // fresh mission re-derives each side's squad from its reseated
             // leader (native re-creates the mission and leaders re-join).
-            EstablishSideSquadFromLeader(mission, targetSide);
+            // P1033: initial selection precedes _peerShips registration. Carry
+            // its verified peer into the native preferred-squad election
+            // (FedSrv/fsmission.cpp:684-686), just as for registered leaders.
+            EstablishSideSquadFromLeader(mission, targetSide, joiningPeer);
             if (newMissionOwner)
                 mission.MissionOwnerSideId = newSideId;
         }
@@ -4524,7 +4527,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         AnnounceFreshShip(live.Ship, -2 /* SIDE_TEAMLOBBY */, pend.Request.CharacterName);
         if (!autoSelection)
         {
-            TryJoinSide(live.Ship, requestedSideId);
+            TryJoinSideCore(live.Ship, requestedSideId, announce: true, joiningPeer: from);
             Console.WriteLine($"[sideselect] {from} '{ConsoleText(pend.Request.CharacterName)}' chose side {requestedSideId} (ship {pend.ShipId})");
         }
         else
@@ -4541,7 +4544,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             // above) became leader.
             if (live.Ship.SideId is { } autoSide)
             {
-                TryJoinSide(live.Ship, autoSide);
+                TryJoinSideCore(live.Ship, autoSide, announce: true, joiningPeer: from);
                 Console.WriteLine($"[sideselect] {from} '{ConsoleText(pend.Request.CharacterName)}' AUTO-assigned to side {autoSide} (ship {pend.ShipId}); leader election via TryJoinSide");
             }
             else
@@ -5295,6 +5298,14 @@ private void CompleteStartCountdown(Mission mission, double now)
                         lobbyState.Add(new PlayerReady { ShipId = teammate.Ship.Id, FReady = true }.Encode());
                 }
             if (lobbyState.Count > 0) SendPeer(from, FedPacket.Pack(lobbyState));
+            // P1033: initial election's SET_TEAM_INFO cannot reach the joining
+            // leader before _peerShips registration. Seed current squads after
+            // JOINED_MISSION's reset, alongside the other role state (native
+            // SetSideName sends to the mission including the leader,
+            // FedSrv/fsmission.cpp:1580-1590).
+            if (lobbyMission.SquadGame)
+                foreach (var side in lobbyMission.Sides)
+                    RelaySideSquad(lobbyMission, side, from);
         }
 
         // FM_S_MISSION_STAGE(37): the message this whole join burst

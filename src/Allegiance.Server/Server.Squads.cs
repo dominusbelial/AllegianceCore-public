@@ -52,8 +52,9 @@ namespace Allegiance.Server;
 /// <para><b>Scope boundary (P820b).</b> Only a VERIFIED peer's squads matter.
 /// Bots and anonymous players have no squads and no behaviour change — a side's
 /// squad is derived solely from a verified leader's preferred squad, and
-/// boot-non-members only ever detaches a verified peer who demonstrably is not
-/// on the side's squad.</para>
+/// boot-non-members only detaches verified peers outside the side's squad,
+/// including verified accounts with no memberships. Initial join checks still
+/// require membership for every peer on an established squad side.</para>
 /// </summary>
 public sealed partial class Server
 {
@@ -76,7 +77,7 @@ public sealed partial class Server
     /// leader (the port's <c>AddPlayerToSide</c>). Succession does <b>not</b>
     /// call this — native keeps the squad there.
     /// </summary>
-    private void EstablishSideSquadFromLeader(Mission mission, Side side)
+    private void EstablishSideSquadFromLeader(Mission mission, Side side, ConnectionId? joiningPeer = null)
     {
         if (!mission.SquadGame)
         {
@@ -86,7 +87,12 @@ public sealed partial class Server
             return;
         }
         (string? Id, string? Name)? preferred = null;
-        if (side.LeaderShipId is { } leaderShipId)
+        // P1033: a first logon leader is not in _peerShips yet. Its joining
+        // connection already has the verified lobby identity (native election:
+        // fsmission.cpp:684-686); registered switches/reseats use the lookup.
+        if (joiningPeer is { } leaderPeer)
+            preferred = PeerPreferredSquad(leaderPeer);
+        else if (side.LeaderShipId is { } leaderShipId)
         {
             foreach (var kv in _peerShips)
             {
@@ -127,16 +133,16 @@ public sealed partial class Server
             // (native guards only on squadID != NA; the port adds the P820c
             // SquadGame gate, which is unreachable-equivalent because every
             // native call site that passes a non-NA squad is squad-game-only).
-            // Only verified peers with a non-empty squad list can be judged
-            // non-members; anonymous/bots keep their seat (no squad ⇒ no
-            // behaviour change). Snapshot first: the boot mutates state.
+            // P1033: a verified empty/missing list means no memberships,
+            // matching native GetIsMemberOfSquad (fsship.cpp:1358-1373).
+            // Preserve the port's anonymous/bot exemption by identity presence,
+            // not claim count. Snapshot first: the boot mutates state.
             foreach (var kv in _peerShips.ToList())
             {
                 if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
                 if (kv.Value.Ship.SideId != side.Id) continue;
-                var squads = PeerSquads(kv.Key);
-                if (squads is null || squads.Count == 0) continue;              // anonymous/bot — leave seated
-                if (squads.Any(s => string.Equals(s.Id, squadId, StringComparison.Ordinal))) continue;  // member
+                if (!_peerIdentities.ContainsKey(kv.Key)) continue;  // anonymous/bot — leave seated
+                if (PeerIsMemberOfSquad(kv.Key, squadId)) continue;
                 MoveToTeamLobby(mission, kv.Value.Ship, QuitSideReason.SquadChange);  // not a member — real quit-side
             }
         }

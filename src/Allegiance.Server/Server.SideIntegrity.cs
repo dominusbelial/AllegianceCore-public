@@ -107,7 +107,11 @@ public sealed partial class Server
         {
             if (Count(sideId) > 0)
             {
-                if (ship is not null && ConnOf(ship) is { } memberPeer && !PeerIsMemberOfSquad(memberPeer, side.SquadId))
+                // Initial selection has a peer but no registered ship yet.
+                // Native checks every requester (fsmission.cpp:4712-4714).
+                var memberPeer = peer ?? (ship is not null ? ConnOf(ship) : null);
+                if (side.SquadId is not null
+                    && (memberPeer is not { } member || !PeerIsMemberOfSquad(member, side.SquadId)))
                     return DelPositionReqReason.WrongSquad;
             }
             else if (peer is not { } squadPeer || PeerSquads(squadPeer)?.Any(s => s.CanLead) != true)
