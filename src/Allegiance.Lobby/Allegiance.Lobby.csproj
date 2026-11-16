@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="BrowserPreview/PreviewAssets.cs" />
     <ProjectReference Include="../Allegiance.Core/Allegiance.Core.csproj" />
     <!-- Steam middleware permits older AngleSharp; pin the patched parser (GHSA-pgww-w46g-26qg). -->
     <PackageReference Include="AngleSharp" Version="1.5.0" />

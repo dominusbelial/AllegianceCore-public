@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "path": "art/fig05.121004a915b39ec5fa076371d833d21b5444cbdb78877e777d37b50a4ca4f5f1.mdl",
+      "source": "fig05.mdl",
+      "byteSize": 46742,
+      "sha256": "121004a915b39ec5fa076371d833d21b5444cbdb78877e777d37b50a4ca4f5f1",
+      "contentType": "application/octet-stream"
+    },
+    {
+      "path": "art/fig05bmp.46144898ffaca2a30429284f64f7eedb906d3afcdaa45954552cac62e9411870.mdl",
+      "source": "fig05bmp.mdl",
+      "byteSize": 131188,
+      "sha256": "46144898ffaca2a30429284f64f7eedb906d3afcdaa45954552cac62e9411870",
+      "contentType": "application/octet-stream"
+    }
+  ]
+}

@@ -414,3 +414,32 @@ policy through the existing selected-plan briefing, including remote supervisors
 and owned skirmish drivers. See
 [the P1001 report](../docs/reports/CIV_STRATEGY_COMMANDER_P1001.md) for gates,
 assumptions and the paired rig plan. The switch remains off pending rig review.
+
+## Optional browser preview (P1046)
+
+The lobby route `/play/preview/` is absent by default. It serves a small KNI
+viewer, with no login, joining or game connection. The desktop and Android builds
+are independent.
+
+For a local publish, run `scripts/publish-browser-preview.sh OUTPUT_DIRECTORY`
+with a new generation directory. Set `BrowserPreview__Enabled=true`,
+`BrowserPreview__BundlePath=OUTPUT_DIRECTORY`, and `ALLEGIANCE_ARTWORK_PATH` to
+the existing Artwork checkout (or `BrowserPreview__ArtworkPath` in settings).
+The bundle directory is **outside** the lobby's ordinary `wwwroot`. Restart the
+lobby after switching generations; retain the previous directory for rollback.
+Publishing does not install a workload or include artwork.
+
+Compose includes an optional one-shot exporter:
+`docker compose --profile browser-preview run --build --rm browser-preview`.
+It writes the browser bundle into the `browser-preview` volume, read-only in the
+lobby. Run the exporter with the lobby stopped when updating that volume. Then
+set `ALLEGIANCE_BROWSER_PREVIEW_ENABLED=true` and recreate the lobby.
+The lobby also needs the two manifest-listed artwork files (`fig05.mdl` and
+`fig05bmp.mdl`) in its read-only `/artwork` mount. The trial downloader only supplies
+core/map files: use a private compose override to mount the same full Artwork
+checkout used by the stack. An enabled preview fails startup if its bundle or
+verified art is missing; disabling it requires neither.
+
+No additional port, listener, API privilege, identity setting, thread isolation
+header or server change is involved. Existing API limits continue to apply.
+The optional build/export service never needs a network game server.

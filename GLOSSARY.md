@@ -29,6 +29,17 @@ list in **reverse**.
 - **`src/Allegiance.Lobby`** — the server-directory web app.
 - **`src/Allegiance.ClientCore`** — headless client world-state (session,
   flight prediction, replay).
+- **Browser preview (P1046)** — separate single-threaded KNI/Blazor viewer in
+  `src/Allegiance.ClientCore.Browser/Allegiance.ClientCore.Browser.csproj`; no desktop
+  Game assembly dependency. The async verified artwork contract/loader is
+  `src/Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs`, with the versioned
+  allow-list in `src/Allegiance.ClientCore.Browser/wwwroot/asset-manifest.json`.
+  Default-off `BrowserPreview:Enabled` and bundle/artwork settings live in
+  `src/Allegiance.Lobby/BrowserPreview/BrowserPreviewSettings.cs`; scoped hosting
+  in `src/Allegiance.Lobby/BrowserPreview/BrowserPreviewHosting.cs` serves only
+  `/play/preview/` before the API limiter. Publish with
+  `scripts/publish-browser-preview.sh`; optional compose exporter and setup in
+  `docker/README.md`. Report: `docs/reports/BROWSER_PREVIEW_P1046.md`.
 - **`src/Allegiance.ClientCore.Game`** — the MonoGame presentation layer
   (rendering, HUD, input, screens).
 - **`src/Allegiance.Bot`** — the minimal BotClass client used by the MCP driver

@@ -1,0 +1,215 @@
+{
+  "note": "Exact failed or timing-offender display cases, one case per process, three isolated repetitions after the full sweep. These do not change the full gate result.",
+  "runs": [
+    {
+      "tag": "timer",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission&DisplayName~delay: 7",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "outcome": "Passed",
+          "seconds": 0.5167702,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "timer",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission&DisplayName~delay: 7",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "outcome": "Passed",
+          "seconds": 0.5922366,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "timer",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission&DisplayName~delay: 7",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+          "outcome": "Passed",
+          "seconds": 0.5506029,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "roster",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.576404,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "roster",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "exitCode": 1,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Failed",
+          "seconds": 0.6006207,
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.19999981"
+        }
+      ]
+    },
+    {
+      "tag": "roster",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5517687,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "nanite",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 3.057821,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "nanite",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 3.0773202,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "nanite",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 3.0762816,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1724161,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1763652,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1200091,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 3.0141337,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.9389472,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 3.0117512,
+          "message": null
+        }
+      ]
+    }
+  ]
+}

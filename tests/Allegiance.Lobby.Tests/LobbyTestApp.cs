@@ -25,6 +25,7 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
 {
     internal readonly string IdentityDirectory = Path.Combine(Directory.GetCurrentDirectory(), ".scratch", "lobby-" + Guid.NewGuid().ToString("N"));
     internal Allegiance.Lobby.Identity.IdentitySettings? IdentityConfiguration { get; set; }
+    internal Allegiance.Lobby.BrowserPreview.BrowserPreviewSettings? BrowserPreviewConfiguration { get; set; }
     private readonly TimeProvider _time;
     private readonly Action<LobbySettings>? _configure;
     private readonly System.Net.IPAddress _source;
@@ -46,6 +47,11 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            if (BrowserPreviewConfiguration is { } preview)
+            {
+                services.RemoveAll<Allegiance.Lobby.BrowserPreview.BrowserPreviewSettings>();
+                services.AddSingleton(preview);
+            }
             var identity = IdentityConfiguration ?? new Allegiance.Lobby.Identity.IdentitySettings
             {
                 ConnectionString = "Data Source=" + Path.Combine(IdentityDirectory, "accounts.db"),

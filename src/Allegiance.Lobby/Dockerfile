@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Allegiance.Lobby — directory and persistent identity issuer. No external
-# asset tree, no required config file (LobbySettings knobs — MaxEntries,
+# asset tree unless the browser preview is enabled, no required config file (LobbySettings knobs — MaxEntries,
 # SweepIntervalSeconds, MaxAgeSeconds — are bound from the optional "Lobby"
 # config section / env vars and have baked-in defaults; see LobbySettings.cs).
 # The one deployment knob that matters is which URL Kestrel binds, controlled
@@ -21,6 +21,7 @@ RUN dotnet restore src/Allegiance.Lobby/Allegiance.Lobby.csproj
 
 COPY src/Allegiance.Update/ src/Allegiance.Update/
 COPY src/Allegiance.Lobby/ src/Allegiance.Lobby/
+COPY src/Allegiance.ClientCore.Browser/Assets/ src/Allegiance.ClientCore.Browser/Assets/
 COPY src/Allegiance.Core/ src/Allegiance.Core/
 # Web-SDK publish pulls in the ASP.NET Core shared framework reference and the
 # wwwroot/ static content automatically.

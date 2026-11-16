@@ -1,0 +1,83 @@
+{
+  "baseline": "1dcf757f",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolsBuilt": 140,
+  "isolated": [
+    {
+      "suite": "browser",
+      "run": 1,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "suite": "browser",
+      "run": 2,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "suite": "browser",
+      "run": 3,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "suite": "lobby",
+      "run": 1,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "suite": "lobby",
+      "run": 2,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "suite": "lobby",
+      "run": 3,
+      "passed": 16,
+      "failed": 0
+    }
+  ],
+  "desktopFiles": 753,
+  "desktopFileListSha256": "3ece68282e4ade29c1dad8c4716b5de801e61865653d76b0b32f696fa624a9a2",
+  "desktopListsIdentical": true,
+  "unchangedDomains": [
+    "Core",
+    "Server",
+    "ClientCore.Game",
+    "ClientCore.MonoGame",
+    "ClientCore.Android",
+    "parity"
+  ],
+  "pngBytes": 579997,
+  "pngCount": 8,
+  "imagesOpenedAndReviewed": true,
+  "hygieneIssues": [],
+  "previewPortClosed": true,
+  "workloadsInstalled": 0,
+  "dockerAvailable": false,
+  "firefoxAvailable": false,
+  "fastGate": {
+    "status": "Failed",
+    "count": 14953,
+    "passed": 14944,
+    "failed": 2,
+    "notExecuted": 7,
+    "seconds": 577.2241987799644,
+    "infrastructurePassed": 9,
+    "timingOffenders": 3
+  },
+  "nonTaskIsolated": {
+    "cases": 5,
+    "executions": 15,
+    "passed": 14,
+    "failed": 1,
+    "ledgerUpdated": true
+  },
+  "licenceLinksNavigateToServedDocuments": true
+}

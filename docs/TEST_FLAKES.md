@@ -4,6 +4,33 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1046 gate observations — 2026-11-16 UTC
+
+One fast sweep on the browser-preview tree: **14,953 tests, 577.2 s, FAIL** —
+14,944 passed / 2 failed / 7 not executed; all 9 infrastructure checks passed.
+The 12 new pure-browser and 16 new lobby-preview cases passed, as did all 209
+lobby cases. Three otherwise passing executions exceeded the calibrated
+**11.550928 s** Fast limit (the runner's generic message still says 10 seconds).
+P1046 changes browser/lobby hosting and packaging; Core, server, desktop and
+Android source are unchanged. Both assertion failures match existing timer-float
+and roster-clock signatures in this ledger. Each exact display case below ran
+three times alone, one case/process, with artwork and `--no-build`.
+
+| Case | Sweep observation | Three isolated outcomes / seconds |
+| --- | --- | --- |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | `7.0000000000000009` above inclusive 7 s bound | pass / pass / pass — 0.517 / 0.592 / 0.551 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | `8.45000076` outside `[4,8]` | pass / **fail** / pass — 0.576 / 0.601 / 0.552; isolated failure `8.19999981` outside `[4,8]` |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | Passed in 14.929 s, over limit | pass / pass / pass — 3.058 / 3.077 / 3.076 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed in 14.675 s, over limit | pass / pass / pass — 3.172 / 3.176 / 3.120 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | Passed in 15.018 s, over limit | pass / pass / pass — 3.014 / 2.939 / 3.012 |
+
+The roster case remains intermittent even alone; the other isolated passes do
+not make the sweep green or establish a root cause. No assertion, tier, timing
+threshold or gameplay rule was relaxed. Report and raw summaries:
+`docs/reports/BROWSER_PREVIEW_P1046.md`,
+`docs/reports/BROWSER_PREVIEW_P1046_assets/fast-summary.json`,
+`docs/reports/BROWSER_PREVIEW_P1046_assets/isolated-tests.json`.
+
 ## P1035 gate observations — 2026-11-16 UTC
 
 One fast sweep on the P1035 tree: **14,792 tests, 573.6 s, FAIL** (runner summary;

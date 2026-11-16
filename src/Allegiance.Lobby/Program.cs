@@ -1,4 +1,5 @@
 using Allegiance.Lobby;
+using Allegiance.Lobby.BrowserPreview;
 using Allegiance.Lobby.Career;
 using Allegiance.Lobby.Chat;
 using Allegiance.Lobby.Games;
@@ -24,6 +25,9 @@ var builder = WebApplication.CreateBuilder(args);
 var settings = new LobbySettings();
 builder.Configuration.GetSection("Lobby").Bind(settings);
 builder.Services.AddSingleton(settings);
+var browserPreview = new BrowserPreviewSettings();
+builder.Configuration.GetSection("BrowserPreview").Bind(browserPreview);
+builder.Services.AddSingleton(browserPreview);
 builder.Services.AddSingleton<NatObservationStore>();
 builder.Services.AddSingleton<PunchSignaling>();
 builder.Services.AddSingleton<NatBindingResponder>();
@@ -97,6 +101,9 @@ app.Use(async (context, next) =>
     }
     await next(context);
 });
+// The optional, closed preview file registry runs after security checks and before
+// rate limiting. It cannot route an API request or alter an API limiter policy.
+app.UseBrowserPreview();
 app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
