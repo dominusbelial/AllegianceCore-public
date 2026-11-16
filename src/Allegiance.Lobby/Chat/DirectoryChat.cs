@@ -28,8 +28,21 @@ public sealed class DirectoryChat
 
     public const int MaxTextLength = 240;
     public const int MaxHistory = 500;
-    private const int MaxChannels = 512;
-    private const int MaxMutedPerAccount = 256;
+    /// <summary>P1024 (R1 F12) — channel-table cap. Only channels that still have a
+    /// line in the bounded history keep a slot (see <see cref="PruneEmptyChannelsLocked"/>),
+    /// so this cap can never be permanently filled by made-up names.</summary>
+    public const int MaxChannels = 512;
+    /// <summary>P1024 (R1 F12) — mutes per account. The muted id must be a
+    /// well-formed account id (<see cref="IsAccountId"/>), so a list is 256 × 32
+    /// characters at worst.</summary>
+    public const int MaxMutedPerAccount = 256;
+    /// <summary>P1024 (R1 F12) — total muted ids across every account, and the
+    /// bound on how many accounts may hold a list at all. Together they bound the
+    /// mute table's memory for the life of the process (no pruning is possible:
+    /// a mute has no expiry in native either).</summary>
+    public const int MaxMuteEntries = 8192;
+    public const int MaxMutedAccounts = 512;
+    private const int AccountIdLength = 32;
 
     private readonly object _gate = new();
     private readonly List<ChatLine> _lines = new();
@@ -37,6 +50,7 @@ public sealed class DirectoryChat
     private readonly Dictionary<string, HashSet<string>> _mutes = new(StringComparer.Ordinal);
     private readonly TimeProvider _time;
     private long _sequence;
+    private int _muteEntries;
 
     public DirectoryChat(TimeProvider time)
     {
@@ -54,6 +68,13 @@ public sealed class DirectoryChat
         channel is DirectoryChannel
         || (channel is { Length: > 7 and <= 80 } && channel.StartsWith("server:", StringComparison.Ordinal)
             && channel.AsSpan(7).IndexOfAnyExcept("abcdefghijklmnopqrstuvwxyz0123456789-".AsSpan()) < 0);
+
+    /// <summary>P1024 (R1 F12) — a mute target (and a mute list's owner) is an
+    /// account id, which this lobby mints as a 32-digit GUID (<c>Guid.ToString("N")</c>,
+    /// <c>IdentityStore</c>), never an arbitrary string. Native's mute was a boolean
+    /// flag on a real player entry in the roster (<c>WinTrek/WinTrek.cpp:3731-3734</c>,
+    /// <c>WinTrek/trekigc.cpp:4492-4495</c>), not free-form text.</summary>
+    public static bool IsAccountId(string? id) => id is { Length: AccountIdLength } && id.All(Uri.IsHexDigit);
 
     /// <summary>Post a line. Returns the accepted line (with its sequence — the
     /// relay feedback native's ack carries), or null with a reason when the
@@ -73,6 +94,9 @@ public sealed class DirectoryChat
 
         lock (_gate)
         {
+            // P1024 (R1 F12) — a channel keeps a slot only while it still has a line
+            // in the bounded history; made-up names cannot own the table for good.
+            PruneEmptyChannelsLocked();
             if (_channels.Count >= MaxChannels && !_channels.Contains(channel))
             {
                 error = "too many channels";
@@ -86,6 +110,22 @@ public sealed class DirectoryChat
         }
     }
 
+    /// <summary>
+    /// P1024 (R1 F12) — drop channels that no longer carry a line. Because the line
+    /// history is capped at <see cref="MaxHistory"/> (500), at most that many channels
+    /// can still hold a line, so at least <c>MaxChannels - MaxHistory</c> slots are
+    /// always free: one account posting to hundreds of made-up <c>server:…</c> names
+    /// can never lock a real server's channel out of the table. History is untouched —
+    /// only empty names leave.
+    /// </summary>
+    private void PruneEmptyChannelsLocked()
+    {
+        if (_channels.Count < MaxChannels) return;
+        var live = new HashSet<string>(StringComparer.Ordinal) { DirectoryChannel };
+        foreach (var line in _lines) live.Add(line.Channel);
+        _channels.RemoveWhere(c => !live.Contains(c));
+    }
+
     /// <summary>Lines on <paramref name="channel"/> after
     /// <paramref name="sinceSequence"/>, excluding senders
     /// <paramref name="readerAccountId"/> muted. The reader's own lines are
@@ -94,7 +134,7 @@ public sealed class DirectoryChat
     {
         lock (_gate)
         {
-            var muted = readerAccountId is not null && _mutes.TryGetValue(readerAccountId, out var set) ? set : null;
+            var muted = readerAccountId is not null && _mutes.TryGetValue(readerAccountId.ToLowerInvariant(), out var set) ? set : null;
             return _lines
                 .Where(l => l.Channel == channel && l.Sequence > sinceSequence)
                 // The reader's own lines are acknowledged by the POST response;
@@ -108,33 +148,50 @@ public sealed class DirectoryChat
     }
 
     /// <summary>Mute a sender for the reader (native chat-pane mute). Returns
-    /// false for a self-mute or an empty identity.</summary>
+    /// false for a self-mute, an empty identity, or an id that is not a well-formed
+    /// account id (P1024 / R1 F12: the id is stored for the life of the process, so
+    /// only real 32-digit account ids are accepted), and once the per-account or the
+    /// directory-wide mute bound is reached.</summary>
     public bool Mute(string readerAccountId, string mutedAccountId)
     {
-        if (string.IsNullOrEmpty(readerAccountId) || string.IsNullOrEmpty(mutedAccountId)) return false;
-        if (readerAccountId == mutedAccountId) return false;
+        if (!IsAccountId(readerAccountId) || !IsAccountId(mutedAccountId)) return false;
+        string reader = readerAccountId.ToLowerInvariant();
+        string muted = mutedAccountId.ToLowerInvariant();
+        if (reader == muted) return false;
         lock (_gate)
         {
-            if (!_mutes.TryGetValue(readerAccountId, out var set))
-                _mutes[readerAccountId] = set = new HashSet<string>(StringComparer.Ordinal);
-            if (set.Count >= MaxMutedPerAccount) return false;
-            set.Add(mutedAccountId);
+            if (!_mutes.TryGetValue(reader, out var set))
+            {
+                if (_mutes.Count >= MaxMutedAccounts || _muteEntries >= MaxMuteEntries) return false;
+                _mutes[reader] = set = new HashSet<string>(StringComparer.Ordinal);
+            }
+            if (set.Contains(muted)) return true;
+            if (set.Count >= MaxMutedPerAccount || _muteEntries >= MaxMuteEntries) return false;
+            set.Add(muted);
+            _muteEntries++;
             return true;
         }
     }
 
-    /// <summary>Unmute a sender.</summary>
+    /// <summary>Unmute a sender. Only a well-formed account id can be on a list,
+    /// so anything else is not a mute this reader holds.</summary>
     public bool Unmute(string readerAccountId, string mutedAccountId)
     {
+        if (!IsAccountId(readerAccountId) || !IsAccountId(mutedAccountId)) return false;
         lock (_gate)
-            return _mutes.TryGetValue(readerAccountId, out var set) && set.Remove(mutedAccountId);
+        {
+            if (!_mutes.TryGetValue(readerAccountId.ToLowerInvariant(), out var set)
+                || !set.Remove(mutedAccountId.ToLowerInvariant())) return false;
+            _muteEntries--;
+            return true;
+        }
     }
 
     /// <summary>The reader's muted account ids.</summary>
     public IReadOnlyCollection<string> Muted(string readerAccountId)
     {
         lock (_gate)
-            return _mutes.TryGetValue(readerAccountId, out var set) ? set.ToArray() : Array.Empty<string>();
+            return _mutes.TryGetValue(readerAccountId.ToLowerInvariant(), out var set) ? set.ToArray() : Array.Empty<string>();
     }
 
     /// <summary>Known channel names (directory first, then per-server).</summary>

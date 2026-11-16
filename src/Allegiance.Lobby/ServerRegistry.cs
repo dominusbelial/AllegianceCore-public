@@ -30,6 +30,27 @@ public sealed class ServerRegistry
     /// <c>lobby/server.h:168</c>); the directory keeps it short too.</summary>
     private const int LocationMax = 128;
 
+    /// <summary>
+    /// P1024 (R1 F13) — the largest player count a listing may advertise. Native
+    /// carries the population in an 11-bit field: <c>unsigned nNumPlayers : 11</c>
+    /// of LOBBYMISSIONINFO (<c>lobby/messagesall.h:39</c>, <c>nNumNoatPlayers</c>
+    /// at <c>:40</c>), so 2047 is the most one mission can report; anything above
+    /// is a broken or hostile host. The public directory clamped it nowhere, and
+    /// the stats endpoint's overflow-checked sum made two such listings answer 500.
+    /// </summary>
+    public const int MaxPlayerCount = 2047;
+
+    /// <summary>P1024 (R1 F13) — the largest player capacity a listing may
+    /// advertise (native's <c>nMaxPlayersPerGame : 11</c>, <c>lobby/messagesall.h:41</c>).</summary>
+    public const int MaxPlayersCap = 2047;
+
+    /// <summary>P1024 (R1 F13) — the game-count clamp. Native's <c>m_iMaxGames</c>
+    /// is a plain int defaulting to 20 per server (<c>lobby/server.cpp:463</c>,
+    /// <c>lobby/server.h:126,166</c>) with no wire field of its own, so this is a
+    /// deliberately generous port bound: enough for any real host, small enough
+    /// that every counter stays far inside int range.</summary>
+    public const int MaxGamesPerServer = 1024;
+
     private readonly ConcurrentDictionary<string, ServerListing> _entries = new(StringComparer.Ordinal);
     private readonly TimeProvider _time;
     private readonly int _maxEntries;
@@ -105,8 +126,8 @@ public sealed class ServerRegistry
                 Sanitize(req.Name, NameMax),
                 Sanitize(req.Address, AddressMax),
                 NormalizePort(req.Port),
-                Math.Max(0, req.PlayerCount ?? 0),
-                Math.Max(0, req.MaxPlayers ?? 0),
+                ClampCount(req.PlayerCount, MaxPlayerCount),
+                ClampCount(req.MaxPlayers, MaxPlayersCap),
                 Sanitize(req.MissionName, NameMax),
                 Sanitize(req.CoreFile, CoreFileMax),
                 Sanitize(req.Version, VersionMax),
@@ -120,8 +141,8 @@ public sealed class ServerRegistry
                 req.Verified, req.IdentityServerId,
                 // P810 — the optional minimum-client-version requirement
                 // (absent stays null, not "").
-                NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)), ToMissions(req.Missions), Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
-                Math.Max(1, req.MaxGames ?? 20),
+                NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)), ToMissions(req.Missions), ClampCount(req.CurrentGames ?? req.Missions?.Count ?? 0, MaxGamesPerServer),
+                Math.Clamp(req.MaxGames ?? 20, 1, MaxGamesPerServer),
                 // P894 — native's server metadata (location), the paused flag the
                 // listing hides on, and the host's stated lobby protocol version.
                 Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted,
@@ -151,8 +172,8 @@ public sealed class ServerRegistry
             Address = Sanitize(req.Address, AddressMax),
             Port = NormalizePort(req.Port),
             UdpPort = NormalizeUdpPort(req.UdpPort),
-            PlayerCount = Math.Max(0, req.PlayerCount ?? 0),
-            MaxPlayers = Math.Max(0, req.MaxPlayers ?? 0),
+            PlayerCount = ClampCount(req.PlayerCount, MaxPlayerCount),
+            MaxPlayers = ClampCount(req.MaxPlayers, MaxPlayersCap),
             MissionName = Sanitize(req.MissionName, NameMax),
             CoreFile = Sanitize(req.CoreFile, CoreFileMax),
             Version = Sanitize(req.Version, VersionMax),
@@ -164,8 +185,8 @@ public sealed class ServerRegistry
             // Started, so InProgress and the goal bits can change mid-listing).
             Game = ToGameParams(req.Game),
             Missions = ToMissions(req.Missions),
-            CurrentGames = Math.Max(0, req.CurrentGames ?? req.Missions?.Count ?? 0),
-            MaxGames = Math.Max(1, req.MaxGames ?? 20),
+            CurrentGames = ClampCount(req.CurrentGames ?? req.Missions?.Count ?? 0, MaxGamesPerServer),
+            MaxGames = Math.Clamp(req.MaxGames ?? 20, 1, MaxGamesPerServer),
             Verified = req.Verified, IdentityServerId = req.IdentityServerId,
             // P810 — a heartbeat refreshes the requirement too (a server may
             // raise its minimum after a client-breaking update).
@@ -366,15 +387,28 @@ public sealed class ServerRegistry
         var live = alive.Where(IsServerAdvertised).ToList();
         return new LobbyStatsDto(
             Servers: live.Count,
-            Missions: live.Sum(l => l.Missions is { Count: > 0 } missions
+            // P1024 (R1 F13) — every sum accumulates as long and saturates at int
+            // range: the per-listing counters are clamped at registration/refresh,
+            // and this second guard keeps the endpoint answering even if a future
+            // path skipped that clamp (native's counters were int fields, but
+            // native never summed an unbounded caller-supplied population).
+            Missions: SumSaturated(live.Select(l => l.Missions is { Count: > 0 } missions
                 ? missions.Count(m => IsMissionAdvertised(m.PlayerCount, m.Game))
-                : Math.Max(0, l.CurrentGames)),
-            Players: live.Sum(l => l.PlayerCount),
-            PercentLoad: live.Sum(PercentLoad),
+                : Math.Max(0, l.CurrentGames))),
+            Players: SumSaturated(live.Select(l => l.PlayerCount)),
+            PercentLoad: SumSaturated(live.Select(PercentLoad)),
             HiddenPausedServers: alive.Count(l => l.Paused),
-            HiddenPausedMissions: alive.Where(l => l.Paused).Sum(l => l.Missions?.Count ?? 0),
-            HiddenEmptyMissions: alive.Where(l => !l.Paused)
-                .Sum(l => l.Missions?.Count(m => !IsMissionAdvertised(m.PlayerCount, m.Game)) ?? 0));
+            HiddenPausedMissions: SumSaturated(alive.Where(l => l.Paused).Select(l => l.Missions?.Count ?? 0)),
+            HiddenEmptyMissions: SumSaturated(alive.Where(l => !l.Paused)
+                .Select(l => l.Missions?.Count(m => !IsMissionAdvertised(m.PlayerCount, m.Game)) ?? 0)));
+    }
+
+    /// <summary>P1024 (R1 F13) — checked long accumulation, saturated to int.</summary>
+    private static int SumSaturated(IEnumerable<int> values)
+    {
+        long total = 0;
+        foreach (int value in values) total += value;
+        return (int)Math.Clamp(total, 0, int.MaxValue);
     }
 
     /// <summary>
@@ -414,6 +448,12 @@ public sealed class ServerRegistry
         > 65535 => 65535,
         _ => port,
     };
+
+    /// <summary>P1024 (R1 F13) — an advertised counter is capped at the field's
+    /// native width (or the port's documented bound) and floored at zero, so a
+    /// hostile or broken host can neither publish an absurd population nor push
+    /// the stats sums out of range.</summary>
+    private static int ClampCount(int? value, int max) => Math.Clamp(value ?? 0, 0, max);
 
     /// <summary>P761 — per-player hygiene for the FIND_PLAYER directory data:
     /// the same control-character/length guard as every string field, capped
@@ -476,7 +516,7 @@ public sealed class ServerRegistry
     /// </summary>
     private static IReadOnlyList<MissionListingDto>? ToMissions(List<MissionListingRequest>? missions) => missions?
         .Where(m => m.Cookie != uint.MaxValue).DistinctBy(m => m.Cookie).Take(128)
-        .Select(m => new MissionListingDto(m.Cookie, Sanitize(m.Name, NameMax), Math.Max(0, m.PlayerCount), ToGameParams(m.Game),
+        .Select(m => new MissionListingDto(m.Cookie, Sanitize(m.Name, NameMax), ClampCount(m.PlayerCount, MaxPlayerCount), ToGameParams(m.Game),
             // P970 — the per-game password-required fact the join screen reads.
             m.PasswordRequired)).ToArray();
 

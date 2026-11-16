@@ -9236,3 +9236,40 @@ Slow-Fast offenders (A: P814 13.0 s, P999 15.3 s, P1000 12.0 s; B: P814 13.3 s, 
 `:116-117` under concurrent lane load (load average 2.4-4.3). The showcase never-parks
 test passed **10/10** runs (two 5-run sets) with 24/30 reach and longest idle-with-target
 0.2-2.2 s. Report: `docs/reports/R1_TRANSPORT_LIMITS_P1023.md`.
+## 2026-11-15 — P1024 lobby limits, one Fast sweep
+
+One completed sweep (base `114ba185`): **14,651 passed / 5 failed / 11 not executed**, **607.5 s**, Fast limit
+**12.537 s** (P744 factor 1.254). Infrastructure checks: **9/0/0**. Lobby project: **188/0/0** fast (the whole
+`Allegiance.Lobby.Tests` project also passed 191/0/3 three times alone). Every one of the five Core failures was
+repeated in its own process three times and passed each time, so all five are load flakes on the shared host (other
+lanes ran suites concurrently); none touches a file this story changed. Results below are **Passed / Failed /
+Skipped (duration)** per repetition.
+
+| Method | Run 1 | Run 2 | Run 3 | Sweep observation |
+| --- | --- | --- | --- | --- |
+| `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | 1/0/0 (1.9 s) | 1/0/0 (0.6 s) | 1/0/0 (0.6 s) | Single-round damage observation missed under load; existing gun/development family (entry above) |
+| `MissileCombatTests.Cross_side_missile_against_a_mounted_shield_absorbs_then_leaks_exactly_like_a_weapon` | 1/0/0 (0.2 s) | 1/0/0 (0.2 s) | 1/0/0 (0.2 s) | First ledgered occurrence: 10 s against the calibrated limit; missile/shield damage accounting unchanged by this story |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 1/0/0 (0.5 s) | 1/0/0 (0.5 s) | 1/0/0 (0.5 s) | Stint timing family already ledgered repeatedly (see entries above) |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | 1/0/0 (0.3 s) | 1/0/0 (0.3 s) | 1/0/0 (0.3 s) | Independent-rollout intermittency already ledgered |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | 1/0/0 (1.7 s) | 1/0/0 (1.7 s) | 1/0/0 (1.7 s) | Mining receipt intermittency already ledgered (P903/P926 family) |
+
+The four calibrated-limit offenders in the sweep (`P796VariedLoadoutTests…civ: 35` 17.0 s,
+`P814GunnerTests.P814b…` 19.1 s, `SC2NaniteSupportTests.Support_selection…civ: 25` 18.1 s,
+`P750NativeAsteroidTypesTests.Research_showcase_rocks…` 15.8 s) all **passed**; each already has a timing-only
+entry above. No tier, limit or assertion was relaxed for any of these.
+
+Final-tree sweep, same story (base `114ba185` + the working-tree changes): **14,651 tests, 578.7 s**, calibrated
+Fast limit **13.113 s** (P744 factor 1.311), infrastructure checks **9/0/0**; Lobby **188/0/0**. Four Core failures,
+again a different set from the earlier sweep, each repeated in its own process three times and passing every time:
+
+| Method | Run 1 | Run 2 | Run 3 | Sweep observation |
+| --- | --- | --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | 1/0/0 (0.3 s) | 1/0/0 (0.3 s) | 1/0/0 (0.3 s) | Destination SHIP_STATUS not collected under load; already ledgered warp-transit family |
+| `StationCombatLiveTests.Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission` | 1/0/0 (0.2 s) | 1/0/0 (0.2 s) | 1/0/0 (0.2 s) | First ledgered occurrence: 19.2 s against the calibrated limit; station damage/broadcast rules unchanged by this story |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | 1/0/0 (0.1 s) | 1/0/0 (0.1 s) | 1/0/0 (0.1 s) | Existing floating upper-bound family (entry above) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | 1/0/0 (0.1 s) | 1/0/0 (0.1 s) | 1/0/0 (0.1 s) | Same family: 7.0000000000000009 > 7 |
+
+Six calibrated-limit offenders all passed (`P796VariedLoadoutTests…civ: 35` 16.3 s, `P814GunnerTests.P814b…`
+17.7 s, `SC2NaniteSupportTests.Support_selection…civ: 25` 18.3 s, `StationCombatLiveTests…` 19.2 s,
+`P968PublisherStreamIndexTests.Reliable_backlog…(peers: 400)` 13.6 s, `P999CivStrategyTests.Every_profile…civ: 5`
+15.7 s). No tier, limit or assertion changed.
