@@ -6,12 +6,15 @@ namespace Allegiance.ClientCore.MonoGame.Tests.Skins;
 public sealed class HudSkinCatalogTests
 {
     [Fact]
-    public void Built_in_skins_load_classic_and_modern()
+    public void Built_in_skins_load_classic_modern_and_jet()
     {
         var catalog = new HudSkinCatalog();
-        Assert.Equal(2, catalog.Installed.Count);
+        // P1035 — Jet is a built-in definition too (installed; the hud.jetSkin
+        // flag only gates its selection, not its loading).
+        Assert.Equal(3, catalog.Installed.Count);
         Assert.NotNull(catalog.TryGet(HudSkinIds.Classic));
         Assert.NotNull(catalog.TryGet(HudSkinIds.Modern));
+        Assert.NotNull(catalog.TryGet(HudSkinIds.Jet));
     }
 
     [Fact]
@@ -46,7 +49,7 @@ public sealed class HudSkinCatalogTests
     {
         var catalog = new HudSkinCatalog();
         Assert.False(catalog.TryAdd("{ \"Schema\": \"hud-skin-1\" }"));
-        Assert.Equal(2, catalog.Installed.Count);
+        Assert.Equal(3, catalog.Installed.Count);
     }
 
     [Fact]

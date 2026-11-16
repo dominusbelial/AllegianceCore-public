@@ -40,6 +40,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Sim;
@@ -63,6 +64,8 @@ sealed record Options
     public string? Capture { get; init; }
     public string? Compare { get; init; }
     public string? SelfTest { get; init; }
+    /// <summary>P1035 — render the Jet skin's story-1 scenes to PNG (see CaptureJet).</summary>
+    public string? Jet { get; init; }
     public string[] DiffCaptures { get; init; } = Array.Empty<string>();
     public string? Filter { get; init; }
     public int MaxDiffs { get; init; } = 10;
@@ -72,7 +75,7 @@ sealed record Options
 
     public static Options Parse(string[] arguments)
     {
-        string? capture = null, compare = null, selfTest = null, filter = null, output = null;
+        string? capture = null, compare = null, selfTest = null, filter = null, output = null, jet = null;
         var diff = new List<string>();
         int maxDiffs = 10;
         bool test = false, samples = false, noVerify = false;
@@ -86,6 +89,7 @@ sealed record Options
                 case "--capture": capture = Next("--capture"); break;
                 case "--compare": compare = Next("--compare"); break;
                 case "--self-test": selfTest = Next("--self-test"); break;
+                case "--jet": jet = Next("--jet"); break;
                 case "--filter": filter = Next("--filter"); break;
                 case "--max-diffs": maxDiffs = int.Parse(Next("--max-diffs")); break;
                 case "--diff-captures":
@@ -98,7 +102,7 @@ sealed record Options
                 case "--samples": samples = true; break;
                 case "--no-baseline-verify": noVerify = true; break;
                 case "--help" or "-h":
-                    Console.WriteLine("hud2-proof [<outputDir>] [--test] [--samples] [--capture <dir>] [--compare <dir>] [--self-test <dir>] [--diff-captures <a> <b>] [--filter <text>] [--max-diffs <n>] [--no-baseline-verify]");
+                    Console.WriteLine("hud2-proof [<outputDir>] [--test] [--samples] [--capture <dir>] [--compare <dir>] [--self-test <dir>] [--jet <dir>] [--diff-captures <a> <b>] [--filter <text>] [--max-diffs <n>] [--no-baseline-verify]");
                     Environment.Exit(0); break;
                 default:
                     if (arguments[i].StartsWith("--", StringComparison.Ordinal)) throw new ArgumentException("unknown flag " + arguments[i]);
@@ -108,8 +112,8 @@ sealed record Options
         if (positional.Count > 0) output = positional[0];
         return new Options
         {
-            Output = output ?? (capture ?? compare ?? selfTest ?? Path.Combine(".scratch", "p980", "render")),
-            Capture = capture, Compare = compare, SelfTest = selfTest, DiffCaptures = diff.ToArray(),
+            Output = output ?? (capture ?? compare ?? selfTest ?? jet ?? Path.Combine(".scratch", "p980", "render")),
+            Capture = capture, Compare = compare, SelfTest = selfTest, Jet = jet, DiffCaptures = diff.ToArray(),
             Filter = filter, MaxDiffs = maxDiffs, Test = test, Samples = samples, NoBaselineVerify = noVerify,
         };
     }
@@ -182,6 +186,10 @@ sealed class Proof : Game
     private StatusTextures? _status;
     private IndicatorTextures? _indicators;
     private HudRenderer _classic = null!;
+    // P1035 — the Jet story-1 renderer for `--jet` captures (its shared radar pass
+    // is the production RadarBracketRenderer; the fixture draws no chat/cargo/tags).
+    private JetHudRenderer? _jet;
+    private HudSkinDefinition? _jetDefinition;
 
     private static readonly (string Name, Color Color)[] Backdrops =
     [
@@ -240,6 +248,17 @@ sealed class Proof : Game
             _indicators = IndicatorTextures.Load(GraphicsDevice, artwork);
         }
         _classic = new HudRenderer(_batch, _white, _small, _big, _gauges, statusTextures: _status, indicators: _indicators);
+        // P1035 — the built-in Jet definition and its story-1 renderer. The shared
+        // radar pass uses the production Classic radar composition.
+        _jetDefinition = HudSkinResolver.Catalog.TryGet(HudSkinIds.Jet);
+        if (_jetDefinition is not null)
+        {
+            var radar = new RadarBracketRenderer(_batch, _white, _status);
+            var resources = new HudSkinResources(model => radar.Draw(model, GraphicsDevice.Viewport),
+                (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
+            _jet = new JetHudRenderer(_batch, _white, _small, _big,
+                new HudSettings { Skin = HudSkinIds.Jet, Size = 1f }, resources, _jetDefinition, radarIcons: null);
+        }
         Console.WriteLine(hasArtwork
             ? "HUD2_ARTWORK present (native gauge/status/indicator art loaded)"
             : "HUD2_ARTWORK absent (synthetic gauge/status shapes)");
@@ -261,6 +280,10 @@ sealed class Proof : Game
         else if (_options.Capture is { } capture)
         {
             Environment.ExitCode = Capture(capture);
+        }
+        else if (_options.Jet is { } jetDirectory)
+        {
+            Environment.ExitCode = CaptureJet(jetDirectory);
         }
         else
         {
@@ -309,6 +332,73 @@ sealed class Proof : Game
         }
         WriteManifest(root, entries);
         Console.WriteLine($"HUD2_CAPTURE_PASS {entries.Count} combinations in {started.Elapsed.TotalMinutes:0.0} min -> {root}");
+        return 0;
+    }
+
+    /// <summary>P1035 — the Jet story-1 evidence capture. Renders the Jet skin
+    /// through the production JetHudRenderer (its own vector primitives plus the
+    /// shared Classic radar pass) at the two required resolutions, on a dark and a
+    /// bright backdrop, and writes the drawn-state summary beside the PNGs.
+    /// Deliberately separate from the Classic/Modern matrix so the zero-delta
+    /// capture and comparison stay byte-identical.</summary>
+    private int CaptureJet(string directory)
+    {
+        if (_jet is null || _jetDefinition is null)
+        {
+            Console.Error.WriteLine("HUD2_JET_MISSING the Jet skin definition is not installed");
+            return 1;
+        }
+        string root = Path.GetFullPath(directory);
+        Directory.CreateDirectory(root);
+        var scenes = new (string Scenario, int Width, int Height, string Backdrop)[]
+        {
+            ("flight", 1920, 1080, "dark"),
+            ("flight", 800, 480, "dark"),
+            ("flight", 800, 480, "bright"),
+            // The shared Classic radar pass with every overlay/label flag set.
+            ("radar-overlays", 1920, 1080, "dark"),
+            // Instrument-hidden states prove the native gate (pod keeps them,
+            // docked and command view do not).
+            ("lifepod", 800, 480, "dark"),
+            ("docked", 800, 480, "dark"),
+            ("command", 1920, 1080, "dark"),
+        };
+        var summaries = new List<object>(scenes.Length);
+        foreach (var (scenario, width, height, backdropName) in scenes)
+        {
+            using var target = new RenderTarget2D(GraphicsDevice, width, height);
+            var backdrop = Backdrops.First(b => b.Name == backdropName).Color;
+            var model = Scenario(scenario, width, height);
+            GraphicsDevice.SetRenderTarget(target);
+            GraphicsDevice.Clear(backdrop);
+            try
+            {
+                // Same frame-boundary call Game1 makes, with no target preview.
+                _jet.Draw(model, new(GraphicsDevice.Viewport, null, false));
+            }
+            finally
+            {
+                GraphicsDevice.SetRenderTarget(null);
+            }
+            string stem = $"jet-{scenario}-{width}x{height}-{backdropName}";
+            using (var file = File.Create(Path.Combine(root, stem + ".png")))
+                target.SaveAsPng(file, width, height);
+            float scale = ModernHudScale.Core(1f, 1f, height);
+            summaries.Add(new
+            {
+                scene = stem, scenario, width, height, backdrop = backdropName,
+                coverage = _jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal),
+                visible = model.Visible, flightVisible = model.FlightVisible,
+                instrumentsVisible = model.InstrumentsVisible,
+                reticleVisible = model.ReticleVisible, telemetry = model.Telemetry is not null,
+                speed = model.Telemetry?.Speed, throttle = model.Telemetry?.Throttle,
+                scale, strokePx = MathF.Max(1f, JetVectorPainter.ReferenceStroke * scale),
+                tag = JetHudRenderer.TagText,
+            });
+        }
+        File.WriteAllText(Path.Combine(root, "jet-capture.json"),
+            JsonSerializer.Serialize(new { schema = 1, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+        Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
 

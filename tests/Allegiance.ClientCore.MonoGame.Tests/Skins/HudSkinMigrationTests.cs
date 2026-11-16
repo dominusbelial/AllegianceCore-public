@@ -47,6 +47,10 @@ public sealed class HudSkinMigrationTests : IDisposable
     [InlineData("\"modern\"", HudSkinIds.Modern)]
     [InlineData("\"CLASSIC\"", HudSkinIds.Classic)]
     [InlineData("\"  Modern  \"", HudSkinIds.Modern)]
+    // P1035 — Jet is an installed id now, so the persisted value is kept as-is;
+    // it is the switcher (not the settings) that displays Modern while the
+    // hud.jetSkin flag is off (JetSkinScaffoldTests).
+    [InlineData("\"jet\"", HudSkinIds.Jet)]
     public void Skin_field_is_normalized_to_canonical_id(string raw, string expectedId)
     {
         File.WriteAllText(HudPath(), $"{{ \"Skin\": {raw} }}");
@@ -57,7 +61,8 @@ public sealed class HudSkinMigrationTests : IDisposable
     [Fact]
     public void Unknown_skin_id_falls_back_to_modern()
     {
-        File.WriteAllText(HudPath(), "{ \"Skin\": \"jet\" }");
+        // A future/uninstalled skin id (Modern 2.0 is not part of this work).
+        File.WriteAllText(HudPath(), "{ \"Skin\": \"modern2\" }");
         var loaded = HudSettings.Load(HudPath(), existingPlayer: true);
         Assert.Equal(HudSkinIds.Modern, loaded.Skin);
         Assert.Equal(HudStyle.Modern, loaded.Style);
