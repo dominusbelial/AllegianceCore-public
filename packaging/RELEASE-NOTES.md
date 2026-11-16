@@ -1,57 +1,59 @@
 AllegianceCore: portable bundles plus Windows setup and Linux AppImage.
 
-## New since v0.1.5
+## New since v0.1.6
 
-This release brings a new look for space, HUD skins you can switch in flight, passwords for private
-games, and a set of fixes to ejecting, lifepods and connecting.
+This release brings a new loadout screen, fixes for the bugs testers reported in v0.1.6, and a
+large round of server and lobby hardening.
 
-**Look**
-- Space has a new default look: an HDR scene with a filmic colour grade, simulated stars and glare,
-  star streaks at speed, subtle space dust, and full-range visibility (objects stay visible out to
-  10 km instead of popping in). Asteroids in particular read as real rock now.
-- Every part of the new look can be switched off in **Options → Visuals** (or with `--visuals key=off`),
-  which restores the original rendering exactly.
-- Station construction looks like the original: the violet build shell grows around the rock,
-  turns solid and shrinks away as the station completes.
-- Flight cameras draw out to the original 10 km far plane.
+**New loadout screen (on by default)**
+- A redesigned hangar loadout screen: hulls, slots and parts side by side, with an inline part list,
+  a stats bar, the price, and Buy / Launch / Back buttons.
+- Ship stats use the original game's labels and formulas, with better/worse arrows when you swap a
+  part. Shield recharge is shown in seconds to refill, as in the original.
+- Hovering a weapon slot marks its mount on the rotating ship; turret slots show their aim guide and
+  the seated gunner's name.
+- Works with mouse, keyboard and controller: **Tab** (or pad X) moves between columns, and the number
+  keys still restore your saved custom loadouts, as in the original.
+- Buying follows the original rules: Launch does nothing if you can't afford the ship, Buy asks your
+  team for the shortfall, and refusals use the original wording. **Need $X** turns into **Buy** as
+  soon as you have the money.
+- Switching hulls works like the original: nothing carries over, the hull starts from your saved or
+  default loadout, and saved loadouts are re-bought with the closest available parts.
+- Your first dock now shows the parts your ship really has (it could appear empty before).
+- Prefer the old screen? **Options → Visuals → Loadout V2** switches back.
 
-**HUD**
-- HUD skins: **Shift+F12** switches between the Classic and Modern HUD in flight; the choice is also
-  in Options and is remembered. Training missions restore the skin they need.
+**Fixes from tester reports**
+- Escape no longer opens a main menu on top of the intro, and an open popup keeps your keys and text.
+- Hangar and loadout controls only work on their own screen; the mission briefing shows only while the
+  game is starting; undocking always clears the hangar.
+- The afterburner sound plays only when you have a working afterburner (pods and empty tanks are
+  silent), with the original afterburner sounds for inside and outside views.
+- Asteroids spin at the right speed even when a big battle slows the game down.
+- Skirmish: your station no longer raises an alert for harmless scout fire.
 
 **Joining games**
-- Password-protected games: the server list shows which games need a password, the join screen asks
-  for it and lets you retry in place after a wrong password. Remembering passwords is opt-in and stored
-  only for your user account.
-- Connecting is more robust: one connection attempt at a time, a clear 15-second limit, and a cancel
-  that really cancels.
+- The server list shows whether a running game still has team slots (`[team slots open]` / `[full]` /
+  `[no team slots]`), and full-looking games can still be joined.
+- Clearer connection errors: HTTP error, unreachable, timed out or invalid response.
+- On a password game, Enter jumps to the password field and Enter again joins.
 
-**Gameplay fixes**
-- Ejecting heads for your own or an allied station, and rescue probes pick up any friendly pod, as in the
-  original.
-- Lifepods no longer die moments after launch because of an oxygen timer left over from a previous life,
-  and a pod no longer keeps the dead ship's shield, booster or cargo.
-- After a station teleport the hangar no longer gets stuck.
+**Servers and lobby: hardening**
+- Two security reviews of what a broken or hostile client could send to a server or the lobby led to
+  about twenty fixes, including:
+  - limits on relayed chat, wrong-password guessing, inbound messages and connection setup;
+  - mission settings that reject invalid numbers;
+  - treasure only revealed to sides that can see it;
+  - combat, ripcord, boarding and squad actions checked the way the original server checks them.
+- Buying parts is closer to the original for every client: every bought part is armed, passengers are
+  re-seated after a buy, and keeping your spawn kit through a buy costs nothing.
 
-**Updates and stability**
-- Installing an update is now atomic: it is checked before anything is touched, and an interrupted
-  update is rolled back or finished on the next start.
-- Fresh installs report their version to the updater.
-- Malformed messages from a server are dropped instead of crashing the client.
-
-**Servers**
-- Less bandwidth in big battles: gunfire is batched into one message per player per tick (about 13 %
-  less server traffic in the 400-player test), and ship status messages are only sent when something
-  changed, as in the original (87 % fewer status bytes).
-- Hardening: repeated logon requests are rate-limited, maps load only from the artwork catalogue, and a
-  wrong reconnect token refuses only that client.
-
-**For bot and server tinkerers (experimental, off by default)**
-- `ALLEGIANCE_BOTS_CIV_STRATEGY=1`: bots plan research and fleets from each civilization's own
-  strengths instead of one generic path. Not yet the default; it is being measured on the 200v200 rig.
+**Experimental (off by default)**
+- **Jet HUD**: a military-style green vector HUD in development (pitch ladder, heading and speed tapes,
+  flight-path marker, target box and missile lock). Try it with `--visuals hud.jetSkin=on`, then
+  **Shift+F12** to cycle Classic → Modern → Jet. It is incomplete; feedback welcome.
 
 **Known limits**: the Android client is experimental and has no download. Behaviour parity with native
-Allegiance is about 98 % of the tracked rules; the per-area scorecard is in `docs/parity/`.
+Allegiance is about 99.6 % of the tracked rules; the per-area scorecard is in `docs/parity/`.
 
 ## Downloads (all self-contained, with native artwork and the complete sky pack):
 

@@ -50,6 +50,9 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   indicators, console text, chat, warnings and damage flash. Fonts and anchors
   follow the native layout. A **Modern HUD** skin offers scaling (75–150 %) and
   a colour-blind safe palette; Shift+F12 switches skins in flight.
+- **Loadout screen**: hulls, slots and parts side by side with native stats and
+  better/worse arrows, the mount highlighted on the rotating ship, mouse, keyboard
+  and controller; the original screen stays one option away.
 - Command view, minimap and starmap, order/command icons, investment,
   loadout and teleport panes, quick chat, and native UI and simulation sounds.
 - **Visuals**: an HDR space look by default — filmic colour grade, simulated
@@ -152,7 +155,7 @@ works offline. See the included `README-PLAYERS.txt` for installation, unsigned
 SmartScreen/Gatekeeper steps and multiplayer configuration. F1 shows help; F6
 rebinds keys. Verify downloads against the release's `SHA256SUMS.txt`.
 
-The latest release is **v0.1.6** (2026-11-12); each release's notes list what changed. To join a
+The latest release is **v0.1.7** (2026-11-16); each release's notes list what changed. To join a
 web-listed game, install the client first, then use the lobby page's **Join** link. For local
 packaging and the release checklist, see
 [`packaging/README.md`](packaging/README.md).
