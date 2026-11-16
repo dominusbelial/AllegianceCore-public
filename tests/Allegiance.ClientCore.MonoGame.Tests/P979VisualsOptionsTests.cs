@@ -58,7 +58,7 @@ public sealed class P979VisualsOptionsTests
         Assert.Equal(15, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
-        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: on - "));
         // P1035 — the Jet skin's flag row (default OFF while it is in development).
         Assert.Contains(rows, r => r.Label == "Jet HUD: off - military vector HUD — in development");
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
@@ -146,7 +146,7 @@ public sealed class P979VisualsOptionsTests
         Assert.Equal(15, rows.Count);   // P1035 adds the Jet HUD toggle row
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
-        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: off - "));
+        Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Jet HUD: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("View range: 10000 m - "));
         Assert.Equal(VisualFlags.RadialVisibilityKey, menu.VisualKeyAt(0, state));

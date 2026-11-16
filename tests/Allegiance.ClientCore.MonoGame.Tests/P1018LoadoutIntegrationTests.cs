@@ -113,7 +113,7 @@ public sealed class P1018LoadoutIntegrationTests
             Call(game, "ToggleVisualFlag", VisualFlags.LoadoutV2Key);
             Assert.True(IntroPreferences.Load(path).Visuals!.IsOn(VisualFlags.LoadoutV2Key));
             Assert.False((bool)Call(game, "LoadoutV2CloseOnEscape")!);
-            Assert.False(new VisualOptions().IsOn(VisualFlags.LoadoutV2Key));
+            Assert.True(new VisualOptions().IsOn(VisualFlags.LoadoutV2Key));   // default ON since 2026-11-16
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }

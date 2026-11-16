@@ -111,7 +111,8 @@ public static class VisualFlags
     public const string ConstructionHandoffKey = "constructionHandoff";
 
     /// <summary>P1014 — three-column loadout presentation, sharing ShopModel.
-    /// Default OFF until the Loadout V2 epic receives visual approval.</summary>
+    /// Default ON since 2026-11-16 (Domingo playtested it: "i like the new screen,
+    /// i think they should be the default"); OFF restores the native-layout loadout.</summary>
     public const string LoadoutV2Key = "hangar.loadoutV2";
 
     /// <summary>P1035 — the Jet military vector HUD skin (P972 §4). Default OFF
@@ -188,7 +189,8 @@ public static class VisualFlags
             LoadoutV2Key,
             "Loadout V2",
             "hulls, ship and inline equipment offers",
-            VisualFlagKind.Toggle),
+            VisualFlagKind.Toggle,
+            DefaultOn: true),
         // P1035 — the Jet skin itself; OFF until the Jet epic's release gate.
         new VisualFlag(
             JetSkinKey,

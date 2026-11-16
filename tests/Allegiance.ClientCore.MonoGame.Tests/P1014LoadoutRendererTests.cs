@@ -12,10 +12,11 @@ public class P1014LoadoutRendererTests
     [Theory]
     [InlineData(HudStyle.Classic)]
     [InlineData(HudStyle.Modern)]
-    public void Flag_defaults_off_and_routes_only_the_active_loadout(HudStyle style)
+    public void Flag_defaults_on_and_routes_only_the_active_loadout(HudStyle style)
     {
+        // Default ON since Domingo approved Loadout V2 (2026-11-16); OFF keeps the native layout.
         var options = new VisualOptions();
-        Assert.False(LoadoutV2Presentation.UseV2(options, true));
+        Assert.True(LoadoutV2Presentation.UseV2(options, true));
         options.SetToggle(VisualFlags.LoadoutV2Key, true);
         Assert.True(LoadoutV2Presentation.UseV2(options, true));
         Assert.False(LoadoutV2Presentation.UseV2(options, false));
@@ -35,7 +36,7 @@ public class P1014LoadoutRendererTests
         Assert.False(effective.IsOn(VisualFlags.LoadoutV2Key));
         Assert.True(profile.IsOn(VisualFlags.LoadoutV2Key));
         Assert.Contains("\"hangar.loadoutV2\":true", JsonSerializer.Serialize(profile));
-        Assert.False(VisualFlags.Find(VisualFlags.LoadoutV2Key)!.DefaultOn);
+        Assert.True(VisualFlags.Find(VisualFlags.LoadoutV2Key)!.DefaultOn);
     }
 
     private static (ShopModel Shop, LoadoutV2Model Model, ShopCatalog Catalog) Fixture()

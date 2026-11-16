@@ -32,7 +32,7 @@ public sealed class VisualFlagsTests
             Assert.False(string.IsNullOrWhiteSpace(definition.Description));
             if (definition.Kind != VisualFlagKind.Toggle) Assert.True(definition.MaxValue > definition.MinValue);
         }
-        Assert.Equal("radialVisibility=on remoteTimeline=off viewRange=10000 subtleDust=on simStars=on simGlare=on starStreaks=on space.hdrPipeline=on space.hdrAces=off space.simPalette=off constructionHandoff=off hangar.loadoutV2=off hud.jetSkin=off", options.Describe());
+        Assert.Equal("radialVisibility=on remoteTimeline=off viewRange=10000 subtleDust=on simStars=on simGlare=on starStreaks=on space.hdrPipeline=on space.hdrAces=off space.simPalette=off constructionHandoff=off hangar.loadoutV2=on hud.jetSkin=off", options.Describe());
     }
 
     /// <summary>Domingo 2026-11-09 ("those image settings look amazing, it should be
@@ -42,7 +42,8 @@ public sealed class VisualFlagsTests
     public void Approved_look_is_the_default_and_the_rest_stay_opt_in()
     {
         string[] on = { VisualFlags.RadialVisibilityKey, VisualFlags.SubtleDustKey, VisualFlags.SimStarsKey,
-                        VisualFlags.SimGlareKey, VisualFlags.StarStreaksKey, VisualFlags.HdrPipelineKey };
+                        VisualFlags.SimGlareKey, VisualFlags.StarStreaksKey, VisualFlags.HdrPipelineKey,
+                        VisualFlags.LoadoutV2Key };   // Loadout V2 approved 2026-11-16
         foreach (var definition in VisualFlags.Definitions)
             if (definition.Kind == VisualFlagKind.Toggle)
                 Assert.Equal(System.Array.IndexOf(on, definition.Key) >= 0, definition.DefaultOn);
