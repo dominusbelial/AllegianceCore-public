@@ -1,0 +1,272 @@
+diff --git a/tools/p1044-cockpit-proof/Program.cs b/tools/p1044-cockpit-proof/Program.cs
+new file mode 100644
+index 00000000..59f9d861
+--- /dev/null
++++ b/tools/p1044-cockpit-proof/Program.cs
+@@ -0,0 +1,252 @@
++// Disposable P1044 spike. Real DesktopGL window; production native sky/ship/HUD renderers.
++// Run from repo root, after building the client. All outputs belong in .scratch/p1044.
++using System.Diagnostics;
++using Allegiance.ClientCore.MonoGame.Assets;
++using Allegiance.ClientCore.MonoGame.Diagnostics;
++using Allegiance.ClientCore.MonoGame.Rendering;
++using Allegiance.Core;
++using Allegiance.Core.Rendering;
++using Microsoft.Xna.Framework;
++using Microsoft.Xna.Framework.Graphics;
++
++string Option(string name, string fallback) { int i = Array.IndexOf(args, name); return i < 0 ? fallback : args[i + 1]; }
++using var proof = new CockpitProof(int.Parse(Option("--width", "1920")), int.Parse(Option("--height", "1080")),
++    Option("--mode", "cockpit"), Option("--out", ".scratch/p1044/window.png"), args.Contains("--cost"));
++proof.Run();
++
++sealed class CockpitProof : Game
++{
++    private readonly int _w, _h;
++    private readonly string _mode, _out;
++    private readonly bool _cost;
++    private SpriteBatch _batch = null!;
++    private Texture2D _white = null!;
++    private SpriteFont _font = null!, _big = null!;
++    private HudRenderer _classic = null!;
++    private ModernHudRenderer _modern = null!;
++    private GaugeTextures _gauges = null!;
++    private StatusTextures _status = null!;
++    private IndicatorTextures _indicators = null!;
++    private NativeShipRenderer _ships = null!;
++    private NativeShipRenderer.NativeShipGeometry _hull = null!;
++    private Texture2D? _hullTexture;
++    private NativeSkyRenderer _sky = null!;
++    private BasicEffect _effect = null!;
++    private VertexPositionColor[] _frame = [];
++    private readonly RenderTarget2D[] _mfds = new RenderTarget2D[3];
++    private readonly VertexPositionTexture[][] _screens = new VertexPositionTexture[3][];
++    private readonly SectorLighting _light = SectorLighting.FromCluster([.2f, .3f, -1], 0xffdddddd);
++    private readonly Matrix _sceneProjection, _interiorProjection;
++    private readonly HudModel _model;
++    private GlFrameTimer? _timer;
++    private int _frameIndex;
++    private readonly List<(int Group, double Cpu, double SceneCpu)> _cpu = [];
++    private readonly Dictionary<long, double> _gpu = [], _sceneGpu = [];
++    private readonly List<long> _draws = [];
++    private readonly int[] _counts = [-1, 0, 1, 3, 3, 1, 0, -1, -1, 1, 3, 0];
++    private int _group, _localFrame;
++    private bool _capture;
++    private int _freeze;
++
++    public CockpitProof(int width, int height, string mode, string output, bool cost)
++    {
++        _w = width; _h = height; _mode = mode; _out = output; _cost = cost;
++        var gdm = new GraphicsDeviceManager(this) { PreferredBackBufferWidth = width, PreferredBackBufferHeight = height,
++            GraphicsProfile = GraphicsProfile.HiDef, SynchronizeWithVerticalRetrace = false };
++        gdm.PreparingDeviceSettings += (_, e) => e.GraphicsDeviceInformation.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
++        Content.RootDirectory = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
++        Window.Title = "P1044 cockpit study"; Window.IsBorderless = true; Window.Position = Point.Zero;
++        IsFixedTimeStep = false;
++        _sceneProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(50), width / (float)height, 1, 10000);
++        _interiorProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(50), width / (float)height, .05f, 5);
++        // P982's deterministic flight HUD fixture; authored telemetry, not live server data.
++        var telemetry = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 180, .6f, false, false, true, 0, false, 0,
++            false, false, 15, 0, [], false, 0, 2500);
++        _model = HudModel.Create(telemetry, new HudContext { Camera = CameraMode.Cockpit });
++    }
++    protected override void LoadContent()
++    {
++        _batch = new SpriteBatch(GraphicsDevice); _white = new Texture2D(GraphicsDevice, 1, 1); _white.SetData([Color.White]);
++        _font = Content.Load<SpriteFont>("HUD"); _big = Content.Load<SpriteFont>("HUDLarge");
++        string art = ExternalPaths.Require(ExternalResourceKind.Artwork);
++        var assets = new DirectoryAssetSource(art);
++        _gauges = GaugeTextures.Load(GraphicsDevice, art); _status = StatusTextures.Load(GraphicsDevice, art);
++        _indicators = IndicatorTextures.Load(GraphicsDevice, art);
++        _classic = new HudRenderer(_batch, _white, _font, _big, _gauges, statusTextures: _status, indicators: _indicators);
++        _modern = new ModernHudRenderer(_batch, _white, _font, _big, new HudSettings { Style = HudStyle.Modern },
++            outlineSource: Content.Load<SpriteFont>("HUDModern"), nativeArt: _status);
++        _ships = new NativeShipRenderer(GraphicsDevice, assets);
++        _hull = _ships.MeshFor("wc_icfig") ?? throw new InvalidOperationException("Native fixture hull missing");
++        _hullTexture = _ships.TextureFor(_ships.TextureStemFor("wc_icfig", null) ?? "wc_icfig");
++        _sky = new NativeSkyRenderer(GraphicsDevice, assets);
++        _sky.SetCluster(new DataClusterIGC(982, [.25f, .12f, -1], 0xffffffff, 0, 0, 0, 250, 500,
++            "P1044 / P982 fixture", "globe5", "", 0, 0, 0, true, false));
++        _effect = new BasicEffect(GraphicsDevice) { VertexColorEnabled = true };
++        for (int i = 0; i < 3; i++)
++        {
++            _mfds[i] = new RenderTarget2D(GraphicsDevice, 512, 256, false, SurfaceFormat.Color, DepthFormat.None);
++            float x = (i == 0 ? 0 : i == 1 ? -1 : 1) * .52f;
++            _screens[i] = Screen(x - .24f, -.44f, x + .24f, -.235f, -.98f);
++        }
++        var geometry = new List<VertexPositionColor>();
++        void Beam(Vector3 a, Vector3 b, float width, Color color)
++        {
++            Vector3 d = Vector3.Normalize(b - a), side = Vector3.Normalize(Vector3.Cross(d, Vector3.UnitZ)) * width / 2;
++            Quad(geometry, a - side, a + side, b + side, b - side, color);
++            Vector3 z = new(0, 0, -.035f);
++            Quad(geometry, a + side, a + side + z, b + side + z, b + side, new Color(84, 100, 115));
++        }
++        var c = new Color(35, 44, 57);
++        Beam(new(-1.18f, -.58f, -1.1f), new(-.83f, .3f, -1.5f), .065f, c);
++        Beam(new(1.18f, -.58f, -1.1f), new(.83f, .3f, -1.5f), .065f, c);
++        Beam(new(-.83f, .3f, -1.5f), new(-.5f, .63f, -1.65f), .065f, c);
++        Beam(new(.83f, .3f, -1.5f), new(.5f, .63f, -1.65f), .065f, c);
++        Beam(new(-.5f, .63f, -1.65f), new(.5f, .63f, -1.65f), .065f, c);
++        // Low console, visible thickness, rear top shelf. Dimensions are eye-local metres.
++        Quad(geometry, new(-1.05f, -.69f, -1f), new(1.05f, -.69f, -1f), new(1.05f, -.21f, -1f), new(-1.05f, -.21f, -1f), c);
++        Quad(geometry, new(-1.05f, -.21f, -1f), new(1.05f, -.21f, -1f), new(.95f, -.21f, -1.2f), new(-.95f, -.21f, -1.2f), new(65, 80, 94));
++        Beam(new(-1.05f, -.21f, -.99f), new(1.05f, -.21f, -.99f), .012f, new(105, 148, 158));
++        _frame = geometry.ToArray();
++        _timer = GlFrameTimer.TryCreate();
++        Console.WriteLine("P1044_RENDERER " + _timer?.Renderer + " / " + _timer?.DriverVersion);
++        Console.WriteLine($"P1044_GEOMETRY triangles={_frame.Length / 3} screens=3, RT=512x256 RGBA8, busyScene=400 native hulls (P982 fixture)");
++        Directory.CreateDirectory(Path.GetDirectoryName(_out)!);
++    }
++    private static void Quad(List<VertexPositionColor> v, Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color color)
++    { v.AddRange([new(a, color), new(b, color), new(c, color), new(a, color), new(c, color), new(d, color)]); }
++    private static VertexPositionTexture[] Screen(float left, float bottom, float right, float top, float z)
++        => [new(new(left, top, z), new(0, 0)), new(new(right, top, z), new(1, 0)), new(new(right, bottom, z), new(1, 1)),
++            new(new(left, top, z), new(0, 0)), new(new(right, bottom, z), new(1, 1)), new(new(left, bottom, z), new(0, 1))];
++    private void DrawScene()
++    {
++        GraphicsDevice.SetRenderTarget(null);
++        GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1, 0);
++        GraphicsDevice.BlendState = BlendState.Opaque; GraphicsDevice.DepthStencilState = DepthStencilState.Default;
++        _sky.Draw(Matrix.Identity, _sceneProjection, Vector3.Zero);
++        // Same 400-ship busy draw pattern as tools/p982-space-proof RunCost/DrawFrame.
++        for (int i = 0; i < 400; i++)
++        {
++            var position = new Vector3((i % 20 - 9.5f) * 50, (i / 20 - 9.5f) * 28, -700 - i % 3 * 70);
++            _ships.Draw(_hull, _hullTexture, Matrix.CreateTranslation(position), Matrix.Identity, _sceneProjection, 1, 15f / _hull.MeshRadius, _light);
++        }
++    }
++    private void DrawCockpit(int count)
++    {
++        for (int i = 0; i < count; i++)
++        {
++            GraphicsDevice.Textures[0] = null;
++            GraphicsDevice.SetRenderTarget(_mfds[i]); GraphicsDevice.Clear(new Color(5, 15, 23));
++            _batch.Begin(samplerState: SamplerState.LinearClamp);
++            _batch.DrawString(_font, i == 0 ? "SHIP / SYSTEMS" : i == 1 ? "FLIGHT / POWER" : "RESERVES", new(20, 12), Color.LightCyan);
++            _batch.Draw(_white, new Rectangle(20, 45, 472, 2), Color.CadetBlue);
++            for (int row = 0; row < 2; row++)
++            {
++                var gauge = _model.Gauges[i * 2 + row];
++                int y = 70 + row * 82;
++                _batch.DrawString(_font, $"{gauge.Label}  {gauge.Fraction * 100:0}%", new(20, y), Color.LightCyan);
++                _batch.Draw(_white, new Rectangle(20, y + 30, 472, 16), new Color(20, 42, 53));
++                _batch.Draw(_white, new Rectangle(20, y + 30, (int)(472 * gauge.Fraction), 16), new Color(74, 202, 183));
++            }
++            _batch.End();
++        }
++        GraphicsDevice.SetRenderTarget(null);
++        // Preserve scene colour, discard scene depth. Never put .5m cockpit in the 10km projection.
++        GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Black, 1, 0);
++        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
++        GraphicsDevice.BlendState = BlendState.Opaque;
++        GraphicsDevice.RasterizerState = RasterizerState.CullNone;
++        _effect.World = Matrix.Identity; _effect.View = Matrix.Identity; _effect.Projection = _interiorProjection;
++        _effect.TextureEnabled = false; _effect.VertexColorEnabled = true;
++        foreach (var pass in _effect.CurrentTechnique.Passes)
++        { pass.Apply(); GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, _frame, 0, _frame.Length / 3); }
++        _effect.VertexColorEnabled = false; _effect.TextureEnabled = true;
++        GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
++        for (int i = 0; i < count; i++)
++        {
++            _effect.Texture = _mfds[i];
++            foreach (var pass in _effect.CurrentTechnique.Passes)
++            { pass.Apply(); GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, _screens[i], 0, 2); }
++        }
++    }
++    protected override void Draw(GameTime time)
++    {
++        if (_freeze > 0) { _freeze--; if (_freeze == 0) Exit(); return; }
++        _frameIndex++;
++        _timer?.Poll((id, post, ms) => { if (post) _gpu[id] = ms; else _sceneGpu[id] = ms; });
++        int n = _cost ? _counts[_group] : _mode == "classic" || _mode == "modern" ? -1 : 1;
++        var start = Stopwatch.GetTimestamp();
++        _timer?.Start(_frameIndex, false); DrawScene(); _timer?.Stop();
++        double sceneCpu = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
++        long before = GraphicsDevice.Metrics.DrawCount;
++        start = Stopwatch.GetTimestamp();
++        _timer?.Start(_frameIndex, true);
++        if (n >= 0) DrawCockpit(n);
++        _timer?.Stop();
++        double cpu = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
++        if (_cost)
++        {
++            if (_localFrame >= 30)
++            { _cpu.Add((_group, cpu, sceneCpu)); _draws.Add(GraphicsDevice.Metrics.DrawCount - before); }
++            _localFrame++;
++            if (_localFrame == 100)
++            { _group++; _localFrame = 0; if (_group == _counts.Length) { _capture = true; } }
++        }
++        else
++        {
++            if (_mode.Contains("classic")) _classic.Draw(_model, GraphicsDevice.Viewport);
++            if (_mode.Contains("modern")) _modern.Draw(_model, GraphicsDevice.Viewport);
++            _batch.Begin();
++            _batch.DrawString(_font, "P1044 / PRIMITIVE STUDY / AUTHORED HUD TELEMETRY", new(16, 12), Color.White);
++            _batch.End();
++            if (_frameIndex == 30) _capture = true;
++        }
++        base.Draw(time);
++    }
++    protected override void EndDraw()
++    {
++        if (_capture)
++        {
++            _capture = false;
++            _timer?.Poll((id, post, ms) => { if (post) _gpu[id] = ms; else _sceneGpu[id] = ms; });
++            if (_cost)
++            {
++                // Synchronize only after all measured intervals, so every final query is accounted for.
++                var completed = new Color[_w * _h]; GraphicsDevice.GetBackBufferData(completed);
++                _timer?.Poll((id, post, ms) => { if (post) _gpu[id] = ms; else _sceneGpu[id] = ms; });
++                WriteCost();
++            }
++            else
++            {
++                var data = new Color[_w * _h]; GraphicsDevice.GetBackBufferData(data);
++                using var texture = new Texture2D(GraphicsDevice, _w, _h); texture.SetData(data);
++                using var file = File.Create(_out); texture.SaveAsPng(file, _w, _h);
++                Console.WriteLine("P1044_WINDOW_CAPTURE " + Path.GetFileName(_out));
++            }
++            _freeze = 30;
++        }
++        base.EndDraw();
++    }
++    private void WriteCost()
++    {
++        using var csv = new StreamWriter(_out);
++        csv.WriteLine("run,mfds,samples,cpu_mean_ms,cpu_p95_ms,gl_mean_ms,gl_p95_ms,scene_cpu_mean_ms,scene_gl_mean_ms,extra_draws,gl_samples,scene_gl_samples");
++        static double Mean(IEnumerable<double> v) => v.Any() ? v.Average() : double.NaN;
++        static double P95(IEnumerable<double> v) { var a = v.Order().ToArray(); return a.Length == 0 ? double.NaN : a[(int)((a.Length - 1) * .95)]; }
++        // Thirty warmup and seventy measured frames in each independent group; GL query IDs are actual frame IDs.
++        for (int g = 0; g < _counts.Length; g++)
++        {
++            var samples = _cpu.Skip(g * 70).Take(70).ToArray();
++            var ids = Enumerable.Range(g * 100 + 31, 70).Select(x => (long)x);
++            var gpu = ids.Where(_gpu.ContainsKey).Select(id => _gpu[id]);
++            var scene = ids.Where(_sceneGpu.ContainsKey).Select(id => _sceneGpu[id]);
++            string line = FormattableString.Invariant($"{g},{_counts[g]},{samples.Length},{Mean(samples.Select(s => s.Cpu)):F5},{P95(samples.Select(s => s.Cpu)):F5},{Mean(gpu):F5},{P95(gpu):F5},{Mean(samples.Select(s => s.SceneCpu)):F5},{Mean(scene):F5},{Mean(_draws.Skip(g * 70).Take(70).Select(x => (double)x)):F1},{gpu.Count()},{scene.Count()}");
++            csv.WriteLine(line); Console.WriteLine("P1044_COST " + line);
++        }
++    }
++    protected override void UnloadContent()
++    {
++        _timer?.Dispose(); _effect.Dispose(); foreach (var rt in _mfds) rt.Dispose();
++        _sky.Dispose(); _ships.Dispose(); _modern.Dispose(); _status.Dispose(); _indicators.Dispose();
++        _batch.Dispose(); _white.Dispose(); base.UnloadContent();
++    }
++}
+diff --git a/tools/p1044-cockpit-proof/p1044-cockpit-proof.csproj b/tools/p1044-cockpit-proof/p1044-cockpit-proof.csproj
+new file mode 100644
+index 00000000..cf2aa868
+--- /dev/null
++++ b/tools/p1044-cockpit-proof/p1044-cockpit-proof.csproj
+@@ -0,0 +1,8 @@
++<Project Sdk="Microsoft.NET.Sdk">
++  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
++  <ItemGroup>
++    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
++    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
++    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" ReferenceOutputAssembly="false" />
++  </ItemGroup>
++</Project>

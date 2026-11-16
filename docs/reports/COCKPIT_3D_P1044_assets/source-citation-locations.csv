@@ -1,0 +1,87 @@
+reference,located,source_line
+Artwork/cortui_huds.mdl:1,yes,1:// HUD slots
+Artwork/dialog.mdl:19,yes,19:ShowScrollbarOnCockpitChat = 1;
+Artwork/gh_fuel_back_bmp.mdl:4,yes,"4:	ImportImageFromFile(""CortUI/glasshud/gh_fuel_back.png"", true);"
+Artwork/wc_bifig.cvh:72,yes,72:cockpt
+Igc/hullTypeIGC.cpp:62,yes,62:                m_scale = (0.5f * m_data->length / r);
+Igc/hullTypeIGC.cpp:80,yes,"80:                const FrameDataUTL*   pfd = pmhb->GetFrame(""cockpt"");"
+WinTrek/WinTrek.cpp:374,yes,374:            // Jiggle the camera orientation based on the amount of afterburner and any residual effects
+WinTrek/WinTrek.cpp:399,yes,399:
+WinTrek/WinTrek.cpp:7028,yes,7028:                        /*
+WinTrek/WinTrek.cpp:7051,yes,7051:                        pMyOrientation = &clientOrientation;
+WinTrek/WinTrek.cpp:7052,yes,7052:                        poffset = &(pshipSource->GetHullType()->GetWeaponPosition(turretID));
+WinTrek/WinTrek.cpp:7057,yes,7057:                        poffset = &(pshipSource->GetHullType()->GetCockpit());
+WinTrek/WinTrek.cpp:7064,yes,7064:                    poffset = &(pshipSource->GetHullType()->GetCockpit());
+WinTrek/WinTrek.cpp:7069,yes,7069:                    */
+WinTrek/WinTrek.cpp:7072,yes,7072:                Vector p = myPosition + *poffset * shipOrientation;
+WinTrek/WinTrek.cpp:7297,yes,7297:                bool    v = !(InternalCamera(m_cm) &&
+WinTrek/WinTrek.cpp:7300,yes,7300:                pshipSource->SetVisibleF(v);
+WinTrek/WinTrek.cpp:8077,yes,"8077:                m_cameraControl.SetZClip(5.0f, 10000.0f);"
+WinTrek/indicator.cpp:167,yes,"167:        pcontext->Begin3DLayer(m_pcamera, false);"
+WinTrek/indicator.cpp:283,yes,"283:                        if (GetCamera()->TransformDirectionToImage(vecLeadPosition, pointLead))"
+WinTrek/indicator.cpp:330,yes,330:                                    pointLead);
+WinTrek/indicator.cpp:764,yes,764:        if (TrekWindow::InternalCamera(GetWindow()->GetCameraMode()) || (GetWindow()->GetCameraMode() == TrekWindow::cmExternalChase) || (GetWindow()->GetCameraMode() == TrekWindow::cmExternalMissile))
+WinTrek/indicator.cpp:796,yes,796:            RenderDirectionIndicator(pcontext);
+WinTrek/radarimage.cpp:325,yes,"325:            //Draw the brackets around the ""object"""
+WinTrek/radarimage.cpp:590,yes,590:            if (pmodel->GetVisibleF() && pshipSource->CanSee(pmodel))
+WinTrek/radarimage.cpp:1021,yes,1021:                                if (pship != pshipSource && //if ship is not me (we already know when we are ripcording)
+_Utility/HitTest.cpp:774,yes,"774:                while (fgets(line, c_maxLine, fileIn))"
+_Utility/HitTest.cpp:803,yes,803:                    pMultiHull->m_frames.last(pfl);
+src/Allegiance.ClientCore.Game/Game1.Director.cs:109,yes,109:        float head = (_cameraMode == CameraMode.Cockpit || _cameraMode == CameraMode.Chase)
+src/Allegiance.ClientCore.Game/Game1.Director.cs:139,yes,"139:                    (v, p) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out e, head);"
+src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:1975,yes,"1975:            if (ActionDown(ks, ""ViewRear"")) head = Rendering.HeadLook.Rear;"
+src/Allegiance.ClientCore.Game/Game1.GpuBudget.cs:44,yes,"44:        _hudSkins = new(_hudSettings,"
+src/Allegiance.ClientCore.Game/Game1.GpuBudget.cs:56,yes,"56:        bool down = map.BindingOf(""CycleHudSkin"").Matches(keys);"
+src/Allegiance.ClientCore.Game/Game1.GpuBudget.cs:67,yes,67:    private void CommitHudSkinChange()
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:498,yes,"498:                    proj = Rendering.RadialVisibility.WithFarPlane(proj, _flightDepthFar);"
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:508,yes,508:                if (_cameraMode == CameraMode.Cockpit
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:762,yes,762:                    if ((_cameraMode == CameraMode.Cockpit && (id == me || id == _turretCarrierId)) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id))
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1867,yes,1867:                _gpuTimer?.Stop();
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1888,yes,1888:                _gpuTimer?.Stop();
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1922,yes,1922:            ActiveHud.DrawCommand(hudModel);
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:1943,yes,1943:        if (!_directorActive) ActiveHud.DrawConsole(hudModel);
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:2583,yes,2583:            if ((_cameraMode == CameraMode.Cockpit && (id == me || id == _turretCarrierId)) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id)) continue;
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:3291,yes,"3291:        if (LocalSpectating) return HudModelAdapter.Create(null, _cameraMode, hidden: true);   // SP-5: no pilot HUD while spectating"
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:3546,yes,"3546:        var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,"
+src/Allegiance.ClientCore.Game/Game1.Rendering.cs:3578,yes,"3578:        ActiveHud.Draw(model, new(GraphicsDevice.Viewport, _hudTargetModelPreview, _hudSettings.SelectionBracketOn));"
+src/Allegiance.ClientCore.Game/Game1.TrainingIntegration.cs:20,yes,20:    private void SaveTrainingPreferences()
+src/Allegiance.ClientCore.Game/Game1.TrainingIntegration.cs:41,yes,41:    private void ReleaseTraining()
+src/Allegiance.ClientCore.Game/Rendering/CockpitCamera.cs:43,yes,"43:    public CockpitCamera(float nearPlane = 1f, float farPlane = ExternalCameras.FarPlane,"
+src/Allegiance.ClientCore.Game/Rendering/CockpitCamera.cs:83,yes,"83:            FieldOfViewRadians, aspectRatio, _nearPlane, _farPlane);"
+src/Allegiance.ClientCore.Game/Rendering/HeadLook.cs:40,yes,40:    public const float RearRight = MathHelper.Pi * 0.75f;
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:278,yes,278:public sealed class HudModel
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:296,yes,296:    public bool InstrumentsVisible => FlightVisible && !Context.CommandView;
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:298,yes,298:    public bool IndicatorsVisible => InstrumentsVisible && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalMissile;
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:318,yes,318:    public bool LeadMarkerVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:338,yes,338:    public bool TargetPaneVisible => InstrumentsVisible
+src/Allegiance.ClientCore.Game/Rendering/HudModel.cs:346,yes,346:    public bool CentreHudVisible => FlightVisible && Context.CentreHudVisible;
+src/Allegiance.ClientCore.Game/Rendering/HudModelAdapter.cs:11,yes,"11:    public static HudModel Create(HudFrame? frame, CameraMode mode,"
+src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs:186,yes,"186:    public virtual void Draw(HudModel model, Viewport viewport)"
+src/Allegiance.ClientCore.Game/Rendering/HudTrainingCallout.cs:38,yes,38:    public static Callout? For(int overlayId) => overlayId switch
+src/Allegiance.ClientCore.Game/Rendering/ModernHudRenderer.cs:111,yes,"111:    public override void Draw(HudModel model, Viewport viewport)"
+src/Allegiance.ClientCore.Game/Rendering/NativeShipRenderer.cs:117,yes,117:    public NativeShipGeometry? MeshFor(string modelStem)
+src/Allegiance.ClientCore.Game/Rendering/NativeShipRenderer.cs:349,yes,349:        if (lighting is { } lp)
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinCatalog.cs:35,yes,35:    /// <summary>Attempts to add/overwrite a definition. Returns false and keeps
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinRenderer.cs:32,yes,32:        if (_modern is null) _resources.Radar(model);
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinRenderer.cs:45,yes,45:        _resources.Chat(model);
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinSwitcher.cs:18,yes,"18:    public HudSkinSwitcher(HudSettings settings, IHudSkinRenderer classic,"
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinSwitcher.cs:27,yes,"27:        _installed = [new(catalog.Resolve(HudSkinIds.Classic), classic), new(catalog.Resolve(HudSkinIds.Modern), modern)];"
+src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinSwitcher.cs:48,yes,"48:        int index = ReferenceEquals(current, _installed[0]) ? 0 : 1;"
+src/Allegiance.ClientCore.Game/Rendering/Skins/IHudSkinRenderer.cs:9,yes,9:public interface IHudSkinRenderer : IDisposable
+src/Allegiance.ClientCore.Game/Rendering/TargetModelPreviewRenderer.cs:32,yes,32:    public const int Size = 256;
+src/Allegiance.ClientCore.Game/Rendering/TargetModelPreviewRenderer.cs:71,yes,"71:            _rt = new RenderTarget2D(_gd, Size, Size, false, SurfaceFormat.Color, DepthFormat.Depth24);"
+src/Allegiance.ClientCore.Game/Rendering/TargetModelPreviewRenderer.cs:90,yes,90:        gd.SetRenderTarget(restoreTo);
+src/Allegiance.ClientCore.Game/Rendering/VfxPostProcessor.cs:129,yes,"129:        DepthRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24);"
+src/Allegiance.ClientCore.Game/Rendering/VfxPostProcessor.cs:140,yes,140:        SurfaceFormat format = HdrOutput.SceneFormat(hdrFormat);
+src/Allegiance.ClientCore.Game/Rendering/VfxPostProcessor.cs:152,yes,"152:            SceneRT = new RenderTarget2D(_gd, w, h, false, format, DepthFormat.Depth24,"
+src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs:24,yes,24:/// may depart from native's look because native's look is a 1999 artefact. A new
+src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs:125,yes,"125:            DefaultOn: true,"
+src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs:142,yes,"142:        new VisualFlag(SubtleDustKey, ""Subtle dust"", ""faint shell; uses Debris level"", VisualFlagKind.Toggle, DefaultOn: true, Hotkey: 'S'),"
+src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs:154,yes,"154:            DefaultOn: true,"
+src/Allegiance.Core/Collision/CvhReader.cs:109,yes,"109:        // --- frames: triples (name, position, forward) to EOF ------------------"
+src/Allegiance.Core/Collision/CvhTypes.cs:38,yes,"38:public readonly record struct CvhFrame(string Name, Vector3 Position, Vector3 Forward);"
+src/Allegiance.Core/Data/MdlFile.cs:63,yes,63:public sealed class MdlFrame
+src/Allegiance.Core/Data/MdlFile.cs:363,yes,"363:            case ""MeshGeo"":"
+src/Allegiance.Core/Data/MdlFile.cs:388,yes,"388:            case ""FrameData"":"
+tools/p982-space-proof/Program.cs:214,yes,"214:    private void DrawFrame(RenderTarget2D target, int tier, string scene, VisualOptions options, SubtleDust dust, DebrisGeo native,"
+tools/p982-space-proof/Program.cs:278,yes,278:    private void RunCost()
