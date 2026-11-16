@@ -223,11 +223,12 @@ Nothing here exceeds 10 s, so no `[Trait("Tier","Live")]` is needed and all 59 r
 
 ## 5. Screenshots
 
-`tools/hud2-proof --jet` at 1920×1080 and 800×480 on dark and bright backdrops; the proof renders 74 scenes (dark
-and bright pairs at both resolutions for the new states), and the cited set is the 33 PNGs kept under the 2 MB cap
-in `docs/reports/JET_STORES_CAUTION_P1038_assets/` (2,000,250 bytes = 1.91 MB with the capture JSON): every P1038
-state at 1920×1080 and 800×480 dark, the bright pairs where colour contrast is the point (stores, caution, F4,
-locked), the four core lock scenes and the six before/after crops. The proof writes
+`tools/hud2-proof --jet` at 1920×1080 and 800×480 on dark and bright backdrops; the proof renders 74 scenes (25
+states dark at both resolutions and the 12 P1037-era states bright at both). The cited set is the 33 PNGs kept
+under the 2 MB cap in `docs/reports/JET_STORES_CAUTION_P1038_assets/` (2,000,250 bytes = 1.91 MB with the capture
+JSON): every new P1038 state at 1920×1080 dark, the 800×480 companion for stores (normal/low/critical), pod, flags,
+caution, F4, locked, lockfull and level, the bright variants of the stores block (800×480) and the caution stack
+(both resolutions), the four core lock scenes and the six before/after crops. The proof writes
 RGBA PNGs; each kept PNG is an RGB re-encode (`ffmpeg -pred mixed -compression_level 9`) whose decoded pixels were
 compared byte-for-byte with the source (`cmp` on raw RGB) — the asset is pixel-identical to the frame the layout
 audit measured. Every image below was opened and read; the read-back is summarised and the capture JSON's measured
