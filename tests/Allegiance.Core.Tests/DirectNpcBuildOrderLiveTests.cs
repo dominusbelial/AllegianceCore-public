@@ -28,13 +28,14 @@ namespace Allegiance.Core.Tests;
 /// the rock → station transformation fires, the DRONE is consumed, and the
 /// station appears on the drone's side — the exact P422 arc, but driven by
 /// commanding an owned NPC rather than flying it yourself.</item>
-/// <item><b>Non-Builder drone refused</b> — a non-Builder-pilot drone is refused
-/// (native's Builder-only gate), and the refusal is SURFACED to the commanding
-/// player's own client as a private "Negative." chat (native's
-/// SendChat(CHAT_INDIVIDUAL, "Negative.") command-refusal ack).</item>
+/// <item><b>Non-Builder drone refused</b> — a non-Builder-pilot drone is
+/// refused (native's Builder-only gate) and the commander receives NO refusal
+/// text: native's "Negative." block in CommandToDrone is commented out
+/// (FedSrv.CPP:3286-3292), and P1032 removed the port's diagnostic chat because
+/// it leaked unexplored asteroid data.</item>
 /// <item><b>Capability-mismatch rock refused</b> — not every rock is buildable.</item>
 /// <item><b>No-station-type drone refused</b> — a Builder drone with nothing to
-/// build is refused (with the surfacing ack).</item>
+/// build is refused, also with no refusal text.</item>
 /// </list>
 /// Harness mirrors P165/P422 (booted in-process server + seated bot commander).
 /// </summary>
@@ -78,6 +79,12 @@ public sealed class DirectNpcBuildOrderLiveTests
         while (!done() && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
         return n;
     }
+
+    /// <summary>P1032 — a chat addressed to the commander as a command reply
+    /// (Individual / IndividualNoFilter). Ambient team line-of-sight chatter is
+    /// not a refusal and is ignored here.</summary>
+    private static bool IsDirectReply(ChatMessage chat) =>
+        chat.ChatTarget is (int)ChatTarget.Individual or (int)ChatTarget.IndividualNoFilter;
 
     private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId, short aabmCap) => new(
         Signature: 1.0f,
@@ -145,6 +152,10 @@ public sealed class DirectNpcBuildOrderLiveTests
             wrongRock = new Asteroid(MkAsteroid(6322, new Vector3(630f, 417f, 442f), 60, sector.Id, wrongCap));
             m.PlaceAsteroid(rock, sector);
             m.PlaceAsteroid(wrongRock, sector);
+            // P1032 — a commander can only target a rock its side has scouted;
+            // reveal both so each negative test fails on its intended gate.
+            rock.SideVisibility.RevealToSide(side);
+            wrongRock.SideVisibility.RevealToSide(side);
 
             // The commander peer: a plain fighter (non-Builder) on side 0.
             var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
@@ -236,12 +247,12 @@ public sealed class DirectNpcBuildOrderLiveTests
     }
 
     /// <summary>⭐ Negative: commanding a NON-Builder-pilot drone to build is
-    /// refused (native's Builder-only gate), AND the refusal is SURFACED to the
-    /// commanding player's own client as a private "Negative." chat (native's
-    /// SendChat(CHAT_INDIVIDUAL, "Negative.") command-refusal ack).</summary>
+    /// refused (native's Builder-only gate), and the commander gets no chat at
+    /// all — native sends no refusal for an illegal drone command
+    /// (FedSrv.CPP:3286-3292), and P1032 removed the leaking diagnostic.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Commander_directing_non_builder_drone_to_build_is_refused_and_acknowledged()
+    public void Commander_directing_non_builder_drone_to_build_is_refused_silently()
     {
         Require.Artwork();
         var (srv, mission, sector, _, builderDroneId, nonBuilderDroneId, stationType, rock, _, side) = BootFixture(out var bot);
@@ -260,21 +271,17 @@ public sealed class DirectNpcBuildOrderLiveTests
 
             bot.ResetChatReceived();
             bot.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, rock.Data.AsteroidId);
-            Pump(srv, () => sector.BuildingEffects.Count > 0 || bot.Chats.Any(), 2000);
+            Pump(srv, () => false, 600);
 
             Assert.Empty(sector.BuildingEffects);   // refused — not a Builder drone
-            // The refusal reached the commanding client: a private "Negative."
-            // chat naming the reason.
-            var ack = Assert.Single(bot.Chats);
-            Assert.StartsWith("Negative.", ack.Message, StringComparison.Ordinal);
-            Assert.Contains("non-Builder", ack.Message, StringComparison.OrdinalIgnoreCase);
-            Console.WriteLine($"P425-REJECT: commander directing non-Builder drone {drone.Id} to build refused — surfaced to commander: \"{ack.Message}\"");
+            Assert.DoesNotContain(bot.Chats, IsDirectReply);   // native sends no refusal text (FedSrv.CPP:3286-3292)
+            Console.WriteLine($"P425-REJECT: commander directing non-Builder drone {drone.Id} to build refused silently (no diagnostic chat)");
         }
     }
 
     /// <summary>⭐ Negative: a Builder drone ordered to build a WRONG-TYPE rock
     /// (capability mismatch) is refused — native HasCapability(m_abmOrders),
-    /// shipIGC.h:1702 — with the refusal acked.</summary>
+    /// shipIGC.h:1702 — and the commander gets no chat.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Commander_directing_builder_drone_at_wrong_type_rock_is_refused()
@@ -289,18 +296,17 @@ public sealed class DirectNpcBuildOrderLiveTests
 
             bot.ResetChatReceived();
             bot.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, wrongRock.Data.AsteroidId);
-            Pump(srv, () => sector.BuildingEffects.Count > 0 || bot.Chats.Any(), 2000);
+            Pump(srv, () => false, 600);
 
             Assert.Empty(sector.BuildingEffects);          // refused — capability mismatch
             Assert.Contains(wrongRock, sector.Mineable);   // wrong-type rock untouched
-            var ack = Assert.Single(bot.Chats);
-            Assert.StartsWith("Negative.", ack.Message, StringComparison.Ordinal);
-            Console.WriteLine($"P425-REJECT: Builder drone {drone.Id} at wrong-type rock {wrongRock.Data.AsteroidId} refused — \"{ack.Message}\"");
+            Assert.DoesNotContain(bot.Chats, IsDirectReply);   // no refusal text to the commander
+            Console.WriteLine($"P425-REJECT: Builder drone {drone.Id} at wrong-type rock {wrongRock.Data.AsteroidId} refused silently");
         }
     }
 
     /// <summary>⭐ Negative: a Builder drone with NO configured station type
-    /// (nothing to build) is refused — with the refusal acked.</summary>
+    /// (nothing to build) is refused — with no chat.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Commander_directing_builder_drone_with_no_station_type_is_refused()
@@ -317,13 +323,12 @@ public sealed class DirectNpcBuildOrderLiveTests
 
             bot.ResetChatReceived();
             bot.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, rock.Data.AsteroidId);
-            Pump(srv, () => sector.BuildingEffects.Count > 0 || bot.Chats.Any(), 2000);
+            Pump(srv, () => false, 600);
 
             Assert.Empty(sector.BuildingEffects);
             Assert.False(drone.IsBuilding);
-            var ack = Assert.Single(bot.Chats);
-            Assert.StartsWith("Negative.", ack.Message, StringComparison.Ordinal);
-            Console.WriteLine($"P425-REJECT: Builder drone {drone.Id} with no station type refused — \"{ack.Message}\"");
+            Assert.DoesNotContain(bot.Chats, IsDirectReply);   // no refusal text
+            Console.WriteLine($"P425-REJECT: Builder drone {drone.Id} with no station type refused silently");
         }
     }
 }

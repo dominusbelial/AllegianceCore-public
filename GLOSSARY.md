@@ -633,6 +633,15 @@ list in **reverse**.
   (`FedSrv.CPP:4830-4832`). `src/Allegiance.Server/Server.Dispatch.cs`,
   `src/Allegiance.Server/Server.Lobby.cs` (`SideRosterPacket`),
   `src/Allegiance.Server/Server.cs` (`PendingSideSelect`).
+- **Constructor build orders / fog-of-war (P1032)** — a `CidBuild` order resolves the target asteroid only when the
+  constructor's side has `SeenBySide` it; every refusal is server-log only (native sends no refusal text); a rock an
+  enemy station replaced gets native's decoy `"Affirmative."` plus a targetless travel objective at the station's
+  position; and every same-side teammate may command a constructor on both the port-added order path and the native
+  drone-chat path. `src/Allegiance.Server/Server.ShipCommands.cs` (`StartBuildIfLegal`, `CommandToDrone`,
+  `ArmDecoyBuildAtReplacedRock`, `EchoDroneCommandToWings`). Native:
+  `FedSrv/FedSrv.CPP:3190-3191,3211-3235,3286-3291,3563-3570`. Tests:
+  `tests/Allegiance.Core.Tests/P1032BuildOrderOracleTests.cs`; parity `docs/parity/p1032-build-order-oracle.csv`;
+  report `docs/reports/R1B_BUILD_ORDER_ORACLE_P1032.md`.
 - **Ship commands** — client intent handlers (flight, firing, docking, buying).
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Running side departure / last side (P1026)** — `LeaveSideForSwitch` in

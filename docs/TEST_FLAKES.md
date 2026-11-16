@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1032 gate observations — 2026-11-16 UTC
+
+One fast sweep on the P1032 tree: **14,743 tests, 558.6 s, FAIL** (the runner summary;
+`Allegiance.Core.Tests` main: 6,546 passed / 3 failed / 3 not executed; MonoGame 5,471
+passed / 4 not executed). Plus 5 executions over the calibrated 10 s Fast limit.
+None of the three failures is on a path this task changed (P1032 touches
+`Server.ShipCommands.cs` build-order resolution, the drone-chat authority/echo and the
+drone/chat/build test fixtures); the failures are the warp-transit receipt, the
+side-elimination restart-station timing and the roster-clock range. Each rerun below
+used its exact method filter in its own test process, with artwork and `--no-build`;
+all three passed in every repetition. Host load average after the isolation loop read
+**0.76 / 1.44 / 1.71** (1/5/15 min); the sweep itself ran while other lanes were active.
+
+| Test | Full-sweep observation | Isolated reruns | Note |
+| --- | --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Destination `SHIP_STATUS` collection held only the old sector (0.020 s in the sweep) | 1/0/0 (0.29 s); 1/0/0 (0.29 s); 1/0/0 (0.29 s) | Warp-receipt family already ledgered repeatedly above |
+| `SideEliminationLiveTests.Side_with_two_restart_stations_survives_losing_one` | First station not destroyed; 18 s in the sweep (also over the Fast guard) | 1/0/0 (0.18 s); 1/0/0 (0.18 s); 1/0/0 (0.18 s) | Live-wire elimination timing family already ledgered (entry above) |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | Value outside `[4,8]` (0.201 s) | 1/0/0 (0.24 s); 1/0/0 (0.24 s); 1/0/0 (0.24 s) | Simulation-clock family already ledgered repeatedly above |
+
+The five calibrated-limit offenders all **passed**: `SideEliminationLiveTests…` 18.4 s,
+`P999CivStrategyTests.Every_profile…civ: 5` 16.5 s, `P814GunnerTests.P814b…` 13.7 s,
+`SC2NaniteSupportTests.Support_selection…civ: 25` 12.1 s and
+`P796VariedLoadoutTests.Varied…civ: 35` 12.2 s; each already has a timing entry above.
+No tier, limit or assertion was relaxed for any of these.
+
 ## P1030 gate observations — 2026-11-16 UTC
 
 Fast sweep on the P1030 tree: **14,726 tests, 576.5 s, FAIL** — 14,713 passed / 6 failed /

@@ -1,0 +1,14 @@
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Replaced_rock_gets_the_native_decoy_affirmative [100 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Accepted_drone_command_is_echoed_to_the_command_wings [10 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Non_leader_teammate_commands_a_constructor_on_both_paths [23 ms]
+  Passed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Seen_asteroid_build_orders_still_start_construction_from_both_paths [6 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Replaced_rock_of_the_drones_own_side_is_not_a_decoy [7 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Leader_build_order_at_an_unseen_asteroid_reveals_no_sector_name [2 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Leader_build_order_at_an_unseen_wrong_type_rock_reveals_no_capability_mask [2 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Chat_build_order_at_an_unseen_asteroid_reveals_no_sector_name [2 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Rock_already_under_construction_refusal_is_silent [13 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Leader_build_order_at_a_nonexistent_asteroid_id_reveals_nothing [2 ms]
+  Failed Allegiance.Core.Tests.P1032BuildOrderOracleTests.Seen_rock_in_another_sector_is_refused_silently [4 ms]
+Total tests: 11
+     Passed: 1
+     Failed: 10

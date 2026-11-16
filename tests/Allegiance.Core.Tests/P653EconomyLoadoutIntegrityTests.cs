@@ -507,6 +507,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     {
         using var w = new World();
         var rock = w.Sector.Mineable.First(r => w.Mission.Core.StationTypes.Values.Any(st => r.Data.HasCapability(st.AabmBuild)));
+        rock.SideVisibility.RevealToSide(0);   // P1032: the side has scouted the rock
         var st = w.Mission.Core.StationTypes.Values.First(st => rock.Data.HasCapability(st.AabmBuild));
         var builder = new Ship(102, w.Buyer.HullType, new Vector3(1000, 0, 0), Vector3.Zero, Orientation.Identity) { SideId = 0, IsNpc = true, PilotType = Ship.PilotTypeBuilder, BuilderStationType = st, WaitsForBuildOrder = true };
         w.Mission.PlaceShip(builder, w.Sector);
@@ -539,10 +540,11 @@ public sealed class P653EconomyLoadoutIntegrityTests
     }
 
     [SkippableFact]
-    public void H18_Docked_and_nonleader_orders_fail_and_commander_build_completes()
+    public void H18_Docked_orders_fail_and_any_teammate_build_order_completes()
     {
         using var w = new World();
         var rock = w.Sector.Mineable.Single();
+        rock.SideVisibility.RevealToSide(0);   // P1032: the side has scouted the rock
         var st = w.Mission.Core.StationTypes.Values.First(st => rock.Data.HasCapability(st.AabmBuild));
         var builder = new Ship(102, w.Buyer.HullType, new Vector3(1000, 0, 0), Vector3.Zero, Orientation.Identity)
         { SideId = 0, IsNpc = true, PilotType = Ship.PilotTypeBuilder, BuilderStationType = st, WaitsForBuildOrder = true, StationId = w.Buyer.StationId };
@@ -552,10 +554,14 @@ public sealed class P653EconomyLoadoutIntegrityTests
         Assert.Empty(w.Sector.BuildingEffects);
         Assert.Null(builder.BuilderAsteroidTarget);
         builder.StationId = null;
+        // P1032 — native's constructor-command authority is the drone-chat
+        // path's, and it has no leader gate (CommandToDrone checks only a real
+        // command id and the same side, FedSrv.CPP:3190-3191): a teammate who is
+        // not the side leader may order the constructor.
         w.Mission.Sides[0].LeaderShipId = w.Mate.Id;
         w.Send(order);
-        Assert.Empty(w.Sector.BuildingEffects);
-        Assert.Null(builder.BuilderAsteroidTarget);
+        Assert.Same(rock, builder.BuilderAsteroidTarget);
+        builder.BuilderAsteroidTarget = null;
         w.Mission.Sides[0].LeaderShipId = w.Buyer.Id;
         w.Send(order);
         var rp = rock.Data.Position;

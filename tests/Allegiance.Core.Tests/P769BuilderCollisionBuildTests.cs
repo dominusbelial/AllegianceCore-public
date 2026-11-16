@@ -65,11 +65,12 @@ public class P769BuilderCollisionBuildTests
             [0, 1, 0], [1, 0, 0], rotation ?? [0, 1, 0, 0], 0, 0, type.AabmBuild,
             6901, 0, (short)radius, "roid.mdl", "", "", sector.Id, "P769 build target", 0));
         mission.PlaceAsteroid(rock, sector);
+        rock.SideVisibility.RevealToSide(0);   // P1032: the side has scouted the rock
         return rock;
     }
 
     private static void Order(Srv server, Ship ship, Asteroid rock) =>
-        Assert.True((bool)Invoke(server, "StartBuildIfLegal", ConnectionId.Me, (short)999, ship,
+        Assert.True((bool)Invoke(server, "StartBuildIfLegal", ConnectionId.Me, ship, ship,
             new OrderChange { ShipID = ship.Id, CommandId = OrderChange.CidBuild,
                 Command = OrderChange.CmdAccepted, ObjectType = IgcObjectType.Asteroid,
                 ObjectID = rock.Data.AsteroidId })!);

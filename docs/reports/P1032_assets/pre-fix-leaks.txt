@@ -1,0 +1,5 @@
+Message = "Negative. BUILD of 'Garrison (Str)' (AabmBuild 0x8"
+Message = "Negative. BUILD target asteroid 32700 not found in"
+Message = "Negative. BUILD target asteroid 7101 is already un"
+Message = "Negative. BUILD target asteroid 7102 is not in bui"
+Message = "Negative. BUILD target asteroid 7104 not found in "
