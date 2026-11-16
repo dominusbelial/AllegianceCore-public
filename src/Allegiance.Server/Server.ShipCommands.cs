@@ -1741,12 +1741,23 @@ public sealed partial class Server
         if (cid == OrderChange.CidDefault && model is not null)
             cid = GetDefaultOrder(drone, model, ot, oid);
 
+        // Imago 7/10 — "keep drones from giving away info" (FedSrv.CPP:3213-3235).
+        // An asteroid the ordered id no longer resolves to was consumed by an
+        // enemy station: native finds that station, puts a buoy at its position
+        // and lets the order through (bBarelyLegal) so the builder still replies
+        // "Affirmative." and flies there, instead of telling the commander that
+        // the rock is gone. P1032 ports that guard.
+        bool decoy = !found && cid == OrderChange.CidBuild && ot == IgcObjectType.Asteroid
+                     && ArmDecoyBuildAtReplacedRock(from, sender, drone, oid);
+
         // LegalCommand gate (FedSrv.CPP:3252; shipIGC.h:1604-1721). `found` — the
         // port's stand-in for native's non-NULL `pmodel`: a resolved ship/station/
         // asteroid/warp id is a VALID target even though this port has no Model
         // object for the non-Ship kinds (native keeps an ImodelIGC for every kind,
         // so its own `pmodel == NULL` gate is never tripped by a real target).
-        if (!LegalCommand(drone, cid, found, model, ot, oid))
+        // A decoy order deliberately skips this gate, exactly as native's
+        // bBarelyLegal does.
+        if (!decoy && !LegalCommand(drone, cid, found, model, ot, oid))
         {
             ConsoleLog.Write($"[drone] ship {sender.Id}: order cid={cid} to NPC {drone.Id} (pilotType {drone.PilotType}) is ILLEGAL — refused, no effect (native LegalCommand, shipIGC.h:1604-1721)");
             return;
@@ -1757,7 +1768,8 @@ public sealed partial class Server
         drone.StayDocked = false;
 
         // Map onto an existing sim arm (Goto/Attack/Defend/Mine/Build/DoNothing).
-        if (!ApplyDroneCommand(from, sender, drone, cid, model, ot, oid))
+        // The decoy already armed its travel objective.
+        if (!decoy && !ApplyDroneCommand(from, sender, drone, cid, model, ot, oid))
         {
             ConsoleLog.Write($"[drone] ship {sender.Id}: order cid={cid} to NPC {drone.Id} legal but no matching port sim arm — not executed (unsupported; see P469 report)");
             return;
@@ -1766,7 +1778,7 @@ public sealed partial class Server
         // The legacy helpers above configure movement/build details; training
         // still writes the native accepted slot (which cascades current/plan).
         // FedSrv/FedSrv.CPP:3281-3283; Igc/shipIGC.h:766-773.
-        if (drone.Mission?.IsTraining == true)
+        if (!decoy && drone.Mission?.IsTraining == true)
             drone.SetCommand(OrderChange.CmdAccepted, model, cid);
 
         RecordCommanderOrder(sender, cid);
@@ -1775,9 +1787,78 @@ public sealed partial class Server
         // Reply "Affirmative." to the commander (FedSrv.CPP:3256-3257).
         SendDroneAffirmative(from, sender, drone);
 
-        // Native echoes the accepted command to the command wing and Charlie/
-        // Delta/Echo wings (FedSrv.CPP:3563-3571). Named gap: this port has no
-        // command-wing routing worth replicating here (see the P469 report).
+        // Native echoes the accepted command to the command wing and the
+        // Charlie/Delta/Echo wings, marked CHAT_INDIVIDUAL_ECHO so clients know
+        // how to process it (FedSrv.CPP:3563-3570). P1032 closes the P469 gap.
+        EchoDroneCommandToWings(sender, chat);
+    }
+
+    /// <summary>
+    /// P1032 — native's Imago 7/10 fog-of-war guard inside <c>CommandToDrone</c>
+    /// (<c>FedSrv.CPP:3213-3235</c>): when an ordered asteroid id no longer
+    /// resolves (an enemy station consumed the rock), native searches every
+    /// station for one whose <c>GetRoidID()</c> is that id — skipping stations on
+    /// the drone's own side — and creates a buoy at the station's position, then
+    /// accepts the order anyway (<c>bBarelyLegal</c>, <c>:3252</c>). The port's
+    /// equivalent travel objective is a targetless <see cref="GotoOrder"/> to
+    /// that position (waypoint in the drone's cluster, cluster-buoy otherwise),
+    /// so the station object itself never rides the order.
+    /// Returns <see langword="true"/> only when a replacement station exists.
+    /// </summary>
+    private bool ArmDecoyBuildAtReplacedRock(ConnectionId from, Ship commander, Ship drone, short asteroidId)
+    {
+        if (drone.PilotType != Ship.PilotTypeBuilder || drone.Mission is not { } mission) return false;
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.StationRuntimes)
+            {
+                if (station.SideId == drone.SideId) continue;   // native: skip the drone's own side (:3223-3225)
+                if (station.ConsumedAsteroid is not { } rock || rock.Data.AsteroidId != asteroidId) continue;
+                short droneSector = drone.Sector?.Id ?? -1;
+                var kind = sector.Id == droneSector ? GotoKind.Waypoint : GotoKind.Cluster;
+                drone.SetGoto(new GotoOrder(kind, sector.Id, station.Center));
+                ConsoleLog.Write($"[build] {from} ship {drone.Id} (commander {commander.Id}): asteroid {asteroidId} was replaced by a station — decoy travel objective to sector {sector.Id} (native Imago guard, FedSrv.CPP:3213-3235)");
+                return true;
+            }
+        return false;
+    }
+
+    /// <summary>
+    /// P1032 — the native wing echo of an accepted drone order: the same chat is
+    /// resent as <c>CHAT_INDIVIDUAL_ECHO</c> to every player in the sender's
+    /// Command (0), Charlie (7), Delta (8) and Echo (9) wings
+    /// (<c>ForwardChatMessageToWing</c>, <c>FedSrv.CPP:3327-3345,3563-3570</c>;
+    /// that helper forwards to players only, skips the sender and iterates the
+    /// whole side, not just one cluster). Message length keeps the P654 255-char
+    /// relay cap.
+    /// </summary>
+    private void EchoDroneCommandToWings(Ship sender, ChatMessage chat)
+    {
+        if (sender.Mission is not { } mission || sender.SideId is not { } side) return;
+        var echo = new ChatMessage
+        {
+            Message = chat.Message.Length > 255 ? chat.Message[..255] : chat.Message,
+            MessageIsAbsent = chat.MessageIsAbsent,
+            SidSender = sender.Id,                     // native overwrites sidSender, FedSrv.CPP:5249
+            ChatTarget = (int)ChatTarget.IndividualEcho,
+            OidRecipient = chat.OidRecipient,
+            VoiceOver = chat.VoiceOver,
+            CommandID = chat.CommandID,
+            BObjectModel = chat.BObjectModel,
+            OidTarget = chat.OidTarget,
+            OtTarget = chat.OtTarget,
+        };
+        byte[] packet = FedPacket.Pack([echo.Encode()]);
+        int sent = 0;
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+            if (!ReferenceEquals(ship.Mission, mission) || ship.SideId != side || ship.Id == sender.Id) continue;
+            if (ship.WingId is not (0 or 7 or 8 or 9)) continue;   // Command / Charlie / Delta / Echo
+            SendPeer(kv.Key, packet);
+            sent++;
+        }
+        if (ConsoleLog.Verbose && sent > 0)
+            ConsoleLog.Write($"[drone] ship {sender.Id}: accepted order echoed to {sent} command-wing peer(s), chatTarget {echo.ChatTarget}");
     }
 
     private static void RecordCommanderOrder(Ship sideOwner, short cid)
@@ -2014,7 +2095,7 @@ public sealed partial class Server
                     return ArmLayerBuild(drone, ot, oid);
                 // The P425 direct-NPC-build path: shared legality + construction.
                 if (ot != IgcObjectType.Asteroid) return false;
-                return StartBuildIfLegal(from, sender.Id, drone, new OrderChange
+                return StartBuildIfLegal(from, sender, drone, new OrderChange
                 {
                     ShipID = drone.Id,
                     ObjectID = oid,
@@ -2174,8 +2255,8 @@ public sealed partial class Server
 
     /// <summary>P469 — reply "Affirmative." to the commanding player as an
     /// Individual chat FROM the drone (native SendChat(pshipTo, CHAT_INDIVIDUAL,
-    /// ...), FedSrv.CPP:3256-3257). The same private-chat construction
-    /// <see cref="RefuseBuild"/> uses, with the drone as speaker.</summary>
+    /// ...), FedSrv.CPP:3256-3257). Also the reply a native decoy order sends
+    /// (P1032; FedSrv.CPP:3213-3235 shares the same accept block).</summary>
     private void SendDroneAffirmative(ConnectionId from, Ship sender, Ship drone, string text = "Affirmative.")
     {
         var msg = new ChatMessage
@@ -2268,7 +2349,7 @@ public sealed partial class Server
             ConsoleLog.Write($"[build] {from}: BUILD for ship {target.Id} != own ship {live.Ship.Id} — refused (self-command only, native pside->GetShip resolves the commander's own ship, FedSrv.CPP:7271-7278)");
             return;
         }
-        StartBuildIfLegal(from, live.Ship.Id, target, req);
+        StartBuildIfLegal(from, live.Ship, target, req);
     }
 
     /// <summary>
@@ -2280,15 +2361,23 @@ public sealed partial class Server
     /// gate. Everything else is the SAME legality body as the player path
     /// (<see cref="StartBuildIfLegal"/>): a non-Builder drone, a non-asteroid
     /// target, an unbuildable rock, or a drone with no configured station type
-    /// is refused exactly as native refuses it, and the refusal is surfaced to
-    /// the commanding player's own client.
+    /// is refused exactly as native refuses it.
+    /// <para><b>P1032 authority.</b> Native's rule for who may command a
+    /// constructor is the drone-chat path's: <c>CommandToDrone</c> requires only
+    /// a real command id and the same side (<c>FedSrv.CPP:3190-3191</c>), and
+    /// native's <c>FM_CS_ORDER_CHANGE</c> resolves any same-side ship for the
+    /// sender (<c>pside-&gt;GetShip(shipID)</c>, <c>FedSrv.CPP:7271-7278</c>) —
+    /// no leader test exists on either path. The former <c>IsSideLeader</c> gate
+    /// here (P653 H-18) was stricter than native while the native chat path had
+    /// no such rule, so any teammate could already command the same build by
+    /// chat; both paths now use native's authority.</para>
     /// </summary>
     private void HandleDirectNpcBuildOrder(ConnectionId from, LiveShip live, Ship target, OrderChange req)
     {
         // This direct NPC build path is port-added (native FedSrv.CPP:7281-7322).
-        if (live.Ship.Mission is not { } mission || !IsSideLeader(mission, live.Ship)) return;
-        if (StartBuildIfLegal(from, live.Ship.Id, target, req))
-            live.Ship.Mission?.Skills?.Record(live.Ship.SideId, ShowcaseSkill.OrderBuild);
+        if (live.Ship.Mission is not { } mission) return;
+        if (StartBuildIfLegal(from, live.Ship, target, req))
+            mission.Skills?.Record(live.Ship.SideId, ShowcaseSkill.OrderBuild);
     }
 
     /// <summary>
@@ -2326,14 +2415,34 @@ public sealed partial class Server
     /// requires the rock to be in the builder's own sector (its preconditions),
     /// the port's stand-in for native "the builder reaches the asteroid's
     /// cluster"; a rock elsewhere is refused rather than crashing the tick.</item>
+    /// <item><b>Seen by the side.</b> A fog-of-war gate the port adds (native
+    /// resolves any asteroid id on the map, <c>pMission-&gt;GetModel</c>,
+    /// <c>FedSrv.CPP:3213-3218</c>, which is exactly the whole-map oracle this
+    /// finding reports): the ordered asteroid must already be
+    /// <see cref="Asteroid.SeenBySide"/> for the constructor's side. A rock the
+    /// side has never scouted is refused as if it did not exist, and the
+    /// refusal carries no detail to the player (P1032).</item>
+    /// <item><b>Replaced rock → native decoy.</b> When the id names no live
+    /// asteroid because an enemy station consumed the rock, native's Imago
+    /// guard (<c>FedSrv.CPP:3213-3235</c>) creates a buoy at that station's
+    /// position and accepts the order anyway; the port arms a targetless travel
+    /// objective there and replies "Affirmative." so nothing about the
+    /// replacement is revealed (<see cref="ArmDecoyBuildAtReplacedRock"/>).</item>
     /// </list>
     /// NPC constructors retain an accepted target while traveling and register
     /// construction only on arrival (native shipIGC.cpp:2810-2827). Player
     /// Builder hulls use the existing immediate effect path. A registered
     /// effect commits its constructor and asteroid until completion or abort.
+    /// <para><b>P1032 refusals are silent.</b> Every <see cref="RefuseBuild"/>
+    /// here logs server-side only: native sends no chat for an illegal drone
+    /// order (the "Negative." block at <c>FedSrv.CPP:3286-3292</c> is commented
+    /// out), so a fabricated diagnostic would be the server telling a player
+    /// about unexplored asteroids (ids, capability masks, sector names, enemy
+    /// construction state) it should not know.</para>
     /// </summary>
-    private bool StartBuildIfLegal(ConnectionId from, short commanderShipId, Ship target, OrderChange req)
+    private bool StartBuildIfLegal(ConnectionId from, Ship commander, Ship target, OrderChange req)
     {
+        short commanderShipId = commander.Id;
         if (target.Dead || target.StationId is not null
             || target.Sector is null || !target.Sector.Models.Contains(target)) return false;
 
@@ -2369,7 +2478,23 @@ public sealed partial class Server
         var rock = FindAsteroidById(req.ObjectID, target.Mission);
         if (rock is null)
         {
-            RefuseBuild(from, commanderShipId, target, $"BUILD target asteroid {req.ObjectID} not found in any sector — refused");
+            // Native's Imago decoy (FedSrv.CPP:3213-3235): the id can name a
+            // rock an enemy station replaced. Reply exactly as a real order and
+            // send the constructor to where the rock used to be.
+            if (ArmDecoyBuildAtReplacedRock(from, commander, target, req.ObjectID))
+            {
+                SendDroneAffirmative(from, commander, target);
+                return true;
+            }
+            RefuseBuild(from, commanderShipId, target, $"BUILD target asteroid {req.ObjectID} not found in any sector — refused (no live asteroid and no replacement station)");
+            return false;
+        }
+
+        // P1032 fog-of-war gate: only a rock the side has already scouted is a
+        // legal order target, so probing ids cannot map the unexplored world.
+        if (target.SideId is not { } sideId || !rock.SeenBySide(sideId))
+        {
+            RefuseBuild(from, commanderShipId, target, $"BUILD target asteroid {rock.Data.AsteroidId} has not been seen by side {target.SideId} — refused (fog-of-war gate, P1032)");
             return false;
         }
 
@@ -2425,24 +2550,18 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P422/P425 — surface a refused Build command to the commanding player's
-    /// own client as a private "Negative." chat (native's command-refusal ack is
-    /// exactly <c>SendChat(pshipTo, CHAT_INDIVIDUAL, ..., "Negative.")</c>,
-    /// clintlib.cpp:2261-2268). Logged here too, so the server console carries
-    /// the full reason even if the commanding player is no longer connected.
+    /// P1032 — log a refused Build command server-side and tell the player
+    /// NOTHING. Native sends no chat for a refused drone order: the
+    /// <c>"Negative."</c> block in <c>CommandToDrone</c> is commented out
+    /// (<c>FedSrv.CPP:3286-3292</c>), and the client-side twin the P422/P425
+    /// docs cited (<c>clintlib.cpp:2255-2272</c>) is itself inside a comment
+    /// block. The port's old verbatim diagnostic (<c>"Negative. BUILD target
+    /// asteroid 7103 not found…"</c>, the station's name, the rock's
+    /// <c>AabmCapabilities</c> mask and the sector name) turned one legal-looking
+    /// order into a whole-map fog-of-war oracle, so it is server-log only now.
     /// </summary>
     private void RefuseBuild(ConnectionId from, short commanderShipId, Ship target, string reason)
-    {
-        ConsoleLog.Write($"[build] {from} ship {target.Id}: {reason}");
-        var msg = new ChatMessage
-        {
-            Message = $"Negative. {reason}",
-            SidSender = commanderShipId,
-            ChatTarget = (int)ChatTarget.IndividualNoFilter,
-            OidRecipient = commanderShipId,
-        };
-        SendPeer(from, FedPacket.Pack(new[] { msg.Encode() }));
-    }
+        => ConsoleLog.Write($"[build] {from} ship {target.Id} (commander {commanderShipId}): {reason}");
 
     /// <summary>
     /// P150 — the port of <c>pship-&gt;SetCommand(pfmOC-&gt;command, pmodel,

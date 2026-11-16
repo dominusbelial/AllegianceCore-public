@@ -44,11 +44,16 @@ public sealed class P652ConstructorBuildTests
             [0, 1, 0], [1, 0, 0], [0, 0, 0, 1], 0, 0, type.AabmBuild,
             6401, 0, 60, "roid.mdl", "", "", sector.Id, "Build target", 0));
         mission.PlaceAsteroid(rock, sector);
+        // P1032 — the fog-of-war gate: a commander can only order a build at a
+        // rock its side has already scouted (a client can only target a seen
+        // model). Fixture rocks are placed without a visibility sweep, so mark
+        // them known, exactly as a scouted rock would be.
+        rock.SideVisibility.RevealToSide(0);
         return rock;
     }
 
     private static void Order(Srv server, Ship ship, Asteroid rock) =>
-        Assert.True((bool)Invoke(server, "StartBuildIfLegal", ConnectionId.Me, (short)999, ship,
+        Assert.True((bool)Invoke(server, "StartBuildIfLegal", ConnectionId.Me, ship, ship,
             new OrderChange { ShipID = ship.Id, CommandId = OrderChange.CidBuild,
                 Command = OrderChange.CmdAccepted, ObjectType = IgcObjectType.Asteroid,
                 ObjectID = rock.Data.AsteroidId })!);
@@ -112,6 +117,7 @@ public sealed class P652ConstructorBuildTests
             AabmCapabilities = (short)(type.AabmBuild | Asteroid.CapMineHe3), Ore = 1000, OreMax = 1000,
         });
         mission.PlaceAsteroid(rock, sector);
+        rock.SideVisibility.RevealToSide(0);   // P1032: scouted rock (see Rock)
         var hull = mission.Core.HullTypes.Values.First() with { Length = 10, Thrust = 0 };
         var friendly = new Ship(1, hull, position + new Vector3(-80, 0, 0), Vector3.Zero, Orientation.Identity)
             { IsNpc = true, PilotType = Ship.PilotTypeMiner, SideId = 0, MiningAsteroidTarget = rock };

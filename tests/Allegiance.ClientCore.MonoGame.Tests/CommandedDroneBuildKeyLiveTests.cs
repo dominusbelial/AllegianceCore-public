@@ -137,6 +137,9 @@ public sealed class CommandedDroneBuildKeyLiveTests
             wrongRock = new Asteroid(MkAsteroid(6402, new Vector3(626f, 421f, 448f), 60, sector.Id, wrongCap));
             m.PlaceAsteroid(rock, sector);
             m.PlaceAsteroid(wrongRock, sector);
+            // P1032 — a commander can only target a rock its side has scouted.
+            rock.SideVisibility.RevealToSide(side);
+            wrongRock.SideVisibility.RevealToSide(side);
 
             var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
             commander = new Ship(id, hull, new SimVec(0f, 0f, 0f), SimVec.Zero, Orientation.Identity) { SideId = side };
@@ -208,12 +211,13 @@ public sealed class CommandedDroneBuildKeyLiveTests
         }
     }
 
-    /// <summary>Illegal command chat is silently refused (native
-    /// FedSrv.CPP:3286-3292); the existing port-added direct ORDER_CHANGE
-    /// path still surfaces its refusal as a private "Negative." chat.</summary>
+    /// <summary>Illegal drone commands are refused silently on BOTH paths
+    /// (native FedSrv.CPP:3286-3292 comments out the "Negative." reply, and
+    /// P1032 removed the port-added direct path's diagnostic chat, which leaked
+    /// unexplored asteroid data).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Live_client_illegal_drone_build_refusal_reaches_client_chat()
+    public void Live_client_illegal_drone_build_refusal_is_silent()
     {
         Require.Artwork();
         var (srv, mission, sector, commander, builderDroneId, stationType, _, wrongRock, side) = Boot(out var client);
@@ -242,16 +246,18 @@ public sealed class CommandedDroneBuildKeyLiveTests
                 || c.Message.StartsWith("Negative.", System.StringComparison.Ordinal));
 
             client.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, wrongRock.Data.AsteroidId);
-            int got = PumpUntil(srv, () => sector.BuildingEffects.Count > 0
-                                       || client.World.Events.Chats.Any(c => c.Message.StartsWith("Negative.", System.StringComparison.Ordinal)), 2000);
-            Assert.True(got < 2000, "expected either construction or a refusal ack");
+            // Fence the direct order the same way: the server relays our chat.
+            const string OrderBarrier = "P1032 direct order delivered";
+            client.SendChat(OrderBarrier, ChatTarget.Individual, commander.Id);
+            int got = PumpUntil(srv, () => client.World.Events.Chats.Any(c => c.Message == OrderBarrier), 2000);
+            Assert.True(got < 2000, "direct-order delivery barrier did not return");
 
             Assert.Empty(sector.BuildingEffects);               // refused — capability mismatch
             Assert.Contains(wrongRock, sector.Mineable);        // wrong-type rock untouched
-            // The refusal surfaced to the commanding client among any ambient
-            // broadcast chatter: a private "Negative." chat naming the reason.
-            var ack = Assert.Single(client.World.Events.Chats, c => c.Message.StartsWith("Negative.", System.StringComparison.Ordinal));
-            Console.WriteLine($"P425-CLIENT-REJECT: illegal drone build refused → client received \"{ack.Message}\"");
+            // No refusal text on the wire: native has none, and P1032 removed
+            // the port's diagnostic (FedSrv.CPP:3286-3292).
+            Assert.DoesNotContain(client.World.Events.Chats, c => c.Message.StartsWith("Negative.", System.StringComparison.Ordinal));
+            Console.WriteLine("P425-CLIENT-REJECT: illegal drone build refused silently on both paths");
         }
     }
 

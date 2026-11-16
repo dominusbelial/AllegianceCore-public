@@ -180,6 +180,9 @@ public sealed class StationBucketSpawnsConstructorLiveTests
         var rp = new Vector3(con.Position.X + 400f, con.Position.Y, con.Position.Z);
         var rock = new Asteroid(MkAsteroid((short)(6000 + sideId), rp, 60, conSector.Id, stationType.AabmBuild));
         mission.PlaceAsteroid(rock, conSector);
+        // P1032 — a real commander can only order a rock its side has seen; the
+        // fixture places it beside the constructor without a visibility sweep.
+        rock.SideVisibility.RevealToSide(sideId);
 
         bot.SendOrderChange(con.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, rock.Data.AsteroidId);
         int bc = PumpUntil(server, () => conSector.BuildingEffects.Count > 0, 2000);
