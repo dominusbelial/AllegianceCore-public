@@ -29,6 +29,18 @@ public interface IJetVectorSurface
     Vector2 Measure(string text, bool large, float scale);
 }
 
+/// <summary>P1038b — an optional audit channel for ICON glyphs: the drawing surface may
+/// implement it to receive the box of every icon mark the painter composes (annunciator,
+/// caution and inventory state glyphs), so the proof can measure that each icon is at
+/// least as tall as the cap height of the text it belongs to. Production and test surfaces
+/// do not implement it, so the check costs one type test per icon and draws nothing.</summary>
+public interface IJetGlyphAudit
+{
+    /// <summary>Record one icon glyph: its drawn box and the minimum (cap-height) size the
+    /// word it introduces needs it to reach.</summary>
+    void Glyph(string id, RectangleF box, float minimumHeight);
+}
+
 /// <summary>P1035 — the production Jet surface: Game1's shared SpriteBatch, the
 /// 1×1 white pixel and the two classic HUD fonts. Borrows every resource; it owns
 /// nothing and therefore has nothing to dispose.</summary>
@@ -260,6 +272,14 @@ public sealed class JetVectorPainter
 
     /// <summary>The ink size a <see cref="Text"/> run would occupy.</summary>
     public Vector2 Measure(string text, bool large, float scale) => _surface.Measure(text, large, scale);
+
+    /// <summary>P1038b — report one icon glyph to the optional <see cref="IJetGlyphAudit"/>
+    /// channel (used by the proof's minimum-glyph-size check). No-op on the production and
+    /// test surfaces, which do not implement it.</summary>
+    public void Glyph(string id, RectangleF box, float minimumHeight)
+    {
+        if (_surface is IJetGlyphAudit audit) audit.Glyph(id, box, minimumHeight);
+    }
 
     /// <summary>Enough segments that a circle reads as a circle at this radius,
     /// bounded by the pre-sized point buffer.</summary>

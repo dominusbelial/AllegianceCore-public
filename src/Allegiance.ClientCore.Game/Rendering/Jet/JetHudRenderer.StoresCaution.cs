@@ -77,11 +77,17 @@ public sealed partial class JetHudRenderer
         if (!model.InstrumentsVisible || model.Telemetry is null) return;
         bool compact = JetStoresPanel.Compact(h);
         float left = JetStoresPanel.Left(scale);
-        float rowH = JetStoresPanel.RowPitch * scale;
+        // P1038b — the pitch is the MEASURED line height plus a real gap, so two rows can
+        // never merge however tall the HUD font is at this density.
+        float textHeight = _painter.Measure("X", large: false, scale).Y;
+        float rowH = JetStoresPanel.RowHeight(textHeight, scale);
+        float barHeight = MathF.Max(1f, _painter.Hairline * 2f);
 
-        // Header.
-        float headerTop = JetStoresPanel.HeaderTop(h, compact, scale);
-        _painter.Text(StoresHeader, new(left, headerTop), large: false, scale, _painter.Dim);
+        // Header. At 800×480 the block IS its three readout rows (P972 §4.5) and the
+        // header is omitted so the taller measured rows stay clear of the speed readout
+        // plate above them (P1038b: the measured pitch raised the header into it).
+        float headerTop = JetStoresPanel.HeaderTop(h, compact, rowH);
+        if (!compact) _painter.Text(StoresHeader, new(left, headerTop), large: false, scale, _painter.Dim);
 
         HudGauge? hull = GaugeOf(model, GaugeKind.Hull);
         HudGauge? shield = GaugeOf(model, GaugeKind.Shield);
@@ -93,7 +99,7 @@ public sealed partial class JetHudRenderer
         if (compact)
         {
             // Row 0 — the two hull/shield readings on one line.
-            float y0 = JetStoresPanel.RowTop(h, true, scale, 0);
+            float y0 = JetStoresPanel.RowTop(h, true, rowH, 0);
             float cursor = left;
             cursor = StorePercentRun(cursor, y0, scale, "HULL", hull, 0, bold: true);
             StorePercentRun(cursor + 8f * scale, y0, scale, "SHLD", shield, 1, bold: false);
@@ -125,17 +131,21 @@ public sealed partial class JetHudRenderer
             return;
         }
 
-        // Row 0 — HULL with its segmented bar.
-        float ry = JetStoresPanel.RowTop(h, false, scale, 0);
-        StorePercentRun(left, ry, scale, "HULL", hull, 0, bold: true);
+        // Row 0 — HULL with its segmented bar BESIDE the reading (never across a glyph).
+        float ry = JetStoresPanel.RowTop(h, false, rowH, 0);
+        float valueEnd = StorePercentRun(left, ry, scale, "HULL", hull, 0, bold: true);
         if (hull is { } hullGauge && hullGauge.Visible)
-            SegmentedBar(left, ry + 13f * scale, JetStoresPanel.BarWidth * scale, hullGauge.Fraction, _painter.Primary);
+            SegmentedBar(valueEnd + JetStoresPanel.BarGap * scale,
+                JetStoresPanel.BarY(ry, textHeight, barHeight), JetStoresPanel.BarWidth * scale,
+                hullGauge.Fraction, _painter.Primary);
 
         // Row 1 — SHLD with its segmented bar.
         ry += rowH;
-        StorePercentRun(left, ry, scale, "SHLD", shield, 1, bold: false);
+        valueEnd = StorePercentRun(left, ry, scale, "SHLD", shield, 1, bold: false);
         if (shield is { } shieldGauge && shieldGauge.Visible)
-            SegmentedBar(left, ry + 13f * scale, JetStoresPanel.BarWidth * scale, shieldGauge.Fraction, _painter.Dim);
+            SegmentedBar(valueEnd + JetStoresPanel.BarGap * scale,
+                JetStoresPanel.BarY(ry, textHeight, barHeight), JetStoresPanel.BarWidth * scale,
+                shieldGauge.Fraction, _painter.Dim);
 
         // Row 2 — ENG.
         ry += rowH;
@@ -200,7 +210,7 @@ public sealed partial class JetHudRenderer
 
         // Row 7 — the own-status annunciators, each under its shared flag.
         ry += rowH;
-        DrawAnnunciators(model, left, ry, scale);
+        DrawAnnunciators(model, left, ry, scale, JetStoresPanel.CapHeight(textHeight));
     }
 
     /// <summary>One <c>WORD 082</c> store run (nothing at all when the gauge is absent or
@@ -224,14 +234,17 @@ public sealed partial class JetHudRenderer
         return cursor;
     }
 
-    /// <summary>A segmented fraction bar (eight segments, shape not hue).</summary>
-    private void SegmentedBar(float x, float y, float width, float fraction, Color ink)
+    /// <summary>A segmented fraction bar (eight segments, shape not hue). <paramref name="centerY"/>
+    /// is the vertical CENTRE of the bar, so a bar can sit beside a text line without ever
+    /// touching it (P1038b).</summary>
+    private void SegmentedBar(float x, float centerY, float width, float fraction, Color ink)
     {
         float segWidth = width / JetStoresPanel.BarSegments;
         int lit = Math.Clamp((int)MathF.Round(Math.Clamp(fraction, 0f, 1f) * JetStoresPanel.BarSegments),
             0, JetStoresPanel.BarSegments);
         float gap = MathF.Max(0.5f, _painter.Hairline * 0.5f);
         float height = MathF.Max(1f, _painter.Hairline * 2f);
+        float y = centerY - height * 0.5f;
         for (int i = 0; i < JetStoresPanel.BarSegments; i++)
             _painter.Surface.Fill(new(x + i * segWidth, y), new(MathF.Max(1f, segWidth - gap), height),
                 i < lit ? ink : _painter.Dim * 0.35f);
@@ -271,8 +284,10 @@ public sealed partial class JetHudRenderer
     }
 
     /// <summary>The full annunciator row: glyph + word per lit flag, in the native
-    /// order (P972 §5.1).</summary>
-    private void DrawAnnunciators(HudModel model, float x, float y, float scale)
+    /// order (P972 §5.1). P1038b — each glyph is drawn at the cap height of its word (and
+    /// reported to the audit channel), so the mark is legible instead of a 2–4 px speck;
+    /// the word stays beside it, so state never depends on the icon or the colour.</summary>
+    private void DrawAnnunciators(HudModel model, float x, float y, float scale, float capHeight)
     {
         var status = model.Status;
         JetStoresPanel.Annunciators set = JetStoresPanel.AnnunciatorsOf(status);
@@ -280,11 +295,11 @@ public sealed partial class JetHudRenderer
         float cursor = x;
         float gap = 8f * scale;
         if ((set & JetStoresPanel.Annunciators.Eye) != 0)
-            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Eye, "EYE", _painter.Dim) + gap;
+            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Eye, "EYE", _painter.Dim, capHeight) + gap;
         if ((set & JetStoresPanel.Annunciators.Cloak) != 0)
         {
             Color cloakInk = status.CloakDrained ? _painter.Hot : _painter.Dim;
-            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Cloak, "CLK", cloakInk) + gap;
+            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Cloak, "CLK", cloakInk, capHeight) + gap;
             if (status.CloakDrained)
                 cursor = TextRun(cursor, y, scale, "DRAINED", _painter.Hot, ref cursor) + gap;
             else if (status.CloakStrengthPercent is { } strength)
@@ -293,13 +308,13 @@ public sealed partial class JetHudRenderer
                     _painter.Dim, ref cursor) + gap;
         }
         if ((set & JetStoresPanel.Annunciators.Autopilot) != 0)
-            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Autopilot, "AUTO", _painter.Dim) + gap;
+            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Autopilot, "AUTO", _painter.Dim, capHeight) + gap;
         if ((set & JetStoresPanel.Annunciators.VectorLock) != 0)
-            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.VectorLock, "VLOCK", _painter.Dim) + gap;
+            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.VectorLock, "VLOCK", _painter.Dim, capHeight) + gap;
         if ((set & JetStoresPanel.Annunciators.Flag) != 0)
-            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Flag, "FLAG", _painter.Primary) + gap;
+            cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Flag, "FLAG", _painter.Primary, capHeight) + gap;
         if ((set & JetStoresPanel.Annunciators.Artifact) != 0)
-            AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Artifact, "ART", _painter.Primary);
+            AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Artifact, "ART", _painter.Primary, capHeight);
     }
 
     /// <summary>The compact form: only the lit annunciator words, no glyphs (P972 §4.5 —
@@ -327,45 +342,52 @@ public sealed partial class JetHudRenderer
             TextRun(cursor, y, scale, "ART", _painter.Primary, ref cursor);
     }
 
-    /// <summary>One annunciator: a small shape glyph plus its word. Returns the cursor
-    /// after the word.</summary>
+    /// <summary>One annunciator: a shape glyph at the word's cap height plus its word.
+    /// Returns the cursor after the word.</summary>
     private float AnnunciatorGlyph(float x, float y, float scale,
-        JetStoresPanel.Annunciators which, string word, Color ink)
+        JetStoresPanel.Annunciators which, string word, Color ink, float capHeight)
     {
-        float size = 6f * scale;
-        float mid = y + 6f * scale;
+        float size = JetStoresPanel.IconSize(capHeight);
+        _painter.Glyph("annunciator:" + word, new RectangleF(x, y, size, size), capHeight);
+        float mid = size * 0.5f;
         float stroke = _painter.Stroke;
         switch (which)
         {
             case JetStoresPanel.Annunciators.Eye:
-                _painter.Arc(new(x + size, mid), size, -MathF.PI * 0.5f, MathF.PI, _painter.Hairline, ink);
-                _painter.Line(new(x + size * 0.6f, mid), new(x + size * 1.4f, mid), _painter.Hairline, ink);
+                // An open eye: an arc over the centre line plus a pupil stroke.
+                _painter.Arc(new(x + mid, y + mid), size * 0.45f, 0f, MathHelper.TwoPi, _painter.Hairline, ink);
+                _painter.Line(new(x + size * 0.3f, y + mid), new(x + size * 0.7f, y + mid), _painter.Hairline, ink);
                 break;
             case JetStoresPanel.Annunciators.Cloak:
-                _painter.Line(new(x, mid), new(x + size * 0.5f, y), stroke, ink);
-                _painter.Line(new(x + size * 0.5f, y), new(x + size, mid), stroke, ink);
+                // A cloak chevron: bottom-left → top-centre → bottom-right.
+                _painter.Line(new(x, y + size * 0.9f), new(x + mid, y + size * 0.1f), stroke, ink);
+                _painter.Line(new(x + mid, y + size * 0.1f), new(x + size, y + size * 0.9f), stroke, ink);
                 break;
             case JetStoresPanel.Annunciators.Autopilot:
-                _painter.Line(new(x, mid + size * 0.4f), new(x + size, mid + size * 0.4f), _painter.Hairline, ink);
-                _painter.Line(new(x + size * 0.5f, mid + size * 0.4f), new(x + size * 0.5f, y), _painter.Hairline, ink);
+                // Autopilot: a base bar with a centre stem (a simple "A" stand).
+                _painter.Line(new(x, y + size * 0.9f), new(x + size, y + size * 0.9f), stroke, ink);
+                _painter.Line(new(x + mid, y + size * 0.9f), new(x + mid, y + size * 0.1f), stroke, ink);
                 break;
             case JetStoresPanel.Annunciators.VectorLock:
-                _painter.Line(new(x, y), new(x + size, y), _painter.Hairline, ink);
-                _painter.Line(new(x + size, y), new(x + size, y + size), _painter.Hairline, ink);
+                // Vector lock: a closed corner.
+                _painter.Line(new(x, y + size * 0.1f), new(x + size, y + size * 0.1f), stroke, ink);
+                _painter.Line(new(x + size, y + size * 0.1f), new(x + size, y + size * 0.9f), stroke, ink);
                 break;
             case JetStoresPanel.Annunciators.Flag:
-                _painter.Line(new(x, y), new(x, y + size), stroke, ink);
-                _painter.Line(new(x, y), new(x + size, y + size * 0.4f), stroke, ink);
-                _painter.Line(new(x + size, y + size * 0.4f), new(x, y + size * 0.7f), stroke, ink);
+                // A pennant on a pole.
+                _painter.Line(new(x, y + size * 0.05f), new(x, y + size * 0.95f), stroke, ink);
+                _painter.Line(new(x, y + size * 0.05f), new(x + size * 0.9f, y + size * 0.35f), stroke, ink);
+                _painter.Line(new(x + size * 0.9f, y + size * 0.35f), new(x, y + size * 0.65f), stroke, ink);
                 break;
             default:
-                _painter.Line(new(x + size * 0.5f, y), new(x + size, mid), _painter.Hairline, ink);
-                _painter.Line(new(x + size, mid), new(x + size * 0.5f, y + size), _painter.Hairline, ink);
-                _painter.Line(new(x + size * 0.5f, y + size), new(x, mid), _painter.Hairline, ink);
-                _painter.Line(new(x, mid), new(x + size * 0.5f, y), _painter.Hairline, ink);
+                // Artifact: a diamond outline.
+                _painter.Line(new(x + mid, y), new(x + size, y + mid), _painter.Hairline, ink);
+                _painter.Line(new(x + size, y + mid), new(x + mid, y + size), _painter.Hairline, ink);
+                _painter.Line(new(x + mid, y + size), new(x, y + mid), _painter.Hairline, ink);
+                _painter.Line(new(x, y + mid), new(x + mid, y), _painter.Hairline, ink);
                 break;
         }
-        float textX = x + size + 4f * scale;
+        float textX = x + size + JetStoresPanel.IconGap * scale;
         _painter.Text(word, new(textX, y), large: false, scale, ink);
         return textX + _painter.Measure(word, large: false, scale).X;
     }
@@ -377,6 +399,12 @@ public sealed partial class JetHudRenderer
     /// boundary, crowd, ghost, critical tips, ripcord and the lives/kills/vote badges. The
     /// lines are read from the shared model every frame; the panel never acknowledges,
     /// suppresses, delays or retriggers a warning and owns no timer or sound.
+    /// <para><b>P1038b layout.</b> The plate's width is the measured widest row plus inner
+    /// padding on ALL four sides; its right edge keeps the same edge gutter as the other
+    /// Jet plates (<see cref="JetCautionModel.RightInset"/> × scale), and every row is
+    /// left-aligned inside that padding, so no reading can spill past the plate or touch
+    /// the viewport edge. If a long critical tip would exceed the bounded width, the whole
+    /// panel is drawn at the measured fit scale — the value is never truncated.</para>
     /// </summary>
     private void DrawCaution(HudModel model, float w, float h, float scale)
     {
@@ -388,53 +416,72 @@ public sealed partial class JetHudRenderer
         if (count > limit) count = limit;
 
         float right = JetCautionModel.Right(w, scale);
-        // The line pitch can never be shorter than a glyph line, or rows would overlap.
-        float textHeight = _painter.Measure("X", large: false, scale).Y;
-        float pitch = MathF.Max(JetCautionModel.LinePitch * scale, textHeight + 3f * scale);
+        float pad = 6f * scale;
+        // P1038b — the leading mark is an icon at the word's cap height, not a tick.
+        float capHeight = JetStoresPanel.CapHeight(_painter.Measure("X", large: false, scale).Y);
+        float iconWidth = JetStoresPanel.IconSize(capHeight) + JetStoresPanel.IconGap * scale;
 
-        // Measure first, then draw a plate behind the panel so it reads over bright space.
-        var headerSize = _painter.Measure(CautionHeader, large: false, scale);
+        // Measure first at the frame scale, then (only if a tip would run past the bounded
+        // panel) re-measure at the measured fit scale — no glyph is clipped, no value is cut.
+        float textScale = scale;
+        var headerSize = _painter.Measure(CautionHeader, large: false, textScale);
         float widest = headerSize.X;
         float[] widths = _cautionWidths;
-        int drawn = 0;
         for (int i = 0; i < count; i++)
         {
-            float width = MeasureCaution(_cautionBuffer[i], i, model, scale);
-            widths[i] = width;
-            if (width > widest) widest = width;
-            drawn++;
+            widths[i] = MeasureCaution(_cautionBuffer[i], i, textScale, iconWidth);
+            if (widths[i] > widest) widest = widths[i];
         }
-        float pad = 6f * scale;
-        float panelHeight = headerSize.Y + 2f * scale + drawn * pitch + pad * 2f;
+        float maxWidth = MathF.Max(0f, right - 8f * scale);   // the plate may never pass the left gutter
+        if (widest + pad * 2f > maxWidth)
+        {
+            float widestText = MathF.Max(1f, widest - iconWidth);
+            float room = maxWidth - pad * 2f - iconWidth;
+            textScale = scale * Math.Clamp(room / widestText, 0.4f, 1f);
+            iconWidth = JetStoresPanel.IconSize(JetStoresPanel.CapHeight(
+                _painter.Measure("X", large: false, textScale).Y)) + JetStoresPanel.IconGap * textScale;
+            headerSize = _painter.Measure(CautionHeader, large: false, textScale);
+            widest = headerSize.X;
+            for (int i = 0; i < count; i++)
+            {
+                widths[i] = MeasureCaution(_cautionBuffer[i], i, textScale, iconWidth);
+                if (widths[i] > widest) widest = widths[i];
+            }
+        }
+
+        float textHeight = _painter.Measure("X", large: false, textScale).Y;
+        // The line pitch can never be shorter than a glyph line, or rows would overlap.
+        float pitch = MathF.Max(JetCautionModel.LinePitch * textScale, textHeight + 3f * scale);
+        float panelWidth = widest + pad * 2f;
+        float panelHeight = headerSize.Y + 2f * scale + count * pitch + pad * 2f;
         // The panel hangs from the top-right but can never reach the throttle tape's own
         // band (its top is cy − halfSpan; the THR caption sits just above that).
         float throttleBandTop = h * 0.2f - textHeight - 2f * scale;
         float top = MathF.Max(2f, throttleBandTop - panelHeight);
-        var panel = new RectangleF(right - widest - pad * 2f, top, widest + pad * 2f, panelHeight);
+        var panel = new RectangleF(right - panelWidth, top, panelWidth, panelHeight);
         _painter.FillPlate(panel, 0.62f);
-        _painter.Text(CautionHeader, new(panel.X + pad, panel.Y + pad), large: false, scale, _painter.Primary);
+        _painter.Text(CautionHeader, new(panel.X + pad, panel.Y + pad), large: false, textScale, _painter.Primary);
 
         float y = panel.Y + pad + headerSize.Y + 2f * scale;
-        for (int i = 0; i < drawn; i++)
+        for (int i = 0; i < count; i++)
         {
             JetCaution caution = _cautionBuffer[i];
-            float textWidth = widths[i] - CautionGlyphWidth(scale);
-            DrawCautionGlyph(new(right - widths[i], y), scale, caution.Hot);
-            DrawCautionText(caution, i, new(right - textWidth, y), scale);
+            // Every row starts inside the same left padding: glyph, gap, words.
+            DrawCautionGlyph(new(panel.X + pad, y), textScale, caution.Hot,
+                JetStoresPanel.CapHeight(textHeight));
+            DrawCautionText(caution, i, new(panel.X + pad + iconWidth, y), textScale);
             y += pitch;
         }
     }
 
     private readonly float[] _cautionWidths = new float[JetCautionModel.MaxCautions];
 
-    private static float CautionGlyphWidth(float scale) => 10f * scale;
-
-    /// <summary>The width of one caution line: glyph + text, measured without allocating
-    /// (the composed lines are cached by kind and value).</summary>
-    private float MeasureCaution(in JetCaution caution, int line, HudModel model, float scale)
+    /// <summary>The width of one caution line: glyph + gap + text, measured without
+    /// allocating (the composed lines are cached by kind and value).</summary>
+    private float MeasureCaution(in JetCaution caution, int line, float textScale, float iconWidth)
     {
         string text = CautionText(caution, line);
-        return CautionGlyphWidth(scale) + _painter.Measure(text, large: false, scale).X;
+        return iconWidth + _painter.Measure(text, large: false, textScale).X;
     }
 
     /// <summary>
@@ -513,25 +560,27 @@ public sealed partial class JetHudRenderer
     }
 
     /// <summary>The caution's icon: a hot "!" mark or a quiet open square — shape, never a
-    /// second hue (P972 §4.1).</summary>
-    private void DrawCautionGlyph(Vector2 at, float scale, bool hot)
+    /// second hue (P972 §4.1). P1038b — drawn at the cap height of the word it introduces
+    /// (the P1038 ticks were 2–4 px), and reported to the audit channel.</summary>
+    private void DrawCautionGlyph(Vector2 at, float textScale, bool hot, float capHeight)
     {
-        float size = 6f * scale;
+        float size = JetStoresPanel.IconSize(capHeight);
+        _painter.Glyph(hot ? "caution:hot" : "caution:quiet", new RectangleF(at.X, at.Y, size, size), capHeight);
         if (hot)
         {
-            _painter.Line(new(at.X + size * 0.5f, at.Y), new(at.X + size * 0.5f, at.Y + size * 0.7f),
+            _painter.Line(new(at.X + size * 0.5f, at.Y + size * 0.15f), new(at.X + size * 0.5f, at.Y + size * 0.65f),
                 _painter.Stroke, _painter.Hot);
-            _painter.Surface.Fill(new(at.X + size * 0.35f, at.Y + size * 0.9f),
-                new(size * 0.3f, size * 0.3f), _painter.Hot);
+            _painter.Surface.Fill(new(at.X + size * 0.35f, at.Y + size * 0.8f),
+                new(MathF.Max(1f, size * 0.3f), MathF.Max(1f, size * 0.3f)), _painter.Hot);
             return;
         }
-        _painter.Line(new(at.X, at.Y + size * 0.1f), new(at.X + size * 0.7f, at.Y + size * 0.1f),
+        _painter.Line(new(at.X + size * 0.15f, at.Y + size * 0.15f), new(at.X + size * 0.85f, at.Y + size * 0.15f),
             _painter.Hairline, _painter.Dim);
-        _painter.Line(new(at.X + size * 0.7f, at.Y + size * 0.1f), new(at.X + size * 0.7f, at.Y + size * 0.9f),
+        _painter.Line(new(at.X + size * 0.85f, at.Y + size * 0.15f), new(at.X + size * 0.85f, at.Y + size * 0.85f),
             _painter.Hairline, _painter.Dim);
-        _painter.Line(new(at.X + size * 0.7f, at.Y + size * 0.9f), new(at.X, at.Y + size * 0.9f),
+        _painter.Line(new(at.X + size * 0.85f, at.Y + size * 0.85f), new(at.X + size * 0.15f, at.Y + size * 0.85f),
             _painter.Hairline, _painter.Dim);
-        _painter.Line(new(at.X, at.Y + size * 0.9f), new(at.X, at.Y + size * 0.1f),
+        _painter.Line(new(at.X + size * 0.15f, at.Y + size * 0.85f), new(at.X + size * 0.15f, at.Y + size * 0.15f),
             _painter.Hairline, _painter.Dim);
     }
 
@@ -546,6 +595,11 @@ public sealed partial class JetHudRenderer
     /// the launcher READY state, and the split RNG/DMG/ROF · SHD STR/RECH · AB SPD/END ·
     /// CLK STR/END stats. Cargo rows keep the shared order/amounts/S key, a gunner sees the
     /// carrier's loadout title, and an empty mount keeps its open outline and EMPTY word.
+    /// <para><b>P1038b.</b> The column caption sits in its own band under the hull title
+    /// (never on the last row), each caption over the column it names and inside the plate;
+    /// every cell keeps <see cref="JetInventoryPresentation.Pad"/> of inner padding; the
+    /// plate uses the same opacity as the Jet readout plates so nothing behind it clutters
+    /// the table.</para>
     /// </summary>
     private void DrawInventory(HudModel model, float w, float h, float scale)
     {
@@ -563,40 +617,66 @@ public sealed partial class JetHudRenderer
         float height = JetInventoryPresentation.Height(rows, h);
         float cap = JetInventoryPresentation.CapHeight * paneScale;
         float rowH = JetInventoryPresentation.RowHeight * paneScale;
+        float pad = JetInventoryPresentation.Pad * paneScale;
+        float rowScale = paneScale * JetInventoryPresentation.RowTextScale;
 
         // Panel: a plate with a keyline frame (the native pane's dark line background).
+        // P1038b — the same opacity rule the Jet readout plate uses (JetHudRenderer.DrawReadout),
+        // so the HUD behind cannot clutter the table.
         var panel = new RectangleF(left, top, width, height);
-        _painter.FillPlate(panel, 0.78f);
+        _painter.FillPlate(panel, ReadoutPlateOpacity);
 
-        // Header: own-ship / hull title centred in the top cap, with the column caption in
-        // the bottom cap (the native ShipNameImage owns the top cap, dialog.mdl:1803-1807).
+        // Title: own-ship / hull name centred in the top cap (native ShipNameImage,
+        // dialog.mdl:1803-1807). P1038b — the title's run box is taller than the native cap
+        // at scale, so its top is clamped to the plate instead of starting above it.
         if (pane.ShipName.Length > 0)
         {
             Vector2 nameSize = _painter.Measure(pane.ShipName, large: false, paneScale);
-            _painter.Text(pane.ShipName, new(left + (width - nameSize.X) * 0.5f,
-                top + (cap - nameSize.Y) * 0.5f), large: false, paneScale, _painter.Primary);
+            float nameY = MathF.Max(top, top + (cap - nameSize.Y) * 0.5f);
+            _painter.Text(pane.ShipName, new(left + (width - nameSize.X) * 0.5f, nameY),
+                large: false, paneScale, _painter.Primary);
         }
-        Vector2 headerSize = _painter.Measure(InventoryHeader, large: false, paneScale);
-        _painter.Text(InventoryHeader, new(left + JetInventoryPresentation.KeyColumn * paneScale,
-            top + height - cap + (cap - headerSize.Y) * 0.5f), large: false, paneScale, _painter.Dim);
+
+        // P1038b — the column captions live in their own band UNDER the title cap, each
+        // over the column it names, at the table font, inside the plate's padding. The
+        // three leading cells are narrow in native units, so each caption starts no earlier
+        // than the previous one's measured end plus a gap: the words never overlap.
+        Vector2 captionSize = _painter.Measure("X", large: false, rowScale);
+        float captionY = top + cap + (JetInventoryPresentation.HeaderRow * paneScale - captionSize.Y) * 0.5f;
+        float captionLimit = left + width - pad;
+        float captionGap = 4f * paneScale;
+        float captionCursor = 0f;
+        ReadOnlySpan<JetInventoryPresentation.HeaderColumn> headers = JetInventoryPresentation.HeaderColumns;
+        for (int i = 0; i < headers.Length; i++)
+        {
+            JetInventoryPresentation.HeaderColumn header = headers[i];
+            float headerWidth = _painter.Measure(header.Label, large: false, rowScale).X;
+            float x = MathF.Max(left + header.X * paneScale, captionCursor);
+            x = MathF.Min(x, MathF.Max(left + pad, captionLimit - headerWidth));
+            _painter.Text(header.Label, new(x, captionY), large: false, rowScale, _painter.Dim);
+            captionCursor = x + headerWidth + captionGap;
+        }
 
         for (int i = 0; i < rows; i++)
         {
             HudInventoryRow row = pane.Rows[i];
-            float rowTop = top + cap + rowH * i;
-            float textY = rowTop + (rowH - 12f * paneScale) * 0.5f;
-            DrawInventoryRow(row, i, left, textY, rowTop, rowH, paneScale, width);
+            float rowTop = top + cap + JetInventoryPresentation.HeaderRow * paneScale + rowH * i;
+            Vector2 textSize = _painter.Measure("X", large: false, rowScale);
+            float textY = rowTop + (rowH - textSize.Y) * 0.5f;
+            DrawInventoryRow(row, i, left, textY, rowTop, rowH, paneScale, rowScale, width, textSize.Y, pad);
         }
     }
 
-    private const string InventoryHeader = "SLOT KEY PART            QTY  STATE    STATS";
+    /// <summary>The Jet readout plate's opacity (P1036/P1037): a Jet plate keeps the world
+    /// behind it visible but cannot let HUD text through it. P1038b — the F4 pane uses the
+    /// same value instead of its own weaker 0.78.</summary>
+    private const float ReadoutPlateOpacity = 0.82f;
 
     private void DrawInventoryRow(in HudInventoryRow row, int index, float left, float textY,
-        float rowTop, float rowH, float paneScale, float width)
+        float rowTop, float rowH, float paneScale, float rowScale, float width, float textHeight, float pad)
     {
         // The row text uses the table font (a fraction of the pane scale) so the §5.6 stat
         // columns fit the native anchor; the title keeps the full pane scale.
-        float rowScale = paneScale * JetInventoryPresentation.RowTextScale;
         float Column(float nativeUnits) => left + nativeUnits * paneScale;
 
         if (row.Kind == HudInventoryRowKind.Observers)
@@ -642,7 +722,7 @@ public sealed partial class JetHudRenderer
         // state word (a shape, never colour alone).
         if (row.IsEmpty)
         {
-            float x0 = Column(3f), x1 = left + width - 3f * paneScale;
+            float x0 = Column(JetInventoryPresentation.Pad * 0.5f), x1 = left + width - pad * 0.5f;
             float y0 = rowTop + 1f * paneScale, y1 = rowTop + rowH - 1f * paneScale;
             DashedLine(new(x0, y0), new(x1, y0), _painter.Hairline, _painter.Dim);
             DashedLine(new(x0, y1), new(x1, y1), _painter.Hairline, _painter.Dim);
@@ -660,29 +740,38 @@ public sealed partial class JetHudRenderer
             _painter.Text("A", new(quantityX + 30f * paneScale, textY), large: false, rowScale, _painter.Hot);
 
         // State: MOUNT/ARM with a segmented progress bar, READY for an armed launcher.
+        // P1038b — the bar sits UNDER the state word, below the measured text line and its
+        // gap; it can never cross the word (the P1038 bar struck through MOUNT/ARM).
         float stateX = Column(JetInventoryPresentation.StateColumn);
         if (JetInventoryPresentation.StateWord(row, out float? progress) is { } state)
         {
             _painter.Text(state, new(stateX, textY), large: false, rowScale,
                 row.ReadyState is 1 or 2 ? _painter.Dim : _painter.Primary);
             if (progress is { } fraction)
-                SegmentedBar(stateX, rowTop + rowH * 0.62f,
+            {
+                float barHeight = MathF.Max(1f, _painter.Hairline * 2f);
+                float barY = textY + textHeight + JetInventoryPresentation.ProgressBarGap * rowScale;
+                barY = MathF.Min(barY, rowTop + rowH - barHeight - 1f * paneScale);
+                SegmentedBar(stateX, barY + barHeight * 0.5f,
                     JetInventoryPresentation.ProgressBarWidth * paneScale, fraction, _painter.Primary);
+            }
         }
 
-        // Stats columns: the row's own StatsText split into the Jet vocabulary. A run is
-        // drawn only while it fits the pane: at 800×480 the tail of a long stat stack is the
-        // one abbreviation the compact pane makes (the value stays in the shared model).
+        // Stats columns: the row's own StatsText split into the Jet vocabulary. Every run
+        // must end inside the pane's inner padding; a run that cannot fit is not drawn at
+        // all (its label and value stay in the shared model) instead of being clipped at
+        // the plate edge — the stated abbreviation rule for a long stat stack.
         float statsX = Column(JetInventoryPresentation.StatsColumn);
         float cursor = statsX;
-        float limit = left + width - 4f * paneScale;
+        float limit = left + width - pad;
+        float trailingGap = 4f * rowScale;
         int runs = CachedStats(index, row);
         for (int i = 0; i < runs; i++)
         {
             JetInventoryPresentation.StatRun run = _statRuns[index][i];
             float labelWidth = _painter.Measure(run.Label, large: false, rowScale).X;
             float valueWidth = _painter.Measure(run.Value, large: false, rowScale).X;
-            if (cursor + labelWidth + valueWidth + 3f * rowScale > limit) break;
+            if (cursor + labelWidth + valueWidth + trailingGap > limit) break;
             _painter.Text(run.Label, new(cursor, textY), large: false, rowScale, _painter.Dim);
             cursor += labelWidth + 3f * rowScale;
             _painter.Text(run.Value, new(cursor, textY), large: false, rowScale, _painter.Primary);

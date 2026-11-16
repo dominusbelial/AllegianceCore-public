@@ -9593,3 +9593,22 @@ untouched areas and both **3/3 pass alone** (≈2 s each):
 `P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live` (already ledgered) and
 `CommandedDroneBuildKeyLiveTests.Live_client_commands_builder_drone_to_build_creating_real_station` (new entry —
 real loopback server under full-sweep load; P1038 changes no buy, drone or command code).
+
+## 2026-11-16 — P1038b Jet layout fixes, Fast sweep (final tree)
+
+One completed sweep on the final tree (master `5d33543d` + the P1038b working-tree changes, Jet-only presentation
+code + `tools/hud2-proof`): **13,558 tests, 328.5 s**, **2 failed / 7 not executed**, 4 Fast executions over the
+calibrated 10 s limit. Infrastructure checks passed (Browser 12, Update 55, Lobby 209); MonoGame 5,723 passed /
+4 not executed; the two failures are ledgered flake families and both pass **3/3 alone**:
+
+| Method | Sweep observation | Alone |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | destination `SHIP_STATUS` held only the old sector, 24 ms | **3/3 pass** (≈0.38–0.40 s) — the ledgered warp-receipt family (entries above) |
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | `B never saw A's death (IsDead never latched)`, 5 s | **3/3 pass** (≈1 s) — the ledgered asynchronous death-receipt family (entries above) |
+
+The run also reported `Test coverage differs: missing 1468 cases` — a consequence of the two failed suites (their
+remaining cases were not executed), not of a discovery change. The four calibrated-limit offenders are timing-only
+and already ledgered for their families (`P796VariedLoadoutTests…civ: 35` 12.8 s, `SC2NaniteSupportTests…civ: 25`
+18.1 s, `P814GunnerTests.P814b…` 14.9 s, `SC2NaniteSupportTests…civ: 3` 12.4 s). No tier, limit or assertion was
+relaxed; P1038b changes no sim, server, wire, audio or buy/drone code. Raw log:
+`~/allegiance-evidence/P1038B/fast-tier-20261116T232035/` (`summary.json` + the two `*-main.log`).

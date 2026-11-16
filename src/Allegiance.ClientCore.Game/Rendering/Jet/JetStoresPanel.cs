@@ -34,6 +34,18 @@ public static class JetStoresPanel
     /// a segmented bar (3 px) fits inside a row.</summary>
     public const float RowPitch = 18f;
 
+    /// <summary>P1038b — the minimum free gap between two store rows, in standard-stroke
+    /// units (× scale). The row pitch is the MEASURED line height plus this gap
+    /// (<see cref="RowHeight(float, float)"/>), so two rows can never touch however tall
+    /// the HUD font is at the current density (the P1038 defect: 1080p rows merged on a
+    /// bright backdrop).</summary>
+    public const float RowGap = 3f;
+
+    /// <summary>P1038b — the gap between a store's value and the segmented bar drawn
+    /// beside it, in standard-stroke units (× scale). The bar never runs across a glyph
+    /// (P1038 defect: HULL/SHLD bars struck through their own words).</summary>
+    public const float BarGap = 6f;
+
     /// <summary>Segmented-bar geometry (physical px per segment at scale 1). The bar is
     /// eight segments with 1 px gaps: fill is shape, not a second colour.</summary>
     public const float BarWidth = 64f;
@@ -71,14 +83,26 @@ public static class JetStoresPanel
     /// <summary>The block's bottom edge (screen y, +Y down).</summary>
     public static float Bottom(float viewportHeight) => viewportHeight - BottomInset;
 
-    /// <summary>Top edge of row <paramref name="index"/> (0 = first row under the
-    /// header). Rows run downward from the header.</summary>
-    public static float RowTop(float viewportHeight, bool compact, float scale, int index)
-        => Bottom(viewportHeight) - (RowCount(compact) - index) * RowPitch * scale;
+    /// <summary>P1038b — the pitch of one row: the MEASURED text line height plus
+    /// <see cref="RowGap"/> (never below <see cref="RowPitch"/>), so consecutive rows keep a
+    /// real gap at every font density instead of merging.</summary>
+    public static float RowHeight(float textHeight, float scale)
+        => MathF.Max(RowPitch * scale, textHeight + RowGap * scale);
 
-    /// <summary>Top edge of the <c>STORES</c> header, one pitch above row 0.</summary>
-    public static float HeaderTop(float viewportHeight, bool compact, float scale)
-        => RowTop(viewportHeight, compact, scale, 0) - RowPitch * scale;
+    /// <summary>Top edge of row <paramref name="index"/> (0 = first row under the
+    /// header). Rows run downward from the header and the block stays bottom-anchored, so
+    /// a taller measured row pushes the header up rather than off the viewport.</summary>
+    public static float RowTop(float viewportHeight, bool compact, float rowHeight, int index)
+        => Bottom(viewportHeight) - (RowCount(compact) - index) * rowHeight;
+
+    /// <summary>Top edge of the <c>STORES</c> header, one measured row above row 0.</summary>
+    public static float HeaderTop(float viewportHeight, bool compact, float rowHeight)
+        => RowTop(viewportHeight, compact, rowHeight, 0) - rowHeight;
+
+    /// <summary>P1038b — the vertical centre-line of a segmented bar that sits beside a
+    /// row's value: the row's text line centred on the bar's own height.</summary>
+    public static float BarY(float rowTop, float textHeight, float height)
+        => rowTop + (textHeight - height) * 0.5f;
 
     /// <summary>True when a gauge's fraction is at the shared critical threshold
     /// (<paramref name="kind"/> ENERGY keeps its own lower threshold).</summary>
@@ -157,4 +181,21 @@ public static class JetStoresPanel
 
     /// <summary>True when any annunciator is lit (the row then exists at all).</summary>
     public static bool AnyAnnunciator(Annunciators set) => set != Annunciators.None;
+
+    /// <summary>P1038b — the gap between an annunciator/caution icon and the word it
+    /// introduces, in standard-stroke units (× scale).</summary>
+    public const float IconGap = 4f;
+
+    /// <summary>P1038b — the drawn size of an icon glyph: at least the cap height of the
+    /// word it introduces, so the mark is legible instead of a 2–4 px speck (the P1038
+    /// defect). The word stays beside it, so state never depends on the icon or the hue.</summary>
+    public static float IconSize(float capHeight) => MathF.Max(capHeight, 6f);
+
+    /// <summary>P1038b — the capital ink height of a text line. A sprite font's measured
+    /// height is its LINE SPACING (22 px at scale 1 for the 8 pt HUD font) while the
+    /// capitals occupy about half of it; icon glyphs and their audit floor use this value,
+    /// so a mark reads at the letters' size rather than at the whole line box.</summary>
+    public const float CapInkFraction = 0.5f;
+
+    public static float CapHeight(float measuredLineHeight) => measuredLineHeight * CapInkFraction;
 }

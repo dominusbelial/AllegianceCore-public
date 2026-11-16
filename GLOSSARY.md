@@ -1076,6 +1076,24 @@ list in **reverse**.
   proof scenes, `PITCH +05` numeral) land in the same story. Tests:
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetStoresCautionTests.cs`; report:
   `docs/reports/JET_STORES_CAUTION_P1038.md`.
+- **Jet layout rules (P1038b, skin story 4/9 follow-up)** — the readability contract of the same three widgets
+  plus the lock cue. **Measured row pitch**: a text line's `MeasureString` height is the font's LINE SPACING (22 px
+  at scale 1, ~half of it capital ink), so the stores block's pitch is `RowHeight(textHeight, scale) =
+  max(18·scale, textHeight + 3·scale)` and the compact block drops the `STORES` header to stay clear of the speed
+  readout plate. **Bars beside/under, never through**: the stores' segmented bars sit to the right of the reading
+  (`BarGap`), the F4 `MOUNT`/`ARM` bars under the state word (`ProgressBarGap`), both drawn in measured gaps.
+  **Icons at cap height**: annunciator and caution glyphs are `JetStoresPanel.IconSize(CapHeight(lineHeight))` and
+  are reported to the optional `IJetGlyphAudit` channel (`JetVectorPainter.Glyph`), which the proof uses to pin the
+  minimum icon size; the compact block keeps the words only. **Padded plates**: the caution panel's width is the
+  measured widest row + `pad` on every side, right edge at `JetCautionModel.RightInset × scale`; the F4 pane keeps
+  `JetInventoryPresentation.Pad` inside its plate, a `KEY SLOT PART QTY STATE STATS` caption band
+  (`HeaderRow`) under the hull title, and the readout-plate opacity (0.82). **Lock cue**: the designator keeps its
+  native `1.05 × radius` size and the lock is a 16-segment RING of radius `√2·LockCueHalf + LockClearance`
+  (`JetTargetGeometry.LockCueHalf`/`LockRingRadius`/`LockRingSegment`), so the native `radiusBracket + 40·(1−lock)`
+  shrink still drives it and a full lock closes just outside the box corners. The proof's layout audit
+  (`tools/hud2-proof --jet`) now measures **stroke-vs-text**, **text-outside-plate**, **text-off-screen** and
+  **icon glyph size** per scene (`jet-capture.json` schema 5). Report:
+  `docs/reports/JET_LAYOUT_FIXES_P1038B.md`.
 
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)

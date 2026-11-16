@@ -348,7 +348,7 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         // marker column; the active row gets a filled square.
         HudInventoryRow row = pane.Rows[0];
         Assert.True(row.Selected);
-        int markerStrokes = selected.linesInColumn(MarkerColumn(1080, 1920), 20f, rowIndexTop(0, 1080, pane.Rows.Count));
+        int markerStrokes = selected.linesInColumn(MarkerColumn(1080, 1920), 20f, rowIndexTop(0, 1920, 1080, pane.Rows.Count));
         Assert.True(markerStrokes >= 4, $"expected the selected marker box, got {markerStrokes} strokes");
     }
 
@@ -398,7 +398,8 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         Assert.True(cautionLines.Count >= 2);
         // The stores do not pass their three-row band.
         float bottom = JetStoresPanel.Bottom(480f);
-        float top = JetStoresPanel.HeaderTop(480f, true, ModernHudScale.Core(1f, 1f, 480));
+        float compactScale = ModernHudScale.Core(1f, 1f, 480);
+        float top = JetStoresPanel.HeaderTop(480f, true, JetStoresPanel.RowHeight(12f * compactScale, compactScale));
         foreach (var run in surface.TextRuns.Where(r => r.Text is "HULL" or "SHLD" or "ENG" or "GUN"))
             Assert.InRange(run.Y, top - 1f, bottom + 1f);
     }
@@ -440,45 +441,49 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         }
     }
 
-    // ── P1037 follow-ups ─────────────────────────────────────────────────
+    // ── P1038b follow-ups (P1037/P1038 geometry pins) ────────────────────
     [Theory]
     [InlineData(0.0f)]
     [InlineData(0.25f)]
     [InlineData(0.62f)]
     [InlineData(1.0f)]
-    public void The_designator_stays_inside_the_lock_diamond_with_a_gap(float fraction)
+    public void The_lock_ring_encloses_the_native_size_designator_with_a_gap(float fraction)
     {
         const float radius = 120f;
-        float diamond = JetTargetGeometry.LockDiamondHalf(
+        float lockHalf = JetTargetGeometry.LockCueHalf(
             fraction >= 1f ? MissileLockFeedback.LockState.Full : MissileLockFeedback.LockState.Partial,
             fraction, radius, 400f, 1f);
+        // The designator keeps its native half-span (1.05 × the projected radius).
         float natural = JetTargetGeometry.DesignatorHalf(radius, 1f, 400f);
-        float half = JetTargetGeometry.DesignatorHalfInsideLock(natural, diamond, 1f);
-
-        // Corner distance along the diamond's diagonal vs the diamond's own edge there.
-        float corner = half * MathF.Sqrt(2f);
-        // A diamond's boundary along the corner diagonal is radius/√2 away.
-        float edge = diamond * JetTargetGeometry.InverseSqrt2;
-        Assert.True(corner <= edge - 1f,
-            $"designator corner {corner:0.##} reaches past the diamond edge {edge:0.##} at lock {fraction}");
+        Assert.Equal(126f, natural, 1);
+        // The ring is √2·lockHalf + clearance around the centre, so it always lies outside
+        // the designator's corner (√2·natural) by at least the clearance.
+        float ring = JetTargetGeometry.LockRingRadius(lockHalf, 1f);
+        float corner = natural * MathF.Sqrt(2f);
+        Assert.Equal(JetTargetGeometry.Sqrt2, MathF.Sqrt(2f), 4);
+        Assert.True(ring - corner >= JetTargetGeometry.LockClearance - 1e-3f,
+            $"ring {ring:0.##} does not clear the corner {corner:0.##} at lock {fraction}");
     }
 
     [Fact]
-    public void The_native_lock_shrink_still_drives_the_diamond_size()
+    public void The_native_lock_shrink_still_drives_the_ring_size()
     {
-        float open = JetTargetGeometry.LockDiamondHalf(MissileLockFeedback.LockState.Partial, 0f, 120f, 400f, 1f);
-        float half = JetTargetGeometry.LockDiamondHalf(MissileLockFeedback.LockState.Partial, .5f, 120f, 400f, 1f);
-        float full = JetTargetGeometry.LockDiamondHalf(MissileLockFeedback.LockState.Full, 1f, 120f, 400f, 1f);
+        float open = JetTargetGeometry.LockCueHalf(MissileLockFeedback.LockState.Partial, 0f, 120f, 400f, 1f);
+        float half = JetTargetGeometry.LockCueHalf(MissileLockFeedback.LockState.Partial, .5f, 120f, 400f, 1f);
+        float full = JetTargetGeometry.LockCueHalf(MissileLockFeedback.LockState.Full, 1f, 120f, 400f, 1f);
         Assert.True(open > half);
         Assert.True(half > full);
-        // Native radiusBracket + 40·(1−lock): the open end is the full size plus 40 px.
+        // Native radiusBracket + 40·(1−lock): open is the full size plus 40 px, so the ring
+        // radius shrinks by 40·√2 as the lock completes.
         Assert.Equal(40f, open - full, 1);
+        Assert.Equal(40f * JetTargetGeometry.Sqrt2,
+            JetTargetGeometry.LockRingRadius(open, 1f) - JetTargetGeometry.LockRingRadius(full, 1f), 1);
         // The native clip is kept: at the screen edge the bracket shrinks to the edge gutter.
-        Assert.True(JetTargetGeometry.LockDiamondHalf(MissileLockFeedback.LockState.Full, 1f, 900f, 30f, 1f) <= 42f);
+        Assert.True(JetTargetGeometry.LockCueHalf(MissileLockFeedback.LockState.Full, 1f, 900f, 30f, 1f) <= 42f);
     }
 
     [Fact]
-    public void At_1080p_a_locked_designator_reads_clear_of_the_diamond_strokes()
+    public void At_1080p_a_locked_designator_reads_clear_of_the_ring_strokes()
     {
         var surface = new Recorder();
         using var jet = Jet(surface);
@@ -488,14 +493,15 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         HudModel model = Model(target: target, lockState: lockState);
         jet.Draw(model, Frame());
 
-        float diamond = JetTargetGeometry.LockDiamondHalf(lockState.State, lockState.Fraction, 120f, 1160f, 1f);
-        // Every designator text run starts right of the diamond's right vertex (or ends
-        // left of the left vertex): no readout can cross a lock stroke.
+        float lockHalf = JetTargetGeometry.LockCueHalf(lockState.State, lockState.Fraction, 120f, 1160f, 1f);
+        float ring = JetTargetGeometry.LockRingRadius(lockHalf, 1f);
+        // Every designator text run starts right of the ring's right vertex (or ends left of
+        // its left vertex): no readout can cross a lock stroke.
         foreach (var run in surface.TextRuns)
         {
             if (run.Text is not ("HOSTILE" or "Enemy fighter" or "FRIEND" or "NEUTRAL")) continue;
-            Assert.True(run.X >= 1160f + diamond + 4f || run.X + run.Width <= 1160f - diamond - 4f,
-                $"readout {run.Text}@{run.X:0.#} crosses the diamond radius {diamond:0.#}");
+            Assert.True(run.X >= 1160f + ring + 4f || run.X + run.Width <= 1160f - ring - 4f,
+                $"readout {run.Text}@{run.X:0.#} crosses the lock ring radius {ring:0.#}");
         }
     }
 
@@ -533,7 +539,7 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         // The stores block sits at the same physical column and row pitch as at 1080p.
         var storesHeader = surface.run("STORES")!.Value;
         Assert.Equal(JetStoresPanel.Left(scale), storesHeader.X, 1);
-        Assert.Equal(JetStoresPanel.HeaderTop(2160f, false, scale), storesHeader.Y, 1);
+        Assert.Equal(JetStoresPanel.HeaderTop(2160f, false, JetStoresPanel.RowHeight(12f * scale, scale)), storesHeader.Y, 1);
         // And no label covers a caption or a readout plate at 4K either.
         RectangleF speedCaption = surface.Caption(JetHudRenderer.SpeedCaptionText);
         foreach (var run in surface.TextRuns.Where(r => r.Text != JetHudRenderer.SpeedCaptionText))
@@ -564,6 +570,275 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
         output.WriteLine($"P1038 JetHudRenderer.Draw (stores+caution+inventory): {bytes} B / 100000 frames = {bytes / 100000d} B/frame");
         Assert.Equal(0, bytes);
+    }
+
+    // ── P1038b — the layout defects, geometry-pinned (no pixel goldens) ───
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(800, 480)]
+    public void The_F4_column_captions_sit_under_the_title_and_above_every_row(int width, int height)
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudInventoryPane pane = InventoryPane();
+        jet.Draw(Model(inventory: pane, inventoryVisible: true, inventorySlide: 1f),
+            new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+
+        float paneScale = JetInventoryPresentation.Scale(height);
+        float left = JetInventoryPresentation.Left(width, height);
+        float top = JetInventoryPresentation.Top(pane.Rows.Count, width, height, 1f);
+        float paneWidth = JetInventoryPresentation.Width(width, height);
+        float firstRowTop = rowIndexTop(0, width, height, pane.Rows.Count);
+        var paneRect = new RectangleF(left, top, paneWidth, JetInventoryPresentation.Height(pane.Rows.Count, height));
+
+        string[] captions = ["KEY", "SLOT", "PART", "QTY", "STATE", "STATS"];
+        var runs = new List<TextRun>();
+        foreach (string caption in captions)
+        {
+            TextRun run = surface.run(caption)!.Value;
+            runs.Add(run);
+            // Under the hull title, above the first row, inside the plate.
+            Assert.InRange(run.Y, top, firstRowTop - 1f);
+            Assert.True(run.X >= paneRect.X && run.X + run.Width <= paneRect.X + paneRect.Width,
+                $"{caption} leaves the pane at {width}x{height}");
+        }
+        // P1038b — the captions never overlap each other (the three leading cells are
+        // narrow in native units).
+        for (int i = 0; i < runs.Count; i++)
+            for (int j = i + 1; j < runs.Count; j++)
+                Assert.False(Overlaps(new RectangleF(runs[i].X, runs[i].Y, runs[i].Width, runs[i].Height), runs[j]),
+                    $"{captions[i]} overlaps {captions[j]} at {width}x{height}");
+        // The band is the pane's own header row, not a stolen inventory line.
+        Assert.Equal(top + JetInventoryPresentation.CapHeight * paneScale,
+            JetInventoryPresentation.HeaderTop(pane.Rows.Count, width, height, 1f), 1);
+    }
+
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(800, 480)]
+    public void The_F4_progress_bar_lies_below_the_state_word(int width, int height)
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudInventoryPane pane = InventoryPane();
+        jet.Draw(Model(inventory: pane, inventoryVisible: true, inventorySlide: 1f),
+            new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+
+        float paneScale = JetInventoryPresentation.Scale(height);
+        float stateX = JetInventoryPresentation.Left(width, height)
+            + JetInventoryPresentation.StateColumn * paneScale;
+        foreach (var (word, rowName) in new[] { ("MOUNT", "Turret weapon"), ("ARM", "SRM Dumbfire 3") })
+        {
+            TextRun run = surface.run(word)!.Value;
+            int rowIndex = 0;
+            while (rowIndex < pane.Rows.Count && pane.Rows[rowIndex].Name != rowName) rowIndex++;
+            Assert.True(rowIndex < pane.Rows.Count, $"{rowName} missing from the fixture");
+            float rowTop = rowIndexTop(rowIndex, width, height, pane.Rows.Count);
+            float rowH = JetInventoryPresentation.RowHeight * paneScale;
+            // The bar's first segment starts exactly at the state column, in this row.
+            var bars = surface.Fills.Where(f => MathF.Abs(f.Min.X - stateX) <= .5f
+                && f.Size.Y <= 4f && f.Min.Y >= rowTop && f.Min.Y + f.Size.Y <= rowTop + rowH + .5f).ToList();
+            Assert.NotEmpty(bars);
+            foreach (var bar in bars)
+            {
+                Assert.True(bar.Min.Y >= run.Y + run.Height,
+                    $"{word} bar at {bar.Min.Y:0.#} crosses the word {word} ({run.Y:0.#}..{run.Y + run.Height:0.#})");
+                Assert.InRange(bar.Min.Y + bar.Size.Y, rowTop, rowTop + JetInventoryPresentation.RowHeight * paneScale);
+            }
+        }
+    }
+
+    [Fact]
+    public void The_stores_segmented_bar_sits_beside_its_value_never_across_the_glyphs()
+    {
+        const int width = 1920, height = 1080;
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = Model();
+        jet.Draw(model, new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+
+        float scale = ModernHudScale.Core(1f, 1f, height);
+        foreach (string word in new[] { "HULL", "SHLD" })
+        {
+            TextRun label = surface.run(word)!.Value;
+            HudGauge gauge = model.Gauges.Single(g => g.Kind == (word == "HULL" ? GaugeKind.Hull : GaugeKind.Shield));
+            // The store row's own reading (the same text appears on the throttle tape).
+            TextRun value = surface.TextRuns.First(r => r.Text == Percent(gauge.Fraction)
+                && MathF.Abs(r.Y - label.Y) < 1f);
+            var bars = surface.Fills.Where(f => f.Size.Y <= 4f && f.Min.X > value.X + value.Width
+                && f.Min.Y >= label.Y - 2f && f.Min.Y <= label.Y + label.Height + 2f).ToList();
+            Assert.NotEmpty(bars);
+            foreach (var bar in bars)
+            {
+                // Beside the reading, after a real gap: the bar starts past the value's ink.
+                Assert.True(bar.Min.X >= value.X + value.Width + JetStoresPanel.BarGap * scale - 0.5f,
+                    $"{word} bar at {bar.Min.X:0.#} touches its reading");
+                // And it never runs through either glyph box.
+                Assert.False(Overlaps(new RectangleF(bar.Min.X, bar.Min.Y, bar.Size.X, bar.Size.Y), label));
+                Assert.False(Overlaps(new RectangleF(bar.Min.X, bar.Min.Y, bar.Size.X, bar.Size.Y), value));
+            }
+        }
+    }
+
+    [Fact]
+    public void Store_rows_keep_a_measured_line_height_with_a_real_gap()
+    {
+        // The pitch is the measured line height plus the gap, never the old fixed 18 px.
+        Assert.Equal(30f + JetStoresPanel.RowGap, JetStoresPanel.RowHeight(30f, 1f), 3);
+        Assert.Equal(JetStoresPanel.RowPitch * .5f,
+            JetStoresPanel.RowHeight(2f, .5f), 3);
+        // The gap is at least 2·scale px at every density (the brief's floor).
+        foreach (float scale in new[] { 0.667f, 1f, 1.5f, 2f })
+        {
+            float textHeight = 22f * scale;
+            Assert.True(JetStoresPanel.RowHeight(textHeight, scale) - textHeight >= 2f * scale - 1e-3f,
+                $"row gap under 2·scale at scale {scale}");
+        }
+        // At 1080p the drawn store rows are a full measured line apart (HULL, SHLD, ENG).
+        {
+            var surface = new Recorder();
+            using var jet = Jet(surface);
+            jet.Draw(Model(), Frame());
+            float scale = ModernHudScale.Core(1f, 1f, 1080);
+            float textHeight = 12f * scale;
+            float pitch = JetStoresPanel.RowHeight(textHeight, scale);
+            Assert.Equal(pitch, surface.run("SHLD")!.Value.Y - surface.run("HULL")!.Value.Y, 2);
+            Assert.Equal(pitch, surface.run("ENG")!.Value.Y - surface.run("SHLD")!.Value.Y, 2);
+            Assert.True(pitch >= textHeight + 2f * scale - 1e-3f);
+        }
+        // At 800×480 the block keeps its three compact rows, each one pitch apart.
+        {
+            var surface = new Recorder();
+            using var jet = Jet(surface);
+            jet.Draw(Model(), new HudDrawFrame(new Viewport(0, 0, 800, 480), null, false));
+            float scale = ModernHudScale.Core(1f, 1f, 480);
+            float pitch = JetStoresPanel.RowHeight(12f * scale, scale);
+            Assert.Equal(pitch, surface.run("ENG")!.Value.Y - surface.run("HULL")!.Value.Y, 2);
+            Assert.Equal(pitch, surface.run("GUN")!.Value.Y - surface.run("ENG")!.Value.Y, 2);
+        }
+    }
+
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(800, 480)]
+    public void Annunciator_and_caution_icons_are_drawn_at_the_cap_height(int width, int height)
+    {
+        float scale = ModernHudScale.Core(1f, 1f, height);
+        float cap = JetStoresPanel.CapHeight(12f * scale);
+
+        var annunciators = new Recorder();
+        using (var jet = Jet(annunciators))
+            jet.Draw(Model(eye: true, cloak: true, autopilot: true, vectorLock: true, carriedFlag: true,
+                carriedArtifact: true), new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+        var icons = annunciators.Glyphs.Where(g => g.Id.StartsWith("annunciator:", StringComparison.Ordinal)).ToList();
+        if (JetStoresPanel.Compact(height))
+        {
+            // P972 §4.5 — the compact block keeps the words only (no icon), so the state is
+            // never carried by a glyph that would be too small at this scale.
+            Assert.Empty(icons);
+            foreach (string word in new[] { "EYE", "CLK", "AUTO", "VLOCK", "FLAG", "ART" })
+                Assert.Contains(word, annunciators.Seen);
+        }
+        else
+        {
+            Assert.Equal(6, icons.Count);
+            foreach (var icon in icons)
+            {
+                Assert.True(icon.Box.Height >= cap - .5f,
+                    $"{icon.Id} icon {icon.Box.Height:0.#} shorter than the cap height {cap:0.#}");
+                Assert.True(icon.Minimum >= cap - .5f);
+            }
+        }
+
+        var caution = new Recorder();
+        using (var jet = Jet(caution))
+            jet.Draw(Model(flashing: true), new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+        var marks = caution.Glyphs.Where(g => g.Id.StartsWith("caution:", StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(marks);
+        foreach (var mark in marks)
+            Assert.True(mark.Box.Height >= cap - .5f,
+                $"{mark.Id} icon {mark.Box.Height:0.#} shorter than the cap height {cap:0.#}");
+    }
+
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(800, 480)]
+    public void The_caution_panel_pads_every_row_inside_its_plate(int width, int height)
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = Model(flashing: true, hullFraction: .05f, energyFraction: .03f,
+            console: new HudConsoleText { CriticalTips = new[] { new HudNotice("Reloading ammo...", true, 1) } });
+        jet.Draw(model, new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+
+        float scale = ModernHudScale.Core(1f, 1f, height);
+        TextRun header = surface.run("MASTER CAUTION")!.Value;
+        RectangleF panel = surface.Plates().First(p => Contains(p, header));
+        // The plate ends at the same edge gutter the other Jet plates keep.
+        Assert.Equal(width - JetCautionModel.RightInset * scale, panel.X + panel.Width, 1);
+        // Every row (and the header) keeps inner padding on all four sides.
+        float pad = 6f * scale;
+        foreach (TextRun run in surface.TextRuns.Where(r => r.Y >= header.Y - 1f && r.Y <= panel.Y + panel.Height))
+        {
+            Assert.True(run.X >= panel.X + pad - .5f, $"{run.Text} enters the left padding");
+            Assert.True(run.X + run.Width <= panel.X + panel.Width - pad + .5f, $"{run.Text} leaves the right padding");
+            Assert.InRange(run.Y, panel.Y, panel.Y + panel.Height);
+        }
+    }
+
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(800, 480)]
+    public void The_F4_stat_runs_end_inside_the_pane_padding(int width, int height)
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudInventoryPane pane = InventoryPane();
+        jet.Draw(Model(inventory: pane, inventoryVisible: true, inventorySlide: 1f),
+            new HudDrawFrame(new Viewport(0, 0, width, height), null, false));
+
+        float paneScale = JetInventoryPresentation.Scale(height);
+        float right = JetInventoryPresentation.Left(width, height) + JetInventoryPresentation.Width(width, height);
+        float pad = JetInventoryPresentation.Pad * paneScale;
+        foreach (TextRun run in surface.TextRuns)
+        {
+            // The cloak row's split stats are the longest stack the pane carries.
+            if (run.Text is not ("CLK STR" or "82%" or "CLK END" or "12 s" or "SHD STR" or "500" or "RECH" or "3 s"))
+                continue;
+            Assert.True(run.X + run.Width <= right - pad + .5f,
+                $"{run.Text} ends {run.X + run.Width:0.#} past the pane's padding {right - pad:0.#}");
+        }
+    }
+
+    [Fact]
+    public void The_F4_pane_plate_uses_the_readout_plate_opacity()
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudInventoryPane pane = InventoryPane();
+        jet.Draw(Model(inventory: pane, inventoryVisible: true, inventorySlide: 1f), Frame());
+
+        var body = surface.Fills.OrderByDescending(f => f.Size.X * f.Size.Y).First();
+        Assert.Equal(jet.Painter.Plate * .82f, body.Color);
+    }
+
+    [Fact]
+    public void The_lock_readout_never_leaves_the_viewport_at_800x480()
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        var target = new HudTarget(new(483f, 116f), true, "Enemy fighter with a long pilot name", .6f, .3f, true,
+            null, 1250f, 43f, new HudColor(1f, 0f, 0f), 120f);
+        var lockState = new HudLock(new(483f, 116f), MissileLockFeedback.LockState.Partial, 1.0, .62f, 120f);
+        jet.Draw(Model(target: target, lockState: lockState),
+            new HudDrawFrame(new Viewport(0, 0, 800, 480), null, false));
+
+        foreach (TextRun run in surface.TextRuns)
+        {
+            Assert.True(run.X >= 0f && run.Y >= 0f && run.X + run.Width <= 800f && run.Y + run.Height <= 480f,
+                $"{run.Text}@{run.X:0.#},{run.Y:0.#} leaves the 800×480 viewport");
+        }
+        Assert.Contains(surface.TextRuns, run => run.Text == "LOCK");
     }
 
     // ── draw smoke for every state P1037 used ────────────────────────────
@@ -737,9 +1012,10 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         => JetInventoryPresentation.Left(width, height)
            + JetInventoryPresentation.MarkerColumn * JetInventoryPresentation.Scale(height);
 
-    private static float rowIndexTop(int index, int height, int rows)
-        => JetInventoryPresentation.Top(rows, 1920f, height, 1f)
-           + (JetInventoryPresentation.CapHeight + JetInventoryPresentation.RowHeight * index)
+    private static float rowIndexTop(int index, int width, int height, int rows)
+        => JetInventoryPresentation.Top(rows, width, height, 1f)
+           + (JetInventoryPresentation.CapHeight + JetInventoryPresentation.HeaderRow
+              + JetInventoryPresentation.RowHeight * index)
              * JetInventoryPresentation.Scale(height);
 
     private static JetHudRenderer Jet(IJetVectorSurface surface, HudSkinResources? resources = null)
@@ -758,10 +1034,11 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
 
     /// <summary>Records every submission; the metrics are a fixed 6×12 grid so the geometry
     /// assertions are deterministic and device-free.</summary>
-    private sealed class Recorder : IJetVectorSurface
+    private sealed class Recorder : IJetVectorSurface, IJetGlyphAudit
     {
         private readonly List<(Vector2 A, Vector2 B, Color Color, float Width)> _segments = new();
         private readonly List<(Vector2 Min, Vector2 Size, Color Color)> _fills = new();
+        private readonly List<(string Id, RectangleF Box, float Minimum)> _glyphs = new();
         private readonly List<TextRun> _runs = new();
         private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
         private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
@@ -783,6 +1060,12 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         public void End() { }
         public void Line(Vector2 a, Vector2 b, float width, Color color) => _segments.Add((a, b, color, width));
         public void Fill(Vector2 min, Vector2 size, Color color) => _fills.Add((min, size, color));
+
+        /// <summary>P1038b — the icon boxes the renderer reports to the audit channel.</summary>
+        public void Glyph(string id, RectangleF box, float minimumHeight) => _glyphs.Add((id, box, minimumHeight));
+
+        public IReadOnlyList<(string Id, RectangleF Box, float Minimum)> Glyphs => _glyphs;
+        public IReadOnlyList<(Vector2 Min, Vector2 Size, Color Color)> Fills => _fills;
 
         public void Text(string text, Vector2 position, bool large, float scale, Color color)
         {

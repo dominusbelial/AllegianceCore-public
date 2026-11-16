@@ -20,9 +20,20 @@ public static class JetInventoryPresentation
     public const float ContentWidth = 480f;
 
     /// <summary>Row pitch and end caps: the native pane's own values, so the pane occupies
-    /// the same vertical band and slides the same 190 px.</summary>
+    /// the same vertical band and slides the same 190 px. P1038b adds the labelled column
+    /// header band that sits under the hull title (<see cref="HeaderRow"/>).</summary>
     public const float RowHeight = InventoryPaneLayout.RowHeight;
     public const float CapHeight = InventoryPaneLayout.CapHeight;
+
+    /// <summary>P1038b — the labelled column-caption band under the hull title, in native
+    /// px units (× pane scale). The P1038 pane drew the caption on its LAST row, over the
+    /// Cargo/Fuel row; the caption belongs at the top, under the title, and the pane grows
+    /// by this band instead of stealing a row's line.</summary>
+    public const float HeaderRow = 14f;
+
+    /// <summary>P1038b — inner padding on every side of the pane, in native px units
+    /// (× pane scale). No cell or caption may end closer than this to the plate edge.</summary>
+    public const float Pad = 6f;
 
     /// <summary>Native slide distance (px) the open animation travels
     /// (<c>dialog.mdl:5387</c>, 0.5 s) — the same offset the shared pane applies.</summary>
@@ -42,9 +53,30 @@ public static class JetInventoryPresentation
     /// native row font at the full pane scale cannot fit the stat columns).</summary>
     public const float RowTextScale = 0.72f;
 
-    /// <summary>Progress bar (MOUNT / ARM) width inside the state column.</summary>
+    /// <summary>Progress bar (MOUNT / ARM) inside the state column. P1038b — the bar is
+    /// drawn UNDER the state word with a measured gap (<see cref="ProgressBarGap"/>), never
+    /// across the glyphs it belongs to.</summary>
     public const float ProgressBarWidth = 44f;
-    public const float ProgressBarHeight = 8f;
+    public const float ProgressBarHeight = 3f;
+    public const float ProgressBarGap = 2f;
+
+    /// <summary>P1038b — the caption of one column, drawn over the column it names. The
+    /// P1038 single string put SLOT before KEY (they sit at 26 and 8 native px) and ran
+    /// past the plate; six measured captions cannot.</summary>
+    public readonly record struct HeaderColumn(float X, string Label);
+
+    /// <summary>The column captions in column order (left to right, native px units).</summary>
+    public static ReadOnlySpan<HeaderColumn> HeaderColumns => _headerColumns;
+
+    private static readonly HeaderColumn[] _headerColumns =
+    [
+        new(KeyColumn, "KEY"),
+        new(MarkerColumn, "SLOT"),
+        new(NameColumn, "PART"),
+        new(QuantityColumn, "QTY"),
+        new(StateColumn, "STATE"),
+        new(StatsColumn, "STATS"),
+    ];
 
     /// <summary>The compact layout floor (P1036/P1037 rule).</summary>
     public const float CompactHeight = 700f;
@@ -74,19 +106,21 @@ public static class JetInventoryPresentation
            + (1f - Math.Clamp(slide, 0f, 1f)) * SlideDistance;
 
     public static float Height(int rowCount, float viewportHeight)
-        => (CapHeight * 2f + RowHeight * rowCount) * Scale(viewportHeight);
+        => (CapHeight * 2f + HeaderRow + RowHeight * rowCount) * Scale(viewportHeight);
 
     public static float Top(int rowCount, float viewportWidth, float viewportHeight, float slide)
         => Bottom(viewportWidth, viewportHeight, slide) - Height(rowCount, viewportHeight);
 
-    /// <summary>The <c>SLOT / KEY / PART</c> header band inside the top cap.</summary>
+    /// <summary>P1038b — the top edge of the column-caption band, directly under the hull
+    /// title cap (the caption belongs at the TOP of the pane, not on its last row).</summary>
     public static float HeaderTop(int rowCount, float viewportWidth, float viewportHeight, float slide)
-        => Top(rowCount, viewportWidth, viewportHeight, slide) + CapHeight * 0.25f * Scale(viewportHeight);
+        => Top(rowCount, viewportWidth, viewportHeight, slide) + CapHeight * Scale(viewportHeight);
 
-    /// <summary>Screen y of row <paramref name="index"/>'s top edge.</summary>
+    /// <summary>Screen y of row <paramref name="index"/>'s top edge (after the title cap
+    /// and the caption band).</summary>
     public static float RowTop(int rowCount, float viewportWidth, float viewportHeight, float slide, int index)
         => Top(rowCount, viewportWidth, viewportHeight, slide)
-           + (CapHeight + RowHeight * index) * Scale(viewportHeight);
+           + (CapHeight + HeaderRow + RowHeight * index) * Scale(viewportHeight);
 
     /// <summary>One labelled stat run of a row (<c>RNG 800m</c>).</summary>
     public readonly record struct StatRun(string Label, string Value);
