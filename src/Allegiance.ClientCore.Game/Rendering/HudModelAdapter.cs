@@ -30,7 +30,8 @@ public static class HudModelAdapter
         HudSnapshotBuffers? buffers = null,
         bool showJoystickIndicator = true,
         int trainingOverlayId = 0,
-        string? controlHint = null)
+        string? controlHint = null,
+        Allegiance.ClientCore.State.MissileTrackState? missileTrack = null)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -48,6 +49,9 @@ public static class HudModelAdapter
             TargetPane = targetPane,
             TargetBearing = bearing is { } b ? Point(b) : null,
             LeaderCommand = leaderCommand, Ripcord = ripcord, Commandee = commandee,
+            // P1038 — the world's incoming-missile snapshot (presentation only; the
+            // native warning loop keeps its own rising edges in Game1.Audio).
+            MissileTrack = missileTrack,
             Diagnostics = diagnostics, Notices = notices ?? Array.Empty<HudNotice>(),
             LastBaseObjectives = lastBaseObjectives ?? Array.Empty<LastBaseHudView>(),
             RadarPulse = radarPulse, RadarMode = radarMode, Chat = chat,

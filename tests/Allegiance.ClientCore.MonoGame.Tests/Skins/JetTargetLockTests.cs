@@ -403,11 +403,17 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         jet.Draw(model, DrawFrame(new Viewport(0, 0, 1920, 1080)));
 
         Assert.Contains("LOC Alystra", surface.Seen);
-        Assert.DoesNotContain(HullWord, surface.Seen);
-        Assert.DoesNotContain(ShieldWord, surface.Seen);
-        Assert.DoesNotContain(TargetSpeedWord, surface.Seen);
-        Assert.DoesNotContain("000", surface.Seen);
-        Assert.DoesNotContain("-1", surface.Seen);
+        // P1038 — the stores block draws its own HULL/SHLD rows from the gauges, so the
+        // target-block assertion is confined to the data block's own band (x ≈ w/2+70).
+        var blockRuns = surface.TextRuns.Where(r => r.X >= 1020f && r.X < 1400f && r.Y > 540f).ToList();
+        foreach (var run in blockRuns)
+        {
+            Assert.NotEqual(HullWord, run.Text);
+            Assert.NotEqual(ShieldWord, run.Text);
+            Assert.NotEqual(TargetSpeedWord, run.Text);
+            Assert.NotEqual("-1", run.Text);
+            Assert.DoesNotContain("000", run.Text);
+        }
         Assert.DoesNotContain(InRangeLabel, surface.Seen);
     }
 

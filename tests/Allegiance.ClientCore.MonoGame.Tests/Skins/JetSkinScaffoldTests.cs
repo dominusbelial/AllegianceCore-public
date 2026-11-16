@@ -364,24 +364,40 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         }
         // Coverage is the elements Jet itself draws (story 2 adds the flight-path
         // marker and the ladder's roll reference; P1037 adds the whole target, lock,
-        // lead/aim and order-steering families), not a native claim.
+        // lead/aim and order-steering families; P1038 adds the stores block, the
+        // master-caution panel and the F4 inventory pane), not a native claim.
         Assert.Equal(new[]
         {
             "Accepted and current order turn arrows", "Aim hit-probability predictor",
-            "Ballistic lead marker", "Chase weapon aim without target", "Cockpit centre reticle",
-            "Missile lock flower", "Roll tutorial cue", "Selected target bracket", "Speed",
+            "Ammunition reserve", "Autopilot status", "Ballistic lead marker",
+            "Boundary and crowd warnings", "Carried artifact", "Carried flag",
+            "Chase weapon aim without target", "Cloak active", "Cloak strength and drained state",
+            "Cockpit centre reticle", "Critical tip text lines", "Damage flash timer",
+            "Death banner", "Detection eye", "Energy reserve",
+            "Equipment afterburner endurance", "Equipment afterburner top speed",
+            "Equipment burst rate", "Equipment cloak endurance", "Equipment empty slot affordances",
+            "Equipment mounting progress", "Equipment part identity and key",
+            "Equipment quantity and empty warning", "Equipment selected and active state",
+            "Equipment shield recharge seconds", "Equipment shield strength",
+            "Equipment shot damage", "Equipment weapon range", "Flight equipment inventory pane",
+            "Fuel reserve", "Hull integrity", "Incoming missile warning", "Inventory cargo slots",
+            "Inventory own ship name", "Inventory turret gunner identity", "Kill bonus",
+            "Launcher arming progress", "Lifepod oxygen endurance", "Lives remaining",
+            "Missile lock flower", "Mission kills", "Roll tutorial cue", "Selected target bracket",
+            "Shield charge", "Signature percentage", "Speed",
             "Target hull", "Target in weapon range", "Target kill bonus", "Target name",
             "Target ore", "Target range or sector", "Target shield", "Target side identity",
             "Target speed", "Target time to intercept", "Target type description",
-            "Thrust setting", "Velocity direction marker",
-        }, jet.Coverage!.OrderBy(id => id));
+            "Thrust setting", "Vector lock status", "Velocity direction marker", "Vote banner",
+            "Ripcord countdown",
+        }.OrderBy(id => id, StringComparer.Ordinal), jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal));
     }
 
     [Fact]
     public void Jet_coverage_matches_the_elements_the_scaffold_draws()
     {
         using var jet = Jet(new CountingJetSurface());
-        Assert.Equal(22, jet.Coverage!.Count);
+        Assert.Equal(64, jet.Coverage!.Count);
         Assert.Contains("Cockpit centre reticle", jet.Coverage);
         Assert.Contains("Speed", jet.Coverage);
         Assert.Contains("Thrust setting", jet.Coverage);
@@ -395,6 +411,12 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         Assert.Contains("Aim hit-probability predictor", jet.Coverage);
         Assert.Contains("Chase weapon aim without target", jet.Coverage);
         Assert.Contains("Accepted and current order turn arrows", jet.Coverage);
+        // P1038 — the stores block, the caution panel and the F4 inventory pane.
+        Assert.Contains("Hull integrity", jet.Coverage);
+        Assert.Contains("Ammunition reserve", jet.Coverage);
+        Assert.Contains("Damage flash timer", jet.Coverage);
+        Assert.Contains("Flight equipment inventory pane", jet.Coverage);
+        Assert.Contains("Equipment weapon range", jet.Coverage);
         Assert.Equal(HudSkinIds.Jet, jet.Id);
     }
 

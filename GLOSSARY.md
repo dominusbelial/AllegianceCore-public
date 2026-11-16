@@ -1042,6 +1042,30 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetTargetLockTests.cs`; report:
   `docs/reports/JET_TARGET_LOCK_P1037.md`.
 
+- **Jet stores, master caution and the F4 inventory pane (P1038, skin story 4/9)** — the stores/alerts/inventory
+  families of the Jet skin (P972 §4.3, §4.4 first paragraph, §4.5, §5.1/§5.5/§5.6, phase 3B).
+  **`JetStoresPanel`** (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetStoresPanel.cs`) is the pure stores
+  geometry + gating: bottom-left block (`96·scale`, fixed bottom inset 166 px above the two unscaled bottom-left
+  text lines), eight rows (`HULL`, `SHLD`, `ENG`, `FUEL`/pod `OXY`, `GUN` %/count + empty `A`, `MSL` count + arming
+  state, `KB`/`SIG`, annunciators `EYE`/`CLK nn`/`DRAINED`/`AUTO`/`VLOCK`/`FLAG`/`ART`), the shared low (≤ 0.5,
+  `HudModel.cs:440`) and critical (≤ 0.15, ≤ 0.05 energy, `ModernHudRenderer.cs:166`) thresholds, and three-row
+  compact collapse. **`JetCautionModel`** (`.../Jet/JetCautionModel.cs`) aggregates only existing warnings
+  (missile track from `HudContext.MissileTrack`, damage flash from `HudFrame.Flashing`, pod oxygen, critical/low
+  stores, boundary/crowd from `HudModel.Warnings`, ghost, critical tips, ripcord, lives/kills, vote) in the P972
+  §4.4 priority bands (missile/damage/pod → critical resource → boundary/system), two lines at 800×480. The
+  **master-caution panel** draws them top-right with a shape glyph + words + the shared value, above the throttle
+  tape band, and owns no timer, acknowledgement or sound. **`JetInventoryPresentation`**
+  (`.../Jet/JetInventoryPresentation.cs`) is the Jet F4 pane's pure presentation over the SAME
+  `HudInventoryPane` rows and `InventoryPaneLayout` anchor/slide: `SLOT/KEY/PART`, selected (open box) / active
+  (solid marker), `QTY` + empty `A`, `MOUNT`/`ARM` progress, launcher `READY`, and the row's own `StatsText` split
+  into `RNG`/`DMG`/`ROF`, `SHD STR`/`RECH`, `AB SPD`/`AB END` (INF), `CLK STR`/`CLK END` — never a second
+  derivation. `JetHudRenderer` (partial: `JetHudRenderer.StoresCaution.cs`) grows `Coverage` to 64 ids and draws
+  the three widgets; the P1037 review follow-ups (designator inside the lock diamond with a gap via
+  `JetTargetGeometry.DesignatorHalfInsideLock` / `LockDiamondHalf`, both radii from one projected radius in the
+  proof scenes, `PITCH +05` numeral) land in the same story. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetStoresCautionTests.cs`; report:
+  `docs/reports/JET_STORES_CAUTION_P1038.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

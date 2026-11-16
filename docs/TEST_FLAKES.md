@@ -9533,3 +9533,28 @@ The two calibrated-limit offenders both **passed** and are timing-only, already 
 assertion was relaxed. Raw logs:
 `~/allegiance-evidence/P1037/fast-tier-final.log` and
 `~/allegiance-evidence/P1037/tiers-20261116T190757.501478Z/`.
+
+## 2026-11-16 — P1038 Jet stores/master-caution/F4 inventory, Fast sweep (final tree)
+
+One completed sweep on the final tree (base `497e3507` + the working-tree changes): **14,984 tests, 555.6 s**,
+**4 failed / 7 not executed**, 4 Fast executions over the calibrated 10 s limit. Infrastructure checks were part of
+the run (Lobby 193/0/0 and Update 55/0/0); MonoGame 5,709 passed / 4 not executed; ClientCore.Tests 2,451 passed.
+The whole new surface is headless (`JetStoresCautionTests` 59/59 three times alone at 552/545/566 ms;
+`JetTargetLockTests` 71, `JetFlightSymbologyTests` 62, `JetSkinScaffoldTests` 45 — 303/303 in the Skins namespace),
+and none of the four failures touches a file this story changed (Jet rendering plus two presentation-only model
+fields; no sim, server, wire or audio code).
+
+| Method | Sweep observation | Alone |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | one-ULP boundary (`5.0000000000000009` over the inclusive 5 s bound), 183 ms | ledgered deterministic floating upper-bound family: 3 runs of the class (5 tests) → **1 fail / pass / 1 fail** (≈1 s each) |
+| `Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | defender kept the distant threat, 1 s | **3/3 pass** (≈1 s each) — load flake |
+| `Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | missing create/destroy broadcast, 103 ms | **3/3 pass** (≈0.47 s each) — load flake |
+| `Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | value outside `[4,8]`, 175 ms | **3/3 pass** (6 tests, ≈1 s each) — the ledgered simulation-clock roster family |
+
+The four calibrated-limit offenders are timing-only and already in the ledger for their families
+(`P796VariedLoadoutTests…civ: 35` 13.8 s, `P814GunnerTests.P814b…` 16.3 s,
+`SC2NaniteSupportTests…civ: 25` 13.7 s, `P999CivStrategyTests…civ: 5` 12.1 s). No tier, limit or assertion was
+relaxed. An earlier sweep on the same tree recorded the same class of load flakes
+(`DeadLatchRespawnLiveTests…` 1 fail, `SideEliminationLiveTests…` 1 fail in Core.Tests, both intermittent alone —
+6 runs: pass/pass/fail/fail/pass/pass and pass/fail/pass). Raw logs:
+`~/allegiance-evidence/P1038/fast-tier-final.log` and `~/allegiance-evidence/P1038/fast-tier.log`.

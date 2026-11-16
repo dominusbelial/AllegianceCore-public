@@ -411,6 +411,36 @@ sealed class Proof : Game
             ("jet-friendly", 1920, 1080, "bright"),
             ("jet-friendly", 800, 480, "dark"),
             ("jet-friendly", 800, 480, "bright"),
+            // P1038 — stores (normal / low / critical), pod OXY, cloak/eye/flag, a caution
+            // stack of three or more, the ghost banner, the F4 pane with every row type, the
+            // F4 pane of empty mounts and the two new lock radii (item 0 follow-up b).
+            ("jet-stores", 1920, 1080, "dark"),
+            ("jet-stores", 1920, 1080, "bright"),
+            ("jet-stores", 800, 480, "dark"),
+            ("jet-stores", 800, 480, "bright"),
+            ("jet-stores-low", 1920, 1080, "dark"),
+            ("jet-stores-low", 800, 480, "dark"),
+            ("jet-stores-critical", 1920, 1080, "dark"),
+            ("jet-stores-critical", 800, 480, "dark"),
+            ("jet-pod", 1920, 1080, "dark"),
+            ("jet-pod", 800, 480, "dark"),
+            ("jet-flags", 1920, 1080, "dark"),
+            ("jet-flags", 800, 480, "dark"),
+            ("jet-caution", 1920, 1080, "dark"),
+            ("jet-caution", 1920, 1080, "bright"),
+            ("jet-caution", 800, 480, "dark"),
+            ("jet-caution", 800, 480, "bright"),
+            ("jet-ghost", 1920, 1080, "dark"),
+            ("jet-ghost", 800, 480, "dark"),
+            ("jet-f4", 1920, 1080, "dark"),
+            ("jet-f4", 1920, 1080, "bright"),
+            ("jet-f4", 800, 480, "dark"),
+            ("jet-f4-empty", 1920, 1080, "dark"),
+            ("jet-f4-empty", 800, 480, "dark"),
+            ("jet-locksmall", 1920, 1080, "dark"),
+            ("jet-locksmall", 800, 480, "dark"),
+            ("jet-locklarge", 1920, 1080, "dark"),
+            ("jet-locklarge", 800, 480, "dark"),
             // The shared Classic radar pass with every overlay/label flag set.
             ("radar-overlays", 1920, 1080, "dark"),
             // Instrument-hidden states prove the native gate (pod keeps them,
@@ -483,7 +513,19 @@ sealed class Proof : Game
                     : null,
                 leadGate = model.LeadMarkerVisible, aimGate = model.AimPredictorVisible,
                 orderGate = model.OrderArrowsVisible, chaseGate = model.ChaseAimVisible,
-                lockState = model.Context.Lock is { } l ? new { state = l.State.ToString(), fraction = l.Fraction } : null,
+                lockState = model.Context.Lock is { } l ? new { state = l.State.ToString(), fraction = l.Fraction, screenRadius = l.ScreenRadius } : null,
+                // P1038 item 0a — the measured lock/designator fit of this frame: the
+                // designator's corner distance along the diamond diagonal against the
+                // diamond's own boundary there (a positive gap means it lies inside).
+                lockFit = LockFit(model, width, height),
+                // P1038 — the shared gates the stores / caution / inventory drawing reads.
+                storesVisible = model.InstrumentsVisible && model.Telemetry is not null,
+                gauges = model.Gauges.Select(g => new { kind = g.Kind.ToString(), label = g.Label, fraction = g.Fraction, visible = g.Visible }),
+                caution = CautionSummary(model, height),
+                inventoryVisible = model.Context.InventoryVisible, inventoryRows = model.Context.InventoryPane?.Rows.Count ?? 0,
+                inventorySlide = model.Context.InventorySlide,
+                missileTrack = model.Context.MissileTrack is { } mt ? new { tracked = mt.IsTracked, bestLock = mt.BestLock } : null,
+                flashing = model.Telemetry?.Flashing,
                 targetPaneVisible = model.TargetPaneVisible,
                 offScreenBearing = model.Context.Target is null && model.Context.TargetBearing is not null,
                 attitude = new
@@ -498,7 +540,7 @@ sealed class Proof : Game
             });
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 3, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 4, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1404,6 +1446,11 @@ sealed class Proof : Game
                 // P1037 — target / lock / lead / order scenes (level flight).
                 "jet-target" or "jet-locked" or "jet-lockfull" or "jet-offscreen"
                     or "jet-lead" or "jet-leadout" or "jet-orders" or "jet-friendly"
+                    or "jet-locksmall" or "jet-locklarge"
+                    => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
+                // P1038 — stores / caution / inventory scenes (level flight).
+                "jet-stores" or "jet-stores-low" or "jet-stores-critical" or "jet-pod"
+                    or "jet-flags" or "jet-caution" or "jet-ghost" or "jet-f4" or "jet-f4-empty"
                     => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
                 _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown Jet scene"),
             };
@@ -1425,6 +1472,58 @@ sealed class Proof : Game
                 Throttle = throttle ?? frame.Throttle,
                 AfterburnerActive = afterburner && frame.AfterburnerActive,
             };
+        // P1038 — the Jet stores/caution scenes drive only shared-model values: the six
+        // gauges, the weapon/missile status rows, the own-status flags and the alert mask.
+        bool jetScene = scenario.StartsWith("jet-", StringComparison.Ordinal);
+        if (jetScene)
+        {
+            // The launcher row carries the shared IsLauncher flag (the stores block shows a
+            // launcher's count and arming state); the weapon row's own ammo reading.
+            frame = frame with
+            {
+                WarningMask = ShipWarningMask.None,
+                WeaponSystems = new WeaponStatusRow[]
+                {
+                    new(0, "Rapid fire plasma cannon", true, 160, 200, WeaponStatus.Ready),
+                    new(5, "SRM Dumbfire", false, 2, 6, WeaponStatus.Ready, IsLauncher: true),
+                },
+                Detected = scenario == "jet-flags",
+                Cloaked = scenario == "jet-flags",
+                CloakStrengthPercent = scenario == "jet-flags" ? 70f : null,
+                CarriedArtifact = scenario == "jet-flags",
+            };
+            switch (scenario)
+            {
+                case "jet-stores-low":
+                    frame = frame with { HullFraction = .45f, ShieldFraction = .40f, FuelFraction = .35f };
+                    break;
+                case "jet-stores-critical":
+                    frame = frame with
+                    {
+                        HullFraction = .08f, ShieldFraction = .05f, FuelFraction = .10f,
+                        EnergyFraction = .02f, AmmoFraction = 0f, Flashing = true,
+                    };
+                    break;
+                case "jet-pod":
+                    frame = frame with
+                    {
+                        IsAdriftLifepod = true, OxygenSecondsRemaining = 95,
+                        AmmoFraction = 0f, EnergyFraction = 0f, FuelFraction = .63f,
+                    };
+                    break;
+                case "jet-caution":
+                    frame = frame with
+                    {
+                        HullFraction = .05f, EnergyFraction = .03f, Flashing = true,
+                        WarningMask = ShipWarningMask.OutOfBounds | ShipWarningMask.CrowdedSector,
+                    };
+                    break;
+                case "jet-f4":
+                case "jet-f4-empty":
+                    frame = frame with { HullFraction = .82f, ShieldFraction = .70f };
+                    break;
+            }
+        }
         float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
         bool target = scenario is "combat" or "critical" or "target-full" || scenario.StartsWith("radar-");
         // P980 — one scenario carries every radar overlay flag and one carries every
@@ -1435,10 +1534,11 @@ sealed class Proof : Game
         bool chase = scenario == "chase";
         // P1037 — the Jet target/lock/lead/order scenes drive the same shared model
         // fields the later tests pin; each scene differs only in which of them is set.
-        bool jetTargetScene = scenario is "jet-target" or "jet-locked" or "jet-lockfull" or "jet-orders" or "jet-friendly";
+        bool jetTargetScene = scenario is "jet-target" or "jet-locked" or "jet-lockfull" or "jet-orders"
+            or "jet-friendly" or "jet-locksmall" or "jet-locklarge";
         bool jetOffScreen = scenario == "jet-offscreen";
         bool jetLeadScene = scenario is "jet-lead" or "jet-leadout";
-        bool jetLockScene = scenario is "jet-locked" or "jet-lockfull";
+        bool jetLockScene = scenario is "jet-locked" or "jet-lockfull" or "jet-locksmall" or "jet-locklarge";
         bool jetFriendly = scenario == "jet-friendly";
         bool anyTarget = target || jetTargetScene || jetOffScreen;
         bool flightCockpit = scenario is "flight" or "chat-stress" or "combat" or "critical" or "lifepod" or "training"
@@ -1501,9 +1601,13 @@ sealed class Proof : Game
                 : new(new(1f, 0f), new(0f, 1f), false)
                 : null,
             ChaseAim = chase ? new(w / 2f + 40, h / 2f - 30) : null,
+            // P1038 follow-up — the designator and the lock bracket come from the SAME
+            // projected world radius in a real frame (Game1.Camera.cs derives both from the
+            // target's world radius), so the Jet lock scenes pin both to one value.
             Target = anyTarget && !jetOffScreen ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true,
                 jetFriendly ? "Friendly pilot" : "Enemy fighter with a long pilot name", .6f, .3f,
-                !jetFriendly, full ? .42f : null, 1250, 43, new(1, 0, 0)) : null,
+                !jetFriendly, full ? .42f : null, 1250, 43, new(1, 0, 0),
+                ScreenRadius: jetScene ? LockRadius(scenario) : null) : null,
             TargetPane = anyTarget ? new(true, jetFriendly ? "Friendly pilot" : "Enemy fighter with a long pilot name",
                 "Fighter", jetFriendly ? "Rixian" : "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f,
                 full ? .42f : null, full || jetTargetScene ? 15f : null, true, true,
@@ -1517,8 +1621,12 @@ sealed class Proof : Game
                     .8f, 1, Granted: true, Visible: true) : null,
             Lock = target ? new(new(w / 2 + 200, h / 2 - 80), MissileLockFeedback.LockState.Partial, 1)
                 : jetLockScene ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread),
-                    scenario == "jet-lockfull" ? MissileLockFeedback.LockState.Full : MissileLockFeedback.LockState.Partial,
-                    1, scenario == "jet-lockfull" ? 1f : .62f, 120f) : null,
+                    scenario == "jet-lockfull" || scenario == "jet-locklarge" ? MissileLockFeedback.LockState.Full
+                        : MissileLockFeedback.LockState.Partial,
+                    1, scenario == "jet-lockfull" || scenario == "jet-locklarge" ? 1f : .62f,
+                    LockRadius(scenario)) : null,
+            // P1038 — the world's incoming-missile snapshot for the caution panel.
+            MissileTrack = scenario == "jet-caution" ? new MissileTrackState(true, .72f) : null,
             HitConfirmation = target, PodReturnInstruction = "Shift+Z / G AUTOPILOT TO BASE",
             TargetBearing = anyTarget ? new(.8f, -.2f) : null,
             Notices = new[] { new HudNotice("NO ENEMY FIGHTER IN SECTOR", false, 1), new HudNotice("Reloading ammo...", true, 1) },
@@ -1531,9 +1639,12 @@ sealed class Proof : Game
             // P980 — the native command recipient/verb row (HUD-10).
             Commandee = scenario == "commandee" ? "attack Enemy fighter" : null,
             // P980 — a mid-slide pane (native .5 s slide, dialog.mdl:5387,5404).
-            InventorySlide = scenario == "slide" ? .5f : 0f,
+            // P1038 — the two Jet F4 scenes open the pane fully (slide progress 1).
+            InventorySlide = scenario is "jet-f4" or "jet-f4-empty" ? 1f : scenario == "slide" ? .5f : 0f,
             TargetPaneSlide = scenario == "slide" ? .5f : 0f,
-            InventoryPane = new HudInventoryPane("Fig Adv", new HudInventoryRow[]
+            InventoryPane = scenario == "jet-f4" ? JetInventoryPane()
+                : scenario == "jet-f4-empty" ? JetEmptyInventoryPane()
+                : new HudInventoryPane("Fig Adv", new HudInventoryRow[]
             {
                 new(HudInventoryRowKind.Weapon, "1.", "Gatling Gun", true, true, false, "800m / 15 X 8", 3, 1f, null, null),
                 new(HudInventoryRowKind.Weapon, "2.", "Plasma Cannon", false, false, false, "1200m / 20 X 5", 3, 1f, null, null),
@@ -1545,12 +1656,16 @@ sealed class Proof : Game
                 new(HudInventoryRowKind.Cargo, "S.", "Ammo Pack", false, false, false, "3", 0, 0f, null, 3),
                 new(HudInventoryRowKind.EmptyWeapon, "3.", "<small weapon mount>", false, false, false, null, 0, 0f, null, null),
             }),
-            Contacts = contacts, InventoryVisible = scenario != "systems",
+            Contacts = contacts,
+            // P1038 — the Jet scenes default the F4 pane CLOSED (the pane is its own scene);
+            // the Classic/Modern matrix keeps the fixture's original rule.
+            InventoryVisible = jetScene ? scenario is "jet-f4" or "jet-f4-empty" : scenario != "systems",
             CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
             RadarMode = mode,
             RoundRadar = scenario.StartsWith("radar-"),
-            Ripcord = "Ripcord in: 9",
-            Ghost = scenario == "ghost",
+            Ripcord = jetScene ? (scenario is "jet-caution" or "jet-ghost" ? "Ripcord in: 9" : null)
+                : "Ripcord in: 9",
+            Ghost = scenario is "ghost" or "jet-ghost",
             Console = new HudConsoleText
             {
                 SectorName = "Alystra",
@@ -1558,18 +1673,95 @@ sealed class Proof : Game
                 BoardState = scenario is "flight" or "chat-stress" ? 2 : 0,
                 AcceptedOrder = scenario is "flight" or "combat" ? "defend Garrison" : null,
                 QueuedOrder = scenario is "flight" or "combat" ? "attack Enemy fighter" : null,
-                VoteText = scenario == "critical" ? "Vote: Mutiny against the commander? (Y/N)" : null,
+                VoteText = scenario is "critical" or "jet-caution" ? "Vote: Mutiny against the commander? (Y/N)" : null,
                 OrdinaryTips = new[] { "Welcome to the sector", "Alystra: 3 miners on duty", "Payday: $500" },
                 CriticalTips = new[] { new HudNotice("Reloading ammo...", true, 1) },
                 SideColor = new(0.07f, 0.95f, 0.84f),
                 // P980 — lives/kills badges (native console.cpp:812-821): the
                 // lives badge is only drawn below 10, the kills badge in a deathmatch.
-                Lives = scenario == "ghost" ? 3 : null,
-                MissionKills = scenario == "ghost" ? 7 : null,
-                Deathmatch = scenario == "ghost",
+                Lives = scenario is "ghost" or "jet-ghost" or "jet-caution" ? 3 : null,
+                MissionKills = scenario is "ghost" or "jet-ghost" or "jet-caution" ? 7 : null,
+                Deathmatch = scenario is "ghost" or "jet-ghost" or "jet-caution",
             }
         });
     }
+
+    /// <summary>P1038 item 0a — the measured designator/diamond fit of a frame: the
+    /// designator half-span actually used, the diamond half-span, the corner distance along
+    /// the diamond's diagonal (√2·half) and the diamond's boundary there (radius/√2).</summary>
+    private static object? LockFit(HudModel model, int width, int height)
+    {
+        if (model.Context.Lock is not { } lockState || lockState.State == MissileLockFeedback.LockState.None) return null;
+        float scale = ModernHudScale.Core(1f, 1f, height);
+        float cx = lockState.Center.X, cy = lockState.Center.Y;
+        float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(width - cx, height - cy));
+        float diamond = JetTargetGeometry.LockDiamondHalf(lockState.State, lockState.Fraction,
+            lockState.ScreenRadius, toEdge, scale);
+        float natural = JetTargetGeometry.DesignatorHalf(model.Context.Target?.ScreenRadius, scale, toEdge);
+        bool samePoint = model.Context.Target is { } t
+            && MathF.Abs(t.Center.X - cx) <= 1.5f && MathF.Abs(t.Center.Y - cy) <= 1.5f;
+        float half = samePoint ? JetTargetGeometry.DesignatorHalfInsideLock(natural, diamond, scale) : natural;
+        float corner = samePoint ? half * MathF.Sqrt(2f) : 0f;
+        float edge = diamond * JetTargetGeometry.InverseSqrt2;
+        return new { diamondHalf = diamond, designatorNaturalHalf = natural, designatorHalf = half,
+            cornerDistance = corner, diamondBoundary = edge, gap = edge - corner, inside = edge - corner > 0f };
+    }
+
+    /// <summary>P1038 — the projected target radius the Jet lock scenes pin on BOTH the
+    /// designator and the lock bracket (a small one, the P1037 default, and one near the
+    /// 150 px designator ceiling).</summary>
+    private static float LockRadius(string scenario) => scenario switch
+    {
+        "jet-locksmall" => 22f,
+        "jet-locklarge" => 145f,
+        _ => 120f,
+    };
+
+    /// <summary>P1038 — the caution lines the master-caution panel resolves for this scene
+    /// (kind + priority + value), so the capture JSON records what the panel actually drew.</summary>
+    private static object CautionSummary(HudModel model, int height)
+    {
+        var buffer = new JetCaution[JetCautionModel.MaxCautions];
+        int count = JetCautionModel.Build(model, buffer);
+        var lines = new List<object>(count);
+        for (int i = 0; i < count; i++)
+            lines.Add(new { kind = buffer[i].Kind.ToString(), priority = buffer[i].Priority, hot = buffer[i].Hot,
+                fraction = buffer[i].Fraction, seconds = buffer[i].Seconds, count = buffer[i].Count });
+        return new { count, limit = JetCautionModel.LineLimit(JetStoresPanel.Compact(height)), compact = JetStoresPanel.Compact(height), lines };
+    }
+
+    /// <summary>P1038 — one row of every native inventory kind, for the F4 scene: weapons,
+    /// a turret occupant, observers, a mounting weapon, an arming launcher, shield,
+    /// afterburner, cloak, chaff, and two cargo rows.</summary>
+    private static HudInventoryPane JetInventoryPane() => new("Fig Adv", new HudInventoryRow[]
+    {
+        new(HudInventoryRowKind.Weapon, "1.", "Gatling Gun", true, true, false, "800m / 15 X 8", 3, 1f, null, null),
+        new(HudInventoryRowKind.Weapon, "2.", "Plasma Cannon", false, false, false, "1200m / 20 X 5", 3, 1f, null, null),
+        new(HudInventoryRowKind.Turret, "", "Pilot Beta", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.Observers, "", "Observers: 2", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.Weapon, "Y.", "Turret weapon", false, false, false, null, 1, .45f, null, null),
+        new(HudInventoryRowKind.Magazine, "5.", "SRM Dumbfire 3", false, false, false, "5 / 1125m / 150", 2, 1f, .6f, 5),
+        new(HudInventoryRowKind.Shield, "7.", "Energy Shield", false, false, false, "500 / 3 sec", 3, 1f, null, 1),
+        new(HudInventoryRowKind.Afterburner, "9.", "Booster", false, false, false, "220mps / 8", 3, 1f, null, 1),
+        new(HudInventoryRowKind.Cloak, "8.", "Cloaking Device", false, false, false, "82% / 12 sec", 3, 1f, null, 1),
+        new(HudInventoryRowKind.Chaff, "6.", "Chaff Dispenser", false, false, false, "40", 3, 1f, null, 40),
+        new(HudInventoryRowKind.Cargo, "S.", "Ammo Pack", false, false, false, "3", 0, 0f, null, 3),
+        new(HudInventoryRowKind.Cargo, "", "Fuel Pod", false, false, false, "1", 0, 0f, null, 1),
+    });
+
+    /// <summary>P1038 — the F4 pane of empty mounts (empty weapon/equipment/cargo slots plus
+    /// one out-of-ammo ready weapon, whose row must keep its <c>A</c> cue).</summary>
+    private static HudInventoryPane JetEmptyInventoryPane() => new("Fig Adv", new HudInventoryRow[]
+    {
+        new(HudInventoryRowKind.EmptyWeapon, "1.", "<small weapon mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.EmptyWeapon, "2.", "<small weapon mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.Weapon, "3.", "Gatling Gun", false, false, true, "800m / 15 X 8", 3, 1f, null, null),
+        new(HudInventoryRowKind.EmptyEquipment, "5.", "<missile mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.EmptyEquipment, "7.", "<shield mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.EmptyEquipment, "8.", "<cloak mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.EmptyEquipment, "9.", "<afterburner mount>", false, false, false, null, 0, 0f, null, null),
+        new(HudInventoryRowKind.EmptyCargo, "S.", "<cargo mount>", false, false, false, null, 0, 0f, null, null),
+    });
 
     /// <summary>
     /// P1036 — a deterministic own-ship attitude for the Jet flight scenes: the
@@ -1669,19 +1861,25 @@ sealed class Proof : Game
                 {
                     LayoutBox a = _texts[i], b = _texts[j];
                     if (!Intersects(a, b)) continue;
-                    textOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#}");
+                    textOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} {a.W:0.#}x{a.H:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#}");
                     if (IsCaption(a.Text) || IsCaption(b.Text))
                         captionOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#}");
                 }
             var boxOverlaps = new List<string>();
+            // P1038 — a PANE (the F4 inventory panel, the caution stack) owns its content:
+            // its own rows may sit over the plates underneath, exactly like the native pane
+            // that covers the same side of the HUD.
+            var panes = new List<LayoutBox>();
+            foreach (LayoutBox pane in _fills) if (pane.H > 64f) panes.Add(pane);
             foreach (LayoutBox fill in _fills)
                 foreach (LayoutBox text in _texts)
                 {
                     // A "box" is a readout plate; the 3 px fraction bars are strokes.
-                    if (fill.H < 8f) continue;
+                    if (fill.H < 8f || fill.H > 64f) continue;
+                    if (InAnyPane(text, panes)) continue;
                     if (!Intersects(fill, text)) continue;
                     if (Contains(fill, text)) continue;      // the readout ink on its own plate
-                    boxOverlaps.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} in fill@{fill.X:0.#},{fill.Y:0.#}");
+                    boxOverlaps.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} {text.W:0.#}x{text.H:0.#} in fill@{fill.X:0.#},{fill.Y:0.#} {fill.W:0.#}x{fill.H:0.#}");
                 }
             return new LayoutAudit(_texts.Count, _fills.Count, textOverlaps.Count, captionOverlaps.Count, boxOverlaps.Count,
                 captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray());
@@ -1693,6 +1891,12 @@ sealed class Proof : Game
         private static bool Intersects(LayoutBox a, LayoutBox b)
             => a.X < b.X + b.W - 1f && b.X < a.X + a.W - 1f
             && a.Y < b.Y + b.H - 1f && b.Y < a.Y + a.H - 1f;
+
+        private static bool InAnyPane(LayoutBox text, List<LayoutBox> panes)
+        {
+            foreach (LayoutBox pane in panes) if (Contains(pane, text)) return true;
+            return false;
+        }
 
         private static bool Contains(LayoutBox outer, LayoutBox inner)
             => inner.X >= outer.X - 1.5f && inner.X + inner.W <= outer.X + outer.W + 1.5f

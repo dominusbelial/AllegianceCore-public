@@ -29,18 +29,19 @@ namespace Allegiance.ClientCore.MonoGame.Rendering.Jet;
 /// keeps the tapes (pod speed) and shows the ladder/heading only as its data
 /// allows.</para>
 /// </summary>
-public sealed class JetHudRenderer : IHudSkinRenderer
+public sealed partial class JetHudRenderer : IHudSkinRenderer
 {
     /// <summary>The WIP tag. HUD fonts are ASCII (<see cref="HudFormat.Printable"/>),
     /// so the P972 em dash is drawn as a hyphen.</summary>
     public const string TagText = "JET / GREEN - WIP";
 
-    /// <summary>The <see cref="HudElement"/> ids Jet itself draws from story 3 on:
-    /// velocity indicator (flight-path marker), roll (the ladder's bank reference),
-    /// speed, thrust setting, the centre reticle, the whole selected-target data
-    /// family (designator/pane readouts), the missile lock, lead/aim/chase markers
-    /// and the order turn arrows. The shared passes draw the rest and are not
-    /// claimed here.</summary>
+    /// <summary>The <see cref="HudElement"/> ids Jet itself draws: velocity indicator
+    /// (flight-path marker), roll (the ladder's bank reference), speed, thrust setting, the
+    /// centre reticle, the whole selected-target data family (designator/pane readouts),
+    /// the missile lock, lead/aim/chase markers, the order turn arrows, the P1038 stores
+    /// block (own-ship rows), the master-caution panel (alert/lifecycle rows) and the Jet
+    /// F4 inventory pane (equipment/inventory rows). The shared passes draw the rest and
+    /// are not claimed here.</summary>
     private static readonly string[] CoverageIds =
     [
         "Velocity direction marker", "Roll tutorial cue", "Speed", "Thrust setting", "Cockpit centre reticle",
@@ -51,6 +52,24 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         // P1037 — centre indicators (P972 §4.2, §5.3).
         "Missile lock flower", "Ballistic lead marker", "Aim hit-probability predictor",
         "Chase weapon aim without target", "Accepted and current order turn arrows",
+        // P1038 — the stores block (P972 §4.3, §5.1).
+        "Hull integrity", "Shield charge", "Energy reserve", "Fuel reserve", "Ammunition reserve",
+        "Kill bonus", "Signature percentage", "Detection eye", "Cloak active",
+        "Cloak strength and drained state", "Autopilot status", "Vector lock status",
+        "Carried flag", "Carried artifact",
+        // P1038 — the master-caution panel (P972 §4.4 first paragraph, §5.5 alert rows).
+        "Incoming missile warning", "Damage flash timer", "Lifepod oxygen endurance",
+        "Boundary and crowd warnings", "Death banner", "Critical tip text lines",
+        "Ripcord countdown", "Lives remaining", "Mission kills", "Vote banner",
+        // P1038 — the F4 inventory pane (P972 §4.3 second half, §5.6).
+        "Flight equipment inventory pane", "Equipment part identity and key",
+        "Equipment selected and active state", "Equipment quantity and empty warning",
+        "Equipment mounting progress", "Launcher arming progress", "Equipment weapon range",
+        "Equipment shot damage", "Equipment burst rate", "Equipment shield strength",
+        "Equipment shield recharge seconds", "Equipment afterburner top speed",
+        "Equipment afterburner endurance", "Equipment cloak endurance",
+        "Inventory turret gunner identity", "Inventory cargo slots", "Inventory own ship name",
+        "Equipment empty slot affordances",
     ];
     private static readonly HashSet<string> CoverageSet = new(CoverageIds, StringComparer.Ordinal);
 
@@ -79,6 +98,8 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     private const string ClosureWord = "CLO";
     private const string TargetSpeedWord = "SPD";
     private const string TypeWord = "TYPE";
+    /// <summary>P1038 — the ladder's current-pitch numeral caption (ASCII only).</summary>
+    private const string PitchCaption = "PITCH";
     private const string RangeWord = "RNG";
 
     /// <summary>Numeric ladder labels for −80 … +80 in 10° steps (ASCII only).</summary>
@@ -132,7 +153,9 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     private int _throttleShown = int.MinValue;
     private string _headingText = HeadingUnavailable;
     private int _headingShown = int.MinValue;
-    private string _pitchText = "00";
+    // P1038 — the current-pitch numeral identifies itself ("PITCH +05") instead of
+    // reading as a stray "00" label under the ladder; the position rules are unchanged.
+    private string _pitchText = PitchCaption + " 00";
     private int _pitchShown = int.MinValue;
     private readonly int[] _speedTickKeys = new int[SpeedTickCache];
     private readonly string[] _speedTickText = new string[SpeedTickCache];
@@ -156,6 +179,14 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     private string _lockPercentText = "";
     private string _sectorShown = "";
     private string _sectorText = "";
+
+    /// <summary>P1038 — the heading readout plate drawn this frame (default when the tape
+    /// is hidden). The target readout uses it so a locked designator's text can never land
+    /// on the <c>HDG</c> box at 800×480.</summary>
+    private RectangleF _headingPlate;
+    /// <summary>P1038 — the two tape caption boxes drawn this frame, for the same rule.</summary>
+    private RectangleF _speedCaptionBox;
+    private RectangleF _throttleCaptionBox;
 
     private int _viewportWidth = 1920;
     private int _viewportHeight = 1080;
@@ -217,6 +248,9 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         _painter.Scale = scale;
         _viewportWidth = frame.Viewport.Width > 0 ? frame.Viewport.Width : _viewportWidth;
         _viewportHeight = frame.Viewport.Height > 0 ? frame.Viewport.Height : _viewportHeight;
+        _headingPlate = default;
+        _speedCaptionBox = default;
+        _throttleCaptionBox = default;
 
         if (model.Visible)
         {
@@ -266,6 +300,12 @@ public sealed class JetHudRenderer : IHudSkinRenderer
                 DrawOffScreenTarget(model, w, h, scale);
                 DrawLock(model, w, h, scale);
                 DrawTargetBlock(model, w, h, scale);
+
+                // P1038 — the stores block, the master-caution panel and the Jet F4
+                // inventory pane (P972 §4.3, §4.4), each behind its own shared gate.
+                DrawStores(model, w, h, scale);
+                DrawCaution(model, w, h, scale);
+                DrawInventory(model, w, h, scale);
 
                 DrawTag(w, h, scale);
             }
@@ -445,7 +485,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         if (roundedPitch != _pitchShown)
         {
             _pitchShown = roundedPitch;
-            _pitchText = FormatSigned(roundedPitch);
+            _pitchText = PitchCaption + " " + FormatSigned(roundedPitch);
         }
         Vector2 pitchSize = _painter.Measure(_pitchText, large: false, scale);
         _painter.Text(_pitchText, new(center.X - pitchSize.X * 0.5f,
@@ -543,7 +583,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         _painter.Line(new(cx, caretApex), new(cx + 5f * scale, caretFoot), _painter.Stroke, caret);
 
         // Boxed numeric below the caret, top-anchored so the gap is guaranteed.
-        DrawReadout(_headingText, cx, boxTop, scale, ReadoutAlign.Center, topAnchored: true);
+        _headingPlate = DrawReadout(_headingText, cx, boxTop, scale, ReadoutAlign.Center, topAnchored: true);
     }
 
     /// <summary>
@@ -566,7 +606,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         float tapeTop = cy - halfSpan + labelH + 3f * scale;
         float tapeBottom = cy + halfSpan;
 
-        DrawCaption(SpeedCaption, new(tapeX - 8f * scale, cy - halfSpan), scale);
+        _speedCaptionBox = DrawCaption(SpeedCaption, new(tapeX - 8f * scale, cy - halfSpan), scale);
 
         float visible = halfSpan / perMps;
         int from = (int)MathF.Max(0f, MathF.Floor((speed - visible) / JetFlightGeometry.SpeedTickStep))
@@ -627,7 +667,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
 
         int percent = JetFlightGeometry.ThrottlePercent(throttle);
 
-        DrawCaption(ThrottleCaption, new(tapeX + 8f * scale, cy - halfSpan), scale, rightAligned: true);
+        _throttleCaptionBox = DrawCaption(ThrottleCaption, new(tapeX + 8f * scale, cy - halfSpan), scale, rightAligned: true);
 
         // The boxed readout owns the left margin at the boresight row; IDLE/REV
         // are right-aligned clear of it so the plate can never cover a word
@@ -716,6 +756,12 @@ public sealed class JetHudRenderer : IHudSkinRenderer
 
         float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(w - cx, h - cy));
         float half = JetTargetGeometry.DesignatorHalf(target.ScreenRadius, scale, toEdge);
+        // P1038 — a lock diamond encloses the designator: the square's corners travel √2·half
+        // from the centre, so the designator contracts to stay inside the diamond with a
+        // visible gap while the native per-state sizing still drives the diamond's radius.
+        float lockHalf = LockHalfAt(model, cx, cy, w, h, scale);
+        if (lockHalf > 0f)
+            half = JetTargetGeometry.DesignatorHalfInsideLock(half, lockHalf, scale);
         JetTargetGeometry.TargetRelationship relationship = JetTargetGeometry.Relationship(target.IsEnemy);
         // Engaged autopilot (the shared model's P345 flag) brightens the designator;
         // the shape stays identical.
@@ -747,15 +793,23 @@ public sealed class JetHudRenderer : IHudSkinRenderer
             shield is null ? null : ShieldWord, shield);
         float textWidth = MathF.Max(row1, MathF.Max(row2, row3));
         // Keep the readout clear of the edge tapes: the right side must stop before
-        // the throttle tape, the left side must start after the speed tape.
+        // the throttle tape, the left side must start after the speed tape. P1038 — while
+        // a lock diamond is shown the readout also clears the diamond's right (or left)
+        // vertex, so no text can cross a lock stroke.
         float rightLimit = w - 100f * scale;
         float leftLimit = 92f * scale;
-        bool rightSide = box.X + box.Width + 8f * scale + textWidth <= rightLimit;
-        bool leftSide = box.X - 8f * scale - textWidth >= leftLimit;
+        float clear = MathF.Max(half, lockHalf);
+        bool rightSide = cx + clear + 8f * scale + textWidth <= rightLimit;
+        bool leftSide = cx - clear - 8f * scale - textWidth >= leftLimit;
         float x = rightSide || !leftSide
-            ? box.X + box.Width + 8f * scale
-            : box.X - 8f * scale - textWidth;
+            ? cx + clear + 8f * scale
+            : cx - clear - 8f * scale - textWidth;
         float y = box.Y;
+        // P1038 — a readout that would land on the HDG box or a tape caption (the 800×480
+        // cases) drops below it instead of covering it.
+        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _headingPlate, scale);
+        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _speedCaptionBox, scale);
+        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _throttleCaptionBox, scale);
 
         DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
         y += rowH;
@@ -821,6 +875,35 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         if (filled > 0f) _painter.Surface.Fill(new(x, y), new(filled, height), ink);
     }
 
+    /// <summary>P1038 — push a readout block below <paramref name="box"/> when the two would
+    /// intersect (the heading plate and the two tape captions are fixed HUD furniture the
+    /// target readout must never cover).</summary>
+    private static float BelowIfCrossed(float y, float x, float width, float height, RectangleF box, float scale)
+    {
+        if (box.Width <= 0f) return y;
+        const float margin = 2f;
+        bool overlaps = x < box.X + box.Width + margin * scale && box.X < x + width + margin * scale
+            && y < box.Y + box.Height + margin * scale && box.Y < y + height;
+        return overlaps ? box.Y + box.Height + 4f * scale : y;
+    }
+
+    /// <summary>
+    /// P1038 — the lock diamond's half-span when the shared lock diamond is centred on this
+    /// target (in a real frame both the designator and the lock bracket come from the same
+    /// projected target radius: <c>Game1.Camera.cs</c> <c>ComputeTargetSelectionBracket</c> /
+    /// <c>ComputeLockBracket</c>). Returns 0 when no diamond is shown or the diamond sits
+    /// elsewhere, so the designator keeps its native size and the readout its old offset.
+    /// </summary>
+    private float LockHalfAt(HudModel model, float cx, float cy, float w, float h, float scale)
+    {
+        if (model.Context.Lock is not { } lockState) return 0f;
+        if (lockState.State == MissileLockFeedback.LockState.None) return 0f;
+        if (MathF.Abs(lockState.Center.X - cx) > 1.5f || MathF.Abs(lockState.Center.Y - cy) > 1.5f) return 0f;
+        float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(w - cx, h - cy));
+        return JetTargetGeometry.LockDiamondHalf(lockState.State, lockState.Fraction,
+            lockState.ScreenRadius, toEdge, scale);
+    }
+
     /// <summary>
     /// The off-screen target chevron (P972 §4.3): a chevron on the viewport edge
     /// pointing at a selected target that does not project into view, using the same
@@ -865,10 +948,10 @@ public sealed class JetHudRenderer : IHudSkinRenderer
 
         float toEdge = MathF.Min(MathF.Min(center.X, center.Y), MathF.Min(w - center.X, h - center.Y));
         // The same per-state sizing the Classic flower uses (native
-        // radiusBracket + 40·(1−lock), radarimage.cpp:325-332).
-        float radius = LockBracketStyle.HalfSizeForFraction(lockState.State, lockState.Fraction, lockState.ScreenRadius, toEdge);
-        // The diamond sits just outside the designator so both read at once.
-        radius = MathF.Max(radius, JetTargetGeometry.DefaultHalf * scale + 8f * scale);
+        // radiusBracket + 40·(1−lock), radarimage.cpp:325-332), with the P1037
+        // readability floor — shared with the designator's fit rule (P1038).
+        float radius = JetTargetGeometry.LockDiamondHalf(lockState.State, lockState.Fraction,
+            lockState.ScreenRadius, toEdge, scale);
         bool full = lockState.State == MissileLockFeedback.LockState.Full;
         Color ink = full ? _painter.Hot : _painter.Dim;
         int segments = JetTargetGeometry.LockSegmentsPerSide * 4;
@@ -1285,7 +1368,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     /// <paramref name="topAnchored"/> places the plate's top edge at
     /// <paramref name="y"/> instead of centring it (the heading tape stacks
     /// downwards from the caret so gaps are guaranteed).</summary>
-    private void DrawReadout(string text, float x, float y, float scale, ReadoutAlign align, bool topAnchored = false)
+    private RectangleF DrawReadout(string text, float x, float y, float scale, ReadoutAlign align, bool topAnchored = false)
     {
         Vector2 ink = _painter.Measure(text, large: true, scale);
         float pad = 7f * scale;
@@ -1306,13 +1389,15 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         _painter.Line(new(tickX, box.Y), new(tickX, box.Y + box.Height), _painter.Stroke, _painter.Dim);
         _painter.Text(text, new(box.X + pad, box.Y + (box.Height - ink.Y) * 0.5f),
             large: true, scale, _painter.Primary);
+        return box;
     }
 
-    private void DrawCaption(string text, Vector2 anchor, float scale, bool rightAligned = false)
+    private RectangleF DrawCaption(string text, Vector2 anchor, float scale, bool rightAligned = false)
     {
         Vector2 ink = _painter.Measure(text, large: false, scale);
         Vector2 position = rightAligned ? new(anchor.X - ink.X, anchor.Y - ink.Y) : new(anchor.X, anchor.Y - ink.Y);
         _painter.Text(text, position, large: false, scale, _painter.Dim);
+        return new RectangleF(position.X, position.Y, ink.X, ink.Y);
     }
 
     /// <summary>A dashed line of alternating segments (no allocation).</summary>
