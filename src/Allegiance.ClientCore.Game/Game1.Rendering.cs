@@ -369,6 +369,7 @@ public sealed partial class Game1
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
         _velocityMarker = null; // HUD-8 — recomputed each frame from the own velocity direction
+        _flightReference = null; // P1036 — recomputed each frame; stale poses never survive a skipped frame
         _chaseAim = null;       // HUD-8 — recomputed only in chase/missile without a target
         _orderArrows = null;    // HUD-8 — recomputed from accepted/current order targets
         _lastBaseHud = [];
@@ -545,6 +546,10 @@ public sealed partial class Game1
                 // applied in HudModel) and the accepted/current order turn
                 // arrows for this frame's snapshot.
                 _velocityMarker = ComputeVelocityMarker(view, proj);
+                // P1036 — the Jet flight reference from the same source pose the
+                // velocity marker reads (attitude quaternion + velocity + the
+                // native sector plane). Presentation-only; Classic/Modern ignore it.
+                _flightReference = ComputeFlightReference();
                 _orderArrows = ComputeOrderArrows(view, proj, cameraEye);
                 // P345 — project the player's OWN T-selected autopilot target into
                 // this frame's view and stage the selection-bracket descriptor for
@@ -3546,6 +3551,7 @@ public sealed partial class Game1
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
             velocityMarker: _velocityMarker, chaseAim: _chaseAim, orderArrows: _orderArrows,
+            flightReference: _flightReference,
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
             commandee: CommandeeLabel(), turret: IsTurretGunner(),
             targetPane: ComputeTargetPane(),

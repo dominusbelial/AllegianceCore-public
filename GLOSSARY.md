@@ -996,6 +996,30 @@ list in **reverse**.
   tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetSkinScaffoldTests.cs`;
   report: `docs/reports/JET_SKIN_SCAFFOLD_P1035.md`.
 
+- **Jet flight symbology (P1036, skin story 2/9)** — the core flight instruments of the Jet skin (P972 §4.2,
+  phase 3A). **`HudFlightReference`** (`src/Allegiance.ClientCore.Game/Rendering/HudFlightReference.cs`) is the
+  presentation-only snapshot the model adapter carries in `HudContext.FlightReference`: the own (source) ship's
+  attitude quaternion, its velocity and the **sector reference plane** — the native command-grid plane at
+  `z = 0` with normal +Z (`WinTrek/WinTrek.cpp:3099` constructs `CommandGeo(…, 0.0f, 40)` over the XY grid of
+  `WinTrek/cmdview.cpp:17-115`; the port repeats it in `src/Allegiance.ClientCore.Game/Rendering/CommandGridRenderer.cs`). It is built by
+  `Game1.Camera.ComputeFlightReference` from the same `TrySourcePose` the velocity marker and cameras use, and is
+  null while docked, dead, in the command view without a ship, or before the first own-ship update. It never
+  reads the live world. **`JetFlightGeometry`** (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetFlightGeometry.cs`)
+  is the pure, allocation-free math on top of it: quaternion pitch/roll/heading relative to that plane, the
+  vertical-singularity rule (`JetAttitudeState` keeps the last valid heading/roll, marks it unavailable, never
+  jumps), the native **FPM** (flight-path marker) gate — the rounded non-zero-speed + cockpit + projection +
+  inside-view rule of `WinTrek/indicator.cpp:128-150` — plus the ladder/tape projection helpers and the
+  throttle-percent mapping (idle = 50 %). The **flight-path marker** itself is drawn by `JetHudRenderer` as a
+  circle with two wings and a tail at the port's existing `HudModel.VelocityMarker` (so Jet and Classic agree to
+  the pixel), always distinct from the broken gun cross and any lead marker. The renderer also draws the
+  sector-plane pitch ladder (10° labelled rungs + 5° ticks at ≥1080p, dashed below the plane, off-scale
+  chevrons, rolled by bank), the heading tape with caret and boxed numeric (`HDG --` when unavailable, and none
+  at all inside the vertical cone), and the moving speed/throttle tapes with the idle detent and reverse band;
+  its `Coverage` now names `Velocity direction marker`, `Roll tutorial cue`, `Speed`, `Thrust setting` and
+  `Cockpit centre reticle`. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetFlightSymbologyTests.cs`;
+  report: `docs/reports/JET_FLIGHT_SYMBOLOGY_P1036.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

@@ -9494,3 +9494,22 @@ Five calibrated-limit offenders all **passed** (`SC2NaniteSupportTests.Support_s
 `P796VariedLoadoutTests…civ: 35` 12.3 s, `P814GunnerTests.P814b…` 12.5 s, `P999CivStrategyTests.Every_profile…civ: 5`
 19.8 s, `P1000CivProfileTests.Every_loaded_civ…civ: 3` 11.6 s). No tier, limit or assertion was relaxed.
 Raw logs: `~/allegiance-evidence/P1031/`.
+
+## 2026-11-16 — P1036 Jet flight symbology, one Fast sweep
+
+One completed sweep (base `0783d747` + the working-tree changes): **14,854 tests, 556.5 s**, calibrated Fast
+limit **11.536 s** (P744 factor 1.154), **1 failed / 7 not executed**. Infrastructure checks were part of the run
+(Lobby 193/0/0 and Update 55/0/0). The whole HUD/Jet surface of this story is headless (`JetFlightSymbologyTests`
+62/62 three times alone at 501/570/691 ms; `JetSkinScaffoldTests` 45/45 green), and none of the failures below
+touches a file this story changed.
+
+| Method | Sweep observation | 3× alone |
+| --- | --- | --- |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")` | Assert failure: **14.900000000054206** outside [14.94, 15.06] (1 s) — the exact value ledgered for this family, and P1031's master-code A/B already reproduced it (2 failures in 5 runs) | **3 pass / 1 fail, 4 pass / 0 fail, 3 pass / 1 fail** — the disabled/off theory row only, i.e. the existing clock-observation boundary; no clock, next-match or session code is in this change |
+
+The five calibrated-limit offenders all **passed** and already have timing-only entries above
+(`P814GunnerTests.P814b_TurretCarrier…` 14.1 s, `SC2NaniteSupportTests.Support_selection…civ: 25` 14.3 s,
+`P968PublisherStreamIndexTests.Reliable_backlog…(peers: 400, indexed: False, coalesced: False)` 12.2 s,
+`P999CivStrategyTests.Every_profile…civ: 5` 15.4 s, `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats…`
+17.8 s). No tier, limit or assertion was relaxed. Raw logs:
+`~/allegiance-evidence/P1036/tiers-20261116T164325.094551Z/`.
