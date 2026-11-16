@@ -189,6 +189,8 @@ sealed class Proof : Game
     // P1035 — the Jet story-1 renderer for `--jet` captures (its shared radar pass
     // is the production RadarBracketRenderer; the fixture draws no chat/cargo/tags).
     private JetHudRenderer? _jet;
+    private JetHudRenderer? _jetAudit;
+    private RecordingSurface? _jetAuditSurface;
     private HudSkinDefinition? _jetDefinition;
 
     private static readonly (string Name, Color Color)[] Backdrops =
@@ -258,6 +260,12 @@ sealed class Proof : Game
                 (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
             _jet = new JetHudRenderer(_batch, _white, _small, _big,
                 new HudSettings { Skin = HudSkinIds.Jet, Size = 1f }, resources, _jetDefinition, radarIcons: null);
+            // P1037 — a second Jet renderer bound to a recording surface, so `--jet`
+            // can audit the exact text/plate boxes of every scene (no screenshot-only
+            // claim). It draws the same model through the same production primitives.
+            _jetAuditSurface = new RecordingSurface(_jet.Painter.Surface);
+            _jetAudit = new JetHudRenderer(_jetAuditSurface,
+                new HudSettings { Skin = HudSkinIds.Jet, Size = 1f }, resources, _jetDefinition);
         }
         Console.WriteLine(hasArtwork
             ? "HUD2_ARTWORK present (native gauge/status/indicator art loaded)"
@@ -369,6 +377,40 @@ sealed class Proof : Game
             ("jet-reverse", 1920, 1080, "dark"),
             ("jet-reverse", 800, 480, "dark"),
             ("jet-reverse", 800, 480, "bright"),
+            // P1037 — target designator / lock / lead / order scenes, both required
+            // resolutions on dark and bright backdrops.
+            ("jet-target", 1920, 1080, "dark"),
+            ("jet-target", 1920, 1080, "bright"),
+            ("jet-target", 800, 480, "dark"),
+            ("jet-target", 800, 480, "bright"),
+            ("jet-locked", 1920, 1080, "dark"),
+            ("jet-locked", 1920, 1080, "bright"),
+            ("jet-locked", 800, 480, "dark"),
+            ("jet-locked", 800, 480, "bright"),
+            ("jet-lockfull", 1920, 1080, "dark"),
+            ("jet-lockfull", 1920, 1080, "bright"),
+            ("jet-lockfull", 800, 480, "dark"),
+            ("jet-lockfull", 800, 480, "bright"),
+            ("jet-offscreen", 1920, 1080, "dark"),
+            ("jet-offscreen", 1920, 1080, "bright"),
+            ("jet-offscreen", 800, 480, "dark"),
+            ("jet-offscreen", 800, 480, "bright"),
+            ("jet-lead", 1920, 1080, "dark"),
+            ("jet-lead", 1920, 1080, "bright"),
+            ("jet-lead", 800, 480, "dark"),
+            ("jet-lead", 800, 480, "bright"),
+            ("jet-leadout", 1920, 1080, "dark"),
+            ("jet-leadout", 1920, 1080, "bright"),
+            ("jet-leadout", 800, 480, "dark"),
+            ("jet-leadout", 800, 480, "bright"),
+            ("jet-orders", 1920, 1080, "dark"),
+            ("jet-orders", 1920, 1080, "bright"),
+            ("jet-orders", 800, 480, "dark"),
+            ("jet-orders", 800, 480, "bright"),
+            ("jet-friendly", 1920, 1080, "dark"),
+            ("jet-friendly", 1920, 1080, "bright"),
+            ("jet-friendly", 800, 480, "dark"),
+            ("jet-friendly", 800, 480, "bright"),
             // The shared Classic radar pass with every overlay/label flag set.
             ("radar-overlays", 1920, 1080, "dark"),
             // Instrument-hidden states prove the native gate (pod keeps them,
@@ -397,6 +439,23 @@ sealed class Proof : Game
             {
                 GraphicsDevice.SetRenderTarget(null);
             }
+            // P1037 — the layout audit renders the SAME model through a recording
+            // surface, so the "no label overlaps a caption or a box" rule is measured
+            // from the exact boxes the renderer submits.
+            LayoutAudit audit;
+            GraphicsDevice.SetRenderTarget(target);
+            GraphicsDevice.Clear(backdrop);
+            try
+            {
+                _jetAuditSurface!.Reset();
+                _jetAudit!.ResetFlightState();
+                _jetAudit.Draw(model, new(GraphicsDevice.Viewport, null, false));
+                audit = _jetAuditSurface.Audit();
+            }
+            finally
+            {
+                GraphicsDevice.SetRenderTarget(null);
+            }
             string stem = $"jet-{scenario.Replace("jet-", "")}-{width}x{height}-{backdropName}";
             using (var file = File.Create(Path.Combine(root, stem + ".png")))
                 target.SaveAsPng(file, width, height);
@@ -413,6 +472,20 @@ sealed class Proof : Game
                 throttlePercent = model.Telemetry is { } own
                     ? (int)MathF.Round((Math.Clamp(own.Throttle, -1f, 1f) + 1f) * 0.5f * 100f) : (int?)null,
                 velocityMarkerVisible = model.VelocityMarkerVisible,
+                // P1037 — the shared-model gates the Jet target/lock/lead/order
+                // drawing must agree with.
+                target = model.Context.Target is { } t
+                    ? new { name = t.Name, enemy = t.IsEnemy, distance = t.Distance, closing = t.ClosingSpeed, screenRadius = t.ScreenRadius }
+                    : null,
+                targetPane = model.Context.TargetPane is { } pane
+                    ? new { present = pane.Present, range = pane.Distance, closing = pane.ClosingSpeed, speed = pane.Speed,
+                            tti = pane.TimeToIntercept, sector = pane.SectorName, inRange = pane.InRange }
+                    : null,
+                leadGate = model.LeadMarkerVisible, aimGate = model.AimPredictorVisible,
+                orderGate = model.OrderArrowsVisible, chaseGate = model.ChaseAimVisible,
+                lockState = model.Context.Lock is { } l ? new { state = l.State.ToString(), fraction = l.Fraction } : null,
+                targetPaneVisible = model.TargetPaneVisible,
+                offScreenBearing = model.Context.Target is null && model.Context.TargetBearing is not null,
                 attitude = new
                 {
                     available = attitude.Available, pitch = attitude.PitchDegrees, roll = attitude.RollDegrees,
@@ -420,11 +493,12 @@ sealed class Proof : Game
                     rollValid = attitude.RollValid,
                 },
                 scale, strokePx = MathF.Max(1f, JetVectorPainter.ReferenceStroke * scale),
+                layout = audit,
                 tag = JetHudRenderer.TagText,
             });
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 2, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 3, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1327,6 +1401,10 @@ sealed class Proof : Game
                 "jet-pitched" => (FlightReference(18f, -25f, 210f), 320f, 1f, false),
                 "jet-vertical" => (FlightReference(89.9f, 0f, 0f), 180f, .3f, false),
                 "jet-reverse" => (FlightReference(-10f, 12f, 90f), 40f, -.6f, false),
+                // P1037 — target / lock / lead / order scenes (level flight).
+                "jet-target" or "jet-locked" or "jet-lockfull" or "jet-offscreen"
+                    or "jet-lead" or "jet-leadout" or "jet-orders" or "jet-friendly"
+                    => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
                 _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown Jet scene"),
             };
         }
@@ -1355,6 +1433,14 @@ sealed class Proof : Game
         bool overlays = scenario == "radar-overlays";
         bool full = scenario == "target-full";
         bool chase = scenario == "chase";
+        // P1037 — the Jet target/lock/lead/order scenes drive the same shared model
+        // fields the later tests pin; each scene differs only in which of them is set.
+        bool jetTargetScene = scenario is "jet-target" or "jet-locked" or "jet-lockfull" or "jet-orders" or "jet-friendly";
+        bool jetOffScreen = scenario == "jet-offscreen";
+        bool jetLeadScene = scenario is "jet-lead" or "jet-leadout";
+        bool jetLockScene = scenario is "jet-locked" or "jet-lockfull";
+        bool jetFriendly = scenario == "jet-friendly";
+        bool anyTarget = target || jetTargetScene || jetOffScreen;
         bool flightCockpit = scenario is "flight" or "chat-stress" or "combat" or "critical" or "lifepod" or "training"
             || scenario.StartsWith("radar-") || scenario.StartsWith("jet-");
         var mode = scenario == "radar-overlays" ? RadarMode.All
@@ -1408,19 +1494,33 @@ sealed class Proof : Game
             Camera = scenario == "command" ? CameraMode.Command : chase ? CameraMode.Chase : CameraMode.Cockpit,
             VelocityMarker = flightCockpit ? new(w / 2f - 60, h / 2f + 20) : null,
             FlightReference = flightReference,
-            OrderArrows = flightCockpit ? new(new(1f, 0f), new(0f, 1f), false) : null,
+            // P1037 — the order-steering scene points the accepted and current arrows
+            // in clearly different directions so both chevrons and both words read.
+            OrderArrows = flightCockpit
+                ? scenario == "jet-orders" ? new(new(.6f, -.8f), new(-.7f, .7f), false)
+                : new(new(1f, 0f), new(0f, 1f), false)
+                : null,
             ChaseAim = chase ? new(w / 2f + 40, h / 2f - 30) : null,
-            Target = target ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true, "Enemy fighter with a long pilot name", .6f, .3f, true, full ? .42f : null, 1250, 43, new(1, 0, 0)) : null,
-            TargetPane = target ? new(true, "Enemy fighter with a long pilot name", "Fighter", "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f,
-                full ? .42f : null, full ? 15f : null, true, true,
-                TimeToIntercept: full ? TargetTti.Text(1250f, 260f, 43f) : null) : null,
+            Target = anyTarget && !jetOffScreen ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true,
+                jetFriendly ? "Friendly pilot" : "Enemy fighter with a long pilot name", .6f, .3f,
+                !jetFriendly, full ? .42f : null, 1250, 43, new(1, 0, 0)) : null,
+            TargetPane = anyTarget ? new(true, jetFriendly ? "Friendly pilot" : "Enemy fighter with a long pilot name",
+                "Fighter", jetFriendly ? "Rixian" : "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f,
+                full ? .42f : null, full || jetTargetScene ? 15f : null, true, true,
+                TimeToIntercept: full || jetTargetScene ? TargetTti.Text(1250f, 260f, 43f) : null,
+                ClosingSpeed: anyTarget ? 43f : null) : null,
             // Native draws the ballistic lead only after the hull/relay capability
             // gate succeeds (indicator.cpp:283-330).
-            SelectionBracket = full,
-            Lead = target ? new(new(w / 2 + 100, h / 2 - 50), new(w / 2 + 200, h / 2 - 80), true, .8f, 1, Granted: full, Visible: true) : null,
-            Lock = target ? new(new(w / 2 + 200, h / 2 - 80), MissileLockFeedback.LockState.Partial, 1) : null,
+            SelectionBracket = full || jetTargetScene,
+            Lead = target ? new(new(w / 2 + 100, h / 2 - 50), new(w / 2 + 200, h / 2 - 80), true, .8f, 1, Granted: full, Visible: true)
+                : jetLeadScene ? new(new(w / 2 + 140, h / 2 - 90), new(w / 2 + 200, h / 2 - 120), scenario == "jet-lead",
+                    .8f, 1, Granted: true, Visible: true) : null,
+            Lock = target ? new(new(w / 2 + 200, h / 2 - 80), MissileLockFeedback.LockState.Partial, 1)
+                : jetLockScene ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread),
+                    scenario == "jet-lockfull" ? MissileLockFeedback.LockState.Full : MissileLockFeedback.LockState.Partial,
+                    1, scenario == "jet-lockfull" ? 1f : .62f, 120f) : null,
             HitConfirmation = target, PodReturnInstruction = "Shift+Z / G AUTOPILOT TO BASE",
-            TargetBearing = target ? new(.8f, -.2f) : null,
+            TargetBearing = anyTarget ? new(.8f, -.2f) : null,
             Notices = new[] { new HudNotice("NO ENEMY FIGHTER IN SECTOR", false, 1), new HudNotice("Reloading ammo...", true, 1) },
             Chat = new(scenario == "chat-stress" ? Enumerable.Range(0, 8).Select(i => $"[TEAM] Pilot {i}: " + new string('W', 250)).ToArray() : new[] { "[TEAM] Pilot: defend the base", "[ALL] Enemy: incoming" }, 0, scenario == "chat-stress" ? new string('W', 250) : "returning", true, 1, "[TEAM] "),
             FlightPartsLine = "WEAPONS: GROUP  BOOST: ON  [1:Plasma]", CargoLine = "CARGO 1/5  Ammo pack x3",
@@ -1498,4 +1598,109 @@ sealed class Proof : Game
         if (roll != 0f) orientation.PostRotate(forward, roll);
         return HudFlightReference.FromSim(orientation, forward * 260f, HudFlightReference.SectorUp);
     }
+
+    /// <summary>
+    /// P1037 — a pass-through <see cref="IJetVectorSurface"/> that records every text
+    /// run and fill it submits (delegating the actual drawing to the production
+    /// surface). The renderer's keyline pass submits the same string eight times at
+    /// ±1 px, so a run within 1.6 px of an already-recorded one replaces it: the
+    /// recorded box is the ink run, which is what a pilot sees.
+    /// </summary>
+    private sealed class RecordingSurface : IJetVectorSurface
+    {
+        private readonly IJetVectorSurface _inner;
+        private readonly List<LayoutBox> _texts = new();
+        private readonly List<LayoutBox> _fills = new();
+
+        public RecordingSurface(IJetVectorSurface inner) => _inner = inner;
+
+        public void Begin() => _inner.Begin();
+        public void End() => _inner.End();
+        public void Line(Vector2 a, Vector2 b, float width, Color color) => _inner.Line(a, b, width, color);
+        public Vector2 Measure(string text, bool large, float scale) => _inner.Measure(text, large, scale);
+
+        public void Fill(Vector2 min, Vector2 size, Color color)
+        {
+            _fills.Add(new("#", min.X, min.Y, size.X, size.Y));
+            _inner.Fill(min, size, color);
+        }
+
+        public void Text(string text, Vector2 position, bool large, float scale, Color color)
+        {
+            Vector2 size = _inner.Measure(text, large, scale);
+            Record(_texts, text, position.X, position.Y, size.X, size.Y);
+            _inner.Text(text, position, large, scale, color);
+        }
+
+        private static void Record(List<LayoutBox> list, string text, float x, float y, float w, float h)
+        {
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                LayoutBox run = list[i];
+                if (string.Equals(run.Text, text, StringComparison.Ordinal)
+                    && MathF.Abs(run.X - x) <= 2.5f && MathF.Abs(run.Y - y) <= 2.5f)
+                {
+                    list[i] = new LayoutBox(text, x, y, w, h);   // keep the ink run (submitted last)
+                    return;
+                }
+            }
+            list.Add(new LayoutBox(text, x, y, w, h));
+        }
+
+        public void Reset()
+        {
+            _texts.Clear();
+            _fills.Clear();
+        }
+
+        /// <summary>The layout audit of the frame just drawn: text/text overlaps and
+        /// text/plate intersections (a readout's own ink inside its plate is allowed).</summary>
+        public LayoutAudit Audit()
+        {
+            // The P1036 review rule: no label may overlap a tape caption ("SPD / MPS",
+            // "THR") or a readout box (plate); a readout's own ink inside its plate is
+            // the one allowed case. Text-vs-text is reported as information only, since
+            // independently positioned markers (ladder numerals, order words) can
+            // legitimately share a row of sky.
+            var captionOverlaps = new List<string>();
+            var textOverlaps = new List<string>();
+            for (int i = 0; i < _texts.Count; i++)
+                for (int j = i + 1; j < _texts.Count; j++)
+                {
+                    LayoutBox a = _texts[i], b = _texts[j];
+                    if (!Intersects(a, b)) continue;
+                    textOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#}");
+                    if (IsCaption(a.Text) || IsCaption(b.Text))
+                        captionOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#}");
+                }
+            var boxOverlaps = new List<string>();
+            foreach (LayoutBox fill in _fills)
+                foreach (LayoutBox text in _texts)
+                {
+                    // A "box" is a readout plate; the 3 px fraction bars are strokes.
+                    if (fill.H < 8f) continue;
+                    if (!Intersects(fill, text)) continue;
+                    if (Contains(fill, text)) continue;      // the readout ink on its own plate
+                    boxOverlaps.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} in fill@{fill.X:0.#},{fill.Y:0.#}");
+                }
+            return new LayoutAudit(_texts.Count, _fills.Count, textOverlaps.Count, captionOverlaps.Count, boxOverlaps.Count,
+                captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray());
+        }
+
+        private static bool IsCaption(string text)
+            => text == JetHudRenderer.SpeedCaptionText || text == JetHudRenderer.ThrottleCaptionText;
+
+        private static bool Intersects(LayoutBox a, LayoutBox b)
+            => a.X < b.X + b.W - 1f && b.X < a.X + a.W - 1f
+            && a.Y < b.Y + b.H - 1f && b.Y < a.Y + a.H - 1f;
+
+        private static bool Contains(LayoutBox outer, LayoutBox inner)
+            => inner.X >= outer.X - 1.5f && inner.X + inner.W <= outer.X + outer.W + 1.5f
+            && inner.Y >= outer.Y - 1.5f && inner.Y + inner.H <= outer.Y + outer.H + 1.5f;
+    }
+
+    private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H);
+
+    private sealed record LayoutAudit(int Texts, int Fills, int TextOverlaps, int CaptionOverlaps, int BoxOverlaps,
+        string[] CaptionOverlapSamples, string[] BoxOverlapSamples);
 }

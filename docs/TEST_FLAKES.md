@@ -9513,3 +9513,23 @@ The five calibrated-limit offenders all **passed** and already have timing-only 
 `P999CivStrategyTests.Every_profile…civ: 5` 15.4 s, `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats…`
 17.8 s). No tier, limit or assertion was relaxed. Raw logs:
 `~/allegiance-evidence/P1036/tiers-20261116T164325.094551Z/`.
+
+## 2026-11-16 — P1037 Jet target/lock/closure/lead/order steering, one Fast sweep
+
+One completed sweep (base `f763fed4` + the working-tree changes): **14,925 tests, 547.2 s**, **1 failed / 7 not
+executed**, 2 Fast executions over the calibrated 10 s limit. Infrastructure checks were part of the run (Lobby
+193/0/0 and Update 55/0/0). The whole new surface is headless (`JetTargetLockTests` 71/71 three times alone at
+438/492/484 ms; `JetSkinScaffoldTests` 45 and `JetFlightSymbologyTests` 62 green, 244/244 in the Skins namespace),
+and the failure below does not touch a file this story changed (the change is Jet rendering, one optional
+`HudTargetPane` field and the shared closure helper).
+
+| Method | Sweep observation | 3× alone |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Assert failure: "B never saw A's death (IsDead never latched on B) after 2500 ticks" (4 s) — the same family P1035 ledgered (1 fail, then pass/pass/pass) | **3 pass / 0 fail** (1 s each) — load flake, not this change |
+
+The two calibrated-limit offenders both **passed** and are timing-only, already in the ledger for their families
+(`SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` 15.9 s,
+`P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` 13.9 s). No tier, limit or
+assertion was relaxed. Raw logs:
+`~/allegiance-evidence/P1037/fast-tier-final.log` and
+`~/allegiance-evidence/P1037/tiers-20261116T190757.501478Z/`.

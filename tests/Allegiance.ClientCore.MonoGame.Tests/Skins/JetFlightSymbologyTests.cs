@@ -249,9 +249,14 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
     public void Jet_coverage_names_the_five_drawn_elements()
     {
         using var jet = Jet(new CountingSurface());
-        Assert.Equal(new[] { "Cockpit centre reticle", "Roll tutorial cue", "Speed", "Thrust setting", "Velocity direction marker" },
+        // P1036's five flight ids are still there; P1037 adds the target, lock,
+        // lead/aim and order families on top (22 ids total).
+        Assert.Equal(22, JetHudRenderer.ElementIds.Count);
+        Assert.Equal(JetHudRenderer.ElementIds.OrderBy(id => id, StringComparer.Ordinal),
             jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal));
-        Assert.Equal(5, JetHudRenderer.ElementIds.Count);
+        Assert.Contains("Velocity direction marker", jet.Coverage);
+        Assert.Contains("Selected target bracket", jet.Coverage);
+        Assert.Contains("Missile lock flower", jet.Coverage);
     }
 
     [Fact]

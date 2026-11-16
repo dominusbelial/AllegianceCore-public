@@ -180,7 +180,10 @@ public sealed partial class Game1
                 distance = delta.Length();
                 var targetVelocity = target.Kind == TargetKind.Ship && world.Ships.TryGetValue(target.Id, out var other) && other.Latest is { } otherUpdate
                     ? otherUpdate.Velocity : default;
-                if (distance > .001f) closing = ((ownUpdate.Velocity - targetVelocity) * delta) / distance.Value;
+                // P1037 — the ONE shared closure derivation (positive = separation
+                // decreasing), also read by the bottom target pane so an off-screen
+                // target keeps the same reading.
+                closing = TargetClosingSpeed.Compute(ownUpdate.Position, ownUpdate.Velocity, targetPosition, targetVelocity);
             }
             short? side = target.Kind == TargetKind.Ship && world.Ships.TryGetValue(target.Id, out var selectedShip) ? selectedShip.SideId
                 : target.Kind == TargetKind.Station && world.Stations.TryGetValue(target.Id, out var selectedStation) ? selectedStation.SideId : null;
