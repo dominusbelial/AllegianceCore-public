@@ -81,6 +81,9 @@ public sealed partial class Mission
             (uint)(now * 1000), NextObjectId(), payload, sector.Id, amount, code, true);
         var treasure = new Treasure(data.ObjectId, sector, data, now, this);
         sector.Add(treasure);
+        // P1031 — generated treasures are c_mtSeenBySide (treasureIGC.cpp:167-177):
+        // score the new object before the creation event exports it.
+        sector.RefreshTreasureVisibility(treasure);
         Site.TreasureGeneratedEvent(treasure);
         return treasure;
 

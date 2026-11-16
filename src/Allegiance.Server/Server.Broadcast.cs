@@ -2291,7 +2291,11 @@ public sealed partial class Server
                             // The creation broadcast (SendTreasureSpawnSectorWide /
                             // BroadcastGeneratedTreasure) and the post-SET_CLUSTER
                             // snapshot latch this same mark, so no peer is told
-                            // twice about one treasure.
+                            // twice about one treasure. P1031 — those creation
+                            // paths now send only to sides that already see the
+                            // treasure, so this sweep is the sole delivery for
+                            // every later sighting edge (the old blind creation
+                            // frame latched unseen peers and leaked the drop).
                             if (!treasure.SeenBySide(sideId)) continue;
                             byte[]? packet = null;
                             int told = 0;

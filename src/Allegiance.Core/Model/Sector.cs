@@ -5096,6 +5096,120 @@ public sealed partial class Sector : IClusterIgc
     }
 
     /// <summary>
+    /// P1031 — score ONE just-created treasure against this sector's scanner
+    /// net <b>now</b>, so the creation broadcast can honour side visibility in
+    /// the same tick. Native has no creation broadcast at all: a
+    /// <c>CtreasureIGC</c> is created with <c>c_mtSeenBySide | c_mtPredictable</c>
+    /// (<c>Igc/treasureIGC.cpp:167-177</c>) and reaches a side only through the
+    /// throttled cluster sweep's <c>ShowObject</c> (<c>FedSrv/FedSrv.CPP:10750-10778</c>;
+    /// <c>Igc/clusterIGC.cpp:347-357</c>) or a joining player's seen-only export
+    /// (<c>FedSrv/fsmission.cpp:4224-4231</c>). The port keeps an instant creation
+    /// path for game feel (P797's <c>FM_S_TREASURE</c> sector broadcast); running
+    /// the same per-target scan here makes that path equivalent to the sweep's
+    /// first pass instead of blind — the owner's side sees its own drop at once,
+    /// while a side with no scanner in range learns nothing. The per-tick sweep
+    /// still owns every later edge (the server's cross-side discovery sweep).
+    /// <para>The scan mirrors the sweep's per-target body exactly: same scanner
+    /// enumeration (flying ships / probes / live stations), same own-side and
+    /// P856 allied legs, same <see cref="VisibilityMath.InScannerRange"/> with the
+    /// sector's asteroid occluders, and the same latched flag/last-spotter write.
+    /// A treasure carries no side, so the own-side rule never applies and its
+    /// signature is <c>CmodelIGC</c>'s default 1.0 (<c>Igc/modelIGC.cpp:32</c>).</para>
+    /// </summary>
+    public void RefreshTreasureVisibility(Treasure treasure)
+    {
+        var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
+        void AddScanner(ISideVisible body, short? sideId, Vector3 pos, float radius, float range, float sig,
+            short ot, short oid)
+        {
+            if (sideId is not { } sid) return;
+            if (!scannersBySide.TryGetValue(sid, out var list)) scannersBySide[sid] = list = [];
+            list.Add(new VisibilityParticipant(body, sid, pos, radius, range, sig, ot, oid));
+        }
+
+        foreach (var m in _models)
+        {
+            switch (m)
+            {
+                // Docked / boarded ships are not in the cluster natively
+                // (stationIGC.cpp:282-285; shipIGC.cpp:3632-3643) — the sweep
+                // excludes them as scanners too.
+                case Ship s when s.StationId is not null || s.ParentShip is not null:
+                    break;
+                case Ship s:
+                    AddScanner(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
+                        s.EffectiveScannerRange(), s.EffectiveSignature,
+                        (short)IgcObjectType.Ship, s.Id);
+                    break;
+                case Probe p:
+                    AddScanner(p, p.SideId, p.Position, p.ProbeType.Radius,
+                        p.EffectiveScannerRange(), p.ProbeType.Signature,
+                        (short)IgcObjectType.Probe, p.Id);
+                    break;
+            }
+        }
+        foreach (var st in _stationRuntimes)
+            AddScanner(st, st.SideId, st.Center, st.Radius, st.EffectiveScannerRange(), st.Type.Signature,
+                (short)IgcObjectType.Station, st.StationId);
+
+        IReadOnlyList<short> sideIds = MissionSides is { Count: > 0 } ms
+            ? ms.Select(s => s.Id).Distinct().ToArray()
+            : scannersBySide.Keys.ToArray();
+        if (sideIds.Count == 0) return;
+
+        var occluders = new List<VisibilityMath.SightBody>(_mineable.Count);
+        foreach (var a in _mineable)
+            if (a.Data.Position is { Length: 3 } ap)
+                occluders.Add(new VisibilityMath.SightBody(new Vector3(ap[0], ap[1], ap[2]), a.Radius));
+
+        bool alliedViz = Mission?.AllowAlliedViz == true;
+        var skills = MissionSides?.FirstOrDefault()?.Mission?.Skills;
+        var results = new (bool Seen, VisibilityParticipant Spotter, bool Allied)[sideIds.Count];
+        for (int si = 0; si < sideIds.Count; si++)
+        {
+            if (!scannersBySide.TryGetValue(sideIds[si], out var scanners)) continue;
+            foreach (var scanner in scanners)
+                if (VisibilityMath.InScannerRange(
+                        new VisibilityMath.SightBody(scanner.Position, scanner.Radius), scanner.ScannerRange, Id,
+                        new VisibilityMath.SightBody(treasure.Position, Treasure.PickupRadius), 1.0f, Id, occluders))
+                {
+                    results[si] = (true, scanner, false);
+                    break;
+                }
+        }
+        // P856 — native's allied scan-sharing leg (FedSrv.CPP:10989-11000): a
+        // contact one ally's scanner spotted is visible to its other allies too.
+        if (alliedViz)
+            for (int si = 0; si < sideIds.Count; si++)
+            {
+                if (results[si].Seen) continue;
+                for (int sj = 0; sj < sideIds.Count; sj++)
+                {
+                    if (sj == si || !results[sj].Seen) continue;
+                    if (!Mission!.AreSidesFriendly(sideIds[si], sideIds[sj])) continue;
+                    results[si] = (true, results[sj].Spotter, true);
+                    break;
+                }
+            }
+
+        for (int si = 0; si < sideIds.Count; si++)
+        {
+            short sideId = sideIds[si];
+            var (seen, spotter, allied) = results[si];
+            // The sweep's own first-sight bookkeeping (see
+            // ResolveCrossSideVisibility's write phase): one scouting credit per
+            // first own-scanner sight, so running the scan here does not steal it.
+            if (seen && !allied && !treasure.GetCurrentEye(sideId))
+                skills?.Record(sideId, ShowcaseSkill.Scouting);
+            treasure.SideVisibility.SetSideVisibility(sideId, seen);
+            if (seen)
+                treasure.SideVisibility.SetLastSpotter(sideId, spotter.Ot, spotter.Oid);
+            else
+                treasure.SideVisibility.ClearLastSpotter(sideId);
+        }
+    }
+
+    /// <summary>
     /// P132 — the per-tick cross-side visibility sweep, called from
     /// <see cref="Update"/> alongside the other per-tick passes. Wires P131's
     /// three primitives together for the first time: for every

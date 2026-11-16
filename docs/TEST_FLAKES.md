@@ -9390,3 +9390,25 @@ Six calibrated-limit offenders all passed (`P796VariedLoadoutTests…civ: 35` 16
 17.7 s, `SC2NaniteSupportTests.Support_selection…civ: 25` 18.3 s, `StationCombatLiveTests…` 19.2 s,
 `P968PublisherStreamIndexTests.Reliable_backlog…(peers: 400)` 13.6 s, `P999CivStrategyTests.Every_profile…civ: 5`
 15.7 s). No tier, limit or assertion changed.
+
+## 2026-11-16 — P1031 treasure visibility, one Fast sweep
+
+One completed sweep (base `d15a1482` + the working-tree changes): **14,722 tests, 544.9 s**, calibrated
+Fast limit **11.519 s** (P744 factor 1.152), infrastructure checks **9/0/0**, **5 failed / 3 not executed**.
+Each of the five was repeated in its own process. For the two that did not pass every lone repetition, the
+same test was also run against the master product code (the eight changed product files copied aside with
+`cp`, `git checkout --` restored them, then the copies were put back and the tree rebuilt; **no `git stash`**),
+so the intermittency is attributed to the existing family rather than to this story.
+
+| Method | Alone with the change | Master product code (A/B) | Sweep observation |
+| --- | --- | --- | --- |
+| `WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer` | 3/3 pass (~1 s) | — | Lobby side `-2` read before expected `0` at `:167`; existing side-seating race (entries above) |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (`enabled: False`, `dilation: off`) | Two of three runs had 3 pass / 1 fail, then 4 pass / 1 fail in five runs; 14.9 against [14.94, 15.06] | **2 failures in 5 runs** (14.9 and 14.85) | Countdown receipt window; the same value/assertion is ledgered above. Not caused by the treasure change |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | 3/3 pass (~1 s) | — | Existing asynchronous remote death-receipt intermittency (many entries above) |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | 3/3 pass (0.3 s) | — | Destination `SHIP_STATUS` not collected under the concurrent sweep; ledgered warp-transit family |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 1 failure in 3, then 7/8 pass (8.35) | **1 failure in 8** (8.45) | Stint-timing accumulation window `[4, 8]`; ledgered repeatedly above; baseline fails it too |
+
+Five calibrated-limit offenders all **passed** (`SC2NaniteSupportTests.Support_selection…civ: 25` 14.0 s,
+`P796VariedLoadoutTests…civ: 35` 12.3 s, `P814GunnerTests.P814b…` 12.5 s, `P999CivStrategyTests.Every_profile…civ: 5`
+19.8 s, `P1000CivProfileTests.Every_loaded_civ…civ: 3` 11.6 s). No tier, limit or assertion was relaxed.
+Raw logs: `~/allegiance-evidence/P1031/`.

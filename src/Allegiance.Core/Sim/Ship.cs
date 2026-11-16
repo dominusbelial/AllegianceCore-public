@@ -4689,6 +4689,10 @@ public sealed partial class Ship : Model, IShipIgc
 
         var treasure = new Treasure(data.ObjectId, sector, data, now, Mission);
         sector.Add(treasure);
+        // P1031 — the instant creation broadcast is a side-visibility export
+        // (native treasureIGC.cpp:167-177), so score the new object against the
+        // sector's scanner net before the caller announces it (FedSrv.CPP:10750-10778).
+        sector.RefreshTreasureVisibility(treasure);
         return treasure;
     }
 
@@ -4738,6 +4742,9 @@ public sealed partial class Ship : Model, IShipIgc
 
         var treasure = new Treasure(data.ObjectId, sector, data, now, Mission);
         sector.Add(treasure);
+        // P1031 — same side-visibility refresh as the part drop (a flag treasure
+        // is c_mtSeenBySide too, treasureIGC.cpp:167-177).
+        sector.RefreshTreasureVisibility(treasure);
         return treasure;
     }
 

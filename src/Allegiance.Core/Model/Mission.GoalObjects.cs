@@ -32,10 +32,16 @@ public sealed partial class Mission
                             id, pedestal.StationTypeId, 1, 0, pedestal.Name);
                         PlaceStation(new Station(data, pedestal), sector);
                         var flagPosition = position + new Vector3(0, 0, dz * (50 + pedestal.Radius));
-                        var flag = new DataTreasureIGC([flagPosition.X, flagPosition.Y, flagPosition.Z],
+                        var flagData = new DataTreasureIGC([flagPosition.X, flagPosition.Y, flagPosition.Z],
                             [0, 0, 0], 10 * 24 * 3600, (uint)(now * 1000), NextObjectId(),
                             home.SideId, sector.Id, 0, TreasureCode.Flag, false);
-                        sector.Add(new Treasure(flag.ObjectId, sector, flag, now, this));
+                        var flag = new Treasure(flagData.ObjectId, sector, flagData, now, this);
+                        sector.Add(flag);
+                        // P1031 — the pedestal flag is a side-visible predictable
+                        // treasure (treasureIGC.cpp:167-177), so seed its
+                        // SeenBySide now: the join export and the discovery sweep
+                        // read these flags (fsmission.cpp:4224-4231).
+                        sector.RefreshTreasureVisibility(flag);
                     }
                 }
             }
