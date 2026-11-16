@@ -797,6 +797,80 @@ public class P813cReconnectGraceTests
         Console.WriteLine($"P813C-TURRET: gunner ship {gunnerId} resumed into turret {gunnerShip.TurretId} of carrier {carrierId}");
     }
 
+    /// <summary>⭐ P1025 (R1 F8) — a SEATED connection presenting a parked seat's
+    /// name + token is refused with zero side effects: its own ship stays owned by
+    /// it, the parked ship stays parked inside its window, and the real owner can
+    /// still resume the seat from a fresh connection. Native's logon is once per
+    /// connection (<c>FedSrv.CPP:4830-4831</c>) and native has no resume flow at
+    /// all, so refusing is the reconnect-free model's answer — the alternative
+    /// (retiring the seated ship to make room) is a native rule change P813c
+    /// never asked for and would leave a ship retired that nobody asked about.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Seated_connection_cannot_take_or_retire_a_parked_seat()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        InjectSectorZeroSpawn(server);
+        server.Boot(Config(reconnect: true, graceSeconds: 30));
+        StartMission(server);
+
+        var (dropper, dropperShip) = Seat(server, "DROPPER");
+        var (collector, collectorShip) = Seat(server, "COLLECT", Token + 1);
+        Assert.NotEqual(dropperShip, collectorShip);
+        dropper.Dispose();                            // connection 1 drops: its seat parks
+        Assert.True(PumpUntil(server, () => server.ReconnectParkedShipCount == 1, 800) < 800);
+        Assert.True(InSector(server, dropperShip), "precondition: the dropped seat is being held");
+
+        // The SEATED connection presents the parked name + token.
+        string log = CaptureConsole(() =>
+        {
+            collector.Logon(Request("DROPPER", Token));
+            PumpUntil(server, () => false, 40);       // let the frame reach the dispatcher
+        });
+
+        Assert.Contains("DUPLICATE LOGONREQ", log, StringComparison.Ordinal);
+        Assert.Equal(0, server.ReconnectResumedTotal);
+        Assert.Equal(1, server.ReconnectParkedShipCount);         // the seat is untouched
+        Assert.Equal(dropperShip, server.ReconnectParkedShipId("DROPPER"));
+        Assert.True(InSector(server, dropperShip), "the parked ship must stay parked");
+        Assert.Contains(collectorShip, server.Ships.Select(s => s.Ship.Id));   // no orphan
+
+        // The real owner can still take it back from a fresh connection.
+        using var back = new WireClient();
+        back.Connect(server.BoundPort, "DROPPER");
+        back.Logon(Request("DROPPER", Token));
+        Assert.True(PumpUntil(server, () => server.ReconnectResumedTotal == 1, 4000) < 4000,
+            "the seat must still resume for its owner after the seated connection's attempt");
+        Assert.Equal(dropperShip, back.LastAck!.ShipID);
+        Assert.Equal(0, server.ReconnectParkedShipCount);
+        Assert.Contains(collectorShip, server.Ships.Select(s => s.Ship.Id));   // still the collector's
+        Console.WriteLine($"P1025-F8: seated connection refused; parked ship {dropperShip} resumed by its owner");
+    }
+
+    /// <summary>P1025 (R1 F8) — with reconnect OFF the same frame is the ordinary
+    /// P646 duplicate logon: refused, no second ship, nothing parked. The
+    /// seated-connection guard must not change the default-off path.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Seated_connection_re_logon_with_reconnect_off_allocates_nothing()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        InjectSectorZeroSpawn(server);
+        server.Boot(Config(reconnect: false));
+        StartMission(server);
+
+        var (seated, shipId) = Seat(server, "SEATED");
+        int before = server.Ships.Count();
+        seated.Logon(Request("SEATED"));
+        PumpUntil(server, () => false, 40);
+        Assert.Equal(before, server.Ships.Count());
+        Assert.Contains(shipId, server.Ships.Select(s => s.Ship.Id));
+        Assert.Equal(0, server.ReconnectParkedTotal);
+        Assert.Equal(0, server.ReconnectResumedTotal);
+    }
+
     /// <summary>The CLI switches the rig recipe uses map onto the config (and the
     /// window implies enabled), and the defaults stay the native immediate
     /// removal.</summary>

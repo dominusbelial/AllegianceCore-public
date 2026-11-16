@@ -328,4 +328,215 @@ public sealed class P895UdpTransportTests
         }
         finally { tc.Shutdown(); host.Shutdown(); }
     }
+
+    // ── P1025 (R1 F5): the receive side's own reassembly ceilings ───────────
+
+    /// <summary>A raw ADU2 socket (P1025) that completes the cookie handshake and
+    /// the greeting, then sends records with whatever declared size and fragment
+    /// index the test chooses — the peer-controlled fields F5 is about.</summary>
+    private sealed class RawPeer : IDisposable
+    {
+        public const int Mtu = 1200, Header = 32, RecordHeader = 24, Payload = Mtu - Header - RecordHeader;
+        private readonly Socket _socket;
+        private readonly byte[] _token = new byte[16];
+        private ulong _packet;
+
+        public RawPeer(UdpTransport host, string name = "RAW-PEER")
+        {
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp) { ReceiveTimeout = 2000 };
+            _socket.Connect(IPAddress.Loopback, host.BoundPort);
+            var hello = Packet(64, 1);                    // Hello
+            Random.Shared.NextBytes(hello.AsSpan(8, 16));
+            _socket.Send(hello);
+            var challenge = new byte[1500];
+            int n = _socket.Receive(challenge);
+            Assert.Equal(64, n);
+            Assert.Equal(2, challenge[4]);
+            challenge[4] = 3;                             // Confirm: echo the cookie
+            _socket.Send(challenge, 0, 64, SocketFlags.None);
+            var accept = new byte[1500];
+            int a = _socket.Receive(accept);
+            Assert.Equal(64, a);
+            Assert.Equal(4, accept[4]);
+            accept.AsSpan(32, 16).CopyTo(_token);         // the peer token
+            SendData(3, 0, 0, 0, System.Text.Encoding.UTF8.GetBytes(name));   // greeting
+        }
+
+        private byte[] Packet(int length, byte kind)
+        {
+            var buffer = new byte[length];
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer, UdpTransport.Magic);
+            buffer[4] = kind;
+            _token.CopyTo(buffer, 8);
+            BinaryPrimitives.WriteUInt64LittleEndian(buffer.AsSpan(24), ++_packet);
+            return buffer;
+        }
+        private static void WriteVar(Span<byte> buffer, ref int offset, ulong value)
+        {
+            while (value >= 128) { buffer[offset++] = (byte)((value & 127) | 128); value >>= 7; }
+            buffer[offset++] = (byte)value;
+        }
+        /// <summary>One DATA datagram carrying exactly one record.</summary>
+        public void SendData(byte flags, int key, ulong sequence, int index, ReadOnlySpan<byte> payload, int size = -1)
+        {
+            int declared = size < 0 ? index * Payload + payload.Length : size;
+            var packet = Packet(Mtu, 5);
+            packet[6] = 1;                                 // one record
+            int offset = Header;
+            packet[offset++] = flags;
+            WriteVar(packet, ref offset, (uint)key);
+            WriteVar(packet, ref offset, sequence);
+            WriteVar(packet, ref offset, (uint)declared);
+            if (declared > Payload) WriteVar(packet, ref offset, (uint)index);
+            payload.CopyTo(packet.AsSpan(offset));
+            offset += payload.Length;
+            _socket.Send(packet, 0, offset, SocketFlags.None);
+        }
+        /// <summary>One record declaring <paramref name="size"/> bytes that
+        /// carries only the fragment at <paramref name="index"/>.</summary>
+        public void SendFragment(byte flags, int key, ulong sequence, int size, int index)
+        {
+            int length = Math.Min(Payload, size - index * Payload);
+            var payload = new byte[length];
+            for (int i = 0; i < length; i++) payload[i] = (byte)(key + i);
+            SendData(flags, key, sequence, index, payload, size);
+        }
+        /// <summary>Keep-alive: a 32-byte Ping, so only the idle timeout can end
+        /// the peer (F5's expiry is independent of the peer's liveness).</summary>
+        public void Ping() => _socket.Send(Packet(Header, 6), 0, Header, SocketFlags.None);
+
+        public void Dispose() => _socket.Dispose();
+    }
+
+    /// <summary>⭐ P1025 (R1 F5) — a new incomplete assembly reserves what has
+    /// arrived, not what the peer declares. A record claiming a 64 KiB frame and
+    /// carrying one 1144-byte fragment used to allocate all 64 KiB (and charge
+    /// the 32 MiB send-queue ceiling for it).</summary>
+    [Fact]
+    public void Receive_reassembly_reserves_only_the_bytes_that_arrived()
+    {
+        var hs = new Site();
+        using var host = new UdpTransport(hs) { ReliableAssemblyTimeout = TimeSpan.FromSeconds(30) };
+        host.Host();
+        using var peer = new RawPeer(host);
+        Until(() => hs.Joins.Count == 1, 4000);
+
+        peer.SendFragment(1, 7, 1, size: 64 * 1024, index: 0);
+        Until(() => host.SamplePeerReceive().Assemblies == 1, 4000);
+        var (bytes, assemblies) = host.SamplePeerReceive();
+        Assert.Equal(1, assemblies);
+        Assert.True(bytes < 3 * RawPeer.Payload,
+            $"a 64 KiB frame with one {RawPeer.Payload}-byte fragment reserved {bytes} bytes");
+        Assert.True(bytes < 64 * 1024, $"the declared frame size was allocated up front (reserved {bytes} bytes)");
+        Assert.True(host.SamplePeerQueues().Peers == 1, "the legitimate peer must stay connected");
+        Console.WriteLine($"P1025-F5-ALLOC: one 1144-byte fragment of a declared 64 KiB frame reserved {bytes} bytes");
+    }
+
+    /// <summary>⭐ P1025 (R1 F5) — the per-peer inbound reassembly ceiling. A peer
+    /// that pins large reservations without ever completing a frame is refused
+    /// once it asks for more than <see cref="UdpTransport.DefaultMaxReceiveBytes"/>
+    /// (well under 1 MiB), instead of the 32 MiB send-queue hard cap.</summary>
+    [Fact]
+    public void Per_peer_incomplete_reassembly_is_capped_below_a_megabyte()
+    {
+        var hs = new Site();
+        using var host = new UdpTransport(hs) { ReliableAssemblyTimeout = TimeSpan.FromSeconds(30) };
+        host.Host();
+        using var peer = new RawPeer(host);
+        Until(() => hs.Joins.Count == 1, 4000);
+
+        // Each record is a different stream key whose single fragment sits at a
+        // high index: one 1144-byte datagram asks for ~64 KiB of reservation.
+        long peak = 0;
+        for (int key = 1; key <= 12; key++)
+        {
+            peer.SendFragment(1, key, 1, size: 64 * 1024, index: 56);
+            Thread.Sleep(25);
+            peak = Math.Max(peak, host.SamplePeerReceive().Bytes);
+        }
+        Assert.True(peak <= UdpTransport.DefaultMaxReceiveBytes,
+            $"a peer pinned {peak} bytes of inbound reassembly (ceiling {UdpTransport.DefaultMaxReceiveBytes})");
+        Assert.True(peak < 1024 * 1024, $"the per-peer inbound reassembly ceiling must be well under 1 MiB (peak {peak})");
+        Until(() => hs.Left == 1, 4000);                  // refused, not merely slowed
+        Console.WriteLine($"P1025-F5-CAP: peak inbound reassembly {peak} bytes, then the peer was refused");
+    }
+
+    /// <summary>⭐ P1025 (R1 F5) — the concurrent incomplete-assembly cap. The
+    /// ordered window's reorder depth (4096) also served as the assembly cap,
+    /// so a peer could hold thousands of tiny frame headers at once.</summary>
+    [Fact]
+    public void Concurrent_incomplete_assemblies_are_capped()
+    {
+        var hs = new Site();
+        using var host = new UdpTransport(hs) { ReliableAssemblyTimeout = TimeSpan.FromSeconds(30) };
+        host.Host();
+        using var peer = new RawPeer(host);
+        Until(() => hs.Joins.Count == 1, 4000);
+
+        // Ordered frames (key 0) with distinct sequences leave gaps, so none is
+        // delivered and each keeps its own assembly.
+        for (int seq = 1; seq <= 300; seq++)
+        {
+            peer.SendFragment(1, 0, (ulong)seq, size: 64 * 1024, index: 0);
+            Thread.Sleep(4);
+        }
+        Until(() => hs.Left == 1, 4000);
+        Assert.True(host.SamplePeerReceive().Assemblies <= UdpTransport.MaxAssemblies,
+            $"{host.SamplePeerReceive().Assemblies} incomplete assemblies held (cap {UdpTransport.MaxAssemblies})");
+        Console.WriteLine($"P1025-F5-COUNT: > {UdpTransport.MaxAssemblies} concurrent incomplete assemblies refused");
+    }
+
+    /// <summary>⭐ P1025 (R1 F5) — an incomplete RELIABLE assembly expires. It used
+    /// to live until the peer left, so a 30 s keep-alive held a lost fragment's
+    /// reservation for the whole session.</summary>
+    [Fact]
+    public void Incomplete_reliable_reassembly_expires_while_the_peer_stays_alive()
+    {
+        var hs = new Site();
+        using var host = new UdpTransport(hs) { ReliableAssemblyTimeout = TimeSpan.FromMilliseconds(300) };
+        host.Host();
+        using var peer = new RawPeer(host);
+        Until(() => hs.Joins.Count == 1, 4000);
+
+        peer.SendFragment(1, 0, 1, size: 64 * 1024, index: 0);
+        Until(() => host.SamplePeerReceive().Assemblies == 1, 4000);
+        Assert.Equal(1, host.SamplePeerReceive().Assemblies);
+
+        var until = DateTime.UtcNow.AddSeconds(3);
+        while (host.SamplePeerReceive().Assemblies == 1 && DateTime.UtcNow < until)
+        {
+            peer.Ping();                                  // alive: only the assembly deadline can act
+            Thread.Sleep(50);
+        }
+        Assert.Equal(0, host.SamplePeerReceive().Assemblies);
+        Assert.Equal(0, host.SamplePeerReceive().Bytes);
+        Assert.Equal(0, hs.Left);                         // the peer itself is untouched
+        Assert.Equal(1, host.SamplePeerQueues().Peers);
+        Console.WriteLine("P1025-F5-EXPIRE: incomplete reliable assembly dropped at its deadline; peer alive");
+    }
+
+    /// <summary>⭐ P1025 (R1 F5) — the reliable deadline measures NO PROGRESS: a
+    /// frame that is still arriving fragment by fragment keeps its assembly past
+    /// the deadline and is delivered, which is what a large frame on a slow or
+    /// lossy link looks like. Only a stalled assembly is abandoned.</summary>
+    [Fact]
+    public void Reliable_reassembly_in_progress_is_not_abandoned()
+    {
+        var hs = new Site();
+        using var host = new UdpTransport(hs) { ReliableAssemblyTimeout = TimeSpan.FromMilliseconds(300) };
+        host.Host();
+        using var peer = new RawPeer(host);
+        Until(() => hs.Joins.Count == 1, 4000);
+
+        const int size = 5 * RawPeer.Payload;             // five fragments
+        for (int index = 0; index < 5; index++)
+        {
+            peer.SendFragment(1, 0, 1, size: size, index: index);
+            Thread.Sleep(150);                            // whole frame takes ~750 ms > the 300 ms deadline
+        }
+        Until(() => hs.Data.Count == 1, 4000);
+        Assert.Equal(size, hs.Data.Single().Length);
+        Assert.Equal(0, host.SamplePeerReceive().Assemblies);
+        Console.WriteLine("P1025-F5-PROGRESS: a frame still arriving kept its assembly past the deadline and was delivered");
+    }
 }

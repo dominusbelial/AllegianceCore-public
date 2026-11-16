@@ -106,10 +106,20 @@ Delivery contracts:
   handshake and the client uses its existing TCP fallback.
 * Address-bound cookies prevent an unvalidated source from triggering large
   replies. Tokens prevent off-path spoofing. This provides no encryption.
+* A failed send is that destination's problem, never the listener's (P1025/R1 F4):
+  every `SocketException` from the socket send returns "not sent" and the peer
+  keeps its retransmission/congestion debt, as native discards the send HRESULT
+  (`_Utility/Messages.cpp:666-674`). Only receive-side socket errors end the worker.
 * A paced, bounded Reno-style congestion window counts all data, including
   superseded packets until ACK/loss. Reliable queue overflow disconnects the peer.
   The server shares TCP's connection/per-IP/pending-handshake limits, inbound
   frame cap, idle timeout and queue hard cap. Limits apply per listener.
+* Inbound reassembly has its own small ceiling per peer (P1025/R1 F5): a host
+  reserves only the bytes that arrived (never the peer-declared frame size), holds
+  at most 512 KiB of incomplete frames and at most 256 incomplete assemblies per
+  peer, and expires an incomplete reliable assembly after 5 s (best-effort keeps
+  the native 500 ms lifetime). Exceeding either ceiling disconnects the peer;
+  authentic traffic is below 64 KiB per inbound frame.
 
 `TransportFactory.ActiveTransport` reports the resolved client transport for
 local diagnostics. In server logs, mixed-listener UDP peer ids have the high bit

@@ -4,6 +4,35 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1025 gate observations — 2026-11-15 UTC
+
+Fast sweep on the P1025 tree: **14,618 tests, 535.2 s, FAIL** — 14,598 passed / 5 failed /
+15 not executed, plus 5 passing executions over the calibrated 11.526 s limit (P744 factor
+1.153). None of the five failed assertions touches UDP transport or reconnect grace; each
+rerun below used its exact method filter in its own test process, with artwork and
+`--no-build`, on an 8-CPU lane whose load average measured **0.30 → 0.60** during the reruns.
+
+A control pass repeated the same Core methods on the tree with **every P1025 change reverted**
+(2 filtered loops + 1 detailed run): it fails the same `P739` row with the same value, so that
+failure is not caused by this task.
+
+| Test | Full-sweep observation | Isolated reruns | Note |
+| --- | --- | --- | --- |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | `5.0000000000000009` against an inclusive 5 s upper bound; `delay: 7` failed the same way | failed in all 4 task-tree executions and all 3 reverted-tree executions | Deterministic floating upper-bound signature already led (see the `delay: 5/7` rows below) |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | `8.10000038` against `[4,8]` | 6/6 passed alone (task tree and reverted tree) | Existing simulation-clock family, already led; load-only |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | `Assert.Empty` — one queued ASTEROID_MINED after the capacity receipt | failed once in 4 task-tree executions; passed 2/2 on the reverted tree | Existing mining-receipt family, already led; intermittent |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | 5,424 bytes allocated after warmup, expected 0 | 1/0/0; 1/0/0; 1/0/0 (14 ms each) | Existing allocation-counter intermittency, already led |
+
+The five passing executions over the calibrated limit were
+`P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (13.096 s),
+`SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` (12.835 s),
+`P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` (12.146 s),
+`P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` (20.632 s)
+and `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)` (14.776 s) —
+all already in this ledger's timing-offender list. No timing allowance, tier or assertion was
+relaxed for P1025; the task's own new and unskipped tests pass 3× alone and in the sweep.
+Raw logs and TRX are in `~/allegiance-evidence/P1025/`.
+
 ## P1026 gate observations — 2026-11-15 UTC
 
 Final reviewed Fast result: **14,529 passed / 2 failed / 20 skipped**, 568.3 s.

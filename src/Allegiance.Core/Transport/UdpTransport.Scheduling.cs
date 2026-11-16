@@ -212,8 +212,7 @@ public sealed partial class UdpTransport
             if (stream.NextFragment < stream.Count)
                 length = Math.Min(length, Header + RecordSize(stream, stream.NextFragment) + Math.Min(Payload, stream.Data.Length - stream.NextFragment * Payload));
         }
-        foreach (var assembly in p.Assemblies.Values)
-            if (!assembly.Reliable) due = Math.Min(due, assembly.Created + 501);
+        foreach (var assembly in p.Assemblies.Values) due = Math.Min(due, AssemblyDeadline(assembly));
         if (length != int.MaxValue && p.InFlight + length <= p.Cwnd)
             due = Math.Min(due, now + Math.Max(0, (long)Math.Ceiling((length - budget) / rate)));
         return due;
