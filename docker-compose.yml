@@ -19,6 +19,10 @@ services:
       - "${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}:${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}/udp"
       - "${ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT:-3479}:${ALLEGIANCE_LOBBY_STUN_SECONDARY_PORT:-3479}/udp"
     environment:
+      BrowserPreview__Enabled: "${ALLEGIANCE_BROWSER_PREVIEW_ENABLED:-false}"
+      BrowserPreview__BundlePath: /browser-preview
+      BrowserPreview__ArtworkPath: "" # Empty uses the stack's ALLEGIANCE_ARTWORK_PATH.
+      ALLEGIANCE_ARTWORK_PATH: /artwork
       Lobby__PlayerHostedGames: "${ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES:-false}"
       Lobby__StunBindAddress: "${ALLEGIANCE_LOBBY_STUN_BIND_ADDRESS:-::}"
       Lobby__StunPrimaryPort: "${ALLEGIANCE_LOBBY_STUN_PRIMARY_PORT:-3478}"
@@ -55,12 +59,24 @@ services:
     volumes:
       - lobby-identity:/identity
       - lobby-trust:/trust
+      - browser-preview:/browser-preview:ro
+      - trial-artwork:/artwork:ro
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/healthz"]
       interval: 5s
       timeout: 3s
       retries: 12
     restart: unless-stopped
+
+  # Optional one-shot bundle exporter. Run before enabling the lobby flag.
+  browser-preview:
+    profiles: [browser-preview]
+    build:
+      context: .
+      dockerfile: src/Allegiance.ClientCore.Browser/Dockerfile
+    volumes:
+      - browser-preview:/output
+    restart: "no"
 
   # Desktop Host LAN passes ALLEGIANCE_LAN_PASSWORD privately to its owned bot
   # driver; it is not a server/container setting and must not be set here.
@@ -123,6 +139,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  browser-preview:
   trial-artwork:
   lobby-identity:
   lobby-trust:

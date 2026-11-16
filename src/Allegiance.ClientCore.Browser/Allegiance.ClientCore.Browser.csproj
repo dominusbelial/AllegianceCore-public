@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Allegiance.ClientCore.Browser</RootNamespace>
+    <AssemblyName>Allegiance.ClientCore.Browser</AssemblyName>
+    <DefineConstants>$(DefineConstants);BLAZORGL</DefineConstants>
+    <KniPlatform>BlazorGL</KniPlatform>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="nkast.Xna.Framework" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Content" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Graphics" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Audio" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Media" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Input" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Game" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Devices" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Storage" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.XR" Version="4.3.9001" />
+    <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.3.9001" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Allegiance.Core/Allegiance.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Ship the actual runtime's notices (which follow the SDK version), alongside
+       the committed KNI/Wasm notices. Do not duplicate upstream author contacts
+       in this public repository. This target also runs in the bundle Dockerfile. -->
+  <Target Name="AppendBrowserRuntimeNotices" AfterTargets="Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/wwwroot/THIRD-PARTY-NOTICES.txt"
+          DestinationFiles="$(PublishDir)wwwroot/THIRD-PARTY-NOTICES.txt" />
+    <ReadLinesFromFile File="$(_RuntimePackDir)/THIRD-PARTY-NOTICES.TXT">
+      <Output TaskParameter="Lines" ItemName="_BrowserRuntimeNotices" />
+    </ReadLinesFromFile>
+    <ReadLinesFromFile File="$(PkgMicrosoft_AspNetCore_Components_WebAssembly)/THIRD-PARTY-NOTICES.txt">
+      <Output TaskParameter="Lines" ItemName="_BrowserRuntimeNotices" />
+    </ReadLinesFromFile>
+    <WriteLinesToFile File="$(PublishDir)wwwroot/THIRD-PARTY-NOTICES.txt"
+                      Lines="@(_BrowserRuntimeNotices)" Overwrite="false" Encoding="UTF-8" />
+    <!-- The static pipeline compressed the short source notice, before append. -->
+    <Delete Files="$(PublishDir)wwwroot/THIRD-PARTY-NOTICES.txt.br;$(PublishDir)wwwroot/THIRD-PARTY-NOTICES.txt.gz" />
+  </Target>
+
+</Project>

@@ -1,0 +1,27 @@
+@page "/"
+@page "/index.html"
+@implements IDisposable
+@inject IJSRuntime JsRuntime
+@inject HttpClient Http
+
+<div id="canvasHolder"><canvas id="theCanvas" aria-label="Rotating textured Allegiance scout against stars"></canvas></div>
+<div id="load-panel" class="panel" hidden="@(_game is not null && _error is null)" role="status" aria-live="polite">
+    <h2>@(_error is null ? "Loading preview" : "Preview could not load")</h2>
+    @if (_error is null)
+    {
+        <progress max="100" value="@_progress"></progress>
+        <p>@_status (@_progress%)</p>
+    }
+    else
+    {
+        <p>@_error</p>
+        <button id="retry" @onclick="LoadAsync">Retry</button>
+    }
+</div>
+<nav id="controls" aria-label="Preview controls">
+    <span>Scout · fig05</span>
+    <button disabled="@(_game is null)" @onclick="() => Rotate(-.35f)">Rotate left</button>
+    <button disabled="@(_game is null)" @onclick="() => Rotate(.35f)">Rotate right</button>
+    <button disabled="@(_game is null)" @onclick="() => Zoom(-.25f)">Zoom in</button>
+    <button disabled="@(_game is null)" @onclick="() => Zoom(.25f)">Zoom out</button>
+</nav>
