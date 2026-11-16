@@ -2428,6 +2428,10 @@ public sealed partial class Server
             CreateNow: false);                           // createNow = false (FedSrv.CPP:13928)
         var flag = new Treasure(data.ObjectId, sec, data, _simNow, mission);
         sec.Add(flag);
+        // P1031 — a respawned pedestal flag is side-visible (treasureIGC.cpp:167-177);
+        // score it before the creation broadcast so only the sides whose scanners
+        // cover the pedestal hear about it (FedSrv.CPP:10750-10778).
+        sec.RefreshTreasureVisibility(flag);
         SendTreasureSpawnSectorWide(sec, flag);
         Console.WriteLine($"[loot] flag {sidFlag} respawned above pedestal station {st.StationId} in sector {sec.Id} obj={flag.Data.ObjectId}");
     }

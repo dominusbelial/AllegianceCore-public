@@ -498,13 +498,21 @@ public sealed partial class Server
     /// a treasure the creation path already sent (native's <c>ShowObject</c> fires
     /// once; the port has both a creation broadcast and a discovery sweep, and the
     /// native client's <c>CreateObject</c> is not an upsert). Used by every
-    /// treasure-spawn site (drop, death drop, artifact flag). New artifacts
-    /// wait for side visibility (FedSrv.CPP:10750-10778).</summary>
+    /// treasure-spawn site (drop, death drop, artifact flag). P1031 — the audience
+    /// is the sides whose scanner net SEES the treasure, exactly native's
+    /// <c>c_mtSeenBySide</c> export (<c>Igc/treasureIGC.cpp:167-177</c>;
+    /// <c>FedSrv.CPP:10750-10778</c>): an unseen drop (or an artifact whose random
+    /// respawn position has not been rediscovered) is delivered by the per-tick
+    /// discovery sweep when it becomes seen, never leaked to the whole sector.
+    /// Creation sites call <c>Sector.RefreshTreasureVisibility</c> first, so the
+    /// owner's side (and anyone else with a live eye on the drop) hears at once.</summary>
     private void SendTreasureSpawnSectorWide(Sector sector, Treasure treasure)
     {
         var packet = FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.ExportData() }.Encode() });
         foreach (var kv in _peerShips)
-            if (ReferenceEquals(kv.Value.Ship.Sector, sector) && ArtifactKnownToPeer(treasure, kv.Value.Ship))
+            if (ReferenceEquals(kv.Value.Ship.Sector, sector)
+                && kv.Value.Ship.SideId is { } side && side >= 0
+                && treasure.SeenBySide(side))
             {
                 SendPeer(kv.Key, packet);
                 _crossSideDiscoverySent.Add((kv.Key, (byte)IgcObjectType.Treasure, treasure.Id));

@@ -8,27 +8,32 @@ namespace Allegiance.Server;
 
 public sealed partial class Server
 {
+    /// <summary>
+    /// P1031 — the instant half of a treasure creation export. Native has no
+    /// creation broadcast: every <c>CtreasureIGC</c> is
+    /// <c>c_mtSeenBySide | c_mtPredictable</c> (<c>Igc/treasureIGC.cpp:167-177</c>),
+    /// so a side learns about it only when its own scanner net sees it
+    /// (<c>ShowObject</c>, <c>FedSrv/FedSrv.CPP:10750-10778</c>) or when a player
+    /// joins (<c>fsmission.cpp:4224-4231</c>). The port keeps this frame for
+    /// game feel, but the audience is the same per-side visibility audience the
+    /// discovery sweep uses — a peer whose side has no scanner on the drop learns
+    /// nothing (pre-fix the whole sector got the treasure's exact P0/V0).
+    /// </summary>
     private void BroadcastGeneratedTreasure(Treasure treasure)
     {
         // Sector IDs may repeat across games. Route by mission as well as sector.
         byte[] packet = FedPacket.Pack([new TreasureSpawn { Data = treasure.ExportData() }.Encode()]);
         foreach (var (connection, live) in _peerShips)
-            if (ReferenceEquals(live.Ship.Mission, treasure.OwnerMission) && live.Sector == treasure.OwnerSector)
+            if (ReferenceEquals(live.Ship.Mission, treasure.OwnerMission) && live.Sector == treasure.OwnerSector
+                && live.Ship.SideId is { } side && side >= 0
+                && treasure.SeenBySide(side))
             {
-                // Native predictable-object export follows side visibility
-                // (FedSrv.CPP:10750-10778; fsmission.cpp:4224-4231). A new
-                // artifact's random respawn position must be discovered again.
-                if (!ArtifactKnownToPeer(treasure, live.Ship)) continue;
                 SendPeer(connection, packet);
                 // P797 — latch the discovery mark: the sweep must never re-send a
                 // treasure this creation broadcast already delivered.
                 _crossSideDiscoverySent.Add((connection, (byte)IgcObjectType.Treasure, treasure.Id));
             }
     }
-
-    private static bool ArtifactKnownToPeer(Treasure treasure, Ship peer) =>
-        treasure.Code != TreasureCode.Flag || treasure.Data.TreasureId != Side.ArtifactSentinelFlag
-        || peer.SideId is { } side && treasure.SeenBySide(side);
 
     private void SendTreasureSnapshot(ConnectionId connection, Sector sector)
     {
@@ -41,11 +46,14 @@ public sealed partial class Server
         // Apply(SetCluster) models native's per-cluster object delete), so this
         // post-SET_CLUSTER snapshot is the ONLY way a re-entering peer re-learns
         // its sector's treasures — the latch below is written, never read here.
-        // An unseated peer (no side) keeps the pre-P797 whole-sector behaviour —
-        // it has no per-side view to honour yet.
-        short? side = _peerShips.TryGetValue(connection, out var live) ? live.Ship.SideId : null;
+        // P1031 — an unseated (team-lobby, no side) peer has no per-side view to
+        // honour and receives nothing: native's export is side-gated
+        // (fsmission.cpp:4224-4231), so the old whole-sector branch leaked every
+        // unseen treasure to a peer that had not even joined a side.
+        if (!_peerShips.TryGetValue(connection, out var live)) return;
+        if (live.Ship.SideId is not { } side || side < 0) return;
         var treasures = sector.Models.OfType<Treasure>()
-            .Where(t => side is not { } s || t.SeenBySide(s))
+            .Where(t => t.SeenBySide(side))
             .ToArray();
         if (treasures.Length == 0) return;
         // Only a moving late export needs an immediate clock sample. Static
@@ -55,8 +63,7 @@ public sealed partial class Server
         foreach (var treasure in treasures)
         {
             SendPeer(connection, FedPacket.Pack([new TreasureSpawn { Data = treasure.ExportData() }.Encode()]));
-            if (side is not null)
-                _crossSideDiscoverySent.Add((connection, (byte)IgcObjectType.Treasure, treasure.Id));
+            _crossSideDiscoverySent.Add((connection, (byte)IgcObjectType.Treasure, treasure.Id));
         }
     }
 }

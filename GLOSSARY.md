@@ -269,6 +269,16 @@ list in **reverse**.
   `IIgcSite.SpotterCreditEvent` (credited in `Server.Combat.cs OnSpotterCredit`),
   with `Ship.MarkPreviouslySpotted`/`RecentlySpotted`. Report:
   `docs/reports/P851_CERTIFY.md`.
+- **Treasure visibility export (P797/P1031)** — every treasure is
+  `c_mtSeenBySide | c_mtPredictable` (`Igc/treasureIGC.cpp:167-177`), so a side
+  learns about it only through its scanner net (`ShowObject`,
+  `FedSrv/FedSrv.CPP:10750-10778`) or a seen-only join export
+  (`FedSrv/fsmission.cpp:4224-4231`). The port's instant creation broadcast
+  (`Server.Treasure.cs BroadcastGeneratedTreasure` / `SendTreasureSnapshot`,
+  `Server.Docking.cs SendTreasureSpawnSectorWide`) is gated on
+  `Sector.RefreshTreasureVisibility` (creation-time per-side scan) plus
+  `SeenBySide`; the every-tick discovery sweep delivers later sighting edges.
+  Report: `docs/reports/R1B_TREASURE_VISIBILITY_P1031.md`.
 - **Mounted part** — an equipped part instance (weapon/shield/etc.) with its
   mount and state. `src/Allegiance.Core/Sim/MountedPart.cs`. *Native:*
   `mountc.cpp`.
