@@ -1,0 +1,830 @@
+diff --git a/.scratch/p1045/capture.cjs b/.scratch/p1045/capture.cjs
+new file mode 100644
+index 00000000..ff9c785f
+--- /dev/null
++++ b/.scratch/p1045/capture.cjs
+@@ -0,0 +1,29 @@
++const { chromium: playwright } = require('./npm/node_modules/playwright');
++
++const fs = require('fs');
++(async()=>{
++ const {default:chromium}=await import('./npm/node_modules/@sparticuz/chromium/build/index.js');
++ const results=[]; let version;
++  for(const [width,height] of [[1920,1080],[800,480]]){
++   const browser=await playwright.launch({executablePath:await chromium.executablePath(),args:chromium.args.filter(x=>!["--disable-web-security","--allow-running-insecure-content"].includes(x)),headless:true});
++   version=browser.version();
++   try {
++   const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1});
++   const page=await context.newPage();
++   await page.route('**/*',route=>/^http:\/\/127\.0\.0\.1:8045\//.test(route.request().url())?route.continue():route.abort());
++   page.on('console',m=>console.log('console:',m.type(),m.text()));page.on('pageerror',e=>console.log('pageerror:',e.message));
++   let bytes=0,requests=0;const cdp=await context.newCDPSession(page);await cdp.send('Network.enable');cdp.on('Network.loadingFinished',e=>{bytes+=e.encodedDataLength;requests++});
++   await page.goto('http://127.0.0.1:8045/',{waitUntil:'load'});
++   await page.waitForFunction(()=>window.measurements?.cpu?.length>=660,null,{timeout:120000});
++   const value=await page.evaluate(()=>{
++    const summary=a=>{a=a.slice(60).sort((a,b)=>a-b);return{count:a.length,medianMs:a[Math.floor(a.length*.5)],p95Ms:a[Math.floor(a.length*.95)],p99Ms:a[Math.floor(a.length*.99)]}};
++    const c=document.getElementById('theCanvas'),gl=c.getContext('webgl2')||c.getContext('webgl');
++    const ext=gl.getExtension('WEBGL_debug_renderer_info');
++    return{cpuTick:summary(measurements.cpu.slice(0,660)),rafInterval:summary(measurements.interval.slice(0,660)),firstFrameMs:measurements.firstFrameMs,renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),webglVersion:gl.getParameter(gl.VERSION),resources:performance.getEntriesByType('resource').reduce((s,r)=>s+r.transferSize,0)};
++   });
++   await page.screenshot({path:`docs/reports/BROWSER_CLIENT_P1045_assets/render-${width}x${height}.png`});
++   results.push({width,height,httpEncodedBytes:bytes,requests,...value});console.log(JSON.stringify(results.at(-1)));
++   }finally{await browser.close();}
++  }
++  fs.writeFileSync('docs/reports/BROWSER_CLIENT_P1045_assets/render-metrics.json',JSON.stringify({browser:version,mode:'Headless, software SwiftShader; no GPU timing; fresh browser context per resolution; warmup 60 frames',results},null,2)+'\n');
++})().catch(e=>{console.error(e);process.exitCode=1});
+diff --git a/.scratch/p1045/compat/Game1.RelativeMouse.cs b/.scratch/p1045/compat/Game1.RelativeMouse.cs
+new file mode 100644
+index 00000000..75d0fdb3
+--- /dev/null
++++ b/.scratch/p1045/compat/Game1.RelativeMouse.cs
+@@ -0,0 +1,51 @@
++using Allegiance.ClientCore.MonoGame.Flight;
++using Allegiance.ClientCore.MonoGame.Rendering;
++using Microsoft.Xna.Framework;
++
++namespace Allegiance.ClientCore.MonoGame;
++
++public sealed partial class Game1
++{
++    private readonly RelativeMouse _relativeMouse = new(SdlRelativeMouse.TryCreate, Console.WriteLine);
++    private bool _mouseCaptureExiting;
++
++    private void SyncMouseCapture(bool composing = false)
++    {
++        var owner = MouseCapturePolicy.Choose(IsActive, _state == ClientState.Flying,
++            _dockedActive, _mouseCaptureExiting || _proofEnabled || composing || _chatActive || _qcMenuOpen
++                || LiveComposeState is NativeComposeState.Command or NativeComposeState.MouseCommand
++                || _mainMenuVisible || _keyBindVisible || _graphicsSettingsVisible
++                || _helpVisible || _creditsVisible || _playerPingsVisible || _pilotProfile.Editing
++                || IsBriefingVisible(out _)
++                || _investActive || _teleportActive || _skirmish?.Paused == true,
++            _mouseFlightEnabled, _minimapExpanded, CommandCameraActive, SpectatorCameraActive, _freeCamActive,
++            _menuConsumedFrame);
++        if (_relativeMouse.SetOwner(owner))
++        {
++            _specMouseInit = false;
++            if (owner == MouseCaptureOwner.Flight) _mouseFlight.Enable();
++        }
++        IsMouseVisible = owner == MouseCaptureOwner.None;
++    }
++
++    protected override void OnDeactivated(EventArgs args)
++    {
++        _relativeMouse.SetOwner(MouseCaptureOwner.None);
++        IsMouseVisible = true;
++        base.OnDeactivated(args);
++    }
++
++    protected override void OnExiting(EventArgs args)
++    {
++        base.OnExiting(args);
++        _mouseCaptureExiting = true;
++        _relativeMouse.SetOwner(MouseCaptureOwner.None);
++        IsMouseVisible = true;
++    }
++
++    protected override void Dispose(bool disposing)
++    {
++        if (disposing) _relativeMouse.Dispose();
++        base.Dispose(disposing);
++    }
++}
+diff --git a/.scratch/p1045/compat/compat.csproj b/.scratch/p1045/compat/compat.csproj
+new file mode 100644
+index 00000000..d650083d
+--- /dev/null
++++ b/.scratch/p1045/compat/compat.csproj
+@@ -0,0 +1,21 @@
++<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><EnableDefaultCompileItems>false</EnableDefaultCompileItems><RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace><BaseIntermediateOutputPath>obj/</BaseIntermediateOutputPath></PropertyGroup><ItemGroup>
++<Compile Include="../../../src/Allegiance.ClientCore.Game/**/*.cs" Exclude="../../../src/Allegiance.ClientCore.Game/obj/**;../../../src/Allegiance.ClientCore.Game/Game1.RelativeMouse.cs;../../../src/Allegiance.ClientCore.Game/bin/**"/>
++<Compile Include="Game1.RelativeMouse.cs" />
++<EmbeddedResource Include="../../../src/Allegiance.ClientCore.Game/Rendering/Skins/*.skin.json" />
++<ProjectReference Include="../../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj"/>
++<ProjectReference Include="../../../src/Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj"/>
++<ProjectReference Include="../../../src/Allegiance.Update/Allegiance.Update.csproj"/>
++<PackageReference Include="NVorbis" Version="0.10.4"/>
++<PackageReference Include="nkast.Xna.Framework" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Content" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Graphics" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Audio" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Media" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Input" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Game" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Devices" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Storage" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.XR" Version="4.3.9001" />
++    <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.3.9001" />
++
++  </ItemGroup></Project>
+\ No newline at end of file
+diff --git a/.scratch/p1045/inventory/Program.cs b/.scratch/p1045/inventory/Program.cs
+new file mode 100644
+index 00000000..4ba30d1f
+--- /dev/null
++++ b/.scratch/p1045/inventory/Program.cs
+@@ -0,0 +1,50 @@
++using Allegiance.Core;
++using Allegiance.Core.Model;
++string art = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")!;
++var core = StaticCore.Load(IgcReader.Parse(File.ReadAllBytes(Path.Combine(art, "PCore001.igc"))));
++foreach (var hull in core.HullTypes.Values.Where(x => x.Name.Contains("Scout") || x.Name.Contains("Fighter") || x.Name.Contains("Lifepod")))
++    Console.WriteLine($"{hull.HullId} {hull.Name} model={hull.ModelName} texture={hull.TextureName}");
++var mdl = MdlFile.Parse(Path.Combine(art, args.Length>0 && !args[0].StartsWith("--") ? args[0] : "fig05.mdl"));
++Console.WriteLine($"Meshes={mdl.Meshes.Count} vertices={mdl.Meshes.Sum(m=>m.VertexCount)} tris={mdl.Meshes.Sum(m=>m.TriangleCount)} imports={string.Join(',',mdl.Namespaces)} textures={string.Join(',',mdl.Meshes.Select(m=>m.TextureStem))} unsupported={string.Join(',',mdl.UnsupportedGeometryNodes)}");
++if(args.Contains("--assets"))
++{
++    var files=Directory.EnumerateFiles(art).GroupBy(p=>Path.GetFileName(p),StringComparer.OrdinalIgnoreCase).Select(g=>g.First()).ToDictionary(p=>Path.GetFileName(p)!,p=>p,StringComparer.OrdinalIgnoreCase);
++    var groups=new Dictionary<string,SortedSet<string>>();
++    void Include(string group,string path){
++        if(!files.TryGetValue(path,out var full))return;
++        if(!groups.TryGetValue(group,out var set))groups[group]=set=new(StringComparer.OrdinalIgnoreCase);
++        string name=Path.GetFileName(full);
++        if(!set.Add(name))return;
++        if(!name.EndsWith(".mdl",StringComparison.OrdinalIgnoreCase))return;
++        try{var parsed=MdlFile.Parse(full);foreach(var ns in parsed.Namespaces)Include(group,ns+".mdl");}
++        catch(InvalidDataException){
++            var text=System.Text.Encoding.UTF8.GetString(File.ReadAllBytes(full));
++            foreach(System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(text,"ImportImageFromFile\\s*\\(\\s*\"([^\"]+)\""))Include(group,match.Groups[1].Value);
++        }
++    }
++    void Model(string group,string stem){if(stem.Length==0)return;foreach(string suffix in new[]{".mdl","bmp.mdl",".cvh"})Include(group,stem+suffix);}
++    foreach(short hid in new short[]{14,15,18,33,3,114,121,131,113,107}){
++        var h=core.HullTypes[hid];Model("starter-hulls",h.ModelName);Model("starter-hulls",h.TextureName);
++    }
++    foreach(short cid in new short[]{1,3}){
++        var civ=core.Civilizations[cid];var station=core.StationTypes[civ.InitialStationTypeId];
++        Model("home-stations",station.ModelName);Model("home-stations",station.TextureName);
++    }
++    var map=MissionMap.Load(IgcReader.Parse(File.ReadAllBytes(Path.Combine(art,"XXV_simple.igc"))));
++    foreach(var cluster in map.Clusters){
++        Model("map-sky",cluster.PlanetName);Model("map-sky",cluster.PosterName);
++        if(int.TryParse(new string(cluster.PosterName.Where(char.IsDigit).ToArray()),out int number)){
++            Model("map-sky","globe"+number);Model("map-sky","environment"+number);
++        }
++    }
++    var homeCluster=map.Clusters.First(c=>c.Name=="Ceto");
++    Model("first-sector-sky",homeCluster.PlanetName);Model("first-sector-sky",homeCluster.PosterName);
++    if(int.TryParse(new string(homeCluster.PosterName.Where(char.IsDigit).ToArray()),out int firstNumber)){
++        Model("first-sector-sky","globe"+firstNumber);Model("first-sector-sky","environment"+firstNumber);
++    }
++    foreach(var warp in map.Warps){Model("warps",warp.TextureName);Model("warps",warp.IconName);}
++    foreach(string name in new[]{"PCore001.igc","XXV_simple.igc"})Include("core-map",name);
++    // A stated candidate UI subset. The production pack must be measured with both HUD styles.
++    foreach(string stem in new[]{"AmmoGauge","EnergyGauge","FuelGauge","HullGauge","ShieldGauge","ThrustGauge","chatmouse","chattext","chatcommand","chatshell","softgauge","creditbox","commandbkgnd","recipients","verbs","btnchangewing3","comaccept","comqueued","eye"})Model("hud-candidate",stem+"bmp");
++    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(groups));
++}
+diff --git a/.scratch/p1045/inventory/inventory.csproj b/.scratch/p1045/inventory/inventory.csproj
+new file mode 100644
+index 00000000..ff7ce7ae
+--- /dev/null
++++ b/.scratch/p1045/inventory/inventory.csproj
+@@ -0,0 +1 @@
++<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="../../../src/Allegiance.Core/Allegiance.Core.csproj" /></ItemGroup></Project>
+diff --git a/.scratch/p1045/measure-assets.py b/.scratch/p1045/measure-assets.py
+new file mode 100644
+index 00000000..a78b7807
+--- /dev/null
++++ b/.scratch/p1045/measure-assets.py
+@@ -0,0 +1,27 @@
++from pathlib import Path
++import json,os,gzip,hashlib,collections
++root=Path(os.environ['ALLEGIANCE_ARTWORK_PATH'])
++repo=Path.cwd();dst=repo/'docs/reports/BROWSER_CLIENT_P1045_assets'
++groups=json.loads(Path('.scratch/p1045/art-groups.log').read_text().splitlines()[-1])
++# Resolve canonical spellings from the parser inventory. Inventory selection is stated,
++# not claimed to be a complete production first-match closure.
++files={}
++for name,names in groups.items():files[name]=[(root/n,'artwork/'+n) for n in names]
++files['font-sources']=[(p,'Content/Fonts/'+p.name) for p in (repo/'src/Allegiance.ClientCore.MonoGame/Content/Fonts').glob('*.ttf')]
++files['vfx-atlases']=[(p,'Content/Vfx/atlas/'+p.name) for p in (repo/'src/Allegiance.ClientCore.MonoGame/Content/Vfx/atlas').glob('*.png')]
++files['core-sounds']=[(root/(n+'.ogg'),'artwork/'+n+'.ogg') for n in ['accelsmall','sshipint','pulselaser','erbeam','alephloop','lrgslideout','mmissile','missilelock','missilelockonme','ef24','ef120','dropmine','dropobject','hitrock','hitshield','mount','hoover','receivechat','shieldup','noshld'] if (root/(n+'.ogg')).exists()]
++files['rock-surfaces']=[(root/(n+'.mdl'),'artwork/'+n+'.mdl') for n in ['bgrnd05bmp','bgrnd51bmp','bgrnd52bmp','bgrnd53bmp','bgrnd55bmp'] if (root/(n+'.mdl')).exists()]
++all_files=[p for p in root.rglob('*') if p.is_file() and '.git' not in p.relative_to(root).parts]
++full={'files':len(all_files),'rawBytes':sum(p.stat().st_size for p in all_files),'excluded':'.git'}
++manifest=[l.strip() for l in Path('packaging/artwork-manifest.txt').read_text().splitlines() if l.strip() and not l.startswith('#')]
++manifest_files=[root/p for p in manifest if (root/p).is_file()]
++existing={'manifest':'packaging/artwork-manifest.txt','entries':len(manifest),'present':len(manifest_files),'missing':len(manifest)-len(manifest_files),'rawBytesPresent':sum(p.stat().st_size for p in manifest_files)}
++result={}
++for name,paths in files.items():
++ entries=[]
++ for path,label in sorted(paths,key=lambda p:p[1]):
++  data=path.read_bytes();entries.append({'path':label,'rawBytes':len(data),'gzipBytes':len(gzip.compress(data,compresslevel=9,mtime=0)),'sha256':hashlib.sha256(data).hexdigest()})
++ result[name]={'files':len(entries),'rawBytes':sum(x['rawBytes'] for x in entries),'gzipBytes':sum(x['gzipBytes'] for x in entries),'entries':entries}
++obj={'note':'Candidate categories overlap by logical need, not a certified first-match closure. Fonts are source TTF cost, not a browser content bake. Gzip is per-file level 9, a measurement of compression only. No artwork binaries are included in this evidence JSON.','fullCorpus':full,'existingPlayerManifest':existing,'groups':result}
++(dst/'artwork-inventory.json').write_text(json.dumps(obj,indent=2)+'\n')
++print(json.dumps({'fullCorpus':full,'existingPlayerManifest':existing,'groups':{k:{x:v[x] for x in ['files','rawBytes','gzipBytes']} for k,v in result.items()}},indent=2))
+diff --git a/.scratch/p1045/measure-bundle.cjs b/.scratch/p1045/measure-bundle.cjs
+new file mode 100644
+index 00000000..389e39f3
+--- /dev/null
++++ b/.scratch/p1045/measure-bundle.cjs
+@@ -0,0 +1,8 @@
++const fs=require('fs'),p=require('path'),z=require('zlib');const base='.scratch/p1045/render-publish/wwwroot';
++function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(x=>x.isDirectory()?walk(p.join(dir,x.name)):[p.join(dir,x.name)]);}
++const files=walk(base).filter(x=>!x.endsWith('.gz')&&!x.endsWith('.br'));
++const groups={};for(const file of files){const name=p.relative(base,file);const group=name.startsWith('_framework/')?'framework':name.startsWith('_content/')?'kniScripts':name.startsWith('art/')?'nativeArt':'shell';
++ const data=fs.readFileSync(file),g=groups[group]??={files:0,rawBytes:0,gzipBytes:0,brotliBytes:0};g.files++;g.rawBytes+=data.length;g.gzipBytes+=z.gzipSync(data,{level:9}).length;g.brotliBytes+=z.brotliCompressSync(data,{params:{[z.constants.BROTLI_PARAM_QUALITY]:11}}).length;
++}
++const output={configuration:'Release, net10.0, trimmed managed assemblies; no AOT, no runtime relink; assets individually gzip-9 / Brotli-11 estimated, static server served uncompressed',groups,totals:Object.fromEntries(['files','rawBytes','gzipBytes','brotliBytes'].map(key=>[key,Object.values(groups).reduce((s,g)=>s+g[key],0)]))};
++fs.writeFileSync('docs/reports/BROWSER_CLIENT_P1045_assets/bundle-metrics.json',JSON.stringify(output,null,2)+'\n');console.log(JSON.stringify(output));
+diff --git a/.scratch/p1045/npm/package-lock.json b/.scratch/p1045/npm/package-lock.json
+new file mode 100644
+index 00000000..55d4b322
+--- /dev/null
++++ b/.scratch/p1045/npm/package-lock.json
+@@ -0,0 +1,260 @@
++{
++  "name": "npm",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "dependencies": {
++        "@sparticuz/chromium": "^153.0.0",
++        "playwright": "^1.65.1"
++      }
++    },
++    "node_modules/@sparticuz/chromium": {
++      "version": "153.0.0",
++      "resolved": "https://registry.npmjs.org/@sparticuz/chromium/-/chromium-153.0.0.tgz",
++      "integrity": "sha512-jiGWqSvPMdu4+P9TilYqAR7yEGPEHINx+lCvE/NqNO/EHYzF/x1hUiI5T6ioVIt7dEy7n88byyT0vk+dnsgQwA==",
++      "license": "MIT",
++      "dependencies": {
++        "tar-fs": "^3.1.2"
++      },
++      "engines": {
++        "node": "^22.17.0 || >=24.0.0"
++      }
++    },
++    "node_modules/b4a": {
++      "version": "1.9.0",
++      "resolved": "https://registry.npmjs.org/b4a/-/b4a-1.9.0.tgz",
++      "integrity": "sha512-dpfcF9fDNR6++cthXR67iyhgqWy9CBouAvIWhIntzBG6cvK/cnIPiZQjBwi/ZqjjBEDGfoNDtmB0kTjroOJ3pQ==",
++      "license": "Apache-2.0",
++      "peerDependencies": {
++        "react-native-b4a": "*"
++      },
++      "peerDependenciesMeta": {
++        "react-native-b4a": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/bare-buffer": {
++      "version": "3.7.2",
++      "resolved": "https://registry.npmjs.org/bare-buffer/-/bare-buffer-3.7.2.tgz",
++      "integrity": "sha512-kI35SYpVg0JCk+a+gkUEJZY39mt+g71y1NRwBrEj7SbxLnwngYYMf0T/kouYIujlJwelvPZ9TTbBCbCSPw059Q==",
++      "license": "Apache-2.0",
++      "engines": {
++        "bare": ">=1.20.0"
++      }
++    },
++    "node_modules/bare-events": {
++      "version": "2.9.2",
++      "resolved": "https://registry.npmjs.org/bare-events/-/bare-events-2.9.2.tgz",
++      "integrity": "sha512-AIPKioV7/Y/8KfZ3AAhjPJxLLbY49S64Ym5DakZlUg75qQiTgUq9hEJoEwa4eUezPUlXRy/i5NpsKvo9jgKmoA==",
++      "license": "Apache-2.0",
++      "peerDependencies": {
++        "bare-abort-controller": "*"
++      },
++      "peerDependenciesMeta": {
++        "bare-abort-controller": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/bare-fs": {
++      "version": "4.8.4",
++      "resolved": "https://registry.npmjs.org/bare-fs/-/bare-fs-4.8.4.tgz",
++      "integrity": "sha512-MPC2eyrpbk3A873sK4y6rk+Iv4o2enxTjHZ8zH3HO0mjrpm5XjnguY2XmfidIsDV6vnjpbMBKUAJpV0ISD2SsQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "bare-events": "^2.5.4",
++        "bare-path": "^3.0.0",
++        "bare-stream": "^2.6.4",
++        "bare-url": "^2.2.2",
++        "fast-fifo": "^1.3.2"
++      },
++      "engines": {
++        "bare": ">=1.28.0"
++      },
++      "peerDependencies": {
++        "bare-buffer": "*"
++      },
++      "peerDependenciesMeta": {
++        "bare-buffer": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/bare-path": {
++      "version": "3.1.3",
++      "resolved": "https://registry.npmjs.org/bare-path/-/bare-path-3.1.3.tgz",
++      "integrity": "sha512-8r+FVU/o4zcFmpCDqbqAYhHHbtXPP+cyZKo7DRGRWc7OLlNs4TMaSQEpXL/sIdzyEG0M7RHw4B7xYMGrTc+qrg==",
++      "license": "Apache-2.0"
++    },
++    "node_modules/bare-stream": {
++      "version": "2.13.4",
++      "resolved": "https://registry.npmjs.org/bare-stream/-/bare-stream-2.13.4.tgz",
++      "integrity": "sha512-PcrQ8lVLbiJscNm1Kez+Yp4Gy4AHGcN1lzwjvf5NybWen7VvEgUfyfnXYJ2zNqWnzOfCb1Abq6lH8ti0syQszA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "b4a": "^1.8.1",
++        "streamx": "^2.25.0",
++        "teex": "^1.0.1"
++      },
++      "peerDependencies": {
++        "bare-abort-controller": "*",
++        "bare-buffer": "*",
++        "bare-events": "*"
++      },
++      "peerDependenciesMeta": {
++        "bare-abort-controller": {
++          "optional": true
++        },
++        "bare-buffer": {
++          "optional": true
++        },
++        "bare-events": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/bare-url": {
++      "version": "2.5.7",
++      "resolved": "https://registry.npmjs.org/bare-url/-/bare-url-2.5.7.tgz",
++      "integrity": "sha512-pWAiECRdNYPJAXYKVOb4HuTQedQyRjtGBUu86kO/vOt4GM7e45PghHXQ/Erm5NumaDSWNBzehIfpc768esW7gA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "bare-buffer": "^3.0.0",
++        "bare-path": "^3.0.0"
++      }
++    },
++    "node_modules/end-of-stream": {
++      "version": "1.4.5",
++      "resolved": "https://registry.npmjs.org/end-of-stream/-/end-of-stream-1.4.5.tgz",
++      "integrity": "sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==",
++      "license": "MIT",
++      "dependencies": {
++        "once": "^1.4.0"
++      }
++    },
++    "node_modules/events-universal": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/events-universal/-/events-universal-1.0.1.tgz",
++      "integrity": "sha512-LUd5euvbMLpwOF8m6ivPCbhQeSiYVNb8Vs0fQ8QjXo0JTkEHpz8pxdQf0gStltaPpw0Cca8b39KxvK9cfKRiAw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "bare-events": "^2.7.0"
++      }
++    },
++    "node_modules/fast-fifo": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz",
++      "integrity": "sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==",
++      "license": "MIT"
++    },
++    "node_modules/once": {
++      "version": "1.4.0",
++      "resolved": "https://registry.npmjs.org/once/-/once-1.4.0.tgz",
++      "integrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
++      "license": "ISC",
++      "dependencies": {
++        "wrappy": "1"
++      }
++    },
++    "node_modules/playwright": {
++      "version": "1.65.1",
++      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.65.1.tgz",
++      "integrity": "sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "playwright-core": "1.65.1"
++      },
++      "bin": {
++        "playwright": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/playwright-core": {
++      "version": "1.65.1",
++      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.65.1.tgz",
++      "integrity": "sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==",
++      "license": "Apache-2.0",
++      "bin": {
++        "playwright-core": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/pump": {
++      "version": "3.0.4",
++      "resolved": "https://registry.npmjs.org/pump/-/pump-3.0.4.tgz",
++      "integrity": "sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==",
++      "license": "MIT",
++      "dependencies": {
++        "end-of-stream": "^1.1.0",
++        "once": "^1.3.1"
++      }
++    },
++    "node_modules/streamx": {
++      "version": "2.28.1",
++      "resolved": "https://registry.npmjs.org/streamx/-/streamx-2.28.1.tgz",
++      "integrity": "sha512-zEzXb0s5Cds7tqMH6rhZ05lcJydCWiQPEwiNngVqzsxCc962vLY4Uw+mW7od8kDH258k2Uz/JrOkdIAAhSh9VA==",
++      "license": "MIT",
++      "dependencies": {
++        "events-universal": "^1.0.0",
++        "fast-fifo": "^1.3.2",
++        "text-decoder": "^1.1.0"
++      }
++    },
++    "node_modules/tar-fs": {
++      "version": "3.1.3",
++      "resolved": "https://registry.npmjs.org/tar-fs/-/tar-fs-3.1.3.tgz",
++      "integrity": "sha512-/hU4AXnIdZu+Gvl1pk0oI5f5HxWsCJRtY2aFaJdk9VvyL48DWU6iU5WAIPG+wIi1YvWA6eTJvIviP/tMAZZNwQ==",
++      "license": "MIT",
++      "dependencies": {
++        "pump": "^3.0.0",
++        "tar-stream": "^3.1.5"
++      },
++      "optionalDependencies": {
++        "bare-fs": "^4.0.1",
++        "bare-path": "^3.0.0"
++      }
++    },
++    "node_modules/tar-stream": {
++      "version": "3.2.2",
++      "resolved": "https://registry.npmjs.org/tar-stream/-/tar-stream-3.2.2.tgz",
++      "integrity": "sha512-+8NeqHRjQWH9nYlwo2gamAMImZCVzI4UoEgDpWorBt9OEfppiZn+uSkskzQKPWIZyji/C8fpWO7u69G0DX0tbg==",
++      "license": "MIT",
++      "dependencies": {
++        "b4a": "^1.9.0",
++        "bare-fs": "^4.8.2",
++        "fast-fifo": "^1.3.2",
++        "streamx": "^2.28.1"
++      }
++    },
++    "node_modules/teex": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/teex/-/teex-1.0.1.tgz",
++      "integrity": "sha512-eYE6iEI62Ni1H8oIa7KlDU6uQBtqr4Eajni3wX7rpfXD8ysFx8z0+dri+KWEPWpBsxXfxu58x/0jvTVT1ekOSg==",
++      "license": "MIT",
++      "dependencies": {
++        "streamx": "^2.12.5"
++      }
++    },
++    "node_modules/text-decoder": {
++      "version": "1.2.7",
++      "resolved": "https://registry.npmjs.org/text-decoder/-/text-decoder-1.2.7.tgz",
++      "integrity": "sha512-vlLytXkeP4xvEq2otHeJfSQIRyWxo/oZGEbXrtEEF9Hnmrdly59sUbzZ/QgyWuLYHctCHxFF4tRQZNQ9k60ExQ==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "b4a": "^1.6.4"
++      }
++    },
++    "node_modules/wrappy": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz",
++      "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==",
++      "license": "ISC"
++    }
++  }
++}
+diff --git a/.scratch/p1045/npm/package.json b/.scratch/p1045/npm/package.json
+new file mode 100644
+index 00000000..839231f7
+--- /dev/null
++++ b/.scratch/p1045/npm/package.json
+@@ -0,0 +1,6 @@
++{
++  "dependencies": {
++    "@sparticuz/chromium": "^153.0.0",
++    "playwright": "^1.65.1"
++  }
++}
+diff --git a/.scratch/p1045/render/App.razor b/.scratch/p1045/render/App.razor
+new file mode 100644
+index 00000000..a2123eee
+--- /dev/null
++++ b/.scratch/p1045/render/App.razor
+@@ -0,0 +1,12 @@
++<Router AppAssembly="@typeof(App).Assembly">
++    <Found Context="routeData">
++        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
++        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
++    </Found>
++    <NotFound>
++        <PageTitle>Not found</PageTitle>
++        <LayoutView Layout="@typeof(MainLayout)">
++            <p role="alert">Sorry, there's nothing at this address.</p>
++        </LayoutView>
++    </NotFound>
++</Router>
+diff --git a/.scratch/p1045/render/MainLayout.razor b/.scratch/p1045/render/MainLayout.razor
+new file mode 100644
+index 00000000..77cdfd9e
+--- /dev/null
++++ b/.scratch/p1045/render/MainLayout.razor
+@@ -0,0 +1,7 @@
++@inherits LayoutComponentBase
++
++<div class="page">
++    <main>
++            @Body
++    </main>
++</div>
+diff --git a/.scratch/p1045/render/P1045Render.csproj b/.scratch/p1045/render/P1045Render.csproj
+new file mode 100644
+index 00000000..ad8257c2
+--- /dev/null
++++ b/.scratch/p1045/render/P1045Render.csproj
+@@ -0,0 +1,55 @@
++<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
++
++  <PropertyGroup>
++    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
++    <TargetFramework>net10.0</TargetFramework>
++    <Nullable>enable</Nullable>
++    <ImplicitUsings>enable</ImplicitUsings>
++    <RootNamespace>P1045Render</RootNamespace>
++    <AssemblyName>P1045Render</AssemblyName>
++    <DefineConstants>$(DefineConstants);BLAZORGL</DefineConstants>
++    <KniPlatform>BlazorGL</KniPlatform>
++  </PropertyGroup>
++
++  <PropertyGroup>
++    <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
++    <!--<InvariantGlobalization>true</InvariantGlobalization>-->
++  </PropertyGroup>
++
++  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
++  </PropertyGroup>
++
++  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
++  </PropertyGroup>
++
++  <ItemGroup>
++    <Compile Include="Pages\Index.razor.cs" />
++    <Compile Include="Program.cs" />
++    <Compile Include="P1045RenderGame.cs" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <PackageReference Include="nkast.Xna.Framework" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Content" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Graphics" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Audio" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Media" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Input" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Game" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Devices" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.Storage" Version="4.3.9001" />
++    <PackageReference Include="nkast.Xna.Framework.XR" Version="4.3.9001" />
++    <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.3.9001" />
++
++  </ItemGroup>
++
++  <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
++    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
++    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <ProjectReference Include="../../../src/Allegiance.Core/Allegiance.Core.csproj" />
++  </ItemGroup>
++
++</Project>
+diff --git a/.scratch/p1045/render/P1045RenderGame.cs b/.scratch/p1045/render/P1045RenderGame.cs
+new file mode 100644
+index 00000000..535aa7a9
+--- /dev/null
++++ b/.scratch/p1045/render/P1045RenderGame.cs
+@@ -0,0 +1,74 @@
++using Allegiance.Core;
++using Microsoft.Xna.Framework;
++using Microsoft.Xna.Framework.Graphics;
++namespace P1045Render;
++public sealed class P1045RenderGame : Game
++{
++    private readonly MdlFile _model;
++    private readonly MdlTexture _pixels;
++    private readonly GraphicsDeviceManager _graphics;
++    private BasicEffect _effect = null!;
++    private Texture2D _texture = null!;
++    private SpriteBatch _sprites = null!;
++    private Texture2D _white = null!;
++    private (VertexPositionNormalTexture[] Vertices, short[] Indices)[] _meshes = [];
++    private float _radius;
++    public bool Started { get; set; }
++    public P1045RenderGame(MdlFile model, MdlTexture pixels)
++    {
++        _model=model; _pixels=pixels;
++        _graphics=new GraphicsDeviceManager(this);
++        IsFixedTimeStep=false;
++        IsMouseVisible=true;
++    }
++    protected override void LoadContent()
++    {
++        _sprites=new SpriteBatch(GraphicsDevice);
++        _white=new Texture2D(GraphicsDevice,1,1); _white.SetData(new[]{Color.White});
++        _texture=new Texture2D(GraphicsDevice,_pixels.Width,_pixels.Height);
++        _texture.SetData(_pixels.Rgba);
++        _effect=new BasicEffect(GraphicsDevice) { TextureEnabled=true, Texture=_texture, LightingEnabled=true };
++        _effect.EnableDefaultLighting();
++        _effect.AmbientLightColor=new Vector3(.45f);
++        _meshes=_model.Meshes.Select(m=>
++        {
++            var vertices=new VertexPositionNormalTexture[m.VertexCount];
++            for(int i=0;i<vertices.Length;i++)
++            {
++                var p=new Vector3(m.Positions[i*3],m.Positions[i*3+1],m.Positions[i*3+2]);
++                _radius=Math.Max(_radius,p.Length());
++                vertices[i]=new(p,new Vector3(m.Normals[i*3],m.Normals[i*3+1],m.Normals[i*3+2]),new Vector2(m.TexCoords[i*2],m.TexCoords[i*2+1]));
++            }
++            return (vertices,m.Indices.Select(x=>unchecked((short)x)).ToArray());
++        }).ToArray();
++        Console.WriteLine($"P1045 real MDL meshes={_meshes.Length} tris={_meshes.Sum(m=>m.Indices.Length/3)} radius={_radius} texture={_pixels.Width}x{_pixels.Height}");
++    }
++    protected override void Draw(GameTime time)
++    {
++        GraphicsDevice.Clear(new Color(3,7,18));
++        // A deterministic star field; no native background image is claimed.
++        var random=new Random(1045);
++        _sprites.Begin(blendState:BlendState.Opaque);
++        for(int i=0;i<280;i++)
++        {
++            int x=random.Next(GraphicsDevice.Viewport.Width), y=random.Next(GraphicsDevice.Viewport.Height);
++            byte light=(byte)random.Next(50,170);
++            _sprites.Draw(_white,new Rectangle(x,y,i%20==0?2:1,i%20==0?2:1),new Color(light,light,light));
++        }
++        _sprites.End();
++        GraphicsDevice.DepthStencilState=DepthStencilState.Default;
++        GraphicsDevice.BlendState=BlendState.Opaque;
++        GraphicsDevice.RasterizerState=RasterizerState.CullNone;
++        GraphicsDevice.SamplerStates[0]=SamplerState.LinearWrap;
++        _effect.World=Matrix.CreateRotationY(.6f)*Matrix.CreateRotationX(-.2f);
++        _effect.View=Matrix.CreateLookAt(new Vector3(_radius*1.35f,_radius*.9f,_radius*2.45f),Vector3.Zero,Vector3.Up);
++        _effect.Projection=Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4,GraphicsDevice.Viewport.AspectRatio,_radius*.01f,_radius*12);
++        foreach(var pass in _effect.CurrentTechnique.Passes)
++        {
++            pass.Apply();
++            foreach(var mesh in _meshes)
++                GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.TriangleList,mesh.Vertices,0,mesh.Vertices.Length,mesh.Indices,0,mesh.Indices.Length/3);
++        }
++        base.Draw(time);
++    }
++}
+diff --git a/.scratch/p1045/render/Pages/Index.razor b/.scratch/p1045/render/Pages/Index.razor
+new file mode 100644
+index 00000000..3e2cd856
+--- /dev/null
++++ b/.scratch/p1045/render/Pages/Index.razor
+@@ -0,0 +1,20 @@
++@page "/"
++@page "/index.html"
++@inject IJSRuntime JsRuntime
++@using nkast.Wasm.Canvas
++
++<PageTitle>P1045Render</PageTitle>
++
++<div id="canvasHolder" style="
++    background: #000;
++    margin:0%;
++    position: fixed;
++    top: 0px;
++    right: 0px;
++    bottom: 0px;
++    left: 0px;
++    width:100vw;
++    height:100vh;
++">
++    <canvas id="theCanvas" style="touch-action:none;"></canvas>
++</div>
+diff --git a/.scratch/p1045/render/Pages/Index.razor.cs b/.scratch/p1045/render/Pages/Index.razor.cs
+new file mode 100644
+index 00000000..1e9f9881
+--- /dev/null
++++ b/.scratch/p1045/render/Pages/Index.razor.cs
+@@ -0,0 +1,23 @@
++using Allegiance.Core;
++using Microsoft.JSInterop;
++namespace P1045Render.Pages;
++public partial class Index
++{
++    private P1045RenderGame? _game;
++    private DotNetObjectReference<Index>? _reference;
++    protected override async Task OnAfterRenderAsync(bool firstRender)
++    {
++        if (!firstRender) return;
++        using var http = new HttpClient { BaseAddress = new Uri(await JsRuntime.InvokeAsync<string>("baseUrl")) };
++        var mdl = MdlFile.Parse(await http.GetByteArrayAsync("art/fig05.mdl"));
++        var tex = MdlTextureDecoder.Decode(await http.GetByteArrayAsync("art/fig05bmp.mdl"));
++        _game = new P1045RenderGame(mdl, tex);
++        _reference = DotNetObjectReference.Create(this);
++        await JsRuntime.InvokeVoidAsync("initRenderJS", _reference);
++    }
++    [JSInvokable] public void TickDotNet()
++    {
++        if (!_game!.Started) { _game.Run(); _game.Started = true; }
++        _game.Tick();
++    }
++}
+diff --git a/.scratch/p1045/render/Program.cs b/.scratch/p1045/render/Program.cs
+new file mode 100644
+index 00000000..9d80e322
+--- /dev/null
++++ b/.scratch/p1045/render/Program.cs
+@@ -0,0 +1,24 @@
++using System;
++using System.Net.Http;
++using System.Threading.Tasks;
++using Microsoft.AspNetCore.Components.Web;
++using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
++using Microsoft.Extensions.DependencyInjection;
++
++namespace P1045Render
++{
++    internal class Program
++    {
++        private static async Task Main(string[] args)
++        {
++            var builder = WebAssemblyHostBuilder.CreateDefault(args);
++            builder.RootComponents.Add<App>("#app");
++            builder.RootComponents.Add<HeadOutlet>("head::after");
++            builder.Services.AddScoped(sp => new HttpClient()
++            {
++                BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
++            });
++            await builder.Build().RunAsync();
++        }
++    }
++}
+diff --git a/.scratch/p1045/render/_Imports.razor b/.scratch/p1045/render/_Imports.razor
+new file mode 100644
+index 00000000..8393dbf0
+--- /dev/null
++++ b/.scratch/p1045/render/_Imports.razor
+@@ -0,0 +1,10 @@
++@using System.Net.Http
++@using System.Net.Http.Json
++@using Microsoft.AspNetCore.Components.Forms
++@using Microsoft.AspNetCore.Components.Routing
++@using Microsoft.AspNetCore.Components.Web
++@using Microsoft.AspNetCore.Components.Web.Virtualization
++@using Microsoft.AspNetCore.Components.WebAssembly.Http
++@using Microsoft.JSInterop
++@using nkast.Wasm.Canvas
++@using P1045Render
+diff --git a/.scratch/p1045/render/wwwroot/index.html b/.scratch/p1045/render/wwwroot/index.html
+new file mode 100644
+index 00000000..b4bd4bf4
+--- /dev/null
++++ b/.scratch/p1045/render/wwwroot/index.html
+@@ -0,0 +1,29 @@
++<!doctype html><html><head><meta charset="utf-8"><base href="./"><title>P1045 KNI render experiment</title><style>html,body{margin:0;background:#030712;color:white;font:14px monospace}#label{position:fixed;left:24px;top:20px;z-index:5;pointer-events:none}#metrics{color:#a1b7d4;font-size:12px}</style></head><body>
++<div id="app">Loading C# / WebAssembly…</div><div id="label">P1045 · KNI / WebAssembly · REAL ALLEGIANCE MDL<br><span id="metrics">fig05.mdl + RGB565 texture · procedural stars · static scene</span></div>
++<script src="_framework/blazor.webassembly.js"></script>
++<script src="_content/nkast.Wasm.JSInterop/js/JSObject.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Dom/js/Window.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Dom/js/Document.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Dom/js/Navigator.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Dom/js/Gamepad.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Dom/js/Media.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.XHR/js/XHR.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Canvas/js/Canvas.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Canvas/js/CanvasGLContext.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.Audio/js/Audio.10.0.3.js"></script>
++<script src="_content/nkast.Wasm.XR/js/XR.10.0.3.js"></script>
++<script>
++window.baseUrl=()=>document.baseURI;
++window.measurements={cpu:[],interval:[],firstFrameMs:null};
++window.initRenderJS=instance=>{
++ const canvas=document.getElementById('theCanvas');canvas.width=innerWidth;canvas.height=innerHeight;
++ let previous;
++ function tick(now){
++  const start=performance.now();instance.invokeMethod('TickDotNet');const end=performance.now();
++  if(measurements.firstFrameMs===null)measurements.firstFrameMs=end;
++  if(measurements.cpu.length<900){measurements.cpu.push(end-start);if(previous)measurements.interval.push(now-previous);}
++  previous=now;requestAnimationFrame(tick);
++ }
++ requestAnimationFrame(tick);
++};
++</script></body></html>
+diff --git a/.scratch/p1045/render-serve.py b/.scratch/p1045/render-serve.py
+new file mode 100644
+index 00000000..9bb1edf6
+--- /dev/null
++++ b/.scratch/p1045/render-serve.py
+@@ -0,0 +1,8 @@
++import http.server,sys
++from pathlib import Path
++class Handler(http.server.SimpleHTTPRequestHandler):
++ def __init__(self,*a,**kw): super().__init__(*a,directory=str(Path('.scratch/p1045/render-publish/wwwroot').resolve()),**kw)
++ def guess_type(self,path):
++  return 'application/wasm' if path.endswith('.wasm') else super().guess_type(path)
++ def log_message(self,*a):pass
++http.server.ThreadingHTTPServer(('127.0.0.1',8045),Handler).serve_forever()

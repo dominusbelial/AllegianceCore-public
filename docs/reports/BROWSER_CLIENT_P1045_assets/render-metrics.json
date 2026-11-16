@@ -1,0 +1,50 @@
+{
+  "browser": "153.0.8010.0",
+  "mode": "Headless, software SwiftShader; no GPU timing; fresh browser context per resolution; warmup 60 frames",
+  "results": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "httpEncodedBytes": 12150648,
+      "requests": 90,
+      "cpuTick": {
+        "count": 600,
+        "medianMs": 1,
+        "p95Ms": 1.4000000357627869,
+        "p99Ms": 1.9000000357627869
+      },
+      "rafInterval": {
+        "count": 600,
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.700000000000728,
+        "p99Ms": 16.800000000000182
+      },
+      "firstFrameMs": 402.39999997615814,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "webglVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+      "resources": 12157794
+    },
+    {
+      "width": 800,
+      "height": 480,
+      "httpEncodedBytes": 12150648,
+      "requests": 90,
+      "cpuTick": {
+        "count": 600,
+        "medianMs": 0.800000011920929,
+        "p95Ms": 1.5,
+        "p99Ms": 2.199999988079071
+      },
+      "rafInterval": {
+        "count": 600,
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.700000000000728,
+        "p99Ms": 16.800000000000182
+      },
+      "firstFrameMs": 410.9000000357628,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "webglVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+      "resources": 12157794
+    }
+  ]
+}
