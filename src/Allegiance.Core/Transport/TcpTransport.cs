@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Allegiance.Core.Wire;
 
 namespace Allegiance.Core.Transport;
 
@@ -72,6 +73,15 @@ public enum DisconnectReason
     /// <summary>A peer connected and sent nothing (or a partial frame) within
     /// the greeting timeout.</summary>
     GreetTimeout,
+    /// <summary>P1023 (R1-F6 lead) — a peer greeted but never sent a validated
+    /// logon within <c>transport.preLogonTimeoutSeconds</c> (default 60 s). The
+    /// greeting itself is deadline-bounded (<see cref="GreetTimeout"/>), but a
+    /// greeted peer that keeps a trickle of valid frames flowing restarts the
+    /// data-link idle bound forever, so without this it holds a connection
+    /// slot, a reader, a per-IP slot and per-peer state indefinitely without
+    /// ever playing. Port hardening (native keeps such a connection too — see
+    /// FedSrv.CPP:4536-4544 "we don't do anything until they login").</summary>
+    PreLogonTimeout,
     /// <summary>The server shut down the session (explicit Shutdown).</summary>
     Shutdown,
 }
@@ -820,10 +830,21 @@ public sealed class TcpTransport : IServerTransport
             // The greeting body is just a player name, so cap it well below the
             // generic MaximumFrame: a staller claiming a huge greeting length
             // it never sends is rejected here (before any big allocation),
-            // closing the C2 compounding vector. A length within cap but whose
-            // body never arrives is still bounded by the socket's ReceiveTimeout
-            // (set in ConfigureAcceptedSocket), so it drops rather than parking.
-            (byte type, byte[] body) = ReadFrame(stream, MaximumGreeting);   // peer's greeting
+            // closing the C2 compounding vector.
+            //
+            // P1023 (R1 finding F6) — the greeting had NO absolute deadline: the
+            // socket's ReceiveTimeout bounds each READ, so a peer that sent the
+            // header and then one body byte per 100 ms was never timed out ("the
+            // deadline restarts on every byte"), holding a handshake slot, a
+            // per-IP slot and a greeting thread forever. Pass ONE absolute
+            // deadline (accept + GreetTimeout) that bounds the whole greeting —
+            // the wait for its first byte (idle deadline) and the header+body
+            // once it has started (frame deadline, anchored at that same
+            // instant, not re-armed per read) — exactly as the data phase's
+            // ReadFrame does with its own bounds (ReadDataLoop).
+            long greetDeadline = Environment.TickCount64 + (long)GreetTimeout.TotalMilliseconds;
+            (byte type, byte[] body) = ReadFrame(stream, MaximumGreeting, greetDeadline,
+                                                 absoluteFrameDeadlineMs: greetDeadline);   // peer's greeting
             if (type != (byte)FrameType.Greet)
             {
                 // P606 — a connection that speaks a non-greet frame is a
@@ -904,9 +925,12 @@ public sealed class TcpTransport : IServerTransport
             // P606 — the greeting read failed: the peer connected but sent
             // nothing (ReceiveTimeout → GreetTimeout), closed early (EOF →
             // ReadErrorOrEof), or sent a bad/oversize frame (ProtocolError).
+            // P1023 — a greeting that dribbles past its ABSOLUTE deadline now
+            // fails with ReadDeadlineException, which is the greet timeout, not a
+            // protocol violation.
             DisconnectReason gr;
             if (ex is EndOfStreamException) gr = DisconnectReason.ReadErrorOrEof;
-            else if (IsSocketTimeout(ex)) gr = DisconnectReason.GreetTimeout;
+            else if (ex is ReadDeadlineException || IsSocketTimeout(ex)) gr = DisconnectReason.GreetTimeout;
             // P967 — Shutdown closed this greeting socket on purpose: that is a
             // shutdown, not a protocol violation.
             else if (_intentionalShutdown) gr = DisconnectReason.Shutdown;
@@ -1237,6 +1261,13 @@ public sealed class TcpTransport : IServerTransport
         return false;
     }
 
+    /// <summary>P1023 — a read that hit its (idle or in-progress frame) deadline.
+    /// Its own type lets the greeting classify it as
+    /// <see cref="DisconnectReason.GreetTimeout"/> instead of a generic protocol
+    /// error, exactly as a socket receive timeout used to be classified. Still an
+    /// <see cref="IOException"/>, so the data loop's catches are unchanged.</summary>
+    private sealed class ReadDeadlineException(string message) : IOException(message);
+
     /// <summary>P606 — drain (and clear) the per-window disconnect counts by
     /// reason. Called by the server each report window so the profiler log gets
     /// a "disconnects by reason" line; resets the window counter.</summary>
@@ -1386,6 +1417,34 @@ public sealed class TcpTransport : IServerTransport
                 long frameTimeoutMs = _isHost ? (long)DataFrameReadTimeout.TotalMilliseconds : 0;
                 (byte type, byte[] body) = ReadFrame(s, cap, idleDeadline, frameTimeoutMs);
                 if (type != (byte)FrameType.Data) { CloseQuiet(s); return; }
+                // P1023 (R1 finding F3) — a data frame shorter than the packet's
+                // trailing CRC cannot be a packet: FedPacket.Unpack rejects
+                // anything under 4 bytes ("packet shorter than the CRC slot",
+                // FedPacket.cs:103-104). Native has no explicit length guard at
+                // all — PacketSize() subtracts the CRC width from a DWORD
+                // (messagecore.h:431-438), so a shorter packet UNDERFLOWS into the
+                // CRC compare (Messages.cpp:934-935), which can only fail and whose
+                // failure path deletes the connection ("we have no choice but to
+                // nuke 'em", FedSrv.CPP:4591-4603); FedMessaging accepts a
+                // zero-length receive at OnReceive (Messages.cpp:313-325) and the
+                // native bad-CRC log guards `cbMsg >= 2/4` (FedSrv.CPP:4599), i.e.
+                // short packets are expected to land there. The port rejects it
+                // HERE, at the framing layer, instead of queueing an event only the
+                // drain would eventually kill — a zero-length frame reserved no
+                // queue budget at all, which is what let millions of them pile up.
+                // Same reason the dispatch layer already uses for this condition
+                // (Server.Dispatch.cs:42).
+                if (body.Length < FedPacket.CrcWidth)
+                {
+                    if (_isHost)
+                    {
+                        Console.WriteLine($"[wire] data frame of {body.Length} B is shorter than the {FedPacket.CrcWidth}-byte packet CRC from peer {from} — dropping the peer (FedSrv.CPP:4591-4603)");
+                        DropPeer(from, DisconnectReason.BadCrc);
+                    }
+                    else _clientReadFailure = $"server sent a {body.Length}-byte frame (shorter than the {FedPacket.CrcWidth}-byte packet CRC)";
+                    CloseQuiet(s);
+                    return;
+                }
                 if (!_isHost || !IsPeerClosed(from)) _site.OnReceive(from, body);
             }
         }
@@ -1424,9 +1483,16 @@ public sealed class TcpTransport : IServerTransport
     ///     the frame once it has STARTED (first header byte seen) — the
     ///     header-then-stall slowloris case, preserving P654 (H-02). It is
     ///     anchored AFTER the first byte arrives, so it bounds a STALLED
-    ///     in-progress frame, never an idle-but-healthy data session.</summary>
+    ///     in-progress frame, never an idle-but-healthy data session.
+    /// <para>P1023 (R1 finding F6) — <paramref name="absoluteFrameDeadlineMs"/>
+    /// (may be 0 = none) replaces the anchored frame deadline with a FIXED
+    /// instant: the whole frame (header + body) must complete by then, whatever
+    /// pace its bytes arrive at. The greeting uses this so one absolute
+    /// deadline (accept + GreetTimeout) covers the whole handshake instead of
+    /// being restarted by every body byte the peer dribbles in.</para></summary>
     private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame,
-                                                      long idleDeadlineMs = 0, long frameTimeoutMs = 0)
+                                                      long idleDeadlineMs = 0, long frameTimeoutMs = 0,
+                                                      long absoluteFrameDeadlineMs = 0)
     {
         Span<byte> hdr = stackalloc byte[HeaderWidth];
         // P671 — the IDLE deadline bounds only the frame's first byte: a link
@@ -1436,9 +1502,11 @@ public sealed class TcpTransport : IServerTransport
         if (first <= 0) throw new EndOfStreamException("peer closed before frame");
         // P671 — anchor the frame deadline NOW that the frame has started. A
         // header that stalls, or a body that dribbles, must complete within
-        // frameTimeoutMs of the header's first byte.
-        long frameDeadline = frameTimeoutMs > 0
-            ? Environment.TickCount64 + frameTimeoutMs : 0;
+        // frameTimeoutMs of the header's first byte. P1023 — unless the caller
+        // supplied an ABSOLUTE frame deadline, which is used as-is.
+        long frameDeadline = absoluteFrameDeadlineMs != 0
+            ? absoluteFrameDeadlineMs
+            : frameTimeoutMs > 0 ? Environment.TickCount64 + frameTimeoutMs : 0;
         ReadExactly(s, hdr.Slice(1), frameDeadline);
         byte type = hdr[0];
         uint lenRaw = BinaryPrimitives.ReadUInt32LittleEndian(hdr.Slice(1));
@@ -1505,16 +1573,18 @@ public sealed class TcpTransport : IServerTransport
     ///     thread forever and cannot be interrupted by a wall-clock check, so the
     ///     socket is given a receive timeout equal to the remaining budget and a
     ///     timed-out read is translated into the bound-exceeded error. Only set
-    ///     when a deadline is active: the greet handshake (deadline 0) keeps its
-    ///     P312 socket <c>ReceiveTimeout</c> undisturbed, and the client half
-    ///     (deadline 0) keeps the infinite read it relies on to detect EOF.
+    ///     when a deadline is active: the client half (deadline 0) keeps the
+    ///     infinite read it relies on to detect EOF. (P1023 — the greet handshake
+    ///     now carries an absolute deadline too, so its read is bounded by the
+    ///     same remaining-budget rule instead of only the socket's per-read
+    ///     ReceiveTimeout.)
     ///     Sends stay non-blocking (P645's partial-write safety is untouched).</summary>
     private static int ReadSome(Stream s, Span<byte> dst, long deadlineMs)
     {
         while (true)
         {
             if (deadlineMs != 0 && Environment.TickCount64 > deadlineMs)
-                throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
+                throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
             // P646 — block efficiently on a NON-BLOCKING pool socket instead of
             // throwing+catching a would-block IOException every ~1 ms (P645's
             // Thread.Sleep(1) retry burned CPU and allocated an exception object
@@ -1568,7 +1638,7 @@ public sealed class TcpTransport : IServerTransport
                 // throws the real bound-exceeded error; otherwise (spurious early
                 // timeout) retry with a fresh remaining budget.
                 if (Environment.TickCount64 > deadlineMs)
-                    throw new IOException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
+                    throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
                 continue;
             }
             return n;

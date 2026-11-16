@@ -128,6 +128,12 @@ public sealed partial class Server
         });
         if (inboundTrace is not null)
             Step("inboundTrace", () => inboundTrace.EndTick(TickIndex, drainMs));
+        // P1023 (R1-F6 lead) — drop peers that greeted but never logged on within
+        // transport.preLogonTimeoutSeconds. Right after the drain (so a peer's
+        // PeerJoinedEvt and a logon in the same batch are already applied) and
+        // before any sim work, so a pre-logon squatter holds its slot for at
+        // most one extra tick. No-op when the deadline is off (0) or empty.
+        Step("preLogonTimeouts", SweepPreLogonConnections);
         BroadcastBeforeMissionUpdate();
         lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
