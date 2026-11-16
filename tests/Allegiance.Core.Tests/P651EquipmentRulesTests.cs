@@ -119,6 +119,12 @@ public sealed class P651EquipmentRulesTests
     {
         Require.Artwork(); var m = Domain(); var s = Place(m); var mt = MissileType(m); Launcher(s, mt);
         Assert.True(s.TryFireMissile(0.01));
+        // P1030 — a player lock is bounded by the server's per-tick tracking
+        // (UpdateMountedMissileLock), so the fixture must model the tracked lock a
+        // live server always has before the reported 0.4 is accepted.
+        s.CommandTarget = Place(m, 101, 1, -100);
+        s.UpdateMissileLock(mt, mt.LockTime);
+        Assert.True(s.MissileLock >= 0.4f);
         Assert.True(s.TryFireMissile(0.01 + elapsed, clientRequest: true, requestedLock: 0.4f));
         var missile = s.Sector!.Models.OfType<Missile>().Last();
         Assert.Equal(dud, missile.IsDud); Assert.Equal(0.3f, missile.LockFraction, 4);

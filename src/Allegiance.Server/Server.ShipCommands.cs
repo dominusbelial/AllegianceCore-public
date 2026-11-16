@@ -816,7 +816,16 @@ public sealed partial class Server
     // here. Existing wire audiences and transport batching are preserved.
     private void FireMountedExpendable(Ship ship, MountedPart part, double now)
     {
-        if (ship.FireDispenser(part, now, _rand) is not { } deployment) return;
+        if (ship.FireDispenser(part, now, _rand) is not { } deployment)
+        {
+            // P1030 — the readiness gate lives in FireDispenser so this refusal is
+            // the same for the held bit and the wire request. Logged, no state change.
+            if (ConsoleLog.Verbose)
+                ConsoleLog.Write($"[fireexpendable] ship {ship.Id}: {part.EquipmentType}@0 refused by the fire gate " +
+                                  $"(mounted {part.MountedFraction:F2}, deadline {part.TimeLoaded:F2}, now {now:F2}, " +
+                                  $"ripcord {ship.RipcordModel is not null}, dead {ship.Dead}, side {ship.SideId})");
+            return;
+        }
         // P697 audiences are keyed on the emitter's sector; the IGC callback has no
         // LiveShip, so use the ship's own sector (the same value for a connected peer).
         if (ship.Sector is not { } sector) return;
@@ -902,6 +911,12 @@ public sealed partial class Server
         }
 
         short amountBefore = part.Amount;
+        // P1030 — a lock the server has not tracked cannot be claimed: the shared
+        // fire path bounds the reported normalized lock by Ship.MissileLock
+        // (UpdateMountedMissileLock, magazineigc.cpp:104-176). Log the clamp.
+        float trackedLock = ship.MissileLock;
+        if (float.IsFinite(req.Lock) && Math.Clamp(req.Lock, 0f, 1f) > trackedLock && ConsoleLog.Verbose)
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: requested lock {req.Lock:F3} bounded to the server-tracked {trackedLock:F3}");
         bool fired = ship.TryFireMissile(mission.LastUpdate, clientRequest: true, requestedLock: req.Lock);
         short amountAfter = fired ? ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0)?.Amount ?? amountBefore : amountBefore;
         Console.WriteLine(fired
@@ -2517,9 +2532,19 @@ public sealed partial class Server
     /// type (native <c>TrapHackBoot(!CanMount(ppt, pfmTA-&gt;mountID))</c>,
     /// <c>FedSrv.CPP:6100</c>), is a hack: this port's TrapHackBoot analogue is
     /// log-and-return; the offer has already been consumed so it cannot replay.</item>
-    /// <item><b>Fresh-mount fraction.</b> <see cref="Ship.MountPart"/> is given
-    /// <see cref="ExpandedPartData.FullyMounted"/> — an accepted part is mounted
-    /// up, the same observer-facing stance the port's other mount paths use.</item>
+    /// <item><b>Fresh-mount fraction is 0.</b> Native
+    /// <c>CreateAndAddPart</c> (<c>Igc/shipIGC.h:1490-1512</c>) leaves
+    /// <c>m_mountedFraction = 0.0f</c> — only the dock <c>BuyLoadout</c> path
+    /// arms a part — so a part accepted into an active space mount starts
+    /// unmounted and takes the normal <c>1 / MountRate</c> to come up. P1030
+    /// passes <c>fractionMounted: 0</c> (the previous <c>FullyMounted</c> was a
+    /// shortcut that armed a salvage pickup instantly).</item>
+    /// <item><b>Cargo-slot merge.</b> Native <c>GetMountedPart(et, mount)</c>
+    /// routes a negative mount to <c>m_mountedCargos</c>
+    /// (<c>Igc/shipIGC.cpp:1516-1549</c>); this port's analogue is
+    /// <see cref="Ship.CargoHold"/>, so a stackable pickup into an occupied
+    /// cargo slot merges there instead of being refused by
+    /// <see cref="Ship.MountPart"/>'s occupied-cargo guard (P1030).</item>
     /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/> for
     /// both the <c>ADD_PART</c> echo and the decline's <c>TreasureSpawn</c>,
     /// matching native <c>GetGroupSectorFlying(pcluster)</c>.</item>
@@ -2572,15 +2597,22 @@ public sealed partial class Server
 
             // Merge into an existing same-type part at this mount, else mount
             // fresh (the exact _parts lookup TrySwapPart/TryRemovePart reuse,
-            // then native FedSrv.CPP:6101-6106).
-            var existing = ship.Parts.FirstOrDefault(p => p.EquipmentType == partType.EquipmentType && p.MountId == mount);
+            // then native FedSrv.CPP:6101-6106). A negative mount addresses the
+            // cargo hold (native GetMountedPart -> m_mountedCargos,
+            // Igc/shipIGC.cpp:1516-1549), so an occupied cargo slot merges the
+            // stack there instead of being refused by MountPart.
+            int signedMount = unchecked((sbyte)mount);
+            var existing = signedMount < 0
+                ? ship.CargoHold[Ship.CargoSlotForMount(signedMount)]
+                : ship.Parts.FirstOrDefault(p => p.EquipmentType == partType.EquipmentType && p.MountId == mount);
             if (existing is not null)
             {
                 if (existing.PartId != offer.PartTypeId) return;
                 int total = Ship.ClampPartAmount(ship.HullType, mission.Core, partType, (int)existing.Amount + offer.Amount);
                 offer.Amount = (short)Math.Max(0, total - existing.Amount);
-                ship.SetPartAmount(existing, total);
-                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: merged part {offer.PartTypeId} amount {offer.Amount} into existing mount {mount} (now {existing.Amount + offer.Amount})");
+                if (signedMount < 0) ship.SetCargoPartAmount(Ship.CargoSlotForMount(signedMount), total);
+                else ship.SetPartAmount(existing, total);
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: merged part {offer.PartTypeId} amount {offer.Amount} into existing mount {signedMount} (now {existing.Amount + offer.Amount})");
             }
             else
             {
@@ -2588,12 +2620,15 @@ public sealed partial class Server
                 // a ship is at the wire's 255-part ceiling; log and drop the
                 // buffered offer instead of adding a 256th part that would
                 // crash ExportShip.Encode (the teammate-export path).
-                if (ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted) is null)
+                // P1030 — native CreateAndAddPart leaves m_mountedFraction = 0
+                // (Igc/shipIGC.h:1490-1512): a salvage pickup mounts over the
+                // normal 1/MountRate instead of arriving armed.
+                if (ship.MountPart(partType, offer.Amount, mount, fractionMounted: 0) is null)
                 {
                     Console.WriteLine($"[treasureack] {from} ship {ship.Id}: REFUSED fresh mount of part {offer.PartTypeId} at mount {mount} — ship already at the 255-part wire ceiling; offer dropped");
                             return;
                 }
-                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount}");
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount} (unmounted)");
             }
 
             // Broadcast ADD_PART(164) sector-wide with the granted (buffered)

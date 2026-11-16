@@ -4,6 +4,36 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1030 gate observations — 2026-11-16 UTC
+
+Fast sweep on the P1030 tree: **14,726 tests, 576.5 s, FAIL** — 14,713 passed / 6 failed /
+7 not executed, plus 7 executions over the calibrated 11.545 s limit (P744 factor 1.155).
+None of the six failures is on a path this task changed: P1030 touches the dispenser and
+magazine fire gates (`Ship.FireDispenser`/`Ship.TryFireMissile`) and `HandleTreasureAck`,
+while the failures are the warp-bomb timer float bound, NPC dodge geometry, NPC miner
+docking, the roster-clock range and the ASTEROID_MINED receipt. Every rerun below used its
+exact method filter in its own test process, with artwork and `--no-build`; the host load
+average read **0.73 / 1.70 / 2.59** (1/5/15 min) after the isolation loop.
+
+| Test | Full-sweep observation | Isolated reruns | Note |
+| --- | --- | --- | --- |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` and `(delay: 10)` | `7.0000000000000009` above the inclusive 7 s upper bound | delay 5 failed in run 1, delay 7 failed in run 2, all three rows passed in run 3 | Deterministic one-ULP floating upper-bound family; the test constructs the missile directly, not through the P1030 fire path |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | maxLineDeviation 253.4 ("near-direct line into the dock") | 1/0/0; 1/0/0; 1/0/0 (5 s each) | Existing NPC-dodge geometry family, already led; load-only |
+| `MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | failed at 30.2 s (also over the limit) | 2/0/0; 2/0/0; 2/0/0 (30 s rows) | Existing NPC miner decision-cycle family, already led |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | value outside `[4,8]` | 1/0/0; 1/0/0; 1/0/0 | Existing simulation-clock family, already led |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | one extra queued ASTEROID_MINED after the capacity receipt | 1/0/0; 1/0/0; 1/0/0 | Existing mining-receipt family, already led |
+
+The seven calibrated-limit offenders were
+`P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (14.1 s),
+`P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` (13.1 s),
+`SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` (14.3 s),
+`P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)` (12.7 s),
+`MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` (30.2 s, the failure above),
+`P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` (19.3 s) and
+`P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)` (12.5 s).
+The six that passed each ran 3× alone below the limit (P814 1/1, P796 3/3, SC2 2/2, P968 8/8 rows,
+P999 10/10, P1000 10/10), so these are timing-only entries. No tier, limit or assertion was relaxed.
+
 ## P1025 gate observations — 2026-11-15 UTC
 
 Fast sweep on the P1025 tree: **14,618 tests, 535.2 s, FAIL** — 14,598 passed / 5 failed /

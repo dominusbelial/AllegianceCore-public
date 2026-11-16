@@ -4877,6 +4877,13 @@ public sealed partial class Ship : Model, IShipIgc
         MissileLock = Math.Clamp(MissileLock + v * (float)dt / (lockTime * ecm), 0f, 1f);
     }
 
+    /// <summary>P1030 — the shared wire tolerance for a fire request that arrives
+    /// just before a launcher's load deadline (native's server marks an early
+    /// player missile <c>bDud</c> when <c>timeFired + 0.5 &lt; timeLoaded</c>,
+    /// <c>FedSrv.CPP:5433-5434</c>). Both the magazine and the dispenser request
+    /// paths use one named value so the authority rules stay in step.</summary>
+    public const double FireLoadToleranceSeconds = 0.5;
+
     /// <summary>
     /// P226 — the per-tick lock-buildup half of <see cref="OnUpdate"/>'s
     /// missile armament leg: for a mounted missile launcher
@@ -4918,10 +4925,15 @@ public sealed partial class Ship : Model, IShipIgc
 
         // Native local/NPC update waits for strict load readiness; the server
         // accepts an early player request as a disarmed dud with 0.5s tolerance
-        // (magazineigc.cpp:103,118; FedSrv.CPP:5433-5434,5468).
+        // (magazineigc.cpp:103,118; FedSrv.CPP:5433-5434,5468). P1030 — a rack
+        // that is still mounting (MountedFraction &lt; 1) is a disarmed dud for a
+        // player request; a dead ship or one with no real side never fires
+        // (native's dm.pLauncher is a live, sided ship, FedSrv.CPP:5416-5426).
         if (Sector is null || StationId is not null || ParentShip is not null || IsRipcordActive) return false;
-        if (!clientRequest && (launcher.MountedFraction < 1f || launcher.TimeLoaded >= now)) return false;
-        bool dud = clientRequest && now + 0.5 < launcher.TimeLoaded;
+        if (Dead || SideId is not >= 0) return false;
+        bool mounting = launcher.MountedFraction < 1f;
+        if (!clientRequest && (mounting || launcher.TimeLoaded >= now)) return false;
+        bool dud = clientRequest && (mounting || now + FireLoadToleranceSeconds < launcher.TimeLoaded);
         Model? target = CommandTarget;
         // Recheck the selected target at fire time: selection may predate
         // detection, or visibility may have disappeared after lock acquisition.
@@ -4937,9 +4949,16 @@ public sealed partial class Ship : Model, IShipIgc
             if (missileType.MaxLock != 0f) return false;
             target = null;
         }
-        launcher.TimeLoaded = now + missileType.LoadTime;
-        float launchLock = (requestedLock is { } l && float.IsFinite(l)
-            ? Math.Clamp(l, 0f, 1f) : MissileLock) * missileType.MaxLock;
+        launcher.TimeLoaded = Math.Max(now, launcher.TimeLoaded) + missileType.LoadTime;
+        // P1030 — the client's reported normalized lock is bounded by the server's
+        // own per-tick tracking (UpdateMountedMissileLock / MissileLock), so a
+        // modified client cannot claim a lock it never built. An honest client
+        // echoes the server's last broadcast lock (ConnectionSession.SendFireMissile
+        // sends World.MissileLock.LockFraction), so min() is an identity for it.
+        float requested = requestedLock is { } l && float.IsFinite(l)
+            ? Math.Clamp(l, 0f, 1f) : MissileLock;
+        if (clientRequest) requested = Math.Min(requested, MissileLock);
+        float launchLock = requested * missileType.MaxLock;
         MissileLock = 0f; // magazineigc.cpp:115-118: reset before the fire callback
         // P754 — invoke the IIgcSite.FireMissile seam (igc.h:4868;
         // magazineigc.cpp:118). The port has no mountable magazine model, so

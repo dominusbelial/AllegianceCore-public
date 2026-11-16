@@ -307,6 +307,11 @@ public sealed class P655GameStateIntegrityTests
         ((Dictionary<short, DataMissileTypeIGC>)w.Mission.Core.MissileTypes)[missileId] = w.Mission.Core.MissileTypes[missileId] with { MaxLock = 0 };
         w.Ship.MountPart(missilePart, 2, 0, 255);
         w.Ship.MountPart(minePart, 2, 0, 255);
+        // P1030 — the fire handlers' authority clock is Mission.LastUpdate, while this
+        // fixture seeds only the ship clocks (World.Now(10)). Advance the mission to the
+        // same instant so the mount deadlines have genuinely passed; the previous fixture
+        // relied on the client-request path never checking TimeLoaded.
+        w.Mission.Update(w.Ship.LastUpdate);
         short MissileAmmo() => w.Ship.Parts.Single(p => p.EquipmentType == EquipmentType.Magazine).Amount;
         short MineAmmo() => w.Ship.Parts.Single(p => p.EquipmentType == EquipmentType.Dispenser).Amount;
         var missiles = MissileAmmo(); var mines = MineAmmo();

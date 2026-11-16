@@ -238,6 +238,10 @@ public sealed class P697GhostBattleLiveTests
         Assert.DoesNotContain(CreateChaff.Fmid, seen);
         source.StateM = 0;
         Pump(server, () => !source.IsCloaked);
+        // P1030 — firing arms TimeLoaded = now + LoadTime (dispenserigc.cpp:110-119), so a
+        // second chaff drop must wait for the real reload instead of firing in the same tick.
+        Pump(server, () => source.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher).TimeLoaded
+                           < source.Mission!.LastUpdate);
         seen.Clear();
         server.TakeFireAudienceReport();
         sourceClient.SendFireExpendable(EquipmentType.ChaffLauncher);
