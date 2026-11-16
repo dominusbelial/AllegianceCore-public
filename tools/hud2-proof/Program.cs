@@ -471,8 +471,10 @@ sealed class Proof : Game
             }
             // P1037 — the layout audit renders the SAME model through a recording
             // surface, so the "no label overlaps a caption or a box" rule is measured
-            // from the exact boxes the renderer submits.
+            // from the exact boxes the renderer submits. P1038b extends it to
+            // stroke-vs-text, text-outside-plate, text-off-screen and icon glyph size.
             LayoutAudit audit;
+            float scale = ModernHudScale.Core(1f, 1f, height);
             GraphicsDevice.SetRenderTarget(target);
             GraphicsDevice.Clear(backdrop);
             try
@@ -480,7 +482,7 @@ sealed class Proof : Game
                 _jetAuditSurface!.Reset();
                 _jetAudit!.ResetFlightState();
                 _jetAudit.Draw(model, new(GraphicsDevice.Viewport, null, false));
-                audit = _jetAuditSurface.Audit();
+                audit = _jetAuditSurface.Audit(width, height, scale);
             }
             finally
             {
@@ -489,7 +491,6 @@ sealed class Proof : Game
             string stem = $"jet-{scenario.Replace("jet-", "")}-{width}x{height}-{backdropName}";
             using (var file = File.Create(Path.Combine(root, stem + ".png")))
                 target.SaveAsPng(file, width, height);
-            float scale = ModernHudScale.Core(1f, 1f, height);
             var attitude = _jet.Attitude;
             summaries.Add(new
             {
@@ -535,12 +536,28 @@ sealed class Proof : Game
                     rollValid = attitude.RollValid,
                 },
                 scale, strokePx = MathF.Max(1f, JetVectorPainter.ReferenceStroke * scale),
+                // P1038b — the measured cap height the icon/size rules use (the small font's
+                // own line height at this frame's scale).
+                capHeight = _jetAudit!.Painter.Measure("X", large: false, scale).Y,
                 layout = audit,
                 tag = JetHudRenderer.TagText,
             });
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 4, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 5, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+        // P1038b — the four new layout classes must be 0 in every Jet scene; print the
+        // offending scenes so a regression is visible in the run log, not only in JSON.
+        int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
+        foreach (var scene in summaries)
+        {
+            var layout = (LayoutAudit)scene.GetType().GetProperty("layout")!.GetValue(scene)!;
+            strokeHits += layout.StrokeHits;
+            outsidePlate += layout.TextOutsidePlate;
+            offScreen += layout.TextOffScreen;
+            smallIcons += layout.IconTooSmall;
+        }
+        Console.WriteLine($"HUD2_JET_AUDIT stroke-vs-text {strokeHits}, text-outside-plate {outsidePlate}, "
+            + $"text-off-screen {offScreen}, icon-too-small {smallIcons} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1695,16 +1712,17 @@ sealed class Proof : Game
         float scale = ModernHudScale.Core(1f, 1f, height);
         float cx = lockState.Center.X, cy = lockState.Center.Y;
         float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(width - cx, height - cy));
-        float diamond = JetTargetGeometry.LockDiamondHalf(lockState.State, lockState.Fraction,
+        float lockHalf = JetTargetGeometry.LockCueHalf(lockState.State, lockState.Fraction,
             lockState.ScreenRadius, toEdge, scale);
+        // P1038b — the cue is the segmented ring that encloses the native-size designator.
+        float ring = JetTargetGeometry.LockRingRadius(lockHalf, scale);
         float natural = JetTargetGeometry.DesignatorHalf(model.Context.Target?.ScreenRadius, scale, toEdge);
         bool samePoint = model.Context.Target is { } t
             && MathF.Abs(t.Center.X - cx) <= 1.5f && MathF.Abs(t.Center.Y - cy) <= 1.5f;
-        float half = samePoint ? JetTargetGeometry.DesignatorHalfInsideLock(natural, diamond, scale) : natural;
-        float corner = samePoint ? half * MathF.Sqrt(2f) : 0f;
-        float edge = diamond * JetTargetGeometry.InverseSqrt2;
-        return new { diamondHalf = diamond, designatorNaturalHalf = natural, designatorHalf = half,
-            cornerDistance = corner, diamondBoundary = edge, gap = edge - corner, inside = edge - corner > 0f };
+        float corner = samePoint ? natural * MathF.Sqrt(2f) : 0f;
+        float clearance = JetTargetGeometry.LockClearance * (scale > 0f ? scale : 1f);
+        return new { lockHalf, ringRadius = ring, designatorHalf = natural, cornerDistance = corner,
+            gap = ring - corner, inside = ring - corner >= clearance - 0.5f };
     }
 
     /// <summary>P1038 — the projected target radius the Jet lock scenes pin on BOTH the
@@ -1793,38 +1811,80 @@ sealed class Proof : Game
 
     /// <summary>
     /// P1037 — a pass-through <see cref="IJetVectorSurface"/> that records every text
-    /// run and fill it submits (delegating the actual drawing to the production
-    /// surface). The renderer's keyline pass submits the same string eight times at
-    /// ±1 px, so a run within 1.6 px of an already-recorded one replaces it: the
-    /// recorded box is the ink run, which is what a pilot sees.
+    /// run, fill, stroke and icon glyph it submits (delegating the actual drawing to the
+    /// production surface). The renderer's keyline pass submits the same string eight
+    /// times at ±1 px, so a run within 1.6 px of an already-recorded one replaces it: the
+    /// recorded box is the ink run, which is what a pilot sees. A stroke is recorded the
+    /// same way (the painter emits a wider keyline quad and then the ink quad for the same
+    /// endpoints; the narrowest one is the ink).
+    /// <para>P1038b — the audit measured from these submissions is the recording surface
+    /// the brief requires: text-vs-text, caption and plate overlaps, <b>stroke-vs-text</b>,
+    /// <b>text-outside-plate</b>, <b>text-off-screen</b> and the <b>minimum icon glyph
+    /// size</b>.</para>
     /// </summary>
-    private sealed class RecordingSurface : IJetVectorSurface
+    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit
     {
+        /// <summary>A cursor-invisible sub-pixel tolerance: anything inside this is the same
+        /// geometric run submitted twice (keyline then ink).</summary>
+        private const float SameRun = 0.35f;
+
         private readonly IJetVectorSurface _inner;
         private readonly List<LayoutBox> _texts = new();
         private readonly List<LayoutBox> _fills = new();
+        private readonly List<LayoutFill> _plates = new();
+        private readonly List<LayoutStroke> _strokes = new();
+        private readonly List<LayoutGlyph> _glyphs = new();
+        private int _seq;
 
         public RecordingSurface(IJetVectorSurface inner) => _inner = inner;
 
         public void Begin() => _inner.Begin();
         public void End() => _inner.End();
-        public void Line(Vector2 a, Vector2 b, float width, Color color) => _inner.Line(a, b, width, color);
         public Vector2 Measure(string text, bool large, float scale) => _inner.Measure(text, large, scale);
+
+        public void Line(Vector2 a, Vector2 b, float width, Color color)
+        {
+            RecordStroke(a, b, width, _seq++);
+            _inner.Line(a, b, width, color);
+        }
 
         public void Fill(Vector2 min, Vector2 size, Color color)
         {
-            _fills.Add(new("#", min.X, min.Y, size.X, size.Y));
+            int seq = _seq++;
+            float w = MathF.Max(0f, size.X), h = MathF.Max(0f, size.Y);
+            _fills.Add(new("#", min.X, min.Y, w, h, seq));
+            // P1038b — a fill thin in BOTH axes is a bar/mark (a segmented store bar, a
+            // progress bar, a state marker): record it as a centred stroke so a bar drawn
+            // through a glyph is measured as one. A fill thin in only ONE axis is a plate
+            // keyline (the frame of a readout box or pane), which is furniture, not a bar,
+            // and is not counted against the text a plate legitimately holds.
+            if (w > 0f && h > 0f && w < 8f && h < 8f)
+            {
+                if (w >= h)
+                    RecordStroke(new(min.X, min.Y + h * 0.5f), new(min.X + w, min.Y + h * 0.5f), h, seq);
+                else
+                    RecordStroke(new(min.X + w * 0.5f, min.Y), new(min.X + w * 0.5f, min.Y + h), w, seq);
+            }
+            else if (w >= 8f && h >= 8f)
+            {
+                _plates.Add(new(min.X, min.Y, w, h, seq));
+            }
             _inner.Fill(min, size, color);
         }
 
         public void Text(string text, Vector2 position, bool large, float scale, Color color)
         {
             Vector2 size = _inner.Measure(text, large, scale);
-            Record(_texts, text, position.X, position.Y, size.X, size.Y);
+            Record(_texts, text, position.X, position.Y, size.X, size.Y, _seq++);
             _inner.Text(text, position, large, scale, color);
         }
 
-        private static void Record(List<LayoutBox> list, string text, float x, float y, float w, float h)
+        /// <summary>P1038b — one icon glyph the renderer composed (annunciator, caution or
+        /// inventory state mark) with the cap height its word needs.</summary>
+        public void Glyph(string id, RectangleF box, float minimumHeight)
+            => _glyphs.Add(new(id, box.X, box.Y, box.Width, box.Height, minimumHeight));
+
+        private static void Record(List<LayoutBox> list, string text, float x, float y, float w, float h, int seq)
         {
             for (int i = list.Count - 1; i >= 0; i--)
             {
@@ -1832,22 +1892,59 @@ sealed class Proof : Game
                 if (string.Equals(run.Text, text, StringComparison.Ordinal)
                     && MathF.Abs(run.X - x) <= 2.5f && MathF.Abs(run.Y - y) <= 2.5f)
                 {
-                    list[i] = new LayoutBox(text, x, y, w, h);   // keep the ink run (submitted last)
+                    list[i] = new LayoutBox(text, x, y, w, h, seq);   // keep the ink run (submitted last)
                     return;
                 }
             }
-            list.Add(new LayoutBox(text, x, y, w, h));
+            list.Add(new LayoutBox(text, x, y, w, h, seq));
         }
+
+        /// <summary>P1038b — record one stroke, keeping the INK width when the painter
+        /// submits the same segment twice (keyline quad, then ink quad).</summary>
+        private void RecordStroke(Vector2 a, Vector2 b, float width, int seq)
+        {
+            if (width <= 0f) return;
+            for (int i = _strokes.Count - 1; i >= 0; i--)
+            {
+                LayoutStroke run = _strokes[i];
+                if (Near(run.A, a) && Near(run.B, b) || Near(run.A, b) && Near(run.B, a))
+                {
+                    if (width < run.Width) _strokes[i] = new LayoutStroke(a, b, width, seq);
+                    return;
+                }
+            }
+            _strokes.Add(new LayoutStroke(a, b, width, seq));
+        }
+
+        private static bool Near(Vector2 a, Vector2 b)
+            => MathF.Abs(a.X - b.X) <= SameRun && MathF.Abs(a.Y - b.Y) <= SameRun;
 
         public void Reset()
         {
             _texts.Clear();
             _fills.Clear();
+            _plates.Clear();
+            _strokes.Clear();
+            _glyphs.Clear();
         }
 
-        /// <summary>The layout audit of the frame just drawn: text/text overlaps and
-        /// text/plate intersections (a readout's own ink inside its plate is allowed).</summary>
-        public LayoutAudit Audit()
+        /// <summary>
+        /// P1038b — the extended layout audit of the frame just drawn.
+        /// <list type="bullet">
+        /// <item><b>text-vs-text / caption</b> (P1036): informational; a caption hit is a
+        /// failure because a tape caption is HUD furniture.</item>
+        /// <item><b>stroke-vs-text</b>: any line or bar segment whose ink box crosses a text
+        /// glyph box — including the stroke a label owns (a bar through its own word reads
+        /// as strikethrough).</item>
+        /// <item><b>text-outside-plate</b>: a text run that overlaps a plate (a readout box
+        /// or a pane) but is not fully inside it.</item>
+        /// <item><b>text-off-screen</b>: a text box beyond the viewport minus the edge
+        /// gutter (<see cref="EdgeGutter"/> standard-stroke units × scale).</item>
+        /// <item><b>minimum glyph</b>: an icon glyph shorter than the cap height of the word
+        /// it introduces.</item>
+        /// </list>
+        /// </summary>
+        public LayoutAudit Audit(int viewportWidth, int viewportHeight, float scale)
         {
             // The P1036 review rule: no label may overlap a tape caption ("SPD / MPS",
             // "THR") or a readout box (plate); a readout's own ink inside its plate is
@@ -1881,8 +1978,127 @@ sealed class Proof : Game
                     if (Contains(fill, text)) continue;      // the readout ink on its own plate
                     boxOverlaps.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} {text.W:0.#}x{text.H:0.#} in fill@{fill.X:0.#},{fill.Y:0.#} {fill.W:0.#}x{fill.H:0.#}");
                 }
-            return new LayoutAudit(_texts.Count, _fills.Count, textOverlaps.Count, captionOverlaps.Count, boxOverlaps.Count,
-                captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray());
+
+            // ── P1038b: stroke-vs-text ─────────────────────────────────────
+            // A stroke drawn AFTER the text sits on top of it (the strikethrough the brief
+            // reports); a stroke drawn BEFORE it is the background furniture the text's own
+            // keyline separates it from (the P1036 ladder rungs, a plate's tick). The glyph
+            // ink band is the middle of the recorded run box: SpriteFont's MeasureString
+            // height is the LINE SPACING (22 px at scale 1), of which about ten pixels are
+            // capital ink starting a few pixels below the run's top (InkTop…InkBottom).
+            var strokeHits = new List<string>();
+            foreach (LayoutStroke stroke in _strokes)
+                foreach (LayoutBox text in _texts)
+                {
+                    if (stroke.Seq < text.Seq) continue;      // background under the ink
+                    if (BehindLaterPlate(text)) continue;     // a pane drawn on top hides it
+                    if (!HasLetter(text.Text)) continue;      // a scale graduation, not a label
+                    float pad = stroke.Width * 0.5f;
+                    float inkTop = text.Y + text.H * InkTopFraction + 1f;
+                    float inkBottom = text.Y + text.H * InkBottomFraction - 1f;
+                    if (inkBottom <= inkTop) continue;
+                    if (!SegmentHitsBox(stroke.A, stroke.B,
+                        text.X - pad, inkTop - pad, text.X + text.W + pad, inkBottom + pad)) continue;
+                    strokeHits.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} x stroke {stroke.A.X:0.#},{stroke.A.Y:0.#}->{stroke.B.X:0.#},{stroke.B.Y:0.#} w{stroke.Width:0.#}");
+                }
+
+            // ── P1038b: text-outside-plate ─────────────────────────────────
+            // Only a plate drawn BEFORE the run can be the plate that run belongs to (a
+            // label drawn before the F4 pane is behind it, not on it).
+            var outsidePlate = new List<string>();
+            foreach (LayoutBox text in _texts)
+            {
+                LayoutFill? owner = null;
+                foreach (LayoutFill plate in _plates)
+                {
+                    if (plate.Seq > text.Seq) break;
+                    if (Intersects(new LayoutBox("#", plate.X, plate.Y, plate.W, plate.H, plate.Seq), text))
+                        owner = plate;
+                }
+                if (owner is not { } fill) continue;
+                if (Contains(new LayoutBox("#", fill.X, fill.Y, fill.W, fill.H, fill.Seq), text)) continue;
+                outsidePlate.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} {text.W:0.#}x{text.H:0.#} leaves plate@{fill.X:0.#},{fill.Y:0.#} {fill.W:0.#}x{fill.H:0.#}");
+            }
+
+            // ── P1038b: text-off-screen ────────────────────────────────────
+            // A pane that is sliding out (the native 0.5 s F4 slide) is intentionally
+            // outside the viewport while its own content travels with it.
+            var offScreen = new List<string>();
+            float gutter = EdgeGutter * (scale > 0f ? scale : 1f);
+            float right = viewportWidth - gutter, bottom = viewportHeight - gutter;
+            foreach (LayoutBox text in _texts)
+            {
+                if (text.X >= gutter - 0.5f && text.Y >= gutter - 0.5f
+                    && text.X + text.W <= right + 0.5f && text.Y + text.H <= bottom + 0.5f) continue;
+                if (InSlidingPane(text, viewportWidth, viewportHeight)) continue;
+                offScreen.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} {text.W:0.#}x{text.H:0.#} (viewport {viewportWidth}x{viewportHeight}, gutter {gutter:0.#})");
+            }
+
+            // ── P1038b: minimum glyph size ─────────────────────────────────
+            var smallGlyphs = new List<string>();
+            foreach (LayoutGlyph glyph in _glyphs)
+            {
+                if (glyph.H >= glyph.MinimumHeight - 0.5f) continue;
+                smallGlyphs.Add($"{glyph.Id}@{glyph.X:0.#},{glyph.Y:0.#} {glyph.W:0.#}x{glyph.H:0.#} < cap {glyph.MinimumHeight:0.#}");
+            }
+
+            return new LayoutAudit(_texts.Count, _fills.Count, _strokes.Count, textOverlaps.Count,
+                captionOverlaps.Count, boxOverlaps.Count, strokeHits.Count, outsidePlate.Count, offScreen.Count,
+                _glyphs.Count, smallGlyphs.Count,
+                captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray(),
+                strokeHits.Take(4).ToArray(), outsidePlate.Take(4).ToArray(),
+                offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray());
+        }
+
+        /// <summary>The audit's edge gutter, in standard-stroke units (× scale): the same
+        /// 4 px inset every Jet plate keeps from a viewport edge.</summary>
+        public const float EdgeGutter = 4f;
+
+        /// <summary>P1038b — where the capital ink starts/ends inside a recorded run box:
+        /// SpriteFont's MeasureString height is the line spacing (22 px at scale 1 for the
+        /// 8 pt HUD font), while the capitals are about ten pixels starting four pixels
+        /// below the run's top (measured on the proof's own frames).</summary>
+        public const float InkTopFraction = 0.18f;
+        public const float InkBottomFraction = 0.64f;
+
+        /// <summary>P1038b — true when the run is the content of a pane that is not fully
+        /// on screen: the F4 pane slides out by design (native 0.5 s slide), so its rows
+        /// travel outside the viewport with it.</summary>
+        private bool InSlidingPane(LayoutBox text, int viewportWidth, int viewportHeight)
+        {
+            foreach (LayoutFill pane in _plates)
+            {
+                if (pane.Seq > text.Seq) break;
+                if (pane.H <= 64f) continue;
+                var box = new LayoutBox("#", pane.X, pane.Y, pane.W, pane.H, pane.Seq);
+                if (!Contains(box, text)) continue;
+                if (pane.X < 0f || pane.Y < 0f
+                    || pane.X + pane.W > viewportWidth || pane.Y + pane.H > viewportHeight) return true;
+            }
+            return false;
+        }
+
+        /// <summary>P1038b — true when a plate (readout box or pane) drawn AFTER this run
+        /// covers the run's centre: the HUD element behind an opaque plate is background,
+        /// so a bar or frame drawn on the plate cannot strike through it.</summary>
+        private bool BehindLaterPlate(LayoutBox text)
+        {
+            float cx = text.X + text.W * 0.5f, cy = text.Y + text.H * 0.5f;
+            foreach (LayoutFill plate in _plates)
+                if (plate.Seq > text.Seq
+                    && cx >= plate.X && cx <= plate.X + plate.W
+                    && cy >= plate.Y && cy <= plate.Y + plate.H) return true;
+            return false;
+        }
+
+        /// <summary>P1038b — true when a run carries at least one letter. A run of bare
+        /// digits is a tape/ladder graduation mark (or a bare numeral readout): it is
+        /// furniture every overlay crosses, not a word label, and the stroke check is about
+        /// words being struck through.</summary>
+        private static bool HasLetter(string text)
+        {
+            foreach (char c in text) if (char.IsAsciiLetter(c)) return true;
+            return false;
         }
 
         private static bool IsCaption(string text)
@@ -1901,10 +2117,55 @@ sealed class Proof : Game
         private static bool Contains(LayoutBox outer, LayoutBox inner)
             => inner.X >= outer.X - 1.5f && inner.X + inner.W <= outer.X + outer.W + 1.5f
             && inner.Y >= outer.Y - 1.5f && inner.Y + inner.H <= outer.Y + outer.H + 1.5f;
+
+        /// <summary>True when the segment (a→b) crosses the axis-aligned box (Liang–Barsky
+        /// slab clip). The box is already widened by half the stroke width.</summary>
+        private static bool SegmentHitsBox(Vector2 a, Vector2 b, float x0, float y0, float x1, float y1)
+        {
+            if (x1 < x0 || y1 < y0) return false;
+            // The degenerate (dot) stroke: a point inside the box.
+            float dx = b.X - a.X, dy = b.Y - a.Y;
+            if (MathF.Abs(dx) < 1e-5f && MathF.Abs(dy) < 1e-5f)
+                return a.X >= x0 && a.X <= x1 && a.Y >= y0 && a.Y <= y1;
+            float t0 = 0f, t1 = 1f;
+            if (!Clip(-dx, a.X - x0, ref t0, ref t1)) return false;
+            if (!Clip(dx, x1 - a.X, ref t0, ref t1)) return false;
+            if (!Clip(-dy, a.Y - y0, ref t0, ref t1)) return false;
+            if (!Clip(dy, y1 - a.Y, ref t0, ref t1)) return false;
+            return t0 <= t1;
+        }
+
+        private static bool Clip(float p, float q, ref float t0, ref float t1)
+        {
+            if (MathF.Abs(p) < 1e-6f) return q >= 0f;
+            float r = q / p;
+            if (p < 0f)
+            {
+                if (r > t1) return false;
+                if (r > t0) t0 = r;
+            }
+            else
+            {
+                if (r < t0) return false;
+                if (r < t1) t1 = r;
+            }
+            return true;
+        }
     }
 
-    private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H);
+    private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H, int Seq);
 
-    private sealed record LayoutAudit(int Texts, int Fills, int TextOverlaps, int CaptionOverlaps, int BoxOverlaps,
-        string[] CaptionOverlapSamples, string[] BoxOverlapSamples);
+    /// <summary>P1038b — one recorded stroke: its endpoints, ink width (px) and draw order.</summary>
+    private readonly record struct LayoutStroke(Vector2 A, Vector2 B, float Width, int Seq);
+
+    /// <summary>P1038b — a recorded plate (a readout box or a pane) and its draw order.</summary>
+    private readonly record struct LayoutFill(float X, float Y, float W, float H, int Seq);
+
+    /// <summary>P1038b — one recorded icon glyph and the minimum height its word needs.</summary>
+    private readonly record struct LayoutGlyph(string Id, float X, float Y, float W, float H, float MinimumHeight);
+
+    private sealed record LayoutAudit(int Texts, int Fills, int Strokes, int TextOverlaps, int CaptionOverlaps,
+        int BoxOverlaps, int StrokeHits, int TextOutsidePlate, int TextOffScreen, int Icons, int IconTooSmall,
+        string[] CaptionOverlapSamples, string[] BoxOverlapSamples, string[] StrokeHitSamples,
+        string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples);
 }

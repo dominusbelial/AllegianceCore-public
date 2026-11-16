@@ -92,20 +92,21 @@ public static class JetTargetGeometry
         => relationship == TargetRelationship.Friend;
 
     /// <summary>P1038 — the clearance kept between the designator's corner strokes and the
-    /// lock diamond's edges, in standard-stroke units (× scale).</summary>
+    /// lock cue, in standard-stroke units (× scale).</summary>
     public const float LockClearance = 6f;
 
-    /// <summary>1/√2 — a diamond's edge lies <c>radius/2</c> from the centre along the
-    /// diagonal the square designator's corner travels.</summary>
-    public const float InverseSqrt2 = 0.70710678f;
+    /// <summary>√2: the distance from a square's centre to its corner when its half-span
+    /// is 1 — the factor the lock ring uses to enclose the native-size designator.</summary>
+    public const float Sqrt2 = 1.41421356f;
 
     /// <summary>
-    /// P1038 — the lock diamond's half-span: the native per-state sizing
+    /// P1038b — the lock cue's half-span: the native per-state sizing
     /// <see cref="LockBracketStyle.HalfSizeForFraction"/> (native
     /// <c>radiusBracket + 40·(1−lock)</c>, radarimage.cpp:325-332) with the P1037
-    /// readability floor, so the native shrink still drives the size change.
+    /// readability floor, so the native shrink still drives the size change. This is the
+    /// designator's own native size (1.05 × the projected radius), NOT a contracted copy.
     /// </summary>
-    public static float LockDiamondHalf(MissileLockFeedback.LockState state, float fraction,
+    public static float LockCueHalf(MissileLockFeedback.LockState state, float fraction,
         float? screenRadius, float distanceToEdge, float scale)
     {
         float radius = LockBracketStyle.HalfSizeForFraction(state, fraction, screenRadius, distanceToEdge);
@@ -115,25 +116,20 @@ public static class JetTargetGeometry
     }
 
     /// <summary>
-    /// P1038 — the designator half-span while a lock diamond encloses it. A diamond's
-    /// boundary along the 45° diagonal of its centre is <c>radius/2</c> away, so the square
-    /// designator's corner (<c>half·√2</c>) stays inside with a visible gap exactly when
-    /// <c>half ≤ radius/2 − clearance/√2</c>. The native shrink keeps dictating the radius,
-    /// and the designator contracts to fit it: at every lock fraction all four corner
-    /// strokes lie inside the diamond.
+    /// P1038b — the radius of the segmented lock ring that ENCLOSES the designator:
+    /// <c>√2·lockHalf + clearance</c>. The designator keeps its native half-span, so its
+    /// corner lies <c>√2·lockHalf</c> from the centre — the ring is always exactly
+    /// <see cref="LockClearance"/> outside the corners at full lock and further out while
+    /// the native <c>+40·(1−lock)</c> shrink term is active. P1038 instead contracted the
+    /// designator to fit a diamond (126 → ~60 px at radius 120); that is gone.
     /// </summary>
-    public static float DesignatorHalfInsideLock(float designatorHalf, float diamondHalf, float scale)
-    {
-        float clearance = LockClearance * (scale > 0f ? scale : 1f);
-        float limit = diamondHalf * 0.5f - clearance * InverseSqrt2;
-        float floor = MinimumHalfPx * 0.5f;
-        return MathF.Min(designatorHalf, MathF.Max(limit, floor));
-    }
+    public static float LockRingRadius(float lockHalf, float scale)
+        => lockHalf * Sqrt2 + LockClearance * (scale > 0f ? scale : 1f);
 
     // ── lock ─────────────────────────────────────────────────────────────
-    /// <summary>Segments per diamond side: 4 → a 16-segment lock diamond. A partial
-    /// lock draws every other segment (open/dashed), a full lock draws them all
-    /// (closed) — shape, not hue, carries the state (P972 §4.3).</summary>
+    /// <summary>Segments per quadrant: 4 → a 16-segment lock ring. A partial lock draws
+    /// every other segment (open/dashed), a full lock draws them all (closed) — shape, not
+    /// hue, carries the state (P972 §4.3 "segmented diamond/arc").</summary>
     public const int LockSegmentsPerSide = 4;
 
     /// <summary>The presentation flash clock of the partial lock: one dash phase per
@@ -146,13 +142,13 @@ public static class JetTargetGeometry
     /// <summary>The dash phase index of the partial lock at
     /// <paramref name="nowSeconds"/>: alternates 0/1 every
     /// <see cref="LockPhasePeriodSeconds"/>, so the open segments march around the
-    /// diamond instead of freezing.</summary>
+    /// ring instead of freezing.</summary>
     public static int LockPhase(double nowSeconds)
         => nowSeconds <= 0d ? 0 : (int)(nowSeconds / LockPhasePeriodSeconds) & 1;
 
     /// <summary>True when segment <paramref name="index"/> carries ink in this
-    /// lock state: preset for None (nothing), every other segment for Partial
-    /// (marching with the shared clock), all of them for Full (closed).</summary>
+    /// lock state: nothing for None, every other segment for Partial (marching with the
+    /// shared clock), all of them for Full (closed).</summary>
     public static bool LockSegmentVisible(int index, int segmentsPerSide,
         MissileLockFeedback.LockState state, double nowSeconds) => state switch
     {
@@ -161,40 +157,21 @@ public static class JetTargetGeometry
         _ => ((index + LockPhase(nowSeconds)) & 1) == 0,
     };
 
-    /// <summary>The two endpoints of diamond segment <paramref name="index"/> on a
-    /// diamond of <paramref name="radius"/> centred at <paramref name="center"/>.
-    /// Segments run clockwise from the top vertex.</summary>
-    public static (Vector2 A, Vector2 B) LockSegment(int index, int segmentsPerSide,
-        Vector2 center, float radius)
+    /// <summary>The two endpoints of ring segment <paramref name="index"/> on a ring of
+    /// <paramref name="radius"/> centred at <paramref name="center"/>. Segments are chords
+    /// running clockwise from the top (−90°); 16 of them read as a segmented circle.</summary>
+    public static (Vector2 A, Vector2 B) LockRingSegment(int index, int segments, Vector2 center, float radius)
     {
-        if (segmentsPerSide <= 0) return (center, center);
-        int side = index / segmentsPerSide;
-        int within = index % segmentsPerSide;
-        float t0 = within / (float)segmentsPerSide;
-        float t1 = (within + 1) / (float)segmentsPerSide;
-        return (DiamondPoint(side, t0, center, radius), DiamondPoint(side, t1, center, radius));
+        if (segments <= 0) return (center, center);
+        float sweep = MathHelper.TwoPi / segments;
+        float start = -MathF.PI * 0.5f + index * sweep;
+        return (RingPoint(center, radius, start), RingPoint(center, radius, start + sweep));
     }
 
-    /// <summary>A point at parameter <paramref name="t"/> (0…1) along diamond side
-    /// <paramref name="side"/> (0 = top→right, clockwise).</summary>
-    public static Vector2 DiamondPoint(int side, float t, Vector2 center, float radius)
-    {
-        Vector2 from = side switch
-        {
-            0 => new(0f, -radius),
-            1 => new(radius, 0f),
-            2 => new(0f, radius),
-            _ => new(-radius, 0f),
-        };
-        Vector2 to = side switch
-        {
-            0 => new(radius, 0f),
-            1 => new(0f, radius),
-            2 => new(-radius, 0f),
-            _ => new(0f, -radius),
-        };
-        return Vector2.Lerp(from, to, t) + center;
-    }
+    /// <summary>A point on a ring at <paramref name="angle"/> (radians, screen space).</summary>
+    public static Vector2 RingPoint(Vector2 center, float radius, float angle)
+        => new(center.X + MathF.Cos(angle) * radius, center.Y + MathF.Sin(angle) * radius);
+
 
     // ── lead / aim ───────────────────────────────────────────────────────
     /// <summary>A lead marker/open circle radius (physical px at scale 1).</summary>
