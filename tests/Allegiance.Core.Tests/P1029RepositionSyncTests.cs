@@ -470,9 +470,10 @@ public sealed class P1029RepositionSyncTests
     /// the old `target.Sector is null` test let them be moved with
     /// <c>StationId</c>/<c>ParentShip</c> left behind (a stale dock in the wrong
     /// sector, from which it could buy a hull at a station it is no longer at).
-    /// A docked target stays allowed because the port's MCP staging cheat
-    /// relocates auto-seated bots, which spawn docked
-    /// (<c>P554AdminCheatLiveTests</c>); what it must not do is keep the dock.</summary>
+    /// A docked target stays allowed because the port's staging test seats a
+    /// bot that docks on the first tick (<c>P554AdminCheatLiveTests</c>: the
+    /// probe shows <c>StationId=24465</c> at relocate time; refusing it fails
+    /// that test); what it must not do is keep the dock.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Relocate_refuses_boarded_team_lobby_and_dead_and_clears_a_docked_ships_dock()
@@ -517,8 +518,10 @@ public sealed class P1029RepositionSyncTests
         ExpectRefused("dead");
         ship.SetFraction(1f);
 
-        // (d) docked — moved, and the dock is cleared (no stale station in the
-        // destination sector; the client's SET_CLUSTER does SetStation(NULL)).
+        // (d) docked — moved, and the dock is cleared. Refusing it would break
+        // the P554 staging path (a seated bot is docked at station 24465 by the
+        // time the admin relocates it); the corruption was the stale dock, and
+        // the client's SET_CLUSTER does SetStation(NULL) (appmsg.cpp:1044-1049).
         ship.StationId = 8380;
         sent.Clear();
         Call(server, "HandleRelocateCheat", conn, ship, cmd);

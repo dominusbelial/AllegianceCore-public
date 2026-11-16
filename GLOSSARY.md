@@ -528,6 +528,16 @@ list in **reverse**.
   renderer adaptation: native ranks the parent and locally simulates it.
   Native phases/classification: `docs/parity/p891-boarded-pose.csv`;
   report: `docs/reports/P891_REPORT.md`.
+- **Server-authorized reposition cookie (P1029)** — every server-initiated move of a player's own ship rotates
+  its per-peer pose cookie and tells the client the new cluster, or the client echoes a stale cookie and every
+  later `SHIP_UPDATE` is dropped whole (native `FedSrv.CPP:4851-4864`). One helper does the per-peer half of
+  native `CFSPlayer::SetCluster` (`fsship.cpp:742-767`): `Server.SendOwnerSetCluster`
+  (`Server.Combat.cs`) updates `LiveShip.Sector`, sends `SET_CLUSTER(7)` with `NextCookie(EnsurePeerUpdate(conn))`
+  plus the destination treasure snapshot — used by an aleph warp (`OnShipWarped`) and the ripcord teleport
+  (`Server.Docking.cs PerformRipcordTeleport`, native `UseRipcord` → `SetCluster`, `FedSrv.CPP:13482`; also sent
+  for a same-sector move, `Igc/shipIGC.h:233-240`). `PerformRelaunch` stamps the lander's fresh cookie on
+  `RELAUNCH_SHIP` for a player (`FedSrv.CPP:13015-13016`); child-ship propagation stays with P1034.
+  Proof: `tests/Allegiance.Core.Tests/P1029RepositionSyncTests.cs`; `docs/parity/p1029-reposition-sync.csv`.
 - **Turret relay (one-shot "last update kind")** — a boarded gunner's accepted
   `ACTIVE_TURRET_UPDATE(99)` is stored (`Server._lastTurretUpdates`, native
   `m_atu`) and relayed to every other cluster player by exactly ONE

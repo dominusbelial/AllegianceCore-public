@@ -252,13 +252,13 @@ public sealed partial class Server
     /// <para><b>P1029 — flying-only targets.</b> A dead, boarded or team-lobby
     /// ship is refused: in this port such a ship keeps a non-null
     /// <see cref="Ship.Sector"/>, so the old sector test alone let it be moved
-    /// with its <c>ParentShip</c> left behind. A DOCKED ship is still allowed
-    /// (the port's MCP staging cheat relocates auto-seated bots, which spawn
-    /// docked), but its dock is cleared with the move — the SET_CLUSTER the
-    /// client applies does <c>SetStation(NULL)</c>
-    /// (<c>clintlib/appmsg.cpp:1044-1049</c>), so leaving <c>StationId</c> set
-    /// was the corruption (a stale dock in the wrong sector, from which
-    /// <c>BuyLoadout</c> could still mount a hull). Native's own teleport arm
+    /// <c>ParentShip</c> left behind. A DOCKED ship is still allowed
+    /// (the port's P554 staging test seats a bot that docks on the first tick,
+    /// so refusing docked relocations breaks legit harness staging), but its
+    /// dock is cleared with the move — the SET_CLUSTER the client applies does
+    /// <c>SetStation(NULL)</c> (<c>clintlib/appmsg.cpp:1044-1049</c>), so leaving
+    /// <c>StationId</c> set was the corruption (a stale dock in the wrong
+    /// sector, from which <c>BuyLoadout</c> could still mount a hull). Native's own teleport arm
     /// requires a free-flying ship (<c>FedSrv.CPP:7040-7073</c>) and there is no
     /// native relocate cheat — deliberate port hardening, like the ownership
     /// rule above it.</para>
@@ -345,13 +345,16 @@ public sealed partial class Server
         // `StationId`/`ParentShip` stayed behind — a stale dock in the wrong
         // sector (it could then buy a hull at a station it is no longer at).
         // A DEAD, BOARDED or team-lobby (side < 0) target is refused outright.
-        // A DOCKED target stays allowed — the port's MCP staging cheat
-        // (P554) relocates auto-seated bots, which spawn DOCKED at their
-        // garrison, and refusing them would break that harness — but the dock
-        // is cleared, because the SET_CLUSTER the client applies calls
-        // SetStation(NULL) (clintlib/appmsg.cpp:1044-1049): the server must
-        // match the state it just told the client, or the ship stays "docked"
-        // at a station it is no longer at.
+        // A DOCKED target is allowed and its dock is CLEARED, because refusing
+        // it breaks legit harness staging: a seated peer can be docked by the
+        // time the admin relocates it (P554AdminCheatLiveTests seats a bot that
+        // docks on the first tick in its debug home; the probe log shows
+        // `grounded='docked at a station' station=24465`, and a refusal fails
+        // that test). Clearing the dock is the state the client is told to
+        // take — Apply(SetCluster) calls SetStation(NULL)
+        // (clintlib/appmsg.cpp:1044-1049) — so server and client stay equal;
+        // leaving `StationId` set was the corruption (a dock at a station the
+        // ship is no longer at).
         string? grounded =
             target.Dead ? "dead"
             : target.ParentShip is not null ? "boarded on another ship"
