@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "skin": "jet",
+  "palette": {
+    "Primary": "#79FFC0",
+    "Dim": "#3DA87B",
+    "Hot": "#C9FFE3",
+    "Plate": "#06110C",
+    "Keyline": "#080B09"
+  },
+  "scenes": [
+    {
+      "scene": "jet-flight-1920x1080-dark",
+      "scenario": "flight",
+      "width": 1920,
+      "height": 1080,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": true,
+      "reticleVisible": true,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 1,
+      "strokePx": 1.5,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-flight-800x480-dark",
+      "scenario": "flight",
+      "width": 800,
+      "height": 480,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": true,
+      "reticleVisible": true,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 0.6666667,
+      "strokePx": 1,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-flight-800x480-bright",
+      "scenario": "flight",
+      "width": 800,
+      "height": 480,
+      "backdrop": "bright",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": true,
+      "reticleVisible": true,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 0.6666667,
+      "strokePx": 1,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-radar-overlays-1920x1080-dark",
+      "scenario": "radar-overlays",
+      "width": 1920,
+      "height": 1080,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": true,
+      "reticleVisible": true,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 1,
+      "strokePx": 1.5,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-lifepod-800x480-dark",
+      "scenario": "lifepod",
+      "width": 800,
+      "height": 480,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": true,
+      "reticleVisible": true,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 0.6666667,
+      "strokePx": 1,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-docked-800x480-dark",
+      "scenario": "docked",
+      "width": 800,
+      "height": 480,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": false,
+      "instrumentsVisible": false,
+      "reticleVisible": false,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 0.6666667,
+      "strokePx": 1,
+      "tag": "JET / GREEN - WIP"
+    },
+    {
+      "scene": "jet-command-1920x1080-dark",
+      "scenario": "command",
+      "width": 1920,
+      "height": 1080,
+      "backdrop": "dark",
+      "coverage": [
+        "Cockpit centre reticle",
+        "Speed",
+        "Thrust setting"
+      ],
+      "visible": true,
+      "flightVisible": true,
+      "instrumentsVisible": false,
+      "reticleVisible": false,
+      "telemetry": true,
+      "speed": 260,
+      "throttle": 1,
+      "scale": 1,
+      "strokePx": 1.5,
+      "tag": "JET / GREEN - WIP"
+    }
+  ]
+}

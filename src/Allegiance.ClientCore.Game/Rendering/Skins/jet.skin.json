@@ -1,0 +1,18 @@
+{
+  "Schema": "hud-skin-1",
+  "Id": "jet",
+  "Name": "Jet",
+  "Version": "1.0.0",
+  "Defaults": {
+    "SelectionBracket": true,
+    "RadarDeclutter": true,
+    "Level": "Tactical"
+  },
+  "Palette": {
+    "Primary": "#79FFC0",
+    "Dim": "#3DA87B",
+    "Hot": "#C9FFE3",
+    "Plate": "#06110C",
+    "Keyline": "#080B09"
+  }
+}

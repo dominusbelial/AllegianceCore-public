@@ -114,6 +114,13 @@ public static class VisualFlags
     /// Default OFF until the Loadout V2 epic receives visual approval.</summary>
     public const string LoadoutV2Key = "hangar.loadoutV2";
 
+    /// <summary>P1035 — the Jet military vector HUD skin (P972 §4). Default OFF
+    /// while Jet is built story by story (P1035–P1043): with the flag off Jet is
+    /// not in the Shift+F12 cycle and <c>Request("jet")</c> refuses; a persisted
+    /// <c>"Skin":"jet"</c> displays Modern without rewriting the saved value.
+    /// Visual only: the skin is presentation and never changes a game rule.</summary>
+    public const string JetSkinKey = "hud.jetSkin";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -182,6 +189,12 @@ public static class VisualFlags
             "Loadout V2",
             "hulls, ship and inline equipment offers",
             VisualFlagKind.Toggle),
+        // P1035 — the Jet skin itself; OFF until the Jet epic's release gate.
+        new VisualFlag(
+            JetSkinKey,
+            "Jet HUD",
+            "military vector HUD — in development",
+            VisualFlagKind.Toggle),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -229,6 +242,10 @@ public sealed class VisualOptions
     /// <summary>P989 — the sim colour grade is requested (no-op unless the HDR
     /// pipeline really produced the float scene target: <see cref="SimPalette"/>).</summary>
     public bool SimPalette => IsOn(VisualFlags.SimPaletteKey);
+
+    /// <summary>P1035 — the Jet HUD skin is exposed in the Shift+F12 cycle and to
+    /// <c>Request("jet")</c>. Off while the skin is in development.</summary>
+    public bool JetSkin => IsOn(VisualFlags.JetSkinKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)

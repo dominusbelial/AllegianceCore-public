@@ -41,15 +41,29 @@ public sealed partial class Game1
             model => _radarRenderer.Draw(model, GraphicsDevice.Viewport),
             DrawHudShipTags, DrawEjectDeathOverlays, DrawCommandHud,
             DrawChat, DrawCargoHud, DrawFlightPartsHud);
-        _hudSkins = new(_hudSettings,
-            new HudSkinRenderer(_hudRenderer, resources, _radarRenderer.SetRadarIcons),
-            new HudSkinRenderer(_modernHudRenderer, resources));
+        var classic = new HudSkinRenderer(_hudRenderer, resources, _radarRenderer.SetRadarIcons);
+        var modern = new HudSkinRenderer(_modernHudRenderer, resources);
+        // P1035 — Jet is installed (preloaded) but gated behind hud.jetSkin: the
+        // switcher skips it in the cycle and refuses Request("jet") while the flag
+        // is off. Its shared passes are the Classic composition (see the renderer).
+        IHudSkinRenderer? jet = HudSkinResolver.Catalog.TryGet(HudSkinIds.Jet) is { } jetDefinition
+            ? new Rendering.Jet.JetHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
+                resources, jetDefinition, _displayScale, _radarRenderer.SetRadarIcons)
+            : null;
+        _hudSkins = new(_hudSettings, classic, modern, jet, jetEnabled: JetSkinEnabled);
         _hudSkins.Active.Renderer.SetRadarIcons(_radarIconTextures);
     }
+
+    /// <summary>P1035 — the live <c>hud.jetSkin</c> gate. Read at the update
+    /// boundary; never constructs anything.</summary>
+    private bool JetSkinEnabled() => _visuals?.JetSkin == true;
 
     private void UpdateHudSkinInput(KeyboardState keys, bool focused)
     {
         if (_hudSkins is null) return;
+        // P1035 — toggling hud.jetSkin off while Jet is active queues Modern at
+        // this boundary; CommitHudSkinChange then publishes it atomically.
+        _hudSkins.ObserveJetAvailability(JetSkinEnabled());
         var map = KeyBindingStore.Instance.Map;
         // This port-only action has one rebindable chord and no aliases in
         // either preset. Avoid IsDown's temporary alternate-binding list.
@@ -71,6 +85,11 @@ public sealed partial class Game1
         _hudSkinNotice = "SKIN: " + _hudSkins.Active.Definition.Name;
         _hudSkinNoticeUntil = _nowSeconds + 2;
     }
+
+    /// <summary>P1035 — the Ctrl+F6 HUD-skin row (graphics row 6). One function so
+    /// the options test can assert the active skin's name — including Jet — is what
+    /// the row lists, without duplicating the panel's literal.</summary>
+    internal static string HudStyleRowLabel(string name) => "HUD style: " + name;
     private readonly UpscalingSettings _upscaling = UpscalingSettings.Load(UpscalingSettings.DefaultPath);
     private readonly DynamicResolutionController _resolutionController = new();
     private readonly FlightGcLatency _flightGc = new(Environment.GetEnvironmentVariable("ALLEGIANCE_CLIENT_GC_LOWLATENCY") == "1");
@@ -294,7 +313,7 @@ public sealed partial class Game1
                 $"Dynamic resolution: {(_upscaling.DynamicResolution ? "On" : "Off")}",
                 $"Target frame time: {_upscaling.TargetFrameMs:F1} ms",
                 $"HD textures: {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)",
-                $"HUD style: {_hudSkins!.Active.Definition.Name}",
+                HudStyleRowLabel(_hudSkins!.Active.Definition.Name),
                 $"HUD size: {_hudSettings.Size:P0}",
                 $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
                 $"Effects quality: {_upscaling.Effects}",

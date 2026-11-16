@@ -977,6 +977,25 @@ list in **reverse**.
   tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/HudSkinSwitchingTests.cs`;
   report: `docs/reports/SKINS_1C_SWITCHING_P988.md`.
 
+- **Jet skin (P1035, skin story 1/9)** — the military vector HUD designed in P972 §4, built behind the
+  **`hud.jetSkin`** visual flag (`src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs`, label "Jet HUD",
+  default OFF while it is in development). `HudSkinSwitcher` is now an ordered N-skin registry
+  (Classic, Modern, Jet as preloaded adapters): `Cycle` skips the gated Jet, `Request("jet")` refuses while the
+  flag is off, a persisted `"Skin":"jet"` shows Modern WITHOUT rewriting the saved value, and turning the flag
+  off at runtime falls back to Modern at the update/draw boundary. The definition is the built-in
+  `src/Allegiance.ClientCore.Game/Rendering/Skins/jet.skin.json` (`HudSkinIds.Jet`), whose optional
+  `Palette` block (`#79FFC0` primary / `#3DA87B` dim / `#C9FFE3` hot / near-black plate+keyline) is validated
+  all-or-nothing by `HudSkinLoader`. **`JetVectorPainter`**
+  (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetVectorPainter.cs`) is the shared vector-primitive layer every
+  later Jet story draws with — line/polyline, circle/arc, corner brackets, plate and keyline-backed text, each with
+  a near-black outer under-stroke, 1.5 px at 1080p scaled by the Modern/density rule and floored at one physical
+  pixel, with pre-sized buffers (0 B/frame). `src/Allegiance.ClientCore.Game/Rendering/Jet/JetHudRenderer.cs` draws
+  only the story-1 symbology (broken gun cross, boxed speed, boxed throttle %, `JET / GREEN - WIP` tag) and routes
+  radar/ship tags/pod-death/command/chat/cargo/flight parts through the shared `HudSkinResources` Classic
+  composition. Evidence: `tools/hud2-proof/Program.cs` (`--jet <dir>`);
+  tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetSkinScaffoldTests.cs`;
+  report: `docs/reports/JET_SKIN_SCAFFOLD_P1035.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

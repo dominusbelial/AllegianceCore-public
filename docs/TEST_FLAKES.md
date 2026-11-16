@@ -4,6 +4,33 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1035 gate observations — 2026-11-16 UTC
+
+One fast sweep on the P1035 tree: **14,792 tests, 573.6 s, FAIL** (runner summary;
+`Allegiance.ClientCore.Tests` 2,450 passed / 1 failed; `Allegiance.Core.Tests` 6,565 passed / 4 failed /
+3 not executed (both projects include their quarantine passes: 2 and 17); MonoGame 5,517 passed / 4 not executed;
+Lobby 193 and Update 55 all passed).
+Plus 5 executions over the calibrated 11.536 s Fast limit. P1035 touches only the client HUD skin system
+(`Rendering/Skins/*`, `Rendering/Jet/*`, `VisualFlags`, `Game1.GpuBudget`); none of the failures is on a
+path this task changed — they are the remote death-receipt, the warp-bomb timer float bound, the NPC
+miner decision cycle, the roster-clock range and the ASTEROID_MINED receipt families, every one already
+ledgered above. Each rerun below used its exact method filter in its own test process with artwork and
+`--no-build`. Host load average after the isolation loop: **0.31 / 0.35 / 0.89** (1/5/15 min); the sweep
+itself ran while other lanes were active on the shared host.
+
+| Test | Full-sweep observation | Isolated reruns | Note |
+| --- | --- | --- | --- |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | `B never saw A's death (IsDead never latched on B) after 2500 ticks`, 4 s | fail / pass / pass (~1 s) | Existing asynchronous remote death-receipt intermittency (many entries above) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | `7.0000000000000009` against the inclusive 7 s upper bound, 143 ms | 1 failure in each of run 1/run 3, 0 in run 2 (the filter runs the delay 5/7/10 rows together) | Deterministic one-ULP floating upper-bound family, ledgered above; timer/bomb code unchanged by this story |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | `NPC should have begun mining, got ore 0`, 30.4 s (also over the limit) | 3/3 pass (~1 s) | Existing NPC miner decision-cycle family; load-only under the concurrent sweep |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | value outside `[4,8]`, 206 ms | 3/3 pass (~0.5 s) | Existing simulation-clock roster family, ledgered repeatedly above |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | one extra queued ASTEROID_MINED after the capacity receipt, 1 s | pass / pass / fail (~1 s) | Existing mining-receipt family, ledgered above; intermittent |
+
+The five calibrated-limit offenders: four passed (`P999CivStrategyTests.Every_profile…civ: 5` 20.3 s,
+`SC2NaniteSupportTests.Support_selection…civ: 25` 14.0 s, `P796VariedLoadoutTests.Varied…civ: 35` 13.4 s,
+`P814GunnerTests.P814b…` 11.8 s) and `P817NativeMinerDecisionCycleLiveTests…` (30.4 s) is the failed row
+above; every one already has a timing entry above. No tier, limit or assertion was relaxed for any of them.
+
 ## P1032 gate observations — 2026-11-16 UTC
 
 One fast sweep on the P1032 tree: **14,743 tests, 558.6 s, FAIL** (the runner summary;

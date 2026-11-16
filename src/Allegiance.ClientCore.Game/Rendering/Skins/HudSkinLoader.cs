@@ -45,5 +45,26 @@ public static class HudSkinLoader
             throw new HudSkinLoadException("Missing defaults.");
         if (!Enum.IsDefined(def.Defaults.Level))
             throw new HudSkinLoadException($"Unknown level '{(int)def.Defaults.Level}'.");
+        ValidatePalette(def.Palette);
+    }
+
+    /// <summary>P1035 — the optional palette block is all-or-nothing: a definition
+    /// that carries one must carry every role (an empty string is "missing"), and
+    /// every role must be a <c>#RRGGBB</c> colour. A bad colour rejects the whole
+    /// definition so the prior skin stays active (P972 §2.3).</summary>
+    private static void ValidatePalette(HudSkinPalette? palette)
+    {
+        if (palette is null) return;   // Classic/Modern keep colours in code.
+        ValidateRole("Primary", palette.Primary);
+        ValidateRole("Dim", palette.Dim);
+        ValidateRole("Hot", palette.Hot);
+        ValidateRole("Plate", palette.Plate);
+        ValidateRole("Keyline", palette.Keyline);
+
+        static void ValidateRole(string role, string? value)
+        {
+            if (!HudSkinColor.TryParseHex(value, out _))
+                throw new HudSkinLoadException($"Palette.{role} '{value}' is not a #RRGGBB colour.");
+        }
     }
 }
