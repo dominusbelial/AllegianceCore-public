@@ -2931,6 +2931,7 @@ public sealed partial class Server
     {
         // P760 — LastWarpTime is now stamped in ServerHost.HitWarpEvent so the
         // warp-state handshake and cooldown live in the site callback.
+        MoveShipToSector(ship, newSector);
 
         foreach (var kv in _peerShips)
         {
@@ -2948,7 +2949,9 @@ public sealed partial class Server
                 Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
                 Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on warp SET_CLUSTER (fsship.cpp:767)
             };
-            SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
+            var packet = FedPacket.Pack(new[] { set.Encode() });
+            SendPeer(kv.Key, packet);
+            SendBoardedCluster(ship, newSector, packet);
             SendTreasureSnapshot(kv.Key, newSector);
             Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
             return;

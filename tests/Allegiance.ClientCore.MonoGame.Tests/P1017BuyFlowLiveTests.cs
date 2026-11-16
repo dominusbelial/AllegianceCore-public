@@ -345,6 +345,10 @@ public sealed class P1017BuyFlowLiveTests
             var gun = core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon);
             ship.MountPart(gun, 1, ship.HullType.MaxFixedWeapons, ExpandedPartData.FullyMounted);
         }, capitalDock: true);
+        // The deliberate observer is an allow-listed, verified loopback admin
+        // (native FedSrv/FedSrv.CPP:2405-2406); the gunner remains ordinary.
+        rig.Server.Config.LiveSettings ??= new();
+        rig.Server.Config.LiveSettings.AdminCheats = new() { Enabled = true, AllowNames = ["p1017_observer"] };
         pilot = rig.Join("p1017_pilot");
         gunner = rig.Join("p1017_gunner");
         observer = rig.Join("p1017_observer");

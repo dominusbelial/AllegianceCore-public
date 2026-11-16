@@ -70,6 +70,13 @@ public sealed class P653EconomyLoadoutIntegrityTests
         }
         public void Send(IFedMessage msg) => Call("ProcessDatagram", Conn, FedPacket.Pack([msg.Encode()]));
         public void Buy(params ExpandedPartData[] parts) => Send(new BuyLoadoutRequest { HullId = Buyer.HullType.HullId, Parts = parts });
+        public void PrepareBoarding()
+        {
+            // Refund tests use a real equipped turret seat. Native refuses an
+            // ordinary player's observer fallback (FedSrv/FedSrv.CPP:2405-2406).
+            Mate.ChangeHull(Mission.Core.HullTypes[792]);
+            Assert.NotNull(Mate.MountPart(Gun(), 1, (byte)Mate.HullType.MaxFixedWeapons, 255));
+        }
         public DataPartTypeIGC Gun()
         {
             var gun = Mission.Core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon) with { Price = 25, PartMask = 0, TtbmRequired = new byte[50], SuccessorPartId = -1 };
@@ -136,6 +143,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     public void H03_Free_hull_has_no_refund_and_paid_parts_refund_once_to_player()
     {
         using var w = new World();
+        w.PrepareBoarding();
         var gun = w.Gun();
         w.Wallet.Money = 100;
         w.Buy(new ExpandedPartData(gun.PartId, 1, 0, 255));
@@ -152,6 +160,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     public void H03_Free_spawn_parts_cannot_be_sold_but_bought_parts_can()
     {
         using var w = new World();
+        w.PrepareBoarding();
         var gun = w.Gun();
         w.Server.ShipSpawner = (_, mission, id) =>
         {
@@ -178,6 +187,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     public void H03_Launcher_purchase_and_refund_charge_only_remaining_units()
     {
         using var w = new World();
+        w.PrepareBoarding();
         var launcherId = w.Mission.Core.Launchers.Keys.First();
         Assert.True(w.Mission.Core.TryBuildExpendableLauncher(launcherId, out var launcher));
         launcher = launcher with { Price = 2, PartMask = 0, TtbmRequired = new byte[50], SuccessorPartId = -1 };
@@ -421,6 +431,7 @@ public sealed class P653EconomyLoadoutIntegrityTests
     public void P665_Flight_roundtrip_resets_readiness_preserves_refund_provenance_and_restores_publication(bool paid)
     {
         using var w = new World();
+        w.PrepareBoarding();
         var gun = w.Gun();
         w.Wallet.Money = 100;
         if (paid) w.Buy(new ExpandedPartData(gun.PartId, 1, 0, 240));

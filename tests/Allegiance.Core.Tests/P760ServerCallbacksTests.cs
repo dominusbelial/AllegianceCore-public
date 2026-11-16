@@ -316,6 +316,7 @@ public sealed class P760ServerCallbacksTests
     public void MoveShipToSector_announces_the_sector_exit_like_a_ripcord_move()
     {
         Require.Artwork();
+        using var server = new global::Allegiance.Server.Server();
         var host = new ServerHost();
         var mission = NewStartedMission(host);
         var a = mission.Sectors[0];
@@ -329,24 +330,24 @@ public sealed class P760ServerCallbacksTests
         host.ShipChangedCluster += (s, o, n) => { observedOld = o; observedNew = n; };
 
         var move = typeof(global::Allegiance.Server.Server).GetMethod("MoveShipToSector",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(move);
 
         // Cross-sector move (what a ripcord teleport does) → the site hears it.
-        move!.Invoke(null, [ship, b, true]);
+        move!.Invoke(server, [ship, b, true]);
         Assert.Equal(a, observedOld);
         Assert.Equal(b, observedNew);
         Assert.Same(b, ship.Sector);
 
         // Same-sector move → no announce (native: pclusterOld != pclusterNew).
         observedOld = null; observedNew = null;
-        move.Invoke(null, [ship, b, false]);
+        move.Invoke(server, [ship, b, false]);
         Assert.Null(observedOld);
         Assert.Null(observedNew);
 
         // A dock-bound relocation (announceExit:false — native SetCluster(NULL)
         // first, FedSrv.CPP:12045) is silent even across sectors.
-        move.Invoke(null, [ship, a, false]);
+        move.Invoke(server, [ship, a, false]);
         Assert.Same(a, ship.Sector);
         Assert.Null(observedOld);
     }

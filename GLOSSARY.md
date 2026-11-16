@@ -158,6 +158,18 @@ list in **reverse**.
   native `zone_core.igc` name. Version/size prefixes stay plain. Native:
   `FedSrv/FedSrv.CPP:31-56,9304,9763`; tests:
   `tests/Allegiance.Core.Tests/P868EncryptedCoreTests.cs`.
+- **Boarding and crew sector ownership (P1034)** — authenticated admin-only
+  observer fallback, station-consistent remote boarding/launch, recursive crew
+  membership and peer routing in `src/Allegiance.Server/Server.Docking.cs`
+  (`MoveShipToSector`, `SendBoardedCluster`); warp forwarding in
+  `src/Allegiance.Server/Server.Combat.cs` and immediate boarding status in
+  `src/Allegiance.Server/Server.ShipCommands.cs`. Native:
+  `Igc/shipIGC.h:245-254`, `Igc/stationIGC.cpp:379`,
+  `FedSrv/FedSrv.CPP:2312-2316,2405-2406,2456-2457`,
+  `FedSrv/fsship.cpp:745-769,918-929`. Proof:
+  `tests/Allegiance.Core.Tests/P1034BoardingParityTests.cs`,
+  `docs/parity/p1034-boarding.csv`; report:
+  `docs/reports/R1B_BOARDING_PARITY_P1034.md`.
 - **Ship** — player/bot vessel: flight, weapons, shields, cargo. Key:
   `src/Allegiance.Core/Sim/Ship.cs`. *Native:* `shipigc.cpp`, `fsship.cpp`.
 - **Wingman defend acquisition (P952 audit)** — a guard needs a damaging

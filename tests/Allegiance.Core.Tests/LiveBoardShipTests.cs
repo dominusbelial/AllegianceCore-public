@@ -453,7 +453,7 @@ public class LiveBoardShipTests
 
     /// <summary>⭐ Scenario 2: boarding a ship with turret slots but NO free
     /// equipped slot makes the boarder an observer (TurretId null), not a
-    /// rejection — the ported empty-loop fallback (<c>FedSrv.CPP:2395-2400</c>).
+    /// rejection for an authorized admin (<c>FedSrv.CPP:2395-2406</c>).
     /// The wire reflects it as State=c_ssObserver with the carrier's parent id.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -462,7 +462,13 @@ public class LiveBoardShipTests
         Require.Artwork();
         var server = new Srv();
         InjectBoardSpawn(server, equipTurret: false);         // slots [2,6) but nothing mounted
-        server.Boot(Config());
+        var cfg = Config();
+        // Native observer fallback requires CanCheat (FedSrv.CPP:2405-2406).
+        // All role names are allowed because socket/spawn order may swap them;
+        // these real loopback sockets provide the verified privilege provenance.
+        cfg.LiveSettings = new() { AdminCheats = new() { Enabled = true,
+            AllowNames = ["CARRIER", "BOARDER", "BIG", "SMALL"] } };
+        server.Boot(cfg);
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var carrier = new WireClient(); var boarder = new WireClient();
         carrier.Connect(server.BoundPort, "CARRIER"); boarder.Connect(server.BoundPort, "BOARDER");
@@ -631,7 +637,13 @@ public class LiveBoardShipTests
         Require.Artwork();
         var server = new Srv();
         var sp = InjectReboardSpawn(server);
-        server.Boot(Config());
+        var cfg = Config();
+        // Native observer fallback requires CanCheat (FedSrv.CPP:2405-2406).
+        // All role names are allowed because socket/spawn order may swap them;
+        // these real loopback sockets provide the verified privilege provenance.
+        cfg.LiveSettings = new() { AdminCheats = new() { Enabled = true,
+            AllowNames = ["CARRIER", "BOARDER", "BIG", "SMALL"] } };
+        server.Boot(cfg);
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
         ushort port = server.BoundPort;
 

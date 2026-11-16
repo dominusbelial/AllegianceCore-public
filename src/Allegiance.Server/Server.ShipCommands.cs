@@ -147,7 +147,9 @@ public sealed partial class Server
             // Native BoardShip flushes the queued SHIP_STATUS changes
             // (FedSrv.CPP:2450-2457). A periodic teammate refresh can arrive
             // after PROMOTE, whose wire payload names only the child.
-            var packet = FedPacket.Pack([MakeOwnShipStatus(ship.Id, live).Encode()]);
+            // Boarding may have changed sector (native SetStation inheritance,
+            // FedSrv.CPP:2456-2457). Flush the refreshed peer, not the saved input.
+            var packet = FedPacket.Pack([MakeOwnShipStatus(ship.Id, _peerShips[from]).Encode()]);
             foreach (var peer in _peerShips)
                 if (peer.Value.Ship.Mission == mission && peer.Value.Ship.SideId == ship.SideId)
                     SendPeer(peer.Key, packet);
