@@ -5,6 +5,11 @@ using Npgsql;
 
 namespace Allegiance.Lobby.Career;
 
+/// <summary>P1028 — a match report was rejected before anything was applied:
+/// the <see cref="Exception.Message"/> is the short reason shown to the game
+/// server (the endpoint maps this to a 4xx).</summary>
+public sealed class ReportRejectedException(string reason) : Exception(reason);
+
 /// <summary>
 /// Persistent, per-account, per-civilization career statistics and leaderboard
 /// backing for the lobby (P808b). This is the port of the native club database's
@@ -73,6 +78,16 @@ public sealed class CareerStore
     {
         int applied = 0, duplicates = 0, skipped = 0;
         if (report.Players.Count == 0 && report.SquadGame is null) return new(applied, duplicates, skipped);
+        // P1028 — validate every entry up front, before the transaction opens,
+        // so a rejected report can never partially apply (native had no such
+        // surface to mirror; see CareerContracts.Limits for the chosen bounds).
+        // Exactly-zero time played is native's skip gate (FedSrv.CPP:1052-1055);
+        // a negative value is garbage and is rejected by the validation below.
+        foreach (var p in report.Players)
+        {
+            if (!p.ScoresCount || p.Minutes == 0) continue;   // native gates below; not a rejection
+            if (p.Validate() is { } reason) throw new ReportRejectedException(reason);
+        }
         // A server's match ids are its own: scope them per server, so two servers
         // reusing an id never block (or merge with) each other's results.
         string matchKey = $"{serverId}:{report.MatchId}";
@@ -118,18 +133,30 @@ public sealed class CareerStore
             float newScore = prevScore + p.Score;
             short newRank = CareerRankTable.RankFor((int)newScore);
 
-            using (var upsert = Command(c, """
-                INSERT INTO career_by_civ(account_id,civ,score,rank,combat_rating,kills,deaths,base_kills,base_captures,
-                                          minutes,wins,losses,games,commander_wins,commander_losses)
-                VALUES(@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10,@p11,@p12,@p13,@p14)
-                ON CONFLICT(account_id,civ) DO UPDATE SET
-                  score=@p2, rank=@p3, combat_rating=@p4, kills=@p5, deaths=@p6, base_kills=@p7, base_captures=@p8,
-                  minutes=@p9, wins=@p10, losses=@p11, games=@p12, commander_wins=@p13, commander_losses=@p14
-                """, p.AccountId, p.Civ, newScore, newRank, p.CombatRating,
-                prevKills + p.Kills, prevDeaths + p.Deaths, prevBaseKills + (int)p.BaseKills, prevBaseCaptures + (int)p.BaseCaptures,
-                prevMinutes + p.Minutes, prevWins + (p.Win ? 1 : 0), prevLosses + (p.Loss ? 1 : 0), prevGames + 1,
-                prevCw + (p.CommanderWin ? 1 : 0), prevCl + (p.CommanderLoss ? 1 : 0)))
-            { upsert.Transaction = tx; upsert.ExecuteNonQuery(); }
+            // P1028 — the totals are accumulated in checked arithmetic so a
+            // corrupt or legacy near-int.MaxValue row fails loudly instead of
+            // wrapping negative; the throw rolls the transaction back, so
+            // nothing partially applies (clear failure: the reason is 4xx'd).
+            try
+            {
+                using (var upsert = Command(c, """
+                    INSERT INTO career_by_civ(account_id,civ,score,rank,combat_rating,kills,deaths,base_kills,base_captures,
+                                              minutes,wins,losses,games,commander_wins,commander_losses)
+                    VALUES(@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10,@p11,@p12,@p13,@p14)
+                    ON CONFLICT(account_id,civ) DO UPDATE SET
+                      score=@p2, rank=@p3, combat_rating=@p4, kills=@p5, deaths=@p6, base_kills=@p7, base_captures=@p8,
+                      minutes=@p9, wins=@p10, losses=@p11, games=@p12, commander_wins=@p13, commander_losses=@p14
+                    """, p.AccountId, p.Civ, newScore, newRank, p.CombatRating,
+                    checked(prevKills + p.Kills), checked(prevDeaths + p.Deaths),
+                    checked(prevBaseKills + (int)p.BaseKills), checked(prevBaseCaptures + (int)p.BaseCaptures),
+                    checked(prevMinutes + p.Minutes), checked(prevWins + (p.Win ? 1 : 0)), checked(prevLosses + (p.Loss ? 1 : 0)),
+                    checked(prevGames + 1), checked(prevCw + (p.CommanderWin ? 1 : 0)), checked(prevCl + (p.CommanderLoss ? 1 : 0))))
+                { upsert.Transaction = tx; upsert.ExecuteNonQuery(); }
+            }
+            catch (OverflowException)
+            {
+                throw new ReportRejectedException($"accumulated career totals for account '{p.AccountId}' would overflow; match result rejected");
+            }
 
             // Overall (all-civ) combat rating and last-played timestamp ride the
             // career meta line (native: "Rating is always overall", FedSrv.CPP:1114).
@@ -241,13 +268,13 @@ public sealed class CareerStore
                 {
                     AccountId = r[0], Callsign = r[1],
                     Score = score,
-                    Minutes = int.Parse(r[3]),
+                    Minutes = ClampedInt(r[3]),
                     BaseKills = (int)float.Parse(r[4], System.Globalization.CultureInfo.InvariantCulture),
                     BaseCaptures = (int)float.Parse(r[5], System.Globalization.CultureInfo.InvariantCulture),
-                    Kills = int.Parse(r[6]), Deaths = int.Parse(r[7]),
+                    Kills = ClampedInt(r[6]), Deaths = ClampedInt(r[7]),
                     Rating = (short)(int)float.Parse(r[8], System.Globalization.CultureInfo.InvariantCulture),
-                    Wins = int.Parse(r[9]), Losses = int.Parse(r[10]), Games = int.Parse(r[11]),
-                    CommanderWins = int.Parse(r[12]), CommanderLosses = int.Parse(r[13]),
+                    Wins = ClampedInt(r[9]), Losses = ClampedInt(r[10]), Games = ClampedInt(r[11]),
+                    CommanderWins = ClampedInt(r[12]), CommanderLosses = ClampedInt(r[13]),
                     Rank = CareerRankTable.RankFor((int)score),
                 });
             }
@@ -269,13 +296,13 @@ public sealed class CareerStore
                 {
                     AccountId = r[0], Callsign = r[1],
                     Score = float.Parse(r[2], System.Globalization.CultureInfo.InvariantCulture),
-                    Minutes = int.Parse(r[3]),
+                    Minutes = ClampedInt(r[3]),
                     BaseKills = (int)float.Parse(r[4], System.Globalization.CultureInfo.InvariantCulture),
                     BaseCaptures = (int)float.Parse(r[5], System.Globalization.CultureInfo.InvariantCulture),
-                    Kills = int.Parse(r[6]), Deaths = int.Parse(r[7]),
+                    Kills = ClampedInt(r[6]), Deaths = ClampedInt(r[7]),
                     Rating = (short)(int)float.Parse(r[8], System.Globalization.CultureInfo.InvariantCulture),
-                    Wins = int.Parse(r[9]), Losses = int.Parse(r[10]), Games = int.Parse(r[11]),
-                    CommanderWins = int.Parse(r[12]), CommanderLosses = int.Parse(r[13]),
+                    Wins = ClampedInt(r[9]), Losses = ClampedInt(r[10]), Games = ClampedInt(r[11]),
+                    CommanderWins = ClampedInt(r[12]), CommanderLosses = ClampedInt(r[13]),
                     Rank = short.Parse(r[14]),
                 });
             }
@@ -345,6 +372,15 @@ public sealed class CareerStore
             Wins: rows[0].Wins, Losses: rows[0].Losses, GamesPlayed: rows[0].Games,
             CommanderWins: rows[0].CommanderWins, CommanderLosses: rows[0].CommanderLosses);
         return new(entries, top, basisIdx + 1, null);
+    }
+
+    /// <summary>P1028 — SUM() aggregates are 64-bit; the wire contract's int
+    /// fields would throw on parse past int.MaxValue, so clamp the display
+    /// value instead (unreachable through validated posts; legacy defence).</summary>
+    private static int ClampedInt(string s)
+    {
+        long v = long.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
+        return v >= int.MaxValue ? int.MaxValue : v <= int.MinValue ? int.MinValue : (int)v;
     }
 
     /// <summary>Internal mutable aggregation row for leaderboard sorting.</summary>
