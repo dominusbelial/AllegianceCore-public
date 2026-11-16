@@ -671,7 +671,21 @@ public sealed partial class Server
         // SetRipcordModel(NULL) once UseRipcord returns true, shipIGC.cpp:293).
         StrategyEvent(rip, "completed:ripcord", rip.HullType.HullId);
         rip.SetRipcordModel(null);
-        UpdatePeerSectorSnapshot(rip, targetSector);
+        // P1029 — native UseRipcord ends in `pship->SetCluster(pcluster)`
+        // (FedSrv.CPP:13482), which is CFSPlayer::SetCluster for a player: a
+        // guaranteed SET_CLUSTER(7) stamped with a fresh NewCookie() plus the
+        // destination cluster's exports (fsship.cpp:747-940). It runs even when
+        // the cluster does not change, "because the ship mostly likely
+        // teleported to a new position" (Igc/shipIGC.h:233-240). Without it the
+        // ripper's client keeps the old sector's remote ships/treasures and, on
+        // a same-sector ripcord, keeps a cookie the server has rotated away —
+        // every later SHIP_UPDATE is then dropped whole by the native cookie
+        // gate (FedSrv.CPP:4851-4864). Not in scope here: the same propagation
+        // to boarded CHILD ships (P1034 / R1b F3).
+        if (SendOwnerSetCluster(rip, targetSector) is { } ripPeer)
+            Console.WriteLine($"[ripcord] peer {ripPeer} ship {rip.Id} -> SET_CLUSTER sector {targetSector.Id} (new cookie; native UseRipcord SetCluster, FedSrv.CPP:13482)");
+        else
+            Console.WriteLine($"[ripcord] ship {rip.Id} -> sector {targetSector.Id}: not a peer ship — SET_CLUSTER routing skipped (NPC ripper)");
     }
 
     /// <summary>
@@ -1383,11 +1397,18 @@ public sealed partial class Server
     /// position/velocity/orientation derive from the slot's local frame
     /// transformed by the carrier's orientation; with zero slots, the ship is
     /// launched straight back along the carrier's backward axis.</para>
-    /// <para><b>Cookie.</b> Native sets <c>cookie = NewCookie()</c> for a player
-    /// (<c>FedSrv.CPP:13018</c>); this port's <c>Cookie</c> is a single byte sent
-    /// as <c>0</c> (no per-player cookie machinery), the same established
-    /// simplification <c>Eject.ForSurvivor</c> and <c>Server.cs:3289,4616</c>
-    /// apply — so <c>RelaunchShip.Cookie = 0</c>.</para>
+    /// <para><b>Cookie — P1029 (native parity).</b> Native stamps the lander's
+    /// fresh per-player cookie on <c>RELAUNCH_SHIP</c> for a <b>player</b>
+    /// (<c>FedSrv.CPP:13015-13016</c>: <c>if (pfsShip-&gt;IsPlayer())
+    /// pfmLaunch-&gt;cookie = pfsShip-&gt;GetPlayer()-&gt;NewCookie();</c>), so the
+    /// client's own-ship pose cookie rotates with the authoritative reposition
+    /// exactly like <c>SET_CLUSTER</c>/<c>SHIP_RESET</c> do (<c>fsship.cpp:767</c>,
+    /// <c>fsship.cpp:1199</c>). The port's <c>PeerShipUpdate.Cookie</c> (P507) is
+    /// that per-player cookie; a peer-owned lander is stamped with
+    /// <c>NextCookie(EnsurePeerUpdate(conn))</c> — which also clears
+    /// <c>HasMovementAnchor</c> so the client's post-relaunch pose is measured
+    /// from the launch pose, the same rebase <c>SET_CLUSTER</c> performs. A
+    /// drone/NPC lander keeps <c>0</c>, exactly native (no player to stamp).</para>
     /// </remarks>
     private void PerformRelaunch(Ship lander, Ship carrier)
     {
@@ -1463,6 +1484,12 @@ public sealed partial class Server
         //    cluster (GetGroupSectorFlying, FedSrv.CPP:13019). The loadout blob
         //    is the lander's own ShipLoadout (hullID + mounted parts), reusing
         //    BuyLoadoutRequest's blob shape.
+        //    P1029 — the cookie: native stamps NewCookie() for a player only
+        //    (`if (pfsShip->IsPlayer()) pfmLaunch->cookie = ... NewCookie()`,
+        //    FedSrv.CPP:13015-13016); a drone/NPC lander keeps 0.
+        byte launchCookie = 0;
+        if (ConnOf(lander) is { } landerConn)
+            launchCookie = NextCookie(EnsurePeerUpdate(landerConn));   // FedSrv.CPP:13015-13016
         var relaunch = new RelaunchShip
         {
             ShipId = lander.Id,
@@ -1470,7 +1497,7 @@ public sealed partial class Server
             Position = position,
             Velocity = velocity,
             Orientation = newOrientation,
-            Cookie = 0,
+            Cookie = launchCookie,
             HullId = lander.HullType.HullId,
             Parts = lander.Parts.Select(p => p.ToExpandedPartData()).ToList(),
         };
