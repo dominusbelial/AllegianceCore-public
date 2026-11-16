@@ -1,0 +1,35 @@
+{
+  "configuration": "Release, net10.0, trimmed managed assemblies; no AOT, no runtime relink; assets individually gzip-9 / Brotli-11 estimated, static server served uncompressed",
+  "groups": {
+    "kniScripts": {
+      "files": 12,
+      "rawBytes": 144200,
+      "gzipBytes": 18740,
+      "brotliBytes": 16313
+    },
+    "framework": {
+      "files": 78,
+      "rawBytes": 13887779,
+      "gzipBytes": 5098042,
+      "brotliBytes": 3982770
+    },
+    "nativeArt": {
+      "files": 2,
+      "rawBytes": 177930,
+      "gzipBytes": 45441,
+      "brotliBytes": 38316
+    },
+    "shell": {
+      "files": 1,
+      "rawBytes": 2020,
+      "gzipBytes": 882,
+      "brotliBytes": 673
+    }
+  },
+  "totals": {
+    "files": 93,
+    "rawBytes": 14211929,
+    "gzipBytes": 5163105,
+    "brotliBytes": 4038072
+  }
+}

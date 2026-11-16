@@ -1,0 +1,242 @@
+diff --git a/.scratch/p1045/network/Bridge.cs b/.scratch/p1045/network/Bridge.cs
+new file mode 100644
+index 00000000..51b943b1
+--- /dev/null
++++ b/.scratch/p1045/network/Bridge.cs
+@@ -0,0 +1,58 @@
++using System.Buffers.Binary;
++using System.Net;
++using System.Net.Sockets;
++using System.Net.WebSockets;
++
++public static class Bridge
++{
++    // Loopback-only experiment, hardcoded upstream: deliberately not an open proxy.
++    // Not deployable: no identity, Origin validation, budgets, per-source accounting
++    // or authenticated provenance forwarding. See report before adapting this code.
++    public static async Task HandleAsync(HttpContext context)
++    {
++        if(!IPAddress.IsLoopback(context.Connection.RemoteIpAddress!)||!context.WebSockets.IsWebSocketRequest){context.Response.StatusCode=400;return;}
++        using var stop=CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
++        using var tcp=new TcpClient {NoDelay=true};await tcp.ConnectAsync(IPAddress.Loopback,6045,stop.Token);
++        using var ws=await context.WebSockets.AcceptWebSocketAsync();
++        var stream=tcp.GetStream();
++        var input=ToServerAsync(ws,stream,stop.Token);
++        var output=ToBrowserAsync(ws,stream,stop.Token);
++        try { await await Task.WhenAny(input,output); }
++        catch(Exception e) when(e is IOException or WebSocketException or OperationCanceledException){ }
++        finally{
++            stop.Cancel();tcp.Dispose();ws.Abort();
++            try{await Task.WhenAll(input,output);}catch(Exception e) when(e is IOException or WebSocketException or OperationCanceledException or ObjectDisposedException){}
++        }
++    }
++    public static async Task<byte[]?> ReadMessageAsync(WebSocket ws,int cap,CancellationToken token)
++    {
++        using var bytes=new MemoryStream();var buffer=new byte[8192];
++        while(true){
++            var received=await ws.ReceiveAsync(buffer,token);
++            if(received.MessageType==WebSocketMessageType.Close)return null;
++            if(received.MessageType!=WebSocketMessageType.Binary||bytes.Length+received.Count>cap)throw new InvalidDataException("WS message cap/type");
++            bytes.Write(buffer,0,received.Count);
++            if(received.EndOfMessage)return bytes.ToArray();
++        }
++    }
++    private static async Task ToServerAsync(WebSocket ws,NetworkStream stream,CancellationToken token)
++    {
++        bool greeted=false;
++        while(await ReadMessageAsync(ws,64*1024+1,token) is {} bytes){
++            if(bytes.Length<1||bytes[0]!=(greeted?2:1)||(!greeted&&bytes.Length>4097))throw new InvalidDataException("greeting/data type");
++            greeted=true;
++            var header=new byte[5];header[0]=bytes[0];BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(1),(uint)(bytes.Length-1));
++            await stream.WriteAsync(header,token);await stream.WriteAsync(bytes.AsMemory(1),token);
++        }
++    }
++    private static async Task ToBrowserAsync(WebSocket ws,NetworkStream stream,CancellationToken token)
++    {
++        while(true){
++            var header=new byte[5];await stream.ReadExactlyAsync(header,token);
++            int length=checked((int)BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(1)));
++            if(header[0]!=2||length>16*1024*1024)throw new InvalidDataException("upstream frame cap/type");
++            var bytes=new byte[length+1];bytes[0]=2;await stream.ReadExactlyAsync(bytes.AsMemory(1),token);
++            await ws.SendAsync(bytes,WebSocketMessageType.Binary,true,token);
++        }
++    }
++}
+diff --git a/.scratch/p1045/network/BrowserWebSocketTransport.cs b/.scratch/p1045/network/BrowserWebSocketTransport.cs
+new file mode 100644
+index 00000000..ae1848dd
+--- /dev/null
++++ b/.scratch/p1045/network/BrowserWebSocketTransport.cs
+@@ -0,0 +1,60 @@
++using Allegiance.Core.Transport;
++using System.Net.WebSockets;
++using System.Text;
++using System.Threading.Channels;
++
++// Throwaway single-client transport. The async I/O is browser-compatible;
++// the existing ConnectionSession hosting it in this spike runs on desktop .NET.
++// Wire mapping: one WS binary message = type byte + full FedPacket (CRC included).
++// Type 1 is a UTF-8 TCP-transport greeting, type 2 is application data.
++public sealed class BrowserWebSocketTransport(ITransportSite site, Uri endpoint) : ITransport, IAsyncDisposable
++{
++    private readonly ClientWebSocket _socket=new();
++    private readonly CancellationTokenSource _stop=new();
++    private readonly Channel<byte[]> _send=Channel.CreateBounded<byte[]>(new BoundedChannelOptions(128){SingleReader=true,SingleWriter=false,FullMode=BoundedChannelFullMode.Wait});
++    private Task? _reader, _writer;
++    public long SentPackets {get;private set;}
++    public long ReceivedPackets {get;private set;}
++    public bool IsConnected=>_socket.State==WebSocketState.Open;
++    public ConnectionId LocalId=>ConnectionId.Me;
++    public ushort BoundPort=>0;
++    public void Host(ushort port=0)=>throw new NotSupportedException();
++    public void Join(string address,ushort port,string playerName)=>throw new NotSupportedException("Use JoinAsync");
++    public async Task JoinAsync(string address,ushort port,string playerName,CancellationToken cancellationToken=default)
++    {
++        await _socket.ConnectAsync(endpoint,cancellationToken);
++        var greeting=Encoding.UTF8.GetBytes(playerName);
++        var bytes=new byte[greeting.Length+1];bytes[0]=1;greeting.CopyTo(bytes,1);
++        await _socket.SendAsync(bytes,WebSocketMessageType.Binary,true,cancellationToken);
++        _reader=ReceiveAsync();_writer=SendAsync();
++    }
++    public void Send(ConnectionId target,ReadOnlySpan<byte> data,bool guaranteed)
++    {
++        if(data.Length>64*1024)throw new InvalidDataException("outbound cap");
++        var bytes=new byte[data.Length+1];bytes[0]=2;data.CopyTo(bytes.AsSpan(1));
++        if(!_send.Writer.TryWrite(bytes))throw new IOException("bounded send queue full");
++    }
++    // SPIKE ONLY: preserves all frames, does not implement latest-wins/coalescing.
++    public void SendCoalescing(ConnectionId target,ReadOnlySpan<byte> data,int coalesceKey)=>Send(target,data,false);
++    public void SendGuaranteedCoalescing(ConnectionId target,ReadOnlySpan<byte> data,int coalesceKey)=>Send(target,data,true);
++    private async Task SendAsync()
++    {
++        try {await foreach(var bytes in _send.Reader.ReadAllAsync(_stop.Token)){
++            await _socket.SendAsync(bytes,WebSocketMessageType.Binary,true,_stop.Token);SentPackets++;
++        }} catch(Exception e) when(e is OperationCanceledException or WebSocketException){ }
++    }
++    private async Task ReceiveAsync()
++    {
++        try{
++            while(!_stop.IsCancellationRequested){
++                var bytes=await Bridge.ReadMessageAsync(_socket,16*1024*1024+1,_stop.Token);
++                if(bytes is null)break;
++                if(bytes.Length<1||bytes[0]!=2)throw new InvalidDataException("frame type");
++                ReceivedPackets++;site.OnReceive(ConnectionId.Server,bytes.AsSpan(1));
++            }
++        }catch(Exception e) when(e is OperationCanceledException or WebSocketException){ }
++        finally{site.OnSessionLost();}
++    }
++    public void Shutdown(){_stop.Cancel();_send.Writer.TryComplete();_socket.Abort();}
++    public async ValueTask DisposeAsync(){Shutdown();try{await Task.WhenAll(_reader??Task.CompletedTask,_writer??Task.CompletedTask);}catch(OperationCanceledException){} _socket.Dispose();_stop.Dispose();}
++}
+diff --git a/.scratch/p1045/network/Program.cs b/.scratch/p1045/network/Program.cs
+new file mode 100644
+index 00000000..5545f62f
+--- /dev/null
++++ b/.scratch/p1045/network/Program.cs
+@@ -0,0 +1,61 @@
++using System.Diagnostics;
++using System.Reflection;
++using System.Text.Json;
++using Allegiance.ClientCore.Session;
++using Allegiance.Core;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Collision;
++using Allegiance.Core.Transport;
++using Allegiance.Core.Wire;
++
++if(args.Contains("--gateway")){
++    var builder=WebApplication.CreateBuilder(args);
++    builder.WebHost.UseUrls("http://127.0.0.1:8046");
++    var app=builder.Build();app.UseWebSockets();app.Map("/game",Bridge.HandleAsync);
++    await app.RunAsync();return;
++}
++using var session=new ConnectionSession();
++BrowserWebSocketTransport? transport=null;
++Func<ITransportSite,ITransport> factory=site=>transport=new BrowserWebSocketTransport(site,new Uri("ws://127.0.0.1:8046/game"));
++// Exercise the actual client's wire encoding/world decoding, without editing it.
++typeof(ConnectionSession).GetProperty("TransportFactoryForTesting",BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(session,factory);
++try{
++    var start=Stopwatch.StartNew();
++    await session.JoinAsync(6045,"browser-probe",new LogonRequest{CharacterName="browser-probe",FedsrvVer=LogonRequest.MsgVer,CrcFileList=-1},timeout:TimeSpan.FromSeconds(30));
++    double logonMs=start.Elapsed.TotalMilliseconds;
++    session.SendPositionReq(0);
++    await Until(()=>session.World.MyShipId is not null,20_000);
++    short id=session.World.MyShipId!.Value;
++    session.SendPlayerReady(true,id);
++    await Until(()=>session.World.Mission?.Stage==MissionStageMessage.StageStarted,40_000);
++    session.SendDocked();
++    await Until(()=>session.World.Ships[id].Latest is not null&&session.World.Ships[id].StationId<0,10_000);
++    // The server answers at most one ping per second. Manual probes replace
++    // the session timer during RTT sampling to avoid racing its 6-second ping.
++    typeof(ConnectionSession).GetMethod("StopKeepAlive",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(session,null);
++    await Task.Delay(1100);
++    var rtts=new List<double>();
++    for(int i=0;i<30;i++){
++        session.TakePingEchoes();var watch=Stopwatch.StartNew();session.SendPing();
++        await Until(()=>session.TakePingEchoes().Count>0,3000);
++        rtts.Add(watch.Elapsed.TotalMilliseconds);
++        await Task.Delay(1100);
++    }
++    uint before;Vector3 position;
++    lock(session.Gate){before=session.World.Ships[id].LastUpdateTick;position=session.World.Ships[id].Latest!.Position;}
++    session.CommandControls(new ControlData(0,0,0,1),ShipControlState.ForwardButton);
++    await Until(()=>session.World.Ships[id].LastUpdateTick>before&&(session.World.Ships[id].Latest!.Position-position).Length()>.01f,5000);
++    double distance;uint after;int entities;
++    lock(session.Gate){distance=(session.World.Ships[id].Latest!.Position-position).Length();after=session.World.Ships[id].LastUpdateTick;entities=session.World.Ships.Count;}
++    rtts.Sort();
++    Console.WriteLine(JsonSerializer.Serialize(new{logonValidated=session.Ack!.FValidated,logonMs,shipId=id,entities,decodedBytes=session.DecodedBytes,sentPackets=transport!.SentPackets,receivedPackets=transport.ReceivedPackets,input="FM_C_SHIP_UPDATE forward thrust",beforeTick=before,afterTick=after,displacement=distance,rtt=new{samples=rtts.Count,minMs=rtts[0],medianMs=rtts[15],p95Ms=rtts[28],maxMs=rtts[^1],allMs=rtts},method="FM_CS_PING through WS + TCP bridge + real 20 Hz server tick; 1 ms harness polling; 1.1 s ping pacing preserves server rate limit; automatic keepalive stopped for measurement; no network impairment"}));
++}finally{
++    await session.ShutdownAsync();if(transport is not null)await transport.DisposeAsync();
++}
++async Task Until(Func<bool> predicate,int timeout){
++    var watch=Stopwatch.StartNew();
++    while(true){lock(session.Gate){if(predicate())return;}
++        if(watch.ElapsedMilliseconds>timeout)throw new TimeoutException($"condition after {timeout} ms; ack={session.Ack?.FValidated} ship={session.World.MyShipId} stage={session.World.Mission?.Stage}");
++        await Task.Delay(1);
++    }
++}
+diff --git a/.scratch/p1045/network/network.csproj b/.scratch/p1045/network/network.csproj
+new file mode 100644
+index 00000000..ae103329
+--- /dev/null
++++ b/.scratch/p1045/network/network.csproj
+@@ -0,0 +1 @@
++<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="../../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" /></ItemGroup></Project>
+diff --git a/.scratch/p1045/run-network.sh b/.scratch/p1045/run-network.sh
+new file mode 100644
+index 00000000..bb22827d
+--- /dev/null
++++ b/.scratch/p1045/run-network.sh
+@@ -0,0 +1,32 @@
++#!/usr/bin/env bash
++set -euo pipefail
++export DOTNET="$HOME/.dotnet/dotnet" DOTNET_ROOT="$HOME/.dotnet"
++export ALLEGIANCE_ARTWORK_PATH="$(sed -n 's/^ALLEGIANCE_ARTWORK_PATH=//p' local.env)"
++export Lobby__Identity__ConnectionString="Data Source=$PWD/.scratch/p1045/lobby.db"
++export Lobby__Identity__SigningKeyFile="$PWD/.scratch/p1045/signing-key.pem"
++export Lobby__Identity__PublicKeyFile="$PWD/.scratch/p1045/public-key.pem"
++python3 - <<'CONFIG'
++import json,os
++from pathlib import Path
++Path('.scratch/p1045/server.json').write_text(json.dumps({"artPath":os.environ['ALLEGIANCE_ARTWORK_PATH'],"staticCore":"PCore001.igc","port":6045,"bindAddress":"127.0.0.1","updatesPerSecond":20,"sideSelectAutoSeatSeconds":2,"discovery":{"enabled":False},"games":[{"name":"Browser local proof","map":"XXV_simple.igc","teams":2,"civIds":[1,3],"sideNames":["Alpha","Bravo"]}]}))
++CONFIG
++gateway_pid=""
++cleanup(){
++ if [ -n "$gateway_pid" ]; then kill "$gateway_pid" 2>/dev/null || true; wait "$gateway_pid" 2>/dev/null || true; fi
++ scripts/dev-stack.sh down --name p1045
++}
++trap cleanup EXIT
++for i in 1 2 3; do
++ scripts/dev-stack.sh up --local --no-build --name p1045 --port 6045 --config "$PWD/.scratch/p1045/server.json"
++ "$DOTNET" .scratch/p1045/network/bin/Debug/net10.0/network.dll --gateway > .scratch/p1045/gateway.log 2>&1 &
++ gateway_pid=$!
++ for attempt in $(seq 1 100); do
++  if curl -s -o /dev/null http://127.0.0.1:8046/game; then break; fi
++  sleep 0.1
++ done
++ "$DOTNET" .scratch/p1045/network/bin/Debug/net10.0/network.dll > ".scratch/p1045/network-run$i.log" 2>&1
++ tail -1 ".scratch/p1045/network-run$i.log"
++ cleanup
++ gateway_pid=""
++done
++trap - EXIT

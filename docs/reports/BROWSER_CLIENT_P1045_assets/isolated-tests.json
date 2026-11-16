@@ -1,0 +1,299 @@
+{
+  "note": "Existing failed/timing-offender cases, one display case per process, three repetitions, after the complete fast sweep. These do not change its FAIL result.",
+  "runs": [
+    {
+      "tag": "seating",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+          "outcome": "Passed",
+          "seconds": 1.0148945,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "seating",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+          "outcome": "Passed",
+          "seconds": 1.0037493,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "seating",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility",
+          "outcome": "Passed",
+          "seconds": 0.9962126,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "countdown",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump&DisplayName~enabled: False&DisplayName~off",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "outcome": "Passed",
+          "seconds": 2.3570273,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "countdown",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump&DisplayName~enabled: False&DisplayName~off",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "outcome": "Passed",
+          "seconds": 2.3074384,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "countdown",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump&DisplayName~enabled: False&DisplayName~off",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "outcome": "Passed",
+          "seconds": 2.3359357,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "varied",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases&DisplayName~civ: 35",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 3.8114743,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "varied",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases&DisplayName~civ: 35",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 3.4228658,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "varied",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases&DisplayName~civ: 35",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 3.3611396,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "support",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9992423,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "support",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9391367,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "support",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts&DisplayName~civ: 25",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9170502,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1033719,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1336453,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "turret",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.1149256,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8583571,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8770489,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "profile",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates&DisplayName~civ: 5",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8566824,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "backlog",
+      "repeat": 1,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work&DisplayName~peers: 400&DisplayName~indexed: False&DisplayName~coalesced: False",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "outcome": "Passed",
+          "seconds": 1.3215415,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "backlog",
+      "repeat": 2,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work&DisplayName~peers: 400&DisplayName~indexed: False&DisplayName~coalesced: False",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "outcome": "Passed",
+          "seconds": 1.3125003,
+          "message": null
+        }
+      ]
+    },
+    {
+      "tag": "backlog",
+      "repeat": 3,
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work&DisplayName~peers: 400&DisplayName~indexed: False&DisplayName~coalesced: False",
+      "exitCode": 0,
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.P968PublisherStreamIndexTests.Reliable_backlog_measures_pending_scan_work(peers: 400, indexed: False, coalesced: False)",
+          "outcome": "Passed",
+          "seconds": 1.3134703,
+          "message": null
+        }
+      ]
+    }
+  ]
+}

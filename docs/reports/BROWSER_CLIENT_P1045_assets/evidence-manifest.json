@@ -1,0 +1,69 @@
+{
+  "note": "Final report/assets; manifest excludes itself. No original art binaries or package/runtime outputs included.",
+  "files": {
+    "BROWSER_CLIENT_P1045.md": {
+      "bytes": 58706,
+      "sha256": "4616134dd02e6e511f335c912228fdc2074179dcb40ce95da74eb5cd831b873d"
+    },
+    "BROWSER_CLIENT_P1045_assets/README.md": {
+      "bytes": 8324,
+      "sha256": "3b1da44787f90027d89156f37db3eddda0dba503b5ef0e79cc03caaecd1f09cb"
+    },
+    "BROWSER_CLIENT_P1045_assets/artwork-LICENSE.txt": {
+      "bytes": 1071,
+      "sha256": "4bb8776dc71f3699a9128a07b92eaf0c23cc812ceb69acb18d4eab0aaabe9b32"
+    },
+    "BROWSER_CLIENT_P1045_assets/artwork-inventory.json": {
+      "bytes": 32222,
+      "sha256": "0e235c2ed06ead3d5c033b2781e0cbddcf0b7bf9bb3251d4e9dda6e42415906e"
+    },
+    "BROWSER_CLIENT_P1045_assets/bundle-metrics.json": {
+      "bytes": 806,
+      "sha256": "0114d23e5ba291bb8ed1b0696d0e1d2da30fb5acd00d811b38f7f6153e88ac96"
+    },
+    "BROWSER_CLIENT_P1045_assets/fast-summary.json": {
+      "bytes": 3939,
+      "sha256": "4376c26b7a230304262c938d963c6f5aca18b861d66052376ea2990d0493be81"
+    },
+    "BROWSER_CLIENT_P1045_assets/isolated-tests.json": {
+      "bytes": 11444,
+      "sha256": "e533797647ded82b3c67e48435e30b00a4a0167d06db81ce704b3f87e24f312f"
+    },
+    "BROWSER_CLIENT_P1045_assets/kni-compatibility.txt": {
+      "bytes": 5832,
+      "sha256": "5ae58874477c114d62491def52b5b3c8f5caabe15d969618bb2ef03e87d273b9"
+    },
+    "BROWSER_CLIENT_P1045_assets/network-metrics.json": {
+      "bytes": 4111,
+      "sha256": "b31ee0164d75b0d82eba91c6e88d4c2316993f14ebf648f334cad2037c4231f6"
+    },
+    "BROWSER_CLIENT_P1045_assets/render-1920x1080.png": {
+      "bytes": 109050,
+      "sha256": "0acffe11c4771dd7a2bcfcad227fffc554e353ce9a85712207eace05033acb20"
+    },
+    "BROWSER_CLIENT_P1045_assets/render-800x480.png": {
+      "bytes": 39140,
+      "sha256": "21545bf4a161df4ae3fb9a5c8bc83da0e3f56b76ee2c40a24ef7d260fd7fc44c"
+    },
+    "BROWSER_CLIENT_P1045_assets/render-metrics.json": {
+      "bytes": 1505,
+      "sha256": "1bd4f71f3e3292245f4adc19abcd3521d7b84dd63c030e6a0503183f470922b6"
+    },
+    "BROWSER_CLIENT_P1045_assets/source-citations.txt": {
+      "bytes": 17989,
+      "sha256": "88164e172d1840287d0b69257d4d170a47c228391cbcc2ed405823cc218265a5"
+    },
+    "BROWSER_CLIENT_P1045_assets/spike-network.patch": {
+      "bytes": 14070,
+      "sha256": "1e73c6749082e5276360ccb22db5d39d70ea090f31623863387eedefd65b5bf6"
+    },
+    "BROWSER_CLIENT_P1045_assets/spike-render.patch": {
+      "bytes": 40221,
+      "sha256": "9152a440d7309961709555383d7be73349ba556c0d401c54c0decd821e33e495"
+    },
+    "BROWSER_CLIENT_P1045_assets/verification.json": {
+      "bytes": 2263,
+      "sha256": "72a92872098a9d4d67df40aae4402270d8de1cd696e70369bcb08a6f47194913"
+    }
+  }
+}

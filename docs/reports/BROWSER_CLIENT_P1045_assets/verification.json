@@ -1,0 +1,94 @@
+{
+  "dateUtc": "2026-11-16T20:23:13.078423+00:00",
+  "sourceBaseline": "497e3507",
+  "solutionBuild": {
+    "command": "~/.dotnet/dotnet build AllegianceCore.slnx",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "seconds": 37.41,
+    "afterSpikeRemoval": true
+  },
+  "toolsBuild": {
+    "command": "tools/build-tools.sh --drop-bins",
+    "exitCode": 0,
+    "projects": 140,
+    "warnings": 0,
+    "errors": 0
+  },
+  "fastTier": {
+    "command": "tools/run-tests.sh --tier fast --no-build",
+    "exitCode": 1,
+    "cases": 14925,
+    "outcomes": {
+      "Passed": 14916,
+      "NotExecuted": 7,
+      "Failed": 2
+    },
+    "seconds": 560.737054163008,
+    "timingOffenders": 5,
+    "calibratedLimitSeconds": 12.959416445623342,
+    "infrastructureChecks": 9,
+    "passed": false
+  },
+  "isolatedExistingCases": {
+    "processes": 21,
+    "casesPerProcess": 1,
+    "passed": 21,
+    "failed": 0,
+    "allBelowCalibratedLimit": true
+  },
+  "networkProof": {
+    "independentFreshStacks": 3,
+    "allValidatedLogonAndReceivedWorldAndSentInput": true,
+    "allStoppedByDevStackDown": true
+  },
+  "renderProof": {
+    "viewports": [
+      [
+        1920,
+        1080
+      ],
+      [
+        800,
+        480
+      ]
+    ],
+    "browser": "Chromium 153.0.8010.0",
+    "renderer": "SwiftShader software",
+    "bothFinalImagesOpenedAndReviewed": true,
+    "pngBytes": 148190,
+    "firefoxAvailable": false
+  },
+  "patches": {
+    "spike-render.patch": {
+      "bytes": 40221,
+      "appliesToRevertedScratch": true
+    },
+    "spike-network.patch": {
+      "bytes": 14070,
+      "appliesToRevertedScratch": true
+    }
+  },
+  "glossaryLinks": {
+    "passed": true,
+    "paths": 907
+  },
+  "workingTree": {
+    "trackedFilesChanged": 0,
+    "stagedFiles": 0,
+    "authoredFilesOnly": "docs/reports/BROWSER_CLIENT_P1045.md and its assets directory",
+    "preexistingUntrackedBriefPreserved": true,
+    "commits": 0,
+    "pushes": 0,
+    "stashOperations": 0,
+    "spikeSourceProjectsRemoved": true
+  },
+  "loopbackPortsClosed": {
+    "6045": true,
+    "8045": true,
+    "8046": true,
+    "8080": true
+  },
+  "processCleanup": "Render HTTP server, gateway, dev-stack server/lobby, Chromium and all harness/build/test processes exited before final reporting."
+}

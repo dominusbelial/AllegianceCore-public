@@ -1,0 +1,134 @@
+Re-grepped source locations cited by BROWSER_CLIENT_P1045.md.
+Native paths are relative to the read-only Allegiance src corpus; all other paths are repository-relative.
+
+src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj:27:    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" PrivateAssets="All" />
+src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj:30:    <PackageReference Include="NVorbis" Version="0.10.4" />
+src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj:34:    <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+src/Allegiance.ClientCore.Game/Assets/IAssetSource.cs:19:public interface IAssetSource
+src/Allegiance.ClientCore.Game/Assets/DirectoryAssetSource.cs:25:    public bool Exists(string relativePath) =>
+src/Allegiance.ClientCore.Game/Assets/AssetSources.cs:55:    public static byte[] ReadAllBytes(IAssetSource assets, string relativePath)
+src/Allegiance.Core/Data/MdlFile.cs:138:    public static MdlFile Parse(byte[] data) => new MdlParser(data).Run();
+src/Allegiance.Core/Data/MdlTextureDecoder.cs:51:    public static MdlTexture Decode(byte[] data, bool flipVertical = true)
+src/Allegiance.ClientCore/Session/ConnectionSession.cs:64:    public ConnectionSession(SharedBotWorlds? botWorlds)
+src/Allegiance.ClientCore/Session/ConnectionSession.cs:483:        var t = new Thread(KeepAliveLoop) { IsBackground = true, Name = "session-keepalive" };
+src/Allegiance.ClientCore/Session/ConnectionSession.Ownership.cs:32:        _ = Task.Run(async () =>
+src/Allegiance.Core/Transport/ITransport.cs:16:public interface ITransport
+src/Allegiance.Core/Transport/IServerTransport.cs:6:public interface IServerTransport : ITransport
+src/Allegiance.ClientCore.Game/Discovery/DiscoveryEngine.cs:36:    public DiscoveryEngine(int probeTimeoutMs = DiscoveryDefaults.ProbeTimeoutMs, UdpClient? udp = null)
+src/Allegiance.ClientCore.Game/Discovery/DiscoveryEngine.cs:110:    public IReadOnlyList<DiscoveredServer> CollectLanAsync(
+src/Allegiance.Core/Transport/NetworkLink.cs:7:public enum NetworkLink { Unknown, Wired, Wireless }
+src/Allegiance.Core/Transport/NetworkLink.cs:44:            using var route = new Socket(remote.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+src/Allegiance.SinglePlayer/SkirmishHost.cs:77:            host._ticker = new Thread(host.Tick) { IsBackground = true, Name = "skirmish-server", Priority = ThreadPriority.BelowNormal };
+src/Allegiance.SinglePlayer/SkirmishHost.cs:119:            host._driver = Process.Start(start) ?? throw new IOException("Bot driver failed to start");
+src/Allegiance.ClientCore.Game/Rendering/ShaderAssetCache.cs:41:    public static ShaderAssetCache ForDevice(GraphicsDevice gd) => new(bytes => new Effect(gd, bytes));
+src/Allegiance.ClientCore.Game/Rendering/VfxPostProcessor.cs:75:        LinearDepthEffect = shaders.Load("Content/Shaders/LinearDepth.ogl.mgfxo");
+src/Allegiance.ClientCore.Game/Rendering/HdrOutput.cs:92:    public static SurfaceFormat SceneFormat(bool hdr)
+src/Allegiance.ClientCore.Game/PlayerConfig.cs:11:        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AllegianceCore");
+src/Allegiance.ClientCore.Game/IntroPreferences.cs:119:        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AllegianceCore");
+src/Allegiance.ClientCore.Game/SavedGamePasswords.cs:177:            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+src/Allegiance.ClientCore.Game/SavedGamePasswords.cs:239:        [System.Runtime.InteropServices.DllImport("crypt32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode,
+src/Allegiance.ClientCore.Game/Game1.Identity.cs:63:            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(device.VerificationUri) { UseShellExecute = true }); }
+src/Allegiance.ClientCore.Game/Flight/RelativeMouse.cs:107:    internal static IRelativeMouseBackend? TryCreate()
+src/Allegiance.ClientCore.Game/Diagnostics/GlFrameTimer.cs:53:            if (!NativeLibrary.TryLoad(lib, out var handle)) continue;
+src/Allegiance.ClientCore.Game/Game1.Career.cs:263:            try { saved = _careerClient?.SetDescriptionAsync(_careerViewAccount, text).GetAwaiter().GetResult() == true; }
+src/Allegiance.ClientCore.Game/Game1.RelativeMouse.cs:31:    protected override void OnDeactivated(object sender, EventArgs args)
+src/Allegiance.ClientCore.Game/Game1.RelativeMouse.cs:38:    protected override void OnExiting(object sender, ExitingEventArgs args)
+src/Allegiance.Core/Transport/TransportFactory.cs:6:    public static ITransport CreateClient(ITransportSite site, string? protocol = null, ushort? udpPort = null)
+src/Allegiance.ClientCore/Session/ConnectionSession.Ownership.cs:150:            _transport = transport;
+src/Allegiance.ClientCore/Session/ConnectionSession.cs:31:    public string ActiveTransportProtocol
+src/Allegiance.Core/Transport/ITransport.cs:78:    void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey);
+src/Allegiance.Core/Transport/ITransport.cs:93:    void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey);
+src/Allegiance.Core/Transport/ITransport.cs:105:    /// <paramref name="id"/> and BEFORE any <see cref="OnReceive"/> for that
+src/Allegiance.Server/Server.Privileges.cs:11:    private bool PrivilegedConnection(ConnectionId from, string? secret, HashSet<ConnectionId> authenticated)
+src/Allegiance.Server/Server.CredentialLimits.cs:79:    private IPAddress? ResolvePeerAddress(ConnectionId peer) => _host.Transport switch
+src/Allegiance.Server/Allegiance.Server.csproj:12:    <PublishAot>true</PublishAot>
+src/Allegiance.Server/Dockerfile:85:FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS final
+src/Allegiance.Server/Server.Lifecycle.cs:945:        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+src/Allegiance.Server/Server.Lifecycle.cs:972:            ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
+src/Allegiance.Core/Transport/DualTransport.cs:9:    private const uint UdpBit = 0x80000000;
+src/Allegiance.Server/Server.Egress.cs:57:        var pool = tcp as TcpTransport ?? (tcp as DualTransport)?.Tcp;
+src/Allegiance.Server/Server.SchedulingMetrics.cs:16:        var udp = (_host?.Transport as DualTransport)?.Udp ?? _host?.Transport as UdpTransport;
+src/Allegiance.Core/Transport/TcpTransport.cs:171:    public static uint ServerInboundMaxFrame { get; set; } = 64u * 1024;
+src/Allegiance.Core/Wire/FedPacket.cs:101:    public static byte[][] Unpack(ReadOnlySpan<byte> packet)
+src/Allegiance.Server/ServerHost.cs:137:    internal static int MaxQueuedEventsPerPeer { get; set; } = 2048;
+src/Allegiance.Server/ServerHost.cs:162:    internal static long DrainBudgetEvents { get; set; } = 8192;
+src/Allegiance.Server/ServerHost.cs:2322:        // cap (MaxQueuedEventsPerPeer) bounds the number of un-handled events
+src/Allegiance.Core/Transport/TcpTransport.cs:845:            long greetDeadline = Environment.TickCount64 + (long)GreetTimeout.TotalMilliseconds;
+src/Allegiance.Server/Server.Treasure.cs:29:                && treasure.SeenBySide(side))
+src/Allegiance.Server/Server.Treasure.cs:56:            .Where(t => t.SeenBySide(side))
+src/Allegiance.Server/Server.Docking.cs:127:            && CanUseAdminCheats(kv.Key, boarder))) return false;
+src/Allegiance.Server/Server.Docking.cs:1677:            MoveShipToSector(child, target, announceExit);
+src/Allegiance.Server/Server.Docking.cs:2473:            Cookie = NextCookie(EnsurePeerUpdate(from)),
+src/Allegiance.Server/Server.ShipCommands.cs:915:        // fire path bounds the reported normalized lock by Ship.MissileLock
+src/Allegiance.Server/Server.ShipCommands.cs:2495:        if (target.SideId is not { } sideId || !rock.SeenBySide(sideId))
+tools/vizfight/Program.cs:319:    private sealed class SpectatorHub
+tools/vizfight/Program.cs:332:            var ch = Channel.CreateUnbounded<byte[]>();
+tools/vizfight/Program.cs:357:    private static string TickFrame(Srv server)
+tools/vizfight/Program.cs:414:            // Receiver just detects disconnects; we discard any client bytes.
+src/Allegiance.Lobby/LobbyEndpoints.cs:88:        app.MapGet("/api/servers", (ServerRegistry registry) => Results.Ok(registry.List()));
+src/Allegiance.Lobby/LobbyEndpoints.cs:95:        app.MapGet("/api/servers/cores", (ServerRegistry registry, LobbySettings cfg) =>
+src/Allegiance.Lobby/LobbyEndpoints.cs:110:        app.MapGet("/api/servers/findplayer", ([FromQuery] string? name, ServerRegistry registry) =>
+src/Allegiance.Lobby/LobbyEndpoints.cs:131:        app.MapGet("/api/update/info", (LobbySettings cfg) => Results.Ok(new Allegiance.Update.LobbyUpdateInfo
+src/Allegiance.Lobby/Identity/IdentityEndpoints.cs:40:        group.MapGet("/providers", () => Results.Ok(new[] { "GitHub", "Google", "Steam" }.Where(p => ExternalProviders.Enabled(settings, p))));
+src/Allegiance.Lobby/Identity/IdentityEndpoints.cs:47:        group.MapPost("/passkeys/login/options", (PasskeyService passkeys) => Results.Ok(passkeys.LoginOptions()));
+src/Allegiance.Lobby/Identity/IdentityEndpoints.cs:64:        group.MapPost("/device/poll", (DevicePollRequest req, IdentityStore store) => req.DeviceCode.Length > 128 ? Results.BadRequest() : Results.Ok(store.Poll(req.DeviceCode)));
+src/Allegiance.Lobby/Identity/IdentityEndpoints.cs:75:        group.MapPost("/join-token", (JoinTokenRequest req, HttpContext ctx, IdentityStore store, IdentitySigningKey key, ServerRegistry registry, TimeProvider time) =>
+src/Allegiance.Lobby/Chat/ChatEndpoints.cs:30:        group.MapPost("", (ChatPostRequest req, DirectoryChat chat, IdentityStore identities, HttpContext ctx) =>
+src/Allegiance.Lobby/Chat/ChatEndpoints.cs:42:        group.MapGet("", (DirectoryChat chat, IdentityStore identities, HttpContext ctx, string? channel, long? since) =>
+src/Allegiance.Lobby/Career/CareerEndpoints.cs:44:        group.MapGet("/{accountId}", (string accountId, CareerStore career) =>
+src/Allegiance.Lobby/Career/CareerEndpoints.cs:51:        group.MapPut("/{accountId}/description", (string accountId, DescriptionRequest req, HttpContext ctx, CareerStore career, IdentityStore store) =>
+src/Allegiance.Lobby/Squad/SquadEndpoints.cs:26:        group.MapGet("/", ([FromQuery] SquadContracts.SquadSortColumn sort, [FromQuery] string? basisId,
+src/Allegiance.Lobby/Events/EventEndpoints.cs:26:        group.MapGet("/", (EventStore events) => Results.Ok(events.List()));
+src/Allegiance.Lobby/Games/GameEndpoints.cs:45:        group.MapGet("/catalog", (ServerRegistry registry, LobbySettings settings) =>
+src/Allegiance.Lobby/PunchSignaling.cs:53:        app.MapGet("/api/nat/config", (LobbySettings settings, NatBindingResponder responder) =>
+src/Allegiance.Lobby/PunchSignaling.cs:55:        app.MapPost("/api/servers/{id}/punch", (string id, PunchRequest request, HttpContext context,
+src/Allegiance.Lobby/PunchSignaling.cs:66:        app.MapPost("/api/servers/{id}/punch/poll", (string id, PunchPollRequest request, HttpContext context,
+src/Allegiance.Server/Server.Lifecycle.cs:970:            udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
+src/Allegiance.Lobby/Identity/IdentityEndpoints.cs:14:    public static void SetCookie(HttpContext ctx, IdentitySettings settings, string session) => ctx.Response.Cookies.Append(Cookie, session, new CookieOptions
+src/Allegiance.Server/Server.Identity.cs:91:    private bool BindIdentity(ConnectionId peer, LogonRequest req, out string failure)
+src/Allegiance.Server/Server.Identity.cs:114:            if (!_consumedIdentityTokens.TryAdd(claims.Jti, claims.Exp)) { failure = "lobby join token already used"; return false; }
+src/Allegiance.Core/Identity/JoinTokens.cs:148:    public static JoinIdentity? Verify(string token, ECDsa key, string issuer, string audience, DateTimeOffset now)
+src/Allegiance.ClientCore/Session/LobbyIdentityClient.cs:20:        if (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback)) throw new ArgumentException("Lobby sign-in requires HTTPS or localhost");
+src/Allegiance.ClientCore.Game/Career/CareerApiClient.cs:22:        if (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback)) throw new ArgumentException("Lobby career requires HTTPS or localhost");
+src/Allegiance.Lobby/Identity/IdentitySettings.cs:18:        if ((url.Scheme != "https" && !(url.Scheme == "http" && url.IsLoopback))
+src/Allegiance.Lobby/Program.cs:102:app.UseStaticFiles();
+src/Allegiance.Lobby/RateLimiting.cs:51:            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+src/Allegiance.Lobby/Program.cs:88:{
+packaging/generate-manifest.py:1:#!/usr/bin/env python3
+packaging/generate-manifest.py:59:            data = p.read_bytes()
+packaging/generate-manifest.py:81:        for dep in sorted(references(files[name].read_bytes()[:65536] if files[name].suffix == '.mdl' and files[name].stat().st_size > 1048576 else files[name].read_bytes()) - selected):
+src/Allegiance.ClientCore.Game/Rendering/NativeSkyRenderer.cs:115:        // Environment dome: posterName -> globeN.mdl dome + environmentNbmp.mdl.
+src/Allegiance.ClientCore.Game/Rendering/NativeSkyRenderer.cs:293:            if (!_assets.Exists(stem + ".mdl")) { Missing(stem); return null; }
+src/Allegiance.ClientCore.Game/Rendering/NativeSkyRenderer.cs:333:    private Texture2D? EnvTextureFor(string poster)
+src/Allegiance.ClientCore.Game/Rendering/NativeFonts.cs:15:/// the native pixel size (Verdana is not redistributable; DejaVu is the Bitstream
+src/Allegiance.ClientCore/Session/ConnectionSession.Ownership.cs:41:    private bool Owns(ConnectionOwner owner) => !_disposed && ReferenceEquals(_owner, owner) && !owner.Token.IsCancellationRequested;
+src/Allegiance.ClientCore.Game/Discovery/DiscoveryCoordinator.cs:134:            sem.Wait(ct);
+src/Allegiance.ClientCore.Game/Assets/TextCoreAssets.cs:18:        var scratch = Directory.CreateTempSubdirectory("allegiance-core-");
+src/Allegiance.ClientCore.Game/Audio/SoundManager.cs:1517:                _slidePcm.GetOrAdd(stem, _ => Task.Run(() => TrainingVoicePcm.Read(path)));
+src/Allegiance.ClientCore.Game/Capture/CapturePngSaver.cs:187:        try { _cts.Cancel(); _worker.Wait(2000); } catch { }
+src/Allegiance.Server/ServerHost.cs:194:    internal static long MinPingReplyIntervalMs { get; set; } = 1000;
+src/Allegiance.ClientCore.Game/Flight/RelativeMouse.cs:91:internal sealed class SdlRelativeMouse : IRelativeMouseBackend
+src/Allegiance.ClientCore.Game/Flight/RelativeMouse.cs:10:    internal static MouseCaptureOwner Choose(bool focused, bool flying, bool docked, bool blocked,
+src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:350:        new("ViewFlyby", "CAMERA / VIEW", "External fly-by camera [TK_ViewFlyby]", K(Keys.F5), null),
+src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:551:        new("ToggleInvestmentPane", "PANES / MENUS", "Toggle team investment (flight, hangar or command) [TK_ConModeInvest]", K(Keys.I), K(Keys.F5)),
+src/Allegiance.ClientCore.Game/Rendering/InputLayouts.cs:220:        new("ViewFlyby", new(Keys.F5, InputModifiers.Shift),
+src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:353:        new("ViewExternalStation", "CAMERA / VIEW", "External station camera [TK_ViewExternalStation]", K(Keys.F11), null),
+src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:519:        // Escape: while composing chat it cancels the input line, closes the
+native/Inc/Messages.h:36:DEFINE_FEDMSG(C, LOGONREQ, 1)   // First message the client sends to the server.
+native/Inc/Messages.h:227:DEFINE_FEDMSG(C, SHIP_UPDATE, 24)
+native/Inc/Messages.h:280:DEFINE_FEDMSG(CS, PING, 35) // just send it back to client as soon as you get it
+native/FedSrv/FedSrv.CPP:4900:      pfmPing->timeServer = g.timeNow;
+native/FedSrv/fsship.cpp:767:            pfmSetCluster->cookie = NewCookie();
+native/FedSrv/fsship.cpp:874:                        if (pprobe->SeenBySide(pside))
+native/_Utility/Messages.cpp:558:  static DWORD s_guarenteedFlags = DPNSEND_GUARANTEED | DPNSEND_PRIORITY_HIGH | DPNSEND_COALESCE;
+native/_Utility/Messages.cpp:559:  static DWORD s_normalFlags = DPNSEND_NOCOMPLETE | DPNSEND_NONSEQUENTIAL;
+src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj:25:    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+src/Allegiance.ClientCore.Android/Allegiance.ClientCore.Android.csproj:30:    <TargetFramework>net10.0-android</TargetFramework>
+src/Allegiance.ClientCore.Android/Allegiance.ClientCore.Android.csproj:74:    <ProjectReference Include="../Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+src/Allegiance.ClientCore.Android/MainActivity.cs:142:            AssetSource = new AndroidAssetSource(Assets!),
+src/Allegiance.ClientCore.Android/MainActivity.cs:149:    protected override void OnPause()
+src/Allegiance.ClientCore.Android/MainActivity.cs:155:    protected override void OnResume()
+src/Allegiance.Core/Transport/NatTraversalClient.cs:17:        var handler = new SocketsHttpHandler
+docs/TEST_FLAKES.md:79:`P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` (14.1 s),
+docs/TEST_FLAKES.md:335:| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")` | assertion failure: 14.900000000054206 outside [14.94, 15.06], 1.9 s | **pass / pass / pass**, all 4 cases | 14–17 s for the 4 cases |
+docs/TEST_FLAKES.md:987:| `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility` (expected side 1, saw lobby side -2) | **2 pass / 1 fail**, same lobby/logon-drain signature | Existing seating/logon timing family; the P974/P967-era entries include the same signature and changing isolated outcomes. No server/session/seed path changed by P985. |
