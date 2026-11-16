@@ -2927,12 +2927,26 @@ public sealed partial class Server
         }
     }
 
-    private void OnShipWarped(Ship ship, Sector oldSector, Sector newSector)
+    /// <summary>P1029 — the per-peer half of native <c>CFSPlayer::SetCluster</c>
+    /// (<c>FedSrv/fsship.cpp:747-940</c>): refresh the owning peer's
+    /// <see cref="LiveShip"/> sector, send one <c>SET_CLUSTER(7)</c> stamped with
+    /// a fresh <c>NewCookie()</c> (<c>fsship.cpp:767</c>), and export the new
+    /// cluster's treasures (<c>fsship.cpp:800-940</c>). Native reaches this for
+    /// <b>every</b> cluster move, including a move to the SAME cluster, because
+    /// "the ship mostly likely teleported to a new position"
+    /// (<c>Igc/shipIGC.h:233-240</c> — the <c>if (cluster)</c> branch runs outside
+    /// the <c>cluster != pclusterOld</c> test; the site callback then reaches
+    /// <c>CFSPlayer::SetCluster</c>, <c>Igc/shipIGC.h:254</c> →
+    /// <c>FedSrv.CPP:13525-13527</c>). Both server-authorized
+    /// repositions therefore share it: an aleph transit (<see cref="OnShipWarped"/>)
+    /// and the ripcord teleport (<c>UseRipcord</c> → <c>pship-&gt;SetCluster(pcluster)</c>,
+    /// <c>FedSrv.CPP:13482</c>), whose reason for stamping a cookie is the same —
+    /// the client must echo the new cookie or every later <c>SHIP_UPDATE</c> is
+    /// dropped whole by the native cookie gate (<c>FedSrv.CPP:4851-4864</c>).
+    /// Returns the peer addressed, or <c>null</c> for a ship no peer owns (a
+    /// pure-sim/NPC move, which has no player cookie to rotate).</summary>
+    private ConnectionId? SendOwnerSetCluster(Ship ship, Sector sector)
     {
-        // P760 — LastWarpTime is now stamped in ServerHost.HitWarpEvent so the
-        // warp-state handshake and cooldown live in the site callback.
-        MoveShipToSector(ship, newSector);
-
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
@@ -2941,19 +2955,35 @@ public sealed partial class Server
             // ship status / sector readers all see the new sector. Established
             // `live with { ... }` reassignment pattern (same as LastBroadcastPos,
             // Server.cs:342,500).
-            _peerShips[kv.Key] = kv.Value with { Sector = newSector };
+            _peerShips[kv.Key] = kv.Value with { Sector = sector };
 
             var set = new SetCluster
             {
-                SectorId = newSector.Id,
+                SectorId = sector.Id,
                 Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
-                Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on warp SET_CLUSTER (fsship.cpp:767)
+                Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on SET_CLUSTER (fsship.cpp:767)
             };
             var packet = FedPacket.Pack(new[] { set.Encode() });
             SendPeer(kv.Key, packet);
-            SendBoardedCluster(ship, newSector, packet);
-            SendTreasureSnapshot(kv.Key, newSector);
-            Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
+            // P1034 — passengers get the identical source-ship arrival
+            // (native FedSrv/fsship.cpp:918-929).
+            SendBoardedCluster(ship, sector, packet);
+            SendTreasureSnapshot(kv.Key, sector);
+            return kv.Key;
+        }
+        return null;
+    }
+
+    private void OnShipWarped(Ship ship, Sector oldSector, Sector newSector)
+    {
+        // P760 — LastWarpTime is now stamped in ServerHost.HitWarpEvent so the
+        // warp-state handshake and cooldown live in the site callback.
+        // P1034 — move the ship and its boarded children (native SetCluster recursion).
+        MoveShipToSector(ship, newSector);
+
+        if (SendOwnerSetCluster(ship, newSector) is { } peer)
+        {
+            Console.WriteLine($"[warp] peer {peer} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
             return;
         }
 

@@ -192,7 +192,13 @@ public class LiveRelaunchTests
         Assert.Equal(carrier.Id, p.CarrierId);
         Assert.Equal(p.ShipId, c.ShipId);
         Assert.Equal(p.CarrierId, c.CarrierId);
-        Assert.Equal(0, p.Cookie);                       // no per-player cookie machinery
+        // P1029 — native stamps the lander's fresh per-player cookie for a
+        // PLAYER (FedSrv.CPP:13015-13016), so the client's own-ship pose cookie
+        // rotates with the relaunch instead of being pinned at 0 (which froze
+        // every later SHIP_UPDATE at the dispatch cookie gate).
+        Assert.NotEqual(0, p.Cookie);
+        Assert.NotEqual(lanBot.ShipAssignment!.Cookie, p.Cookie);
+        Assert.Equal(p.Cookie, lanBot.PoseCookie);
         Assert.Equal(lander.HullType.HullId, p.HullId);  // loadout blob hull
         Assert.Empty(p.Parts);                           // hull-only lander (no mounted parts)
 

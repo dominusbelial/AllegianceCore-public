@@ -249,6 +249,19 @@ public sealed partial class Server
     /// chat); a malformed or refused relocation is answered with an individual
     /// no-filter chat reply to the sender (native cheats reply via
     /// <c>SendChatf(CHAT_INDIVIDUAL_NOFILTER)</c>, e.g. <c>FedSrv.CPP:2834,2909</c>).
+    /// <para><b>P1029 — flying-only targets.</b> A dead, boarded or team-lobby
+    /// ship is refused: in this port such a ship keeps a non-null
+    /// <see cref="Ship.Sector"/>, so the old sector test alone let it be moved
+    /// <c>ParentShip</c> left behind. A DOCKED ship is still allowed
+    /// (the port's P554 staging test seats a bot that docks on the first tick,
+    /// so refusing docked relocations breaks legit harness staging), but its
+    /// dock is cleared with the move — the SET_CLUSTER the client applies does
+    /// <c>SetStation(NULL)</c> (<c>clintlib/appmsg.cpp:1044-1049</c>), so leaving
+    /// <c>StationId</c> set was the corruption (a stale dock in the wrong
+    /// sector, from which <c>BuyLoadout</c> could still mount a hull). Native's own teleport arm
+    /// requires a free-flying ship (<c>FedSrv.CPP:7040-7073</c>) and there is no
+    /// native relocate cheat — deliberate port hardening, like the ownership
+    /// rule above it.</para>
     /// </summary>
     /// <summary>P554 — the harness character-name prefix that marks a connection
     /// as one of the MCP's own bots (the same prefix testHarness uses, default
@@ -318,6 +331,47 @@ public sealed partial class Server
             SendAdminReply(from, ship.Id, $"relocate: no sector {sectorId} in this mission");
             return;
         }
+
+        // P1029 — a reposition may only move a ship that is actually FLYING.
+        // Native has no relocate cheat, so this is deliberate port hardening of
+        // the authority surface (P554 added it): native's own move/teleport
+        // paths all require a free-flying ship — FM_C_DOCKED's teleport arm
+        // refuses `stationID != NA` on a ship that is not docked/boarded/dead/
+        // side-less (FedSrv.CPP:7040-7073, mirrored by Server.Docking.cs
+        // PerformTeleport's guard). This port keeps `Ship.Sector` non-null on a
+        // DOCKED ship (Server.Docking.cs:62-66: a docked ship is `StationId !=
+        // null`, it retains its Sector), so the old `target.Sector is null`
+        // test alone let a docked/boarded/lobby ship be moved while
+        // `StationId`/`ParentShip` stayed behind — a stale dock in the wrong
+        // sector (it could then buy a hull at a station it is no longer at).
+        // A DEAD, BOARDED or team-lobby (side < 0) target is refused outright.
+        // A DOCKED target is allowed and its dock is CLEARED, because refusing
+        // it breaks legit harness staging: a seated peer can be docked by the
+        // time the admin relocates it (P554AdminCheatLiveTests seats a bot that
+        // docks on the first tick in its debug home; the probe log shows
+        // `grounded='docked at a station' station=24465`, and a refusal fails
+        // that test). Clearing the dock is the state the client is told to
+        // take — Apply(SetCluster) calls SetStation(NULL)
+        // (clintlib/appmsg.cpp:1044-1049) — so server and client stay equal;
+        // leaving `StationId` set was the corruption (a dock at a station the
+        // ship is no longer at).
+        string? grounded =
+            target.Dead ? "dead"
+            : target.ParentShip is not null ? "boarded on another ship"
+            : target.SideId is not >= 0 ? "in the team lobby (not on a side)"
+            : null;
+        if (grounded is not null)
+        {
+            SendAdminReply(from, ship.Id, $"relocate: ship {target.Id} is {grounded} — cannot relocate, only a flying ship can be moved");
+            return;
+        }
+        if (target.StationId is not null)
+        {
+            target.StationId = null;          // appmsg.cpp:1044-1049 SetStation(NULL)
+            target.StateM = 0;
+            target.LastLaunchTime = _simNow;  // the P75 re-dock debounce (UndockShipState)
+        }
+
         if (target.Sector is not { } src)
         {
             SendAdminReply(from, ship.Id, "relocate: ship is not in a sector (docked/unplaced) — cannot relocate");
@@ -354,6 +408,15 @@ public sealed partial class Server
     /// <para>This is the extraction of the in-process arena relocator
     /// (<c>WireArenaRelocator</c>, <c>P539dFairContactLiveTests.cs</c>) so the
     /// P539d test and the network cheat share ONE implementation.</para>
+    /// <para><b>P1029 — the wire notification already exists here.</b> The
+    /// <c>ShipWarped</c> raise below reaches <c>Server.OnShipWarped</c>, which
+    /// sends <c>SET_CLUSTER(7)</c> with <c>NextCookie(EnsurePeerUpdate(conn))</c>
+    /// plus the destination's treasure snapshot (<c>Server.Combat.cs</c>
+    /// <c>SendOwnerSetCluster</c> — native <c>CFSPlayer::SetCluster</c>,
+    /// <c>fsship.cpp:758-767</c>), even for a same-sector move. The inbound
+    /// relocate cheat's flying-only gate (<see cref="HandleRelocateCheat"/>) is
+    /// what keeps this primitive from moving a docked ship; harness callers may
+    /// legitimately park docked ships.</para>
     /// </summary>
     public bool RelocateShipToSector(Ship ship, Sector dest, Vector3 pos, Vector3 facing)
     {

@@ -101,6 +101,25 @@ were not changed. Full theory groups were selected for parameterized methods.
 Raw receipts: ignored `.scratch/p1034/fast/`,
 `.scratch/p1034/non-task-reruns.json` and per-method TRX/log files.
 Report: `docs/reports/R1B_BOARDING_PARITY_P1034.md`.
+## P1029 gate observations — 2026-11-16 UTC
+
+One Fast sweep (`tools/run-tests.sh --tier fast`, tier 20261116T011254Z):
+**14,597 passed / 3 failed / 17 NotExecuted** across 14,617 executions, 528.1 s.
+All nine infrastructure checks passed. Four executions exceeded the calibrated
+11.525 s limit (SC2NaniteSupportTests, P814GunnerTests, P1000CivProfileTests,
+P999CivStrategyTests — all unrelated to P1029 and all passing). The sweep is
+**FAIL**; no second sweep. The three failures are existing unrelated families:
+
+| Test | Full-sweep observation | Three isolated reruns (P/F/S each) |
+| --- | --- | --- |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Peer's `ShipStatusMessage` collection held only the old sector (1051); existing warp-receipt family, 19 ms | 4/0/0; 4/0/0; 4/0/0 — load-only |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | `minRockDist=69.0`; existing NPC clearance family, 5 s | 6/0/0; 6/0/0; 6/0/0 — load-only |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | `5.0000000000000009` against the inclusive 5 s upper bound; already-led floating upper-bound signature | **fail 3/3 alone** (delay 5, 5, 7 — same one-ULP bound); no timer/bomb code changed |
+
+P1029 changes no timer, warp-bomb, NPC-dodge or warp-receipt code; the task's own
+tests (6/6) and `LiveRelaunchTests` (4/4) pass 3× alone, and `LiveRipcordTests`
+(13/13), `P554AdminCheatLiveTests` (7/7) and `P655GameStateIntegrityTests`
+(35/35) pass.
 
 ## P1026 gate observations — 2026-11-15 UTC
 

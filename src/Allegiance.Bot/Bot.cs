@@ -2154,7 +2154,18 @@ public sealed class Bot : ITransportSite, IDisposable
                         _playerRescueds.Add(PlayerRescued.Decode(m));
                         break;
                     case RelaunchShip.Fmid:
-                        _relaunchShips.Add(RelaunchShip.Decode(m));
+                        var rel = RelaunchShip.Decode(m);
+                        // P1029 — the native client applies RELAUNCH_SHIP as a
+                        // ship reset for its OWN ship and takes the message's
+                        // fresh cookie (clintlib/appmsg.cpp:132-176; the port's
+                        // ClientWorld.Apply(RelaunchShip) echoes it through
+                        // Apply(ShipReset) at
+                        // src/Allegiance.ClientCore/State/ClientWorld.FlightInterface.cs:85).
+                        // The harness must do the same or its next pose echo
+                        // carries a cookie the server has already rotated away
+                        // and is dropped whole by the P507 gate.
+                        if (rel.ShipId == _myShipId) _poseCookie = rel.Cookie;
+                        _relaunchShips.Add(rel);
                         break;
                     case MoneyChange.Fmid:
                         _moneyChanges.Add(MoneyChange.Decode(m));
