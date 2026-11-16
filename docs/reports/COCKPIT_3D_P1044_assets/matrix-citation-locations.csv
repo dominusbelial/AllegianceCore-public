@@ -1,0 +1,195 @@
+reference,located,source_excerpt
+Artwork/cortui_huds.mdl:1,yes,1:// HUD slots
+Artwork/dialog.mdl:1280-1355,yes,"1280:GHTTI_allseconds = Divide(GetRange(Target, OnEveryFrame),Subtract(GetSpeed(Me, OnEveryFrame), GetSpeed(Target, OnEveryFrame))); | 1281:GHTTI_allseconds_Abs = Max(Multiply(-1,GHTTI_allseconds),GHTTI_allseconds); | 1282:GHTTI_Mod = Mod(GHTTI_allseconds_Abs, 60); | 1283:GHTTI_Minutes = Divide(Subtract(GHTTI_allseconds_Abs, GHTTI_Mod),60); | 1284:GHTTI_Seconds = Min(GHTTI_Mod, 59); | 1285:GHTTI_SecondString =  | 1286:    SwitchString( | 1287:        Max(9.4999,GHTTI_Seconds), | 1288:        ConcatinatedString("":"", NumberString(GHTTI_Seconds)), | 1289:        [(9.4999, ConcatinatedString("":0"", NumberString(GHTTI_Seconds)))] | 1290:    ); | 1291: | 1292:GHTTI_string =  | 1293:    ConcatinatedString( | 1294:        NumberString(GHTTI_Minutes), | 1295:        GHTTI_SecondString | 1296:    ); | 1297: | 1298:GHTTI_posneg =  | 1299:    SwitchString( | 1300:        Max(0,GHTTI_allseconds), | 1301:        GHTTI_string , | 1302:        [( | 1303:            0, | 1304:            ConcatinatedString( | 1305:                ConcatinatedString( | 1306:                    ""("", | 1307:                    GHTTI_string | 1308:                ), | 1309:                "")"" | 1310:            ) | 1311:        )] | 1312:    ); | 1313: | 1314:GHTTI =  | 1315:    SwitchString( | 1316:        Subtract(GetSpeed(Me, OnEveryFrame), GetSpeed(Target, OnEveryFrame)), //avoid div/0 errors and funkyness. | 1317:        SwitchString( | 1318:            Min(GHTTI_allseconds_Abs,1800), // avoid ridiculously long numbers. | 1319:            GHTTI_posneg, | 1320:            [ | 1321:            (1800, ""infinite"") | 1322:            ] | 1323:        ), | 1324:        [(0, ""infinite"")] | 1325:    ); | 1326: | 1327:GHLargeTargetTTI =  | 1328:    SwitchImage( | 1329:        GetPercentHitPoints(MyStation, OnEveryFrame), // 0 if not in base | 1330:        emptyImage, // hide if in base | 1331:        [(0, | 1332:            GroupImage([ | 1333:                TranslateImage( | 1334:                    StringImage( | 1335:                        JustifyLeft, | 1336:                        100, | 1337:                        GHVerdana12, | 1338:                        GHTextColor, | 1339:                        ""TTI"" | 1340:                    ), | 1341:                    Point(30,0) | 1342:                ), | 1343:                TranslateImage( | 1344:                    StringImage( | 1345:                        JustifyLeft, | 1346:                        100, | 1347:                        GHVerdana12, | 1348:                        GHTextColor, | 1349:                        ConcatinatedString("": "", GHTTI) | 1350:                    ), | 1351:                    Point(100,0) | 1352:                ) | 1353:            ]) | 1354:        )] | 1355:    );"
+Artwork/dialog.mdl:1430,yes,1430:CurrentViewSectorNameImage =
+Artwork/dialog.mdl:1508,yes,1508:PilotNameImage = 
+Artwork/dialog.mdl:1605,yes,1605:QueuedOrderImage =
+Artwork/dialog.mdl:1623,yes,1623:AcceptedOrderImage =
+Artwork/dialog.mdl:173,yes,173://
+Artwork/dialog.mdl:1803,yes,1803:ShipNameImage = StringImage(
+Artwork/dialog.mdl:1885,yes,"1885:moneyPane = ImagePane(ImportImage(""creditboxbmp"", false),"
+Artwork/dialog.mdl:1926,yes,1926:DefaultEjectPodDisplayOn =
+Artwork/dialog.mdl:1984,yes,1984:
+Artwork/dialog.mdl:1998,yes,1998:DeathBannerPane =
+Artwork/dialog.mdl:2006,yes,2006:TipTextImage =
+Artwork/dialog.mdl:2086,yes,2086:ObserverTextImage =
+Artwork/dialog.mdl:2114,yes,2114:VoteTextImage =
+Artwork/dialog.mdl:2142,yes,2142:cortVectorLockOn =
+Artwork/dialog.mdl:2153,yes,2153:cortAutopilotOnImage =
+Artwork/dialog.mdl:2173,yes,2173:thrustGaugeBack =
+Artwork/dialog.mdl:2226,yes,2226:fuelGaugeBack =
+Artwork/dialog.mdl:2278,yes,2278:ammoGaugeBack =
+Artwork/dialog.mdl:2331,yes,2331:energyGaugeBack =
+Artwork/dialog.mdl:2404,yes,2404:HullGreen =
+Artwork/dialog.mdl:2429,yes,2429:hullGauge =
+Artwork/dialog.mdl:2474,yes,2474:ShieldGreen =
+Artwork/dialog.mdl:2529,yes,2529:RadarDetectPane =
+Artwork/dialog.mdl:2537,yes,2537:CloakOn =
+Artwork/dialog.mdl:2546,yes,2546:SpeedImage =
+Artwork/dialog.mdl:2556,yes,2556:ExperienceImage =
+Artwork/dialog.mdl:2572,yes,2572:Artifact =
+Artwork/dialog.mdl:2586,yes,2586:CaptureFlag =
+Artwork/dialog.mdl:2595,yes,2595:SignatureImage =
+Artwork/dialog.mdl:38,yes,38:
+Artwork/dialog.mdl:4053-4060,yes,"4053:TargetRangeString = | 4054:    SwitchString( | 4055:        GetRange(Target, OnEveryFrame), | 4056:        ConcatinatedString(""RANGE: "", NumberString(GetRange(Target, OnEveryFrame))), | 4057:        [ | 4058:            (-1, ConcatinatedString(""LOCATION:"", GetSectorName(Target, OnEveryFrame))) | 4059:        ] | 4060:    );"
+Artwork/dialog.mdl:4073-4082,yes,"4073:TargetInRangeImage = | 4074:        ImportImage(""turretrangebmp"", true); | 4075: | 4076:TargetInRange = | 4077:    SwitchImage( | 4078:        TargetInRangeFlag, | 4079:        emptyImage, | 4080:        [ | 4081:            (1, TargetInRangeImage) | 4082:        ]"
+Artwork/dialog.mdl:4191,yes,4191:
+Artwork/dialog.mdl:4211,yes,"4211:        emptyImage,"
+Artwork/dialog.mdl:4218,yes,4218:    VisibleImage(GroupImage(
+Artwork/dialog.mdl:4998,yes,4998:    GroupImage([
+Artwork/dialog.mdl:5056,yes,"5056:            ),"
+Artwork/dialog.mdl:5091,yes,5091:CountdownOn = ModifiableNumber(0);
+Artwork/dialog.mdl:5107,yes,5107:KillsOnImage =
+Artwork/dialog.mdl:5139,yes,5139:RipcordCountdownImage =
+Artwork/dialog.mdl:5255,yes,5255:dialogs =
+Artwork/dialog.mdl:5388,yes,5388:     
+Artwork/dialog.mdl:5398,yes,"5398:        (SoftCenterHudDisplayImage, SideTop, Point(-320, 1000), Point(-232, SoftCenterHudDisplayYOffset), .5, ofInCockpit | ofInChase, true),"
+Artwork/dialog.mdl:5419,yes,"5419:        (LocationInCockpitImage, SideTopRight, Point(-180, -37), Point(-180, -37), 0, ofInFlight, true),"
+Artwork/dialog.mdl:5425,yes,"5425:        // TurretOfImage: whose turret I'm in, for launch anim, map (both), hangar, cockpit, chase"
+Artwork/dialog.mdl:570,yes,570:GHCloakGauge = 
+Artwork/dialog.mdl:89,yes,89:
+Artwork/invafterburn.mdl:14,yes,14:            ConcatinatedString(
+Artwork/invafterburn.mdl:4,yes,4:TimeLeft = SwitchString(
+Artwork/invcloak.mdl:4,yes,4:CloakTimeLeft = SwitchString(
+Artwork/invdefault.mdl:53,yes,"53:InventoryLine = ImagePane(ImportImage(""inventorylinebkgndbmp"", false),"
+Artwork/invdefault.mdl:6,yes,6:GaugePaneClassic = 
+Artwork/invemptyweapon.mdl:3,yes,"3:InventoryLine = ImagePane(ImportImage(""inventorylinebkgndbmp"", false),"
+Artwork/invshield.mdl:12,yes,"12:                NumberString(GetRechargeTime(part, OnEveryFrame))"
+Artwork/invshield.mdl:9,yes,"9:					NumberString(GetShieldStrength(part, OnEveryFrame)),"
+Artwork/invsmissile.mdl:12,yes,"12:                    NumberString(GetWeaponRange(part, OnEveryFrame))"
+Artwork/invsmissile.mdl:16,yes,"16:            NumberString(GetDamage(part, OnEveryFrame))"
+Artwork/invsmissile.mdl:69,yes,69:
+Artwork/invsweapon.mdl:14,yes,"14:					NumberString(GetDamage(part, OnEveryFrame)),"
+Artwork/invsweapon.mdl:17,yes,"17:				NumberString(GetRate(part, OnEveryFrame))"
+Artwork/invsweapon.mdl:80,yes,"80:		(SwitchPane(IsActive(part, OnEveryFrame), ["
+Artwork/invsweapon.mdl:9,yes,"9:                NumberString(GetWeaponRange(part, OnEveryFrame)),"
+Artwork/invsweapon.mdl:90,yes,"90:		(SwitchPane(IsOutOfAmmo(part, OnEveryFrame), "
+Artwork/invturret.mdl:3,yes,"3:InventoryLine = ImagePane(ImportImage(""inventorylinebkgndbmp"", false),"
+Igc/magazineigc.cpp:158,yes,158:                            float   lockTime = m_missileType->GetLockTime();
+WinTrek/WinTrek.cpp:3293,yes,"3293:        SetSmoke (LoadPreference (""SmokeEffects"", 3));"
+WinTrek/WinTrek.cpp:35,yes,35:const float c_dtFlashOn = 0.25f;
+WinTrek/WinTrek.cpp:3653,yes,3653:        m_pnumberIsGhost->SetValue(trekClient.GetShip()->IsGhost() ? 1.0f : 0.0f);
+WinTrek/WinTrek.cpp:5104,yes,5104:        float style = m_pnumberStyleHUD->GetValue();
+WinTrek/WinTrek.cpp:7783-7802,yes,"7783:            for (ModelLinkIGC*  l = models->first(); (l != NULL); l = l->next()) | 7784:            { | 7785:                ImodelIGC*        pmodel = l->data(); | 7786: | 7787:                // check to see if this is a ship | 7788:                if (pmodel->GetObjectType () == OT_ship) | 7789:                { | 7790:                    // it is a ship, let's check to see if it is approaching an aleph | 7791:                    IshipIGC* pship; CastTo(pship, pmodel); | 7792:                    ImodelIGC*  pmodelAleph = FindTarget (pship, c_ttWarp | c_ttNearest | c_ttAllSides); | 7793:                    if (pmodelAleph) | 7794:                    { | 7795:                        Vector  vecDelta = pmodelAleph->GetPosition() - pship->GetPosition(); | 7796:                        float   fRange = vecDelta.Length (); | 7797:                        float   fRelativeVelocity = pship->GetVelocity () * (vecDelta / fRange); | 7798:                        if (fRelativeVelocity > 0.0f) | 7799:                            pship->GetThingSite ()->SetTimeUntilAleph (fRange / fRelativeVelocity); | 7800:                        else | 7801:                            pship->GetThingSite ()->SetTimeUntilAleph (-1.0f); | 7802:                    }"
+WinTrek/WinTrek.cpp:8134,yes,8134:            if (pmp->IsCountdownGame())
+WinTrek/WinTrek.cpp:8461,yes,8461:                    m_pplayerThrottle->SetValue(pshipParent
+WinTrek/WinTrek.cpp:8654,yes,8654:            //Change sounds for warning state as appropriate
+WinTrek/WinTrek.cpp:8784-8818,yes,"8784:    { | 8785:        const float alpha = 0.5f; | 8786:        Color colorTargetHUD(alpha, alpha, alpha, alpha); | 8787: | 8788:        m_cameraControl.m_pgeoTarget = Geo::GetEmpty(); | 8789: | 8790:        if (pmodel != NULL) | 8791:        { | 8792:            if (pmodel->GetObjectType() == OT_ship) | 8793:                pmodel = ((IshipIGC*)pmodel)->GetSourceShip(); | 8794: | 8795:            if ((pmodel != trekClient.GetShip()->GetSourceShip()) && | 8796:                (pmodel->GetHitTest() != NULL) && | 8797:                (pmodel->GetCluster() == trekClient.GetCluster()) && | 8798:                trekClient.GetShip()->CanSee(pmodel)) | 8799:            { | 8800:                ThingSite* pthingSite = pmodel->GetThingSite(); | 8801: | 8802:                if (pthingSite) | 8803:                { | 8804:                    TRef<ThingGeo>  pthing; | 8805:                    CastTo(pthing, pthingSite->GetThingGeo()); | 8806:                    if (pthing) | 8807:                        m_cameraControl.m_pgeoTarget = pthing->GetTargetGeo(); | 8808:                } | 8809:            } | 8810: | 8811:            IsideIGC* pside = pmodel->GetSide(); | 8812:            if (pside) | 8813:            { | 8814:                colorTargetHUD = pside->GetColor(); | 8815:                colorTargetHUD = colorTargetHUD * g_hudBright; | 8816:                colorTargetHUD.SetAlpha(alpha); | 8817:            } | 8818:        }"
+WinTrek/WinTrek.cpp:8937,yes,8937:    bool    GetFlash(Time now)
+WinTrek/WinTrek.cpp:9955,yes,9955:            case TK_CycleRadar: //imago updated 7/8/09
+WinTrek/console.cpp:1002,yes,1002:            m_fTargetChanged = true;
+WinTrek/console.cpp:3084,yes,3084:    void SetOverlayFlags(OverlayMask om)
+WinTrek/console.cpp:3385,yes,3385:#endif
+WinTrek/console.cpp:3508,yes,3508:
+WinTrek/console.cpp:672,yes,"672:        m_pns->AddMember(""Target"", m_pmodelDataTarget = new ModelData(NULL));"
+WinTrek/console.cpp:705,yes,"705:        m_pns->AddMember(""ComposeState"", m_pnumberComposeState = new ModifiableNumber(c_csNotComposing));"
+WinTrek/console.cpp:723,yes,"723:        m_pns->AddMember(""TipText"", m_pstringTipText0 = new ModifiableString(""""));  // yp - Your_Persona Bug10 (3 lines for status text) patch"
+WinTrek/console.cpp:726,yes,"726:        m_pns->AddMember(""CriticalTipText0"", m_pstringCriticalTipText0 = new ModifiableString(""""));"
+WinTrek/console.cpp:746,yes,"746:        m_omRecipientsVisible = OverlayMask(m_pnsDisplays->FindNumber(""RecipientsVisibleOM"", 0.0f));"
+WinTrek/console.cpp:783,yes,783:        m_pmodelDataMe->SetModel(trekClient.GetShip()->GetSourceShip());
+WinTrek/console.cpp:792,yes,792:        m_pnumberMoney->SetValue((float)trekClient.GetMoney());
+WinTrek/console.cpp:793,yes,793:        m_pnumberAutopilotOn->SetValue(trekClient.autoPilot() ? 1.0f : 0.0f);
+WinTrek/console.cpp:797,yes,797:
+WinTrek/console.cpp:809,yes,809:        {
+WinTrek/console.cpp:812,yes,812:            m_pnumberLives->SetValue(trekClient.m_pCoreIGC->GetMissionParams()->iLives - ppi->MissionDeaths());
+WinTrek/console.cpp:813,yes,813:            m_pnumberKills->SetValue(ppi->MissionKills());
+WinTrek/console.cpp:824,yes,824:        // update my experience.  
+WinTrek/console.cpp:830,yes,830:
+WinTrek/console.cpp:846,yes,846:            IshipIGC*   pship = trekClient.GetShip()->GetSourceShip();
+WinTrek/console.cpp:865,yes,865:            m_pnumberSignature->SetValue(100.0f * pship->GetSignature() /
+WinTrek/console.cpp:870,yes,870:            IclusterIGC*    pcluster = trekClient.GetCluster();
+WinTrek/console.cpp:875,yes,875:        {
+WinTrek/console.cpp:893,yes,893:        {
+WinTrek/console.cpp:913,yes,913:        float   fTipTextDuration = Training::IsTraining () ? 30.0f : 7.5f;
+WinTrek/console.cpp:935,yes,935:        float rMissileLock = 0.0f;
+WinTrek/console.cpp:941,yes,941:        if (rMissileLock > 0.0f && rMissileLock < 1.0f && 
+WinTrek/consoledata.cpp:1080,yes,1080:float PartWrapper::IsSelected()
+WinTrek/consoledata.cpp:1122,yes,1122:float PartWrapper::IsActive()
+WinTrek/consoledata.cpp:1132,yes,1132:float PartWrapper::IsOutOfAmmo()
+WinTrek/consoledata.cpp:1157,yes,1157:float PartWrapper::GetReadyState()
+WinTrek/consoledata.cpp:1177,yes,1177:float PartWrapper::GetMountedFraction()
+WinTrek/consoledata.cpp:1189,yes,1189:float PartWrapper::GetArmedFraction()
+WinTrek/consoledata.cpp:136,yes,136:float ModelData::GetSpeed()
+WinTrek/consoledata.cpp:182,yes,182:float ModelData::GetRange()
+WinTrek/consoledata.cpp:202,yes,202:float ModelData::GetPercentHitPoints()
+WinTrek/consoledata.cpp:252,yes,252:float ModelData::GetPercentShields()
+WinTrek/consoledata.cpp:328,yes,328:float ModelData::GetPercentEnergy()
+WinTrek/consoledata.cpp:367,yes,367:float ModelData::GetAmmo()
+WinTrek/consoledata.cpp:40,yes,40:ZString ModelData::GetModelTypeDesc()
+WinTrek/consoledata.cpp:406,yes,406:float ModelData::GetFuel()
+WinTrek/consoledata.cpp:449,yes,449:float ModelData::GetOre()
+WinTrek/consoledata.cpp:465,yes,465:float ModelData::GetVectorLock()
+WinTrek/consoledata.cpp:480,yes,480:float ModelData::GetCloaking()
+WinTrek/consoledata.cpp:493,yes,493:float ModelData::GetNumObservers()
+WinTrek/consoledata.cpp:521,yes,521:float ModelData::GetRipcordTimeLeft()
+WinTrek/consoledata.cpp:536,yes,536:float ModelData::GetEndurance()
+WinTrek/consoledata.cpp:565,yes,565:float ModelData::IsCloaked()
+WinTrek/consoledata.cpp:578,yes,578:float ModelData::IsEjectPod()
+WinTrek/consoledata.cpp:65,yes,65:ZString ModelData::GetName()
+WinTrek/consoledata.cpp:684,yes,684:ZString PartWrapper::GetPartName()
+WinTrek/consoledata.cpp:690,yes,690:float PartWrapper::GetRange()
+WinTrek/consoledata.cpp:722,yes,722:float PartWrapper::GetDamage()
+WinTrek/consoledata.cpp:748,yes,748:float PartWrapper::GetRate()
+WinTrek/consoledata.cpp:768,yes,768:float PartWrapper::GetCount()
+WinTrek/consoledata.cpp:848,yes,848:float PartWrapper::GetAfterburnerTopSpeed()
+WinTrek/consoledata.cpp:869,yes,869:float PartWrapper::GetAfterburnerTimeLeft()
+WinTrek/consoledata.cpp:89,yes,89:ZString ModelData::GetSideName()
+WinTrek/consoledata.cpp:911,yes,911:float PartWrapper::GetShieldStrength()
+WinTrek/consoledata.cpp:945,yes,945:float PartWrapper::GetRechargeTime()
+WinTrek/consoledata.cpp:967,yes,967:float PartWrapper::GetCloakTimeLeft()
+WinTrek/gamescreen.cpp:46-90,yes,"46:{ | 47: | 48:    IHTTPSession *              m_pSession; | 49:    ZString                     m_strPendingFileList; | 50:    ZString                     m_strWaitForFile; | 51: | 52:    int                         m_nRetriesLeft; | 53:    enum { c_cRetries = 5 }; | 54: | 55:public: | 56: | 57:    enum StatusColor | 58:    { | 59:        statusGreen, | 60:        statusYellow, | 61:        statusRed | 62:    }; | 63: | 64:    enum BooleanFilterState | 65:    { | 66:        No, | 67:        Yes, | 68:        DontCare | 69:    }; | 70: | 71:    static BooleanFilterState m_sFilterDevelopments; | 72:    static BooleanFilterState m_sFilterLives; | 73:    static BooleanFilterState m_sFilterScoresCount; | 74:    static BooleanFilterState m_sFilterZone; | 75: | 76:    static BooleanFilterState m_sFilterConquest; | 77:    static BooleanFilterState m_sFilterDeathmatch; | 78:    static BooleanFilterState m_sFilterProsperity; | 79:    static BooleanFilterState m_sFilterCountdown; | 80:    static BooleanFilterState m_sFilterArtifact; | 81:    static BooleanFilterState m_sFilterFlags; | 82:    static BooleanFilterState m_sFilterTerritorial; | 83: | 84:    static ZString m_strGameNameSubstring; | 85: | 86:    static TVector<unsigned, DefaultEquals> m_vuSorts; | 87:    static TVector<bool, DefaultEquals>     m_vbReversedSorts; | 88: | 89:private: | 90:"
+WinTrek/hudimage.h:10-27,yes,"10:class HUDImage : public WrapImage { | 11:protected: | 12:    HUDImage(Camera* pcamera, RectValue* prectView) : | 13:        WrapImage(Image::GetEmpty(), pcamera, prectView) | 14:    { | 15:    } | 16: | 17:    Camera*    GetCamera()   { return Camera::Cast(GetChild(1));    } | 18:    RectValue* GetViewRect() { return RectValue::Cast(GetChild(2)); } | 19: | 20:public: | 21:    static TRef<HUDImage> Create(Engine* pengine, Camera* pcamera, RectValue* prectView); | 22: | 23:    virtual void Update(Time now) = 0; | 24: | 25:    virtual void SetClusterName(const char* value) = 0; | 26:    virtual void SetWindowSize(const Point& point) = 0; | 27:};"
+WinTrek/indicator.cpp:128,yes,128:    void RenderDirectionIndicator(Context* pcontext)
+WinTrek/indicator.cpp:130-148,yes,"130:        const Vector& myVelocity = trekClient.GetShip()->GetSourceShip()->GetVelocity(); | 131:        int speed = (int)(myVelocity.Length() + 0.5f); | 132: | 133:        if (GetWindow()->GetCameraMode() == TrekWindow::cmCockpit) | 134:        { | 135:            const Rect& rect = GetViewRect()->GetValue(); | 136: | 137:            if (speed != 0) | 138:            { | 139:                Point pointImage; | 140:                if (GetCamera()->TransformDirectionToImage(myVelocity, pointImage)) | 141:                { | 142:                    pointImage = rect.TransformNDCToImage(pointImage); | 143: | 144:                    if (rect.Inside(pointImage)) | 145:                        pcontext->DrawImage(m_psurfaceDirection, true, pointImage); | 146:                } | 147:            } | 148:"
+WinTrek/indicator.cpp:149,yes,149:            pcontext->SetBlendMode(BlendModeAdd);
+WinTrek/indicator.cpp:154,yes,154:    void RenderJoystickIndicator(Context* pcontext) {
+WinTrek/indicator.cpp:179,yes,179:    void RenderLeadIndicator(Context* pcontext)
+WinTrek/indicator.cpp:245,yes,245:                        float               fDistanceBetweenShips = (targetPosition - shipPosition).Length();
+WinTrek/indicator.cpp:328,yes,"328:                                pcontext->DrawImage((t <= l) ? m_psurfaceLeadInRange : m_psurfaceLeadOutRange,"
+WinTrek/indicator.cpp:334,yes,334:                            if (bIisInRange)
+WinTrek/indicator.cpp:367,yes,367:            }
+WinTrek/indicator.cpp:405,yes,405:            }
+WinTrek/indicator.cpp:411,yes,"411:    void RenderTurnIndicator(Context* pcontext, ImodelIGC* pmodelTarget, const Color& color)"
+WinTrek/indicator.cpp:461,yes,461:    void RenderTrainingOverlay(Context* pContext)
+WinTrek/indicator.cpp:514,yes,514:
+WinTrek/indicator.cpp:634,yes,634:        case RollTrainingOverlay:
+WinTrek/indicator.cpp:778,yes,778:            if (GetWindow()->GetShowJoystickIndicator())
+WinTrek/indicator.cpp:783,yes,783:            ImodelIGC* pmodelAccepted = trekClient.GetShip()->GetCommandTarget(c_cmdAccepted);
+WinTrek/inventoryimage.cpp:169,yes,169:                paneParent->InsertAtBottom(ppane);
+WinTrek/inventoryimage.cpp:299,yes,299:            TRef<ColumnPane> pColumnPane = new ColumnPane();
+WinTrek/inventoryimage.cpp:341,yes,"341:            ProcessCargo(pColumnPane, pship, trekClient.GetSelectedCargoMount(), ""S."");"
+WinTrek/inventoryimage.cpp:65,yes,65:            pmodelDataGunner->SetModel(gunner);
+WinTrek/inventoryimage.cpp:94,yes,"94:                    && pship->GetHullType()->CanMount(ppartLink->data()->GetPartType(), mount))"
+WinTrek/radarimage.cpp:1008,yes,"1008:                                //Student 7/1/2022 if friendly is spotted, pass the information to drawBlip"
+WinTrek/radarimage.cpp:1021,yes,1021:                                if (pship != pshipSource && //if ship is not me (we already know when we are ripcording)
+WinTrek/radarimage.cpp:1134,yes,"1134:	void RenderRoundBorder (Context* pcontext, const Rect& rectImage)"
+WinTrek/radarimage.cpp:1149,yes,1149:    void Render(Context* pcontext)
+WinTrek/radarimage.cpp:1199,yes,1199:                float   width = 0.0f;
+WinTrek/radarimage.cpp:1209,yes,1209:                char    szRange[20];
+WinTrek/radarimage.cpp:1234,yes,1234:                float       xshift = 0;
+WinTrek/radarimage.cpp:1408,yes,"1408:                    CD3DDevice9::Get()->SetRenderState( D3DRS_MULTISAMPLEANTIALIAS, FALSE ); //8/8/09 Imago"
+WinTrek/radarimage.cpp:28,yes,28://////////////////////////////////////////////////////////////////////////////
+WinTrek/radarimage.cpp:325,yes,"325:            //Draw the brackets around the ""object"""
+WinTrek/radarimage.cpp:334,yes,334:
+WinTrek/radarimage.cpp:340,yes,340:
+WinTrek/radarimage.cpp:343,yes,343:
+WinTrek/radarimage.cpp:346,yes,346:            else if (maskBrackets & c_maskArtifact)
+WinTrek/radarimage.cpp:352,yes,352:			if (maskBrackets & c_maskTarget) {
+WinTrek/radarimage.cpp:590,yes,590:            if (pmodel->GetVisibleF() && pshipSource->CanSee(pmodel))
+WinTrek/radarimage.cpp:645,yes,645:                            maskBrackets |= (sidFlag == SIDE_TEAMLOBBY) ? c_maskArtifact : c_maskFlag;
+WinTrek/radarimage.cpp:689,yes,689:                    static const int    closeRange = 100;
+WinTrek/radarimage.cpp:701,yes,701:                    */
+WinTrek/radarimage.cpp:724,yes,724:                        if (m_radarLOD == c_rlMinimal)
+WinTrek/radarimage.cpp:738,yes,738:                                    switch (m_radarLOD)
+WinTrek/radarimage.cpp:782,yes,782:                                case    OT_station:
+WinTrek/radarimage.cpp:819,yes,819:                                case    OT_missile:
+WinTrek/radarimage.cpp:834,yes,834:                                case    OT_probe:
+WinTrek/radarimage.cpp:877,yes,877:                                case    OT_treasure:
+WinTrek/radarimage.cpp:903,yes,903:                                    switch (m_radarLOD)
+WinTrek/radarimage.cpp:952,yes,952:                                case    OT_warp:
+WinTrek/radarimage.cpp:989,yes,"989:                                // for that to happen, so for now I'm just commenting it out and"
+WinTrek/radarimage.cpp:999,yes,999:								//Xynth #47 7/2010
+WinTrek/radarimage.h:42,yes,42:    enum RadarLOD
+WinTrek/trekigc.cpp:5061,yes,"5061:                    m_psoundMissileWarning = StartSound(missileLockSound, ((ThingSiteImpl*)pts)->GetSoundSource());"
+effect/thinggeo.cpp:619-696,yes,"619:    void    AddTeleportParticles (float fDeltaTime, const Vector& vecFrameVelocity, const Vector& vecFrameAcceleration) | 620:    { | 621:        float   fTimeUntilTeleport = m_fTimeUntilRipcord; | 622:        if ((fTimeUntilTeleport < 0.0f) || ((m_fTimeUntilAleph >= 0.0f) && (m_fTimeUntilAleph < m_fTimeUntilRipcord))) | 623:            fTimeUntilTeleport = m_fTimeUntilAleph; | 624:        // run the effect until it ends | 625:        if (fTimeUntilTeleport >= 0.0f) | 626:        { | 627:            // the axis vectors that we'll use to spray the particles | 628:            Vector          vecX; | 629:            Vector          vecY; | 630:            Vector          vecZ; | 631: | 632:            // check to see if the thing is moving | 633:            float           fSpeedSquared = vecFrameVelocity.LengthSquared (); | 634:            if (fSpeedSquared > 0.0f) | 635:            { | 636:                // it is, so compute the axis vectors from the velocity | 637:                vecZ = vecFrameVelocity / sqrtf (fSpeedSquared); | 638:                vecX = vecZ.GetOrthogonalVector (); | 639:                vecY = CrossProduct (vecX, vecZ); | 640:            } | 641:            else | 642:            { | 643:                // it's not, so compute the axis vectors from the orientation | 644:                vecZ = m_orientation.GetForward (); | 645:                vecX = m_orientation.GetRight (); | 646:                vecY = CrossProduct (vecX, vecZ); | 647:            } | 648: | 649:            // compute how many sparks to show, based on a linear increase | 650:            // of particles over the leadup time | 651:            float           fTimeToShowSparks = 3.0f; | 652:            fTimeToShowSparks = fTimeUntilTeleport / fTimeToShowSparks; | 653:            if (fTimeToShowSparks > 1.0f) | 654:                fTimeToShowSparks = 1.0f; | 655:            if (fTimeToShowSparks < 0.0f) | 656:                fTimeToShowSparks = 0.0f; | 657:            float           fCountUpToOne = 1.0f - fTimeToShowSparks; | 658:            float           fScaledUpCount = ((fCountUpToOne * 2.0f) + 1.0f) * m_radius; | 659:            int             iSparkCount = int (floorf (TELEPORT_SPARK_COUNT * float (s_iShowSmoke) * fCountUpToOne) + 0.5f); | 660: | 661:            // now loop over all the spark count, spewing them as necessary | 662:            float           fSparkTimeDelta = fDeltaTime / float (iSparkCount); | 663:            for (int i = 0; i < iSparkCount; i++) | 664:            { | 665:                // start by figuring how big of a ""blast"" to make, and building the initial blast vector | 666:                float           fRadius = m_radius * random (0.75f, 1.25f); | 667:                Vector          vecParticleVelocity = Vector::RandomDirection () * fRadius; | 668: | 669:                // project the blast vector onto the plane in front of the ship, and compute the | 670:                // offset from the desired vector to the projected vector | 671:                Vector          vecParticleVelocityProjected = ((vecParticleVelocity * vecX) * vecX) + ((vecParticleVelocity * vecY) * vecY); | 672:                Vector          vecDeltaProjection = vecParticleVelocityProjected - vecParticleVelocity; | 673: | 674:                // the final velocity vector is an interpolation from the blast vector to the projected | 675:                // vector, based on the duration of the effect | 676:                vecParticleVelocity = (fTimeToShowSparks * vecDeltaProjection) + vecParticleVelocity; | 677: | 678:                // create the particle and set its parameters | 679:                ParticleData*   pParticleData = m_pParticleGeo->AddSpark (); | 680:                float           fRandomStartTime = random (float (i), float (i) + 1.0f) * fSparkTimeDelta; | 681:                pParticleData->m_vecVelocity = vecFrameVelocity + vecParticleVelocity; | 682:                pParticleData->m_vecAcceleration = -vecFrameVelocity; | 683:                pParticleData->m_vecPosition =  | 684:                      m_vecPositionLast  | 685:                    + (fTimeToShowSparks * m_radius * 1.5f * vecZ)  | 686:                    + (vecParticleVelocity * ((1.0f - fTimeToShowSparks) + fRandomStartTime))  | 687:                    + (0.5f * fRandomStartTime * fRandomStartTime * pParticleData->m_vecAcceleration); | 688:                pParticleData->m_fSize = random (fScaledUpCount * 0.15f, fScaledUpCount * 0.3f); | 689:                pParticleData->m_fDuration = 0.5f; | 690:            } | 691:        } | 692: | 693:        // decrement the time until teleport | 694:        m_fTimeUntilRipcord -= fDeltaTime; | 695:        m_fTimeUntilAleph -= fDeltaTime; | 696:    }"
+engine/modeler.cpp:2008,yes,2008:    }
