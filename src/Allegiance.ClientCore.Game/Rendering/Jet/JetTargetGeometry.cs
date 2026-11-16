@@ -91,6 +91,45 @@ public static class JetTargetGeometry
     public static bool DashedDesignator(TargetRelationship relationship)
         => relationship == TargetRelationship.Friend;
 
+    /// <summary>P1038 — the clearance kept between the designator's corner strokes and the
+    /// lock diamond's edges, in standard-stroke units (× scale).</summary>
+    public const float LockClearance = 6f;
+
+    /// <summary>1/√2 — a diamond's edge lies <c>radius/2</c> from the centre along the
+    /// diagonal the square designator's corner travels.</summary>
+    public const float InverseSqrt2 = 0.70710678f;
+
+    /// <summary>
+    /// P1038 — the lock diamond's half-span: the native per-state sizing
+    /// <see cref="LockBracketStyle.HalfSizeForFraction"/> (native
+    /// <c>radiusBracket + 40·(1−lock)</c>, radarimage.cpp:325-332) with the P1037
+    /// readability floor, so the native shrink still drives the size change.
+    /// </summary>
+    public static float LockDiamondHalf(MissileLockFeedback.LockState state, float fraction,
+        float? screenRadius, float distanceToEdge, float scale)
+    {
+        float radius = LockBracketStyle.HalfSizeForFraction(state, fraction, screenRadius, distanceToEdge);
+        // The established fixed floor keeps a small projected radius legible (P1037);
+        // for any normal hull the native term above dominates it.
+        return MathF.Max(radius, DefaultHalf * (scale > 0f ? scale : 1f) + 8f * (scale > 0f ? scale : 1f));
+    }
+
+    /// <summary>
+    /// P1038 — the designator half-span while a lock diamond encloses it. A diamond's
+    /// boundary along the 45° diagonal of its centre is <c>radius/2</c> away, so the square
+    /// designator's corner (<c>half·√2</c>) stays inside with a visible gap exactly when
+    /// <c>half ≤ radius/2 − clearance/√2</c>. The native shrink keeps dictating the radius,
+    /// and the designator contracts to fit it: at every lock fraction all four corner
+    /// strokes lie inside the diamond.
+    /// </summary>
+    public static float DesignatorHalfInsideLock(float designatorHalf, float diamondHalf, float scale)
+    {
+        float clearance = LockClearance * (scale > 0f ? scale : 1f);
+        float limit = diamondHalf * 0.5f - clearance * InverseSqrt2;
+        float floor = MinimumHalfPx * 0.5f;
+        return MathF.Min(designatorHalf, MathF.Max(limit, floor));
+    }
+
     // ── lock ─────────────────────────────────────────────────────────────
     /// <summary>Segments per diamond side: 4 → a 16-segment lock diamond. A partial
     /// lock draws every other segment (open/dashed), a full lock draws them all

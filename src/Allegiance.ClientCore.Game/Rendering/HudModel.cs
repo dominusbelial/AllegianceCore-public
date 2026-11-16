@@ -214,6 +214,12 @@ public sealed record HudContext
     /// <summary>Native ShowJoystickIndicator preference, default on
     /// (WinTrek.cpp:2739,3059).</summary>
     public bool ShowJoystickIndicator { get; init; } = true;
+    /// <summary>P1038 — true when the incoming-missile warning is armed: an
+    /// in-sector enemy missile is tracking the own ship (native
+    /// <c>MISSILE_TRACK_WARNING(208)</c>, <see cref="MissileTrackState"/>). Null when the
+    /// client did not supply the snapshot. P1038 — presentation only: Classic/Modern never
+    /// read it, and the native audio loop keeps its own rising edges.</summary>
+    public MissileTrackState? MissileTrack { get; init; }
     public HudTarget? Target { get; init; }
     public HudTargetPane? TargetPane { get; init; }
     public HudPoint? TargetBearing { get; init; }
@@ -367,6 +373,12 @@ public sealed class HudModel
     // ghost, so no death banner ever shows (the pre-P799 parity gap), and a
     // ghost shows it docked in command view exactly like native.
     public bool DeathVisible => Visible && Context.Ghost;
+    /// <summary>P1038 — the native boundary warning text (<see cref="HudFrame.WarningMask"/>).
+    /// Classic/Modern print it unchanged; Jet maps the same bit to its <c>BOUNDARY</c>
+    /// caution line.</summary>
+    public const string WarningOutOfBounds = "OUT OF BOUNDS";
+    /// <summary>P1038 — the native crowd warning text (same mask).</summary>
+    public const string WarningSectorCrowded = "SECTOR CROWDED";
     public string SpeedUnit => "mps"; // Artwork/dialog.mdl:2546-2554.
     public string CameraLabel => Context.CameraLabel ?? (Context.Camera switch
     {
@@ -447,8 +459,8 @@ public sealed class HudModel
         var warnings = new List<string>();
         if (FlightVisible && Telemetry is { } own)
         {
-            if ((own.WarningMask & ShipWarningMask.OutOfBounds) != 0) warnings.Add("OUT OF BOUNDS");
-            if ((own.WarningMask & ShipWarningMask.CrowdedSector) != 0) warnings.Add("SECTOR CROWDED");
+            if ((own.WarningMask & ShipWarningMask.OutOfBounds) != 0) warnings.Add(WarningOutOfBounds);
+            if ((own.WarningMask & ShipWarningMask.CrowdedSector) != 0) warnings.Add(WarningSectorCrowded);
         }
         Warnings = warnings.AsReadOnly();
     }

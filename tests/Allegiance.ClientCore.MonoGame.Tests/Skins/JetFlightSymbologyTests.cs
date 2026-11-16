@@ -250,8 +250,9 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
     {
         using var jet = Jet(new CountingSurface());
         // P1036's five flight ids are still there; P1037 adds the target, lock,
-        // lead/aim and order families on top (22 ids total).
-        Assert.Equal(22, JetHudRenderer.ElementIds.Count);
+        // lead/aim and order families; P1038 adds the stores block, the caution
+        // panel and the F4 inventory pane on top (64 ids total).
+        Assert.Equal(64, JetHudRenderer.ElementIds.Count);
         Assert.Equal(JetHudRenderer.ElementIds.OrderBy(id => id, StringComparer.Ordinal),
             jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal));
         Assert.Contains("Velocity direction marker", jet.Coverage);

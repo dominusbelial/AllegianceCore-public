@@ -33,7 +33,11 @@ public readonly record struct WeaponSlotDescriptor(
     string Name,
     bool ConsumesAmmo,
     short CapacityAmmo,
-    bool IsReady = true);
+    bool IsReady = true,
+    // P1038 — true for a missile launcher (native OT_magazine/OT_dispenser family):
+    // the Jet stores block shows a launcher's count and arming state, and an energy
+    // weapon that also never touches the ammo pool must not be mistaken for one.
+    bool IsLauncher = false);
 
 /// <summary>One rendered row of the weapon-status HUD list — a snapshot taken by
 /// <see cref="WeaponReloadTracker.Update"/>, pure data (no MonoGame types) so a
@@ -44,7 +48,10 @@ public readonly record struct WeaponStatusRow(
     bool ConsumesAmmo,
     short Ammo,
     short CapacityAmmo,
-    WeaponStatus Status);
+    WeaponStatus Status,
+    // P1038 — see WeaponSlotDescriptor.IsLauncher. Trailing with a default so every
+    // existing construction keeps its meaning.
+    bool IsLauncher = false);
 
 /// <summary>
 /// Pure (MonoGame-free) derivation of each mounted weapon system's status from
@@ -137,13 +144,13 @@ public sealed class WeaponReloadTracker
             {
                 rows.Add(new WeaponStatusRow(s.MountId, s.Name, s.ConsumesAmmo,
                     (short)Math.Clamp((int)MathF.Round(s.CapacityAmmo * ammoFrac), 0, s.CapacityAmmo),
-                    s.CapacityAmmo, WeaponStatus.NotReady));
+                    s.CapacityAmmo, WeaponStatus.NotReady, s.IsLauncher));
                 continue;
             }
             if (!s.ConsumesAmmo)
             {
                 // Energy weapon / missile launcher: never touches the shared pool.
-                rows.Add(new WeaponStatusRow(s.MountId, s.Name, false, 0, s.CapacityAmmo, WeaponStatus.Ready));
+                rows.Add(new WeaponStatusRow(s.MountId, s.Name, false, 0, s.CapacityAmmo, WeaponStatus.Ready, s.IsLauncher));
                 continue;
             }
 
@@ -184,7 +191,7 @@ public sealed class WeaponReloadTracker
             _states[s.MountId] = st;
 
             short ammo = (short)Math.Clamp((int)MathF.Round(s.CapacityAmmo * ammoFrac), 0, s.CapacityAmmo);
-            rows.Add(new WeaponStatusRow(s.MountId, s.Name, true, ammo, s.CapacityAmmo, st.status));
+            rows.Add(new WeaponStatusRow(s.MountId, s.Name, true, ammo, s.CapacityAmmo, st.status, s.IsLauncher));
         }
 
         return rows;

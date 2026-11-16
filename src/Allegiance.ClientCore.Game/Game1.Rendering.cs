@@ -3295,6 +3295,9 @@ public sealed partial class Game1
     {
         if (LocalSpectating) return HudModelAdapter.Create(null, _cameraMode, hidden: true);   // SP-5: no pilot HUD while spectating
         var world = _session.World;
+        // P1038 — the incoming-missile snapshot (plain data; the audio warning loop
+        // owns its edge tracking, this is only what the HUD may present).
+        var missileTrack = world.MissileTrack;
         HudFrame? frame = null;
         HudInventoryPane? inventoryPane = null;
         bool hudDocked = _dockedActive, hudDead = false;
@@ -3580,6 +3583,9 @@ public sealed partial class Game1
             showJoystickIndicator: _hudSettings.ShowJoystickIndicator,
             // P949 — the one-time fresh-profile keys hint (null once dismissed).
             controlHint: _controlHint?.VisibleText,
+            // P1038 — the world's MISSILE_TRACK_WARNING snapshot for the Jet caution
+            // panel. Presentation only; Classic/Modern never read it.
+            missileTrack: missileTrack,
             buffers: _hudSnapshotBuffers);
         ActiveHud.Draw(model, new(GraphicsDevice.Viewport, _hudTargetModelPreview, _hudSettings.SelectionBracketOn));
         DrawTargetNoMatchFeedback();

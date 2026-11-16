@@ -1244,13 +1244,16 @@ public sealed partial class Game1
             if (!found) continue;
 
             bool consumes;
+            bool launcher = false;
             if (part.Type is DataPartTypeIGC.Weapon w) consumes = w.CAmmoPerShot != 0;
-            else if (part.Type is DataPartTypeIGC.MissileLauncher) consumes = false;
+            else if (part.Type is DataPartTypeIGC.MissileLauncher) { consumes = false; launcher = true; }
             else continue;   // not a weapon system (shield/cloak/pack/afterburner)
 
             slots.Add(new Flight.WeaponSlotDescriptor(
                 p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount,
-                p.FractionMounted == 255 && (part.Type is not DataPartTypeIGC.MissileLauncher || _session.World.MissileLock.IsReady)));
+                p.FractionMounted == 255 && (part.Type is not DataPartTypeIGC.MissileLauncher || _session.World.MissileLock.IsReady),
+                // P1038 — the Jet stores block shows a launcher's count and arming state.
+                IsLauncher: launcher));
         }
         return _weaponReloadTracker.Update((float)_nowSeconds, ammoFrac, reloadArrived, slots);
     }
