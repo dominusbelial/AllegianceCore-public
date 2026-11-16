@@ -828,6 +828,23 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P1036 — the Jet flight reference (P972 §4.2): the own SOURCE ship's
+    /// attitude and velocity, plus the sector reference plane. It reads the pose
+    /// <see cref="TrySourcePose"/> already resolves for the velocity marker and
+    /// the cameras, so a boarded gunner gets the carrier's attitude exactly as
+    /// native's <c>GetSourceShip()</c> does (<c>WinTrek/indicator.cpp:130</c>).
+    /// The plane is the native command-grid plane: <c>z = 0</c>, normal +Z
+    /// (<c>WinTrek/WinTrek.cpp:3099</c> passes <c>zGrid = 0.0f</c>;
+    /// <c>WinTrek/cmdview.cpp:17-115</c> builds the XY grid on it). No world read
+    /// happens here beyond the pose this client already tracks.
+    /// </summary>
+    private HudFlightReference? ComputeFlightReference()
+    {
+        if (!TrySourcePose(out _, out var orientation, out var velocity)) return null;
+        return HudFlightReference.FromSim(orientation, velocity, HudFlightReference.SectorUp);
+    }
+
+    /// <summary>
     /// P803 — the native <c>GetSourceShip()</c> pose (parent ship when boarded,
     /// else the own ship), resolved from the same client state the HUD already
     /// carries (<c>ShipEntity.ParentId</c> + the parent's <c>Latest</c>). No own-sim

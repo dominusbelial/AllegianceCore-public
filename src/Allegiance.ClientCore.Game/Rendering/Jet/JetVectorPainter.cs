@@ -78,7 +78,9 @@ public sealed class JetSpriteBatchSurface : IJetVectorSurface
 /// first, then the requested ink, so a glyph stays legible over bright space
 /// without any additive bloom. The standard stroke is 1.5 px at the 1080p
 /// reference, multiplied by the existing density/Modern HUD scale and floored at
-/// one physical pixel.
+/// <see cref="MinimumLineStroke"/> (1.5 physical px). Since P1036 the under-stroke
+/// on an ink LINE is capped at half the ink width (<see cref="LineKeylineAllowance"/>),
+/// so the ink is always the dominant stroke — a 1 px hairline never reads as almost black.
 /// <para>No per-frame allocation: the polyline point buffer is pre-sized, the
 /// palette is copied once at construction and every loop is a plain <c>for</c>.</para>
 /// </summary>
@@ -86,6 +88,16 @@ public sealed class JetVectorPainter
 {
     /// <summary>The authored stroke width at 1080p / 1.0 desktop scale (P972 §4.1).</summary>
     public const float ReferenceStroke = 1.5f;
+
+    /// <summary>
+    /// The physical floor for an INK line. P972 §4.1's "1 physical pixel at
+    /// 800×480" is a minimum; P1036 raises the line floor to 1.5 physical pixels
+    /// because a 1 px quad centred on a fractional row splits its coverage across
+    /// two rows at ~50 % and the stroke then reads as dark green inside the
+    /// keyline (the 800×480 bright review finding). At 1.5 px one row is always
+    /// fully covered, so the ink stays bright and dominant.
+    /// </summary>
+    public const float MinimumLineStroke = 1.5f;
 
     /// <summary>The near-black under-stroke allowance on each side of a glyph.</summary>
     public const float ReferenceKeyline = 1.0f;
@@ -124,11 +136,24 @@ public sealed class JetVectorPainter
     /// <summary>Near-black outer under-stroke colour.</summary>
     public Color Keyline { get; }
 
-    /// <summary>The standard stroke: 1.5 px × scale, never below one physical pixel.</summary>
-    public float Stroke => MathF.Max(1f, ReferenceStroke * Scale);
+    /// <summary>The standard stroke: 1.5 px × scale, never below 1.5 physical pixels.</summary>
+    public float Stroke => MathF.Max(MinimumLineStroke, ReferenceStroke * Scale);
 
     /// <summary>The keyline allowance on one side, never below one physical pixel.</summary>
     public float KeylineWidth => MathF.Max(1f, ReferenceKeyline * Scale);
+
+    /// <summary>
+    /// The under-stroke allowance on one side of an INK LINE of
+    /// <paramref name="width"/> px: at most one physical pixel and never more than
+    /// half the ink width. P1036 review follow-up: at 800×480 the 1 px green ink
+    /// used to sit inside a 3 px near-black band, so the gun cross read almost
+    /// black. Keeping the dark allowance at ≤ ink/2 makes the ink the dominant
+    /// stroke at every density while the outline still separates it from a bright
+    /// backdrop. Text keeps the full <see cref="KeylineWidth"/> (glyph strokes are
+    /// far denser than a hairline).
+    /// </summary>
+    public float LineKeylineAllowance(float width)
+        => MathF.Min(KeylineWidth, MathF.Max(0.5f, MathF.Max(width, Hairline) * 0.5f));
 
     /// <summary>A hairline that still resolves to a whole physical pixel.</summary>
     public float Hairline => MathF.Max(1f, Scale);
@@ -137,7 +162,7 @@ public sealed class JetVectorPainter
     public void Line(Vector2 a, Vector2 b, float width, Color color)
     {
         width = MathF.Max(width, Hairline);
-        _surface.Line(a, b, width + KeylineWidth * 2f, Keyline);
+        _surface.Line(a, b, width + LineKeylineAllowance(width) * 2f, Keyline);
         _surface.Line(a, b, width, color);
     }
 
@@ -150,7 +175,7 @@ public sealed class JetVectorPainter
     {
         if (points.Length < 2) return;
         width = MathF.Max(width, Hairline);
-        float keyline = width + KeylineWidth * 2f;
+        float keyline = width + LineKeylineAllowance(width) * 2f;
         int last = closed ? points.Length : points.Length - 1;
         for (int i = 0; i < last; i++)
             _surface.Line(points[i], points[(i + 1) % points.Length], keyline, Keyline);
@@ -182,7 +207,7 @@ public sealed class JetVectorPainter
         if (box.Width <= 0f || box.Height <= 0f) return;
         float arm = MathF.Min(armLength, MathF.Min(box.Width, box.Height) * 0.5f);
         width = MathF.Max(width, Hairline);
-        float keyline = width + KeylineWidth * 2f;
+        float keyline = width + LineKeylineAllowance(width) * 2f;
         float x0 = box.X, y0 = box.Y, x1 = box.X + box.Width, y1 = box.Y + box.Height;
         for (int pass = 0; pass < 2; pass++)
         {

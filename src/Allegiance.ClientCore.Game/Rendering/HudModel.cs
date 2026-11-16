@@ -194,6 +194,13 @@ public sealed record HudContext
     /// <summary>Projected velocity-direction marker (screen px), cockpit only.
     /// Native directionbmp at indicator.cpp:130-148.</summary>
     public HudPoint? VelocityMarker { get; init; }
+    /// <summary>P1036 — the Jet flight reference (P972 §4.2): own source-ship
+    /// attitude quaternion, velocity and the sector reference plane's normal,
+    /// staged by <c>Game1</c> from the pose it already tracks for the cameras.
+    /// Null when no own-ship attitude is available (docked, dead, command view
+    /// without a ship, before the first update). Presentation-only: Classic and
+    /// Modern never read it, so their pixels stay identical.</summary>
+    public HudFlightReference? FlightReference { get; init; }
     /// <summary>Projected weapon-range aim point when in chase/missile view
     /// with no target (indicator.cpp:367-405).</summary>
     public HudPoint? ChaseAim { get; init; }

@@ -335,12 +335,14 @@ sealed class Proof : Game
         return 0;
     }
 
-    /// <summary>P1035 — the Jet story-1 evidence capture. Renders the Jet skin
-    /// through the production JetHudRenderer (its own vector primitives plus the
-    /// shared Classic radar pass) at the two required resolutions, on a dark and a
-    /// bright backdrop, and writes the drawn-state summary beside the PNGs.
-    /// Deliberately separate from the Classic/Modern matrix so the zero-delta
-    /// capture and comparison stay byte-identical.</summary>
+    /// <summary>P1035/P1036 — the Jet evidence capture. Renders the Jet skin through
+    /// the production JetHudRenderer (its own vector primitives plus the shared
+    /// Classic radar pass) at the two required resolutions, on a dark and a bright
+    /// backdrop, and writes the drawn-state summary beside the PNGs. Since P1036 the
+    /// scenes include the four flight-symbology cases: level, pitched + rolled,
+    /// near-vertical (heading unavailable) and reverse throttle. Deliberately
+    /// separate from the Classic/Modern matrix so the zero-delta capture and
+    /// comparison stay byte-identical.</summary>
     private int CaptureJet(string directory)
     {
         if (_jet is null || _jetDefinition is null)
@@ -352,9 +354,21 @@ sealed class Proof : Game
         Directory.CreateDirectory(root);
         var scenes = new (string Scenario, int Width, int Height, string Backdrop)[]
         {
-            ("flight", 1920, 1080, "dark"),
-            ("flight", 800, 480, "dark"),
-            ("flight", 800, 480, "bright"),
+            // Level, heading 045, 260 mps, 80 % throttle.
+            ("jet-level", 1920, 1080, "dark"),
+            ("jet-level", 1920, 1080, "bright"),
+            ("jet-level", 800, 480, "dark"),
+            ("jet-level", 800, 480, "bright"),
+            // Pitched +18°, banked −25° (left), heading 210.
+            ("jet-pitched", 1920, 1080, "dark"),
+            ("jet-pitched", 800, 480, "dark"),
+            // Near-vertical: 89.9° pitch, heading unavailable (held).
+            ("jet-vertical", 1920, 1080, "dark"),
+            ("jet-vertical", 800, 480, "dark"),
+            // Reverse throttle (−0.6 → 20 %, below the 50 % idle detent).
+            ("jet-reverse", 1920, 1080, "dark"),
+            ("jet-reverse", 800, 480, "dark"),
+            ("jet-reverse", 800, 480, "bright"),
             // The shared Classic radar pass with every overlay/label flag set.
             ("radar-overlays", 1920, 1080, "dark"),
             // Instrument-hidden states prove the native gate (pod keeps them,
@@ -369,6 +383,9 @@ sealed class Proof : Game
             using var target = new RenderTarget2D(GraphicsDevice, width, height);
             var backdrop = Backdrops.First(b => b.Name == backdropName).Color;
             var model = Scenario(scenario, width, height);
+            // Each scene starts from no held attitude (the proof's frames are
+            // independent; in the live client the hold carries across frames).
+            _jet.ResetFlightState();
             GraphicsDevice.SetRenderTarget(target);
             GraphicsDevice.Clear(backdrop);
             try
@@ -380,10 +397,11 @@ sealed class Proof : Game
             {
                 GraphicsDevice.SetRenderTarget(null);
             }
-            string stem = $"jet-{scenario}-{width}x{height}-{backdropName}";
+            string stem = $"jet-{scenario.Replace("jet-", "")}-{width}x{height}-{backdropName}";
             using (var file = File.Create(Path.Combine(root, stem + ".png")))
                 target.SaveAsPng(file, width, height);
             float scale = ModernHudScale.Core(1f, 1f, height);
+            var attitude = _jet.Attitude;
             summaries.Add(new
             {
                 scene = stem, scenario, width, height, backdrop = backdropName,
@@ -392,12 +410,21 @@ sealed class Proof : Game
                 instrumentsVisible = model.InstrumentsVisible,
                 reticleVisible = model.ReticleVisible, telemetry = model.Telemetry is not null,
                 speed = model.Telemetry?.Speed, throttle = model.Telemetry?.Throttle,
+                throttlePercent = model.Telemetry is { } own
+                    ? (int)MathF.Round((Math.Clamp(own.Throttle, -1f, 1f) + 1f) * 0.5f * 100f) : (int?)null,
+                velocityMarkerVisible = model.VelocityMarkerVisible,
+                attitude = new
+                {
+                    available = attitude.Available, pitch = attitude.PitchDegrees, roll = attitude.RollDegrees,
+                    heading = attitude.HeadingDegrees, headingValid = attitude.HeadingValid,
+                    rollValid = attitude.RollValid,
+                },
                 scale, strokePx = MathF.Max(1f, JetVectorPainter.ReferenceStroke * scale),
                 tag = JetHudRenderer.TagText,
             });
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 1, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 2, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1286,8 +1313,23 @@ sealed class Proof : Game
     }
 
     // ── scenarios (shared HudModel fixture; no renderer code) ────────────────
-    private static HudModel Scenario(string scenario, int w, int h)
+    private static HudModel Scenario(string scenario, int w, int h,
+        HudFlightReference? flightReference = null, float? speed = null, float? throttle = null,
+        bool afterburner = true)
     {
+        // P1036 — the four Jet flight-symbology scenes: level, pitched + rolled,
+        // near-vertical (heading held unavailable) and reverse throttle.
+        if (scenario.StartsWith("jet-", StringComparison.Ordinal))
+        {
+            (flightReference, speed, throttle, afterburner) = scenario switch
+            {
+                "jet-level" => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
+                "jet-pitched" => (FlightReference(18f, -25f, 210f), 320f, 1f, false),
+                "jet-vertical" => (FlightReference(89.9f, 0f, 0f), 180f, .3f, false),
+                "jet-reverse" => (FlightReference(-10f, 12f, 90f), 40f, -.6f, false),
+                _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown Jet scene"),
+            };
+        }
         var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 24,
             new WeaponStatusRow[] { new(0, "Rapid fire plasma cannon", true, 0, 200, WeaponStatus.NotReady), new(1, "Interceptor missile", false, 0, 0, WeaponStatus.Ready) }, false, 0, 2500,
             new(.2f, -.3f, .1f, false), 85, ShipWarningMask.OutOfBounds,
@@ -1295,6 +1337,16 @@ sealed class Proof : Game
             CarriedFlag: true, CarriedArtifact: scenario == "target-full");
         if (scenario == "critical") frame = frame with { HullFraction = .08f, ShieldFraction = 0, FuelFraction = .10f, EnergyFraction = .02f, Flashing = true };
         if (scenario == "lifepod") frame = frame with { IsAdriftLifepod = true, OxygenSecondsRemaining = 95 };
+        // P1036 — the Jet flight scenes drive the frame with the attitude/readout
+        // values under test (and can release the fixture's latched afterburner so
+        // a reverse throttle actually reaches the shared model).
+        if (!afterburner || speed is not null || throttle is not null)
+            frame = frame with
+            {
+                Speed = speed ?? frame.Speed,
+                Throttle = throttle ?? frame.Throttle,
+                AfterburnerActive = afterburner && frame.AfterburnerActive,
+            };
         float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
         bool target = scenario is "combat" or "critical" or "target-full" || scenario.StartsWith("radar-");
         // P980 — one scenario carries every radar overlay flag and one carries every
@@ -1304,7 +1356,7 @@ sealed class Proof : Game
         bool full = scenario == "target-full";
         bool chase = scenario == "chase";
         bool flightCockpit = scenario is "flight" or "chat-stress" or "combat" or "critical" or "lifepod" or "training"
-            || scenario.StartsWith("radar-");
+            || scenario.StartsWith("radar-") || scenario.StartsWith("jet-");
         var mode = scenario == "radar-overlays" ? RadarMode.All
             : scenario.StartsWith("radar-") ? Enum.Parse<RadarMode>(scenario[6..]) : RadarMode.Default;
         var contacts = new List<HudContact>();
@@ -1355,6 +1407,7 @@ sealed class Proof : Game
             CommandView = scenario == "command", Hidden = scenario == "hidden",
             Camera = scenario == "command" ? CameraMode.Command : chase ? CameraMode.Chase : CameraMode.Cockpit,
             VelocityMarker = flightCockpit ? new(w / 2f - 60, h / 2f + 20) : null,
+            FlightReference = flightReference,
             OrderArrows = flightCockpit ? new(new(1f, 0f), new(0f, 1f), false) : null,
             ChaseAim = chase ? new(w / 2f + 40, h / 2f - 30) : null,
             Target = target ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true, "Enemy fighter with a long pilot name", .6f, .3f, true, full ? .42f : null, 1250, 43, new(1, 0, 0)) : null,
@@ -1416,5 +1469,33 @@ sealed class Proof : Game
                 Deathmatch = scenario == "ghost",
             }
         });
+    }
+
+    /// <summary>
+    /// P1036 — a deterministic own-ship attitude for the Jet flight scenes: the
+    /// forward is placed at <paramref name="headingDegrees"/> in the sector plane
+    /// (0° = world +X), pitched <paramref name="pitchDegrees"/> above it, then rolled
+    /// <paramref name="rollDegrees"/> about the forward axis with the sim's own
+    /// <see cref="Orientation.PostRotate"/> (the same left-handed convention the
+    /// flight code uses), converted through <see cref="HudFlightReference.FromSim"/>.
+    /// No world access — this is the same shape the model adapter builds.
+    /// </summary>
+    private static HudFlightReference FlightReference(float pitchDegrees, float rollDegrees, float headingDegrees)
+    {
+        float heading = headingDegrees * MathF.PI / 180f;
+        float pitch = pitchDegrees * MathF.PI / 180f;
+        float roll = rollDegrees * MathF.PI / 180f;
+        var forward = new Allegiance.Core.Collision.Vector3(
+            MathF.Cos(heading) * MathF.Cos(pitch),
+            MathF.Sin(heading) * MathF.Cos(pitch),
+            MathF.Sin(pitch));
+        var levelUp = new Allegiance.Core.Collision.Vector3(
+            -MathF.Cos(heading) * MathF.Sin(pitch),
+            -MathF.Sin(heading) * MathF.Sin(pitch),
+            MathF.Cos(pitch));
+        var orientation = new Orientation();
+        orientation.Set(forward, levelUp);
+        if (roll != 0f) orientation.PostRotate(forward, roll);
+        return HudFlightReference.FromSim(orientation, forward * 260f, HudFlightReference.SectorUp);
     }
 }

@@ -1285,6 +1285,10 @@ public sealed partial class Game1 : Game
     // HUD-8 — the per-frame projected velocity-direction marker (cockpit only),
     // computed in Draw from the own ship's real velocity direction.
     private Vector2? _velocityMarker;
+    // P1036 — the per-frame Jet flight reference (own source-ship attitude +
+    // velocity + sector plane), staged from the same TrySourcePose the velocity
+    // marker uses; null when no own-ship attitude is available.
+    private HudFlightReference? _flightReference;
     // HUD-8 — the per-frame projected chase/missile weapon-range aim point with
     // no target (indicator.cpp:367-405); null when unavailable/not applicable.
     private Vector2? _chaseAim;

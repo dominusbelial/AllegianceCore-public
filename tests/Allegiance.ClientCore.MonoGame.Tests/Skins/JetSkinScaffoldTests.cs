@@ -362,18 +362,23 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
                 Assert.Contains(percent + "%", surface.Seen);
             }
         }
-        // Coverage is the scaffold's own three elements, not a native claim.
-        Assert.Equal(new[] { "Cockpit centre reticle", "Speed", "Thrust setting" }, jet.Coverage!.OrderBy(id => id));
+        // Coverage is the elements Jet itself draws (story 2 adds the flight-path
+        // marker and the ladder's roll reference), not a native claim.
+        Assert.Equal(new[] { "Cockpit centre reticle", "Roll tutorial cue", "Speed", "Thrust setting", "Velocity direction marker" },
+            jet.Coverage!.OrderBy(id => id));
     }
 
     [Fact]
     public void Jet_coverage_matches_the_elements_the_scaffold_draws()
     {
         using var jet = Jet(new CountingJetSurface());
-        Assert.Equal(3, jet.Coverage!.Count);
+        Assert.Equal(5, jet.Coverage!.Count);
         Assert.Contains("Cockpit centre reticle", jet.Coverage);
         Assert.Contains("Speed", jet.Coverage);
         Assert.Contains("Thrust setting", jet.Coverage);
+        // P1036 — the flight-path marker and the ladder's roll reference.
+        Assert.Contains("Velocity direction marker", jet.Coverage);
+        Assert.Contains("Roll tutorial cue", jet.Coverage);
         Assert.Equal(HudSkinIds.Jet, jet.Id);
     }
 
@@ -402,7 +407,8 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         var surface = new CountingJetSurface();
         var painter = new JetVectorPainter(surface, Color.Red, Color.Yellow, Color.White, Color.Black, Color.Black);
         painter.Scale = .25f;   // would be 0.375 px unscaled
-        Assert.Equal(1f, painter.Stroke);
+        Assert.Equal(JetVectorPainter.MinimumLineStroke, painter.Stroke);   // P1036 ink floor
+        Assert.True(painter.Stroke >= 1f);                                  // never below one physical pixel
         Assert.Equal(1f, painter.Hairline);
         painter.Line(new(0, 0), new(10, 0), painter.Hairline, Color.Red);
         // Keyline first, ink second: two submissions, the first dark.
