@@ -1,6 +1,6 @@
 # R1 F3 + F6 — inbound queue counts events, TCP greeting gets an absolute deadline
 
-Task P1023, branch `hermes/p1023` (worktree `/home/domingo/wt-p1023`), base Claude's
+Task P1023, branch `hermes/p1023` base Claude's
 `master` at `dbf2db91`. Owner findings: **F3** and **F6** of `R1_REPORT.md` (§2), plus
 F6's unconfirmed lead in §4 ("no pre-logon deadline"). Changes are left in the working
 tree, uncommitted.
