@@ -99,19 +99,41 @@ public sealed partial class Ship
         bool chaff = part.EquipmentType == EquipmentType.ChaffLauncher;
         int mask = chaff ? ShipControlState.ChaffFire : ShipControlState.MineFire;
         if ((StateM & mask) == 0 || (!chaff && RipcordModel is not null)) return;
-        part.TimeLoaded = now + loadTime; // arm before callback, including reentrant callers
-        Mission?.Site.FireExpendable(this, part, now);
+        Mission?.Site.FireExpendable(this, part, now);   // FireDispenser arms the deadline
+        // P1030 — native arms the deadline before the callback (dispenserigc.cpp:110);
+        // when the callback body refused (unknown subtype), still spend this cooldown
+        // rather than retrying the deployment every tick.
+        if (part.TimeLoaded <= now) part.TimeLoaded = now + loadTime;
     }
 
     public sealed record ExpendableDeployment(Model Model, IReadOnlyList<Missile> Spoofed);
 
     /// <summary>Authoritative FireExpendable callback body. Explicit wire requests
     /// use the same operation after their existing authority checks; local held
-    /// input goes through UpdateDispenser's mount/load/ripcord predicates.</summary>
+    /// input goes through UpdateDispenser's mount/load/ripcord predicates.
+    /// P1030 — the readiness rules live HERE so the untrusted
+    /// <c>FM_C_FIRE_EXPENDABLE(82)</c> handler cannot skip them: alive, a real
+    /// side, fully mounted (<c>m_mountedFraction == 1.0f</c>,
+    /// <c>dispenserigc.cpp:92-93</c>), loaded (<c>m_timeLoaded &lt; now</c>,
+    /// <c>:103</c>, with the port's <see cref="FireLoadToleranceSeconds"/> wire
+    /// tolerance) and no active ripcord for mines/probes (<c>:108-110</c>).
+    /// Arming the deadline here (never shortening an already-pending one) keeps
+    /// one wire packet from firing more than one round per launcher.</summary>
     public ExpendableDeployment? FireDispenser(MountedPart part, double now, Random? random = null)
     {
         if (Mission is not { } mission || Sector is not { } sector || StationId is not null || ParentShip is not null ||
-            !_parts.Contains(part) || part.MountId != 0 || part.Amount <= 0) return null;
+            Dead || SideId is not >= 0 || !_parts.Contains(part) || part.MountId != 0 || part.Amount <= 0 ||
+            part.MountedFraction < 1f ||
+            (part.EquipmentType != EquipmentType.ChaffLauncher && RipcordModel is not null) ||
+            DispenserLoadTime(part) is not { } loadTime) return null;
+        // The tolerance never exceeds the cooldown, so a second request inside the
+        // same tick (one UDP packet of 30 copies) always sees the deadline armed
+        // below and is refused — the whole load cannot be dumped at once.
+        if (now + Math.Min(FireLoadToleranceSeconds, loadTime) <= part.TimeLoaded) return null;
+        // Native arms the deadline before firing (dispenserigc.cpp:110-119). A
+        // pending future deadline (a request inside the tolerance window) is never
+        // shortened by this shot.
+        part.TimeLoaded = Math.Max(now, part.TimeLoaded) + loadTime;
         Model model;
         IReadOnlyList<Missile> spoofed = [];
         // FedSrv/FedSrv.CPP:5646-5774. A stationary layer drops behind its hull;
@@ -164,7 +186,6 @@ public sealed partial class Ship
             }
             default: return null;
         }
-        part.TimeLoaded = now + DispenserLoadTime(part)!.Value;
         short remaining = (short)(part.Amount - 1);
         SetPartAmount(part, remaining); // FedSrv/FedSrv.CPP:5778-5780
         // P787a — native's fire-emptied expendable reload (clintlib.cpp:3382-3422):

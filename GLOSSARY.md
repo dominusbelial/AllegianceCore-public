@@ -512,6 +512,20 @@ list in **reverse**.
   gate (`Asteroid.GetCurrentEye`) for `ASTEROID_MINED`. `Server.FireAudience.cs`,
   `Server.Combat.cs`, `Server.Research.cs`. Native: `FedSrv/FedSrv.CPP:11429-11457,
   12454-12483,12512-12540`.
+- **Combat fire gates (P1030)** — the untrusted `FM_C_FIRE_EXPENDABLE(82)` /
+  `FM_CS_FIRE_MISSILE(70)` handlers and the local/NPC held-input leg share one
+  readiness gate per launcher instead of trusting the client: alive, real side,
+  `MountedFraction >= 1`, deadline passed with the 0.5 s
+  `Ship.FireLoadToleranceSeconds` wire window, ripcord only tolerated for chaff,
+  and a player lock bounded by the server's per-tick `Ship.MissileLock`. Arming
+  the deadline *before* the deployment (never shortening a pending one) is what
+  stops a single UDP packet from dumping a load; a salvage pickup mounts at
+  fraction 0 and a negative mount reads the cargo hold.
+  `src/Allegiance.Core/Sim/Ship.Equipment.cs` (`FireDispenser`, `UpdateDispenser`),
+  `src/Allegiance.Core/Sim/Ship.cs` (`TryFireMissile`, `UpdateMountedMissileLock`),
+  `src/Allegiance.Server/Server.ShipCommands.cs` (`HandleTreasureAck`). Native:
+  `Igc/dispenserigc.cpp:88-119`, `Igc/magazineigc.cpp:85-176`,
+  `FedSrv/FedSrv.CPP:5408-5510,5615-5780,6094-6152`.
 - **Discovery responder** — the P731 UDP "Find Server" responder.
   `src/Allegiance.Server/Discovery/`.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and
