@@ -1,5 +1,6 @@
 using System.Globalization;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
+using Allegiance.ClientCore.State;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -34,23 +35,51 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     /// so the P972 em dash is drawn as a hyphen.</summary>
     public const string TagText = "JET / GREEN - WIP";
 
-    /// <summary>The <see cref="HudElement"/> ids Jet itself draws from story 2 on:
+    /// <summary>The <see cref="HudElement"/> ids Jet itself draws from story 3 on:
     /// velocity indicator (flight-path marker), roll (the ladder's bank reference),
-    /// speed, thrust setting and the centre reticle. The shared passes draw the
-    /// rest and are not claimed here.</summary>
+    /// speed, thrust setting, the centre reticle, the whole selected-target data
+    /// family (designator/pane readouts), the missile lock, lead/aim/chase markers
+    /// and the order turn arrows. The shared passes draw the rest and are not
+    /// claimed here.</summary>
     private static readonly string[] CoverageIds =
-        ["Velocity direction marker", "Roll tutorial cue", "Speed", "Thrust setting", "Cockpit centre reticle"];
+    [
+        "Velocity direction marker", "Roll tutorial cue", "Speed", "Thrust setting", "Cockpit centre reticle",
+        // P1037 — selected target (P972 §4.3, §5.2).
+        "Selected target bracket", "Target name", "Target type description", "Target side identity",
+        "Target hull", "Target shield", "Target range or sector", "Target speed", "Target ore",
+        "Target kill bonus", "Target in weapon range", "Target time to intercept",
+        // P1037 — centre indicators (P972 §4.2, §5.3).
+        "Missile lock flower", "Ballistic lead marker", "Aim hit-probability predictor",
+        "Chase weapon aim without target", "Accepted and current order turn arrows",
+    ];
     private static readonly HashSet<string> CoverageSet = new(CoverageIds, StringComparer.Ordinal);
 
     /// <summary>The drawn element ids, for the tests and the proof output.</summary>
     public static IReadOnlyList<string> ElementIds => CoverageIds;
 
-    private const string SpeedCaption = "SPD / MPS";
-    private const string ThrottleCaption = "THR";
+    // P1037 — public so the proof's layout audit can identify the caption boxes.
+    public const string SpeedCaptionText = "SPD / MPS";
+    public const string ThrottleCaptionText = "THR";
+    private const string SpeedCaption = SpeedCaptionText;
+    private const string ThrottleCaption = ThrottleCaptionText;
     private const string HeadingCaption = "HDG ";
     private const string HeadingUnavailable = "HDG --";
     private const string IdleLabel = "IDLE";
     private const string ReverseLabel = "REV";
+    // P1037 — target / lock / order text (pure ASCII: the HUD fonts bake 32..126).
+    private const string LockCaption = "LOCK";
+    private const string InRangeLabel = "IN RANGE";
+    private const string AcceptedLabel = "ACC";
+    private const string CurrentLabel = "CUR";
+    private const string SameTargetLabel = "ACC / CUR";
+    private const string HullWord = "HULL";
+    private const string ShieldWord = "SHLD";
+    private const string OreWord = "ORE";
+    private const string KillBonusWord = "KB";
+    private const string ClosureWord = "CLO";
+    private const string TargetSpeedWord = "SPD";
+    private const string TypeWord = "TYPE";
+    private const string RangeWord = "RNG";
 
     /// <summary>Numeric ladder labels for −80 … +80 in 10° steps (ASCII only).</summary>
     private static readonly string[] RungLabels =
@@ -108,6 +137,27 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     private readonly int[] _speedTickKeys = new int[SpeedTickCache];
     private readonly string[] _speedTickText = new string[SpeedTickCache];
 
+    // P1037 — target/lock readout caches: a steady frame formats nothing.
+    private int _rangeShown = int.MinValue;
+    private string _rangeText = "";
+    private int _closureShown = int.MinValue;
+    private string _closureText = "";
+    private int _hullShown = int.MinValue;
+    private string _hullText = "";
+    private int _shieldShown = int.MinValue;
+    private string _shieldText = "";
+    private int _oreShown = int.MinValue;
+    private string _oreText = "";
+    private int _killBonusShown = int.MinValue;
+    private string _killBonusText = "";
+    private int _targetSpeedShown = int.MinValue;
+    private string _targetSpeedText = "";
+    private int _lockPercentShown = int.MinValue;
+    private string _lockPercentText = "";
+    private string _sectorShown = "";
+    private string _sectorText = "";
+
+    private int _viewportWidth = 1920;
     private int _viewportHeight = 1080;
     private bool _disposed;
 
@@ -165,6 +215,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
 
         float scale = ModernHudScale.Core(_displayScale, _settings.Size, frame.Viewport.Height);
         _painter.Scale = scale;
+        _viewportWidth = frame.Viewport.Width > 0 ? frame.Viewport.Width : _viewportWidth;
         _viewportHeight = frame.Viewport.Height > 0 ? frame.Viewport.Height : _viewportHeight;
 
         if (model.Visible)
@@ -200,6 +251,22 @@ public sealed class JetHudRenderer : IHudSkinRenderer
                     DrawSpeedTape(own.Speed, w, h, scale);
                     DrawThrottleTape(own.Throttle, w, h, scale);
                 }
+
+                // P1037 — the shared indicator family (P972 §4.2): order steering,
+                // lead/aim predictor and the chase no-target aim, each following the
+                // exact gate the shared model computes.
+                DrawOrderArrows(model, w, h, scale);
+                DrawLeadAndAim(model, scale);
+                DrawChaseAim(model, scale);
+
+                // P1037 — the selected target (P972 §4.3): projected designator +
+                // off-screen edge chevron + lock, then the native target pane as a
+                // Jet data block (present even when the target is out of view).
+                DrawTargetDesignator(model, w, h, scale);
+                DrawOffScreenTarget(model, w, h, scale);
+                DrawLock(model, w, h, scale);
+                DrawTargetBlock(model, w, h, scale);
+
                 DrawTag(w, h, scale);
             }
             finally
@@ -281,6 +348,13 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         _painter.Line(new(position.X, position.Y - radius - tail), new(position.X, position.Y - radius), stroke, ink);
     }
 
+    /// <summary>The half-width of the centre gap in the horizon (0°) rung, in
+    /// standard-stroke units: wide enough for both gun-cross arms (23 × scale from
+    /// the boresight) with a margin, so the split horizon line never covers the
+    /// cross or the flight-path marker (P1036 review follow-up: real HUDs draw a
+    /// split horizon line).</summary>
+    private const float HorizonGapHalfWidth = 27f;
+
     /// <summary>
     /// The sector-plane pitch ladder (P972 §4.2): 10° labelled rungs, with the
     /// optional 5° refinement as short unlabelled ticks at ≥1080p (it stays
@@ -289,6 +363,10 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     /// numeric labels that stay horizontal, and off-scale chevrons when the ladder
     /// runs past ±80°. At 800×480 the span shrinks to ±20° and the 5° ticks are
     /// dropped (P972 §4.5).
+    /// <para>P1036 review follow-up: the 0° rung is <b>never</b> skipped and is
+    /// drawn as a split horizon line with a centre gap wide enough for the gun
+    /// cross and the FPM, so level flight always shows the horizon. Only the other
+    /// rungs keep the boresight skip.</para>
     /// </summary>
     private void DrawPitchLadder(float w, float h, float scale)
     {
@@ -312,13 +390,17 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         for (int rungPitch = -limit; rungPitch <= limit; rungPitch += step)
         {
             if (rungPitch - pitch < -span || rungPitch - pitch > span) continue;
+            bool horizon = rungPitch == 0;
             // The rung nearest the current pitch lands on the boresight and would
             // cover the gun cross and the flight-path marker; the pitch numeral
-            // below the ladder carries that value instead.
-            if (MathF.Abs(rungPitch - pitch) * pxPerDegree < 24f * scale) continue;
+            // below the ladder carries that value instead. The horizon rung is
+            // the exception: level flight must always show it, so it is split
+            // around the boresight instead of skipped.
+            if (!horizon && MathF.Abs(rungPitch - pitch) * pxPerDegree < 24f * scale) continue;
             bool major = rungPitch % (int)JetFlightGeometry.LadderStepDegrees == 0;
             Vector2 at = center + JetFlightGeometry.LadderOffset(pitch, rungPitch, roll, pxPerDegree);
-            Vector2 half = new(cosA * halfWidth, sinA * halfWidth);
+            float width = horizon ? MathF.Max(halfWidth, HorizonGapHalfWidth * scale + 24f * scale) : halfWidth;
+            Vector2 half = new(cosA * width, sinA * width);
             if (!major)
             {
                 // 5° refinement tick: short, dim, never labelled.
@@ -328,16 +410,25 @@ public sealed class JetHudRenderer : IHudSkinRenderer
             }
             bool belowPlane = rungPitch < 0;
             Color ink = belowPlane ? _painter.Dim : _painter.Primary;
-            if (belowPlane)
+            if (horizon)
+            {
+                // Split horizon line: solid, with a centre gap for the gun cross
+                // and the FPM (the gap stays centred on the ladder axis, i.e. the
+                // boresight column, at every pitch).
+                Vector2 gap = new(cosA * HorizonGapHalfWidth * scale, sinA * HorizonGapHalfWidth * scale);
+                _painter.Line(at - half, at - gap, stroke, ink);
+                _painter.Line(at + gap, at + half, stroke, ink);
+            }
+            else if (belowPlane)
                 DashedLine(at - half, at + half, stroke, ink);   // dashed below the sector plane
             else
                 _painter.Line(at - half, at + half, stroke, ink);
             // Labels stay horizontal even when the ladder rolls.
             string label = RungLabels[(rungPitch + limit) / (int)JetFlightGeometry.LadderStepDegrees];
             Vector2 size = _painter.Measure(label, large: false, scale);
-            _painter.Text(label, new(at.X - halfWidth - size.X - 4f * scale, at.Y - size.Y * 0.5f),
+            _painter.Text(label, new(at.X - width - size.X - 4f * scale, at.Y - size.Y * 0.5f),
                 large: false, scale, ink);
-            _painter.Text(label, new(at.X + halfWidth + 4f * scale, at.Y - size.Y * 0.5f),
+            _painter.Text(label, new(at.X + width + 4f * scale, at.Y - size.Y * 0.5f),
                 large: false, scale, ink);
         }
 
@@ -383,11 +474,21 @@ public sealed class JetHudRenderer : IHudSkinRenderer
     /// caret at the current heading and a boxed numeric readout. Inside the vertical
     /// singularity the state holder keeps the last valid heading but marks it
     /// unavailable, so the readout becomes <c>HDG --</c> instead of jumping.
+    /// <para>P1036 review follow-up: the whole block is laid out top-down from the
+    /// measured label height, so no label (or its keyline) can touch the top screen
+    /// edge, and the caret sits in the gap between the rail and the readout plate
+    /// instead of inside the <c>HDG</c> box.</para>
     /// </summary>
     private void DrawHeadingTape(float w, float h, float scale)
     {
         float cx = w * 0.5f;
-        float y = 22f * scale;
+        // Label box, rail, ticks, caret and plate stack with explicit gaps.
+        float labelH = _painter.Measure("000", large: false, scale).Y;
+        float labelTop = MathF.Max(6f, 5f * scale) + _painter.KeylineWidth;
+        float y = labelTop + labelH + 3f * scale;
+        float caretApex = y + 7f * scale;
+        float caretFoot = y + 13f * scale;
+        float boxTop = y + 17f * scale;
         float pxPerDegree = JetFlightGeometry.HeadingTapeScale(w);
         bool haveHeading = _attitude.Current.Available && _attitude.Current.HeadingValid;
         float halfSpanPx = MathF.Max(0f, MathF.Min(cx - 70f * scale, 340f * scale));
@@ -417,7 +518,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
                 {
                     string text = HeadingLabels[normalized / (int)JetFlightGeometry.HeadingLabelStep];
                     Vector2 size = _painter.Measure(text, large: false, scale);
-                    _painter.Text(text, new(x - size.X * 0.5f, y - size.Y - 2f * scale),
+                    _painter.Text(text, new(x - size.X * 0.5f, labelTop + (labelH - size.Y) * 0.5f),
                         large: false, scale, _painter.Dim);
                 }
             }
@@ -436,19 +537,22 @@ public sealed class JetHudRenderer : IHudSkinRenderer
             _headingText = HeadingUnavailable;
         }
 
-        // Caret below the rail pointing up at the current heading (it must not
-        // overlap the numeric marks, which sit above the rail).
-        _painter.Line(new(cx - 5f * scale, y + 9f * scale), new(cx, y + 1f * scale), _painter.Stroke, caret);
-        _painter.Line(new(cx, y + 1f * scale), new(cx + 5f * scale, y + 9f * scale), _painter.Stroke, caret);
+        // Caret in the gap between the rail ticks and the plate, pointing up at the
+        // current heading (never inside the numeric box).
+        _painter.Line(new(cx - 5f * scale, caretFoot), new(cx, caretApex), _painter.Stroke, caret);
+        _painter.Line(new(cx, caretApex), new(cx + 5f * scale, caretFoot), _painter.Stroke, caret);
 
-        // Boxed numeric below the caret.
-        DrawReadout(_headingText, cx, y + 22f * scale, scale, ReadoutAlign.Center);
+        // Boxed numeric below the caret, top-anchored so the gap is guaranteed.
+        DrawReadout(_headingText, cx, boxTop, scale, ReadoutAlign.Center, topAnchored: true);
     }
 
     /// <summary>
     /// The left SPEED tape (P972 §4.2): a fixed moving tape of 20 mps ticks with
     /// 40 mps numeric marks and a boxed numeric readout at the boresight row. The
     /// value is the shared model's speed (a lifepod reads the same field).
+    /// <para>P1036 review follow-up: the caption owns the band above the tape, so
+    /// no tick label may rise into it, and the rail is clipped to the ticks actually
+    /// drawn instead of running past the top of its scale.</para>
     /// </summary>
     private void DrawSpeedTape(float speed, float w, float h, float scale)
     {
@@ -457,8 +561,11 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         float halfSpan = h * 0.30f;
         float perMps = JetFlightGeometry.SpeedTapeScale(h);
         float stroke = _painter.Hairline;
+        float labelH = _painter.Measure("000", large: false, scale).Y;
+        // The first row a tick/label may occupy: below the caption row.
+        float tapeTop = cy - halfSpan + labelH + 3f * scale;
+        float tapeBottom = cy + halfSpan;
 
-        _painter.Line(new(tapeX, cy - halfSpan), new(tapeX, cy + halfSpan), stroke, _painter.Dim);
         DrawCaption(SpeedCaption, new(tapeX - 8f * scale, cy - halfSpan), scale);
 
         float visible = halfSpan / perMps;
@@ -466,9 +573,11 @@ public sealed class JetHudRenderer : IHudSkinRenderer
             * (int)JetFlightGeometry.SpeedTickStep;
         int to = (int)(speed + visible);
         int labelSlot = 0;
+        float firstY = float.NaN, lastY = float.NaN;
         for (int value = from; value <= to; value += (int)JetFlightGeometry.SpeedTickStep)
         {
             float y = cy - (value - speed) * perMps;
+            if (y < tapeTop || y > tapeBottom) continue;    // clip to the drawn scale
             bool major = value % (int)JetFlightGeometry.SpeedLabelStep == 0;
             _painter.Line(new(tapeX, y), new(tapeX + (major ? 7f : 4f) * scale, y), stroke,
                 major ? _painter.Primary : _painter.Dim);
@@ -479,7 +588,13 @@ public sealed class JetHudRenderer : IHudSkinRenderer
                 _painter.Text(text, new(tapeX - 6f * scale - size.X, y - size.Y * 0.5f),
                     large: false, scale, _painter.Dim);
             }
+            if (float.IsNaN(firstY) || y < firstY) firstY = y;
+            if (float.IsNaN(lastY) || y > lastY) lastY = y;
         }
+
+        // Rail spans exactly the drawn ticks (no stub past the scale ends).
+        if (!float.IsNaN(firstY))
+            _painter.Line(new(tapeX, firstY), new(tapeX, lastY), stroke, _painter.Dim);
 
         // Boxed numeric at the boresight row, right of the tape.
         int rounded = (int)MathF.Round(speed);
@@ -505,11 +620,25 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         float perPercent = JetFlightGeometry.ThrottleTapeScale(h);
         float stroke = _painter.Hairline;
         bool compact = h < CompactHeight;
+        float labelH = _painter.Measure("000", large: false, scale).Y;
+        // The first row a tick/label may occupy: below the caption row.
+        float tapeTop = cy - halfSpan + labelH + 3f * scale;
+        float tapeBottom = cy + halfSpan;
 
         int percent = JetFlightGeometry.ThrottlePercent(throttle);
 
-        _painter.Line(new(tapeX, cy - halfSpan), new(tapeX, cy + halfSpan), stroke, _painter.Dim);
         DrawCaption(ThrottleCaption, new(tapeX + 8f * scale, cy - halfSpan), scale, rightAligned: true);
+
+        // The boxed readout owns the left margin at the boresight row; IDLE/REV
+        // are right-aligned clear of it so the plate can never cover a word
+        // (P1036 review follow-up: the boxed percent used to sit on top of REV).
+        if (percent != _throttleShown)
+        {
+            _throttleShown = percent;
+            _throttleText = percent.ToString(CultureInfo.InvariantCulture) + "%";
+        }
+        float readoutWidth = _painter.Measure(_throttleText, true, scale).X + 18f * scale;
+        float wordRight = tapeX - 10f * scale - readoutWidth - 6f * scale;
 
         // Reverse band (0…50 %) as a dashed dim rail below the idle detent.
         float reverseTop = cy - (50f - percent) * perPercent;
@@ -517,11 +646,10 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         DashedLine(new(tapeX - 5f * scale, reverseTop), new(tapeX - 5f * scale, reverseBottom), stroke, _painter.Dim);
         if (!compact)
         {
-            // REV sits in the same left margin as IDLE, so the right column stays
-            // numeric labels only.
+            // REV and IDLE share the outer left margin, clear of the readout box.
             Vector2 reverseSize = _painter.Measure(ReverseLabel, large: false, scale);
             _painter.Text(ReverseLabel,
-                new(tapeX - 12f * scale - reverseSize.X,
+                new(wordRight - reverseSize.X,
                     cy - (25f - percent) * perPercent - reverseSize.Y * 0.5f),
                 large: false, scale, _painter.Dim);
         }
@@ -530,9 +658,11 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         int from = (int)MathF.Max(0f, MathF.Floor((percent - visible) / JetFlightGeometry.ThrottleTickStep))
             * (int)JetFlightGeometry.ThrottleTickStep;
         int to = (int)MathF.Min(100f, percent + visible);
+        float firstY = float.NaN, lastY = float.NaN;
         for (int value = from; value <= to; value += (int)JetFlightGeometry.ThrottleTickStep)
         {
             float y = cy - (value - percent) * perPercent;
+            if (y < tapeTop || y > tapeBottom) continue;    // clip to the drawn scale
             bool major = value % (int)JetFlightGeometry.ThrottleLabelStep == 0;
             _painter.Line(new(tapeX - (major ? 7f : 4f) * scale, y), new(tapeX, y), stroke,
                 major ? _painter.Primary : _painter.Dim);
@@ -542,7 +672,14 @@ public sealed class JetHudRenderer : IHudSkinRenderer
                 Vector2 size = _painter.Measure(text, large: false, scale);
                 _painter.Text(text, new(tapeX + 10f * scale, y - size.Y * 0.5f), large: false, scale, _painter.Dim);
             }
+            if (float.IsNaN(firstY) || y < firstY) firstY = y;
+            if (float.IsNaN(lastY) || y > lastY) lastY = y;
         }
+
+        // Rail spans exactly the drawn ticks: at 800×480 it no longer continues
+        // below the 000 mark (the low end is clipped to the scale).
+        if (!float.IsNaN(firstY))
+            _painter.Line(new(tapeX, firstY), new(tapeX, lastY), stroke, _painter.Dim);
 
         // Idle detent: a doubled tick across the tape at 50 %.
         float idleY = cy - (50f - percent) * perPercent;
@@ -553,24 +690,602 @@ public sealed class JetHudRenderer : IHudSkinRenderer
         if (!compact)
         {
             Vector2 idleSize = _painter.Measure(IdleLabel, large: false, scale);
-            _painter.Text(IdleLabel, new(tapeX - 12f * scale - idleSize.X, idleY - idleSize.Y * 0.5f),
+            _painter.Text(IdleLabel, new(wordRight - idleSize.X, idleY - idleSize.Y * 0.5f),
                 large: false, scale, _painter.Dim);
         }
 
-        if (percent != _throttleShown)
-        {
-            _throttleShown = percent;
-            _throttleText = percent.ToString(CultureInfo.InvariantCulture) + "%";
-        }
         DrawReadout(_throttleText, tapeX - 10f * scale, cy, scale, ReadoutAlign.RightEdge);
+    }
+
+    // ── Target, lock, lead and order steering (P1037) ────────────────────
+    /// <summary>
+    /// The in-view target designator (P972 §4.3): four corner strokes sized from the
+    /// shared model's projected <c>ScreenRadius</c> (clamped to
+    /// <see cref="JetTargetGeometry.MinimumHalfPx"/>…<see cref="JetTargetGeometry.MaximumHalfPx"/>
+    /// and to the viewport edge), with the relationship, name, range, closure and
+    /// hull/shield readouts beside it. The relationship is carried by corner pattern
+    /// and the word — enemy = solid corners + inward ticks + <c>HOSTILE</c>, friend =
+    /// dashed corners + <c>FRIEND</c>, non-ship = plain corners + <c>NEUTRAL</c> — and
+    /// never by a second hue (P972 §4.1).
+    /// </summary>
+    private void DrawTargetDesignator(HudModel model, float w, float h, float scale)
+    {
+        if (!model.FlightVisible || !model.Context.SelectionBracket || model.Context.Target is not { } target) return;
+        float cx = target.Center.X, cy = target.Center.Y;
+        if (cx < 0f || cy < 0f || cx > w || cy > h) return;
+
+        float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(w - cx, h - cy));
+        float half = JetTargetGeometry.DesignatorHalf(target.ScreenRadius, scale, toEdge);
+        JetTargetGeometry.TargetRelationship relationship = JetTargetGeometry.Relationship(target.IsEnemy);
+        // Engaged autopilot (the shared model's P345 flag) brightens the designator;
+        // the shape stays identical.
+        Color ink = target.Engaged ? _painter.Primary : _painter.Dim;
+        var box = new RectangleF(cx - half, cy - half, half * 2f, half * 2f);
+        float arm = MathF.Min(half * 0.5f, 20f * scale);
+        DrawDesignatorFrame(box, arm, relationship, ink, scale);
+
+        // Precise aim point: a tiny plus (never the lock diamond or the gun cross).
+        float dot = 2f * scale;
+        _painter.Line(new(cx - dot, cy), new(cx + dot, cy), _painter.Stroke, ink);
+        _painter.Line(new(cx, cy - dot), new(cx, cy + dot), _painter.Stroke, ink);
+
+        // Readout beside the bracket, flipping to the left when the right side would
+        // run off the viewport.
+        string relationshipWord = JetTargetGeometry.RelationshipWord(relationship);
+        string? name = target.Name;
+        string? range = target.Distance is { } distance ? RangeText(distance) : null;
+        string? closure = target.ClosingSpeed is { } closing ? ClosureText(closing) : null;
+        string? hull = target.HullFraction is { } hullFraction && hullFraction > 0f
+            ? PercentText(hullFraction, ref _hullShown, ref _hullText) : null;
+        string? shield = target.ShieldFraction is { } shieldFraction && shieldFraction > 0f
+            ? PercentText(shieldFraction, ref _shieldShown, ref _shieldText) : null;
+
+        float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
+        float row1 = MeasureRuns(scale, " / ", relationshipWord, name, null, null);
+        float row2 = MeasureRuns(scale, "  ", range, range is null ? null : ClosureWord, closure, null);
+        float row3 = MeasureRuns(scale, "  ", hull is null ? null : HullWord, hull,
+            shield is null ? null : ShieldWord, shield);
+        float textWidth = MathF.Max(row1, MathF.Max(row2, row3));
+        // Keep the readout clear of the edge tapes: the right side must stop before
+        // the throttle tape, the left side must start after the speed tape.
+        float rightLimit = w - 100f * scale;
+        float leftLimit = 92f * scale;
+        bool rightSide = box.X + box.Width + 8f * scale + textWidth <= rightLimit;
+        bool leftSide = box.X - 8f * scale - textWidth >= leftLimit;
+        float x = rightSide || !leftSide
+            ? box.X + box.Width + 8f * scale
+            : box.X - 8f * scale - textWidth;
+        float y = box.Y;
+
+        DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
+        y += rowH;
+        if (range is not null || closure is not null)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, "  ", range, range is null ? null : ClosureWord, closure, null);
+            y += rowH;
+        }
+        if (hull is not null || shield is not null)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, "  ", hull is null ? null : HullWord, hull,
+                shield is null ? null : ShieldWord, shield);
+            y += rowH;
+            DrawTargetBars(x, y, scale, target.HullFraction, target.ShieldFraction);
+        }
+    }
+
+    /// <summary>The designator's four corner strokes: solid + inward ticks for a
+    /// hostile target, dashed/open for a friend, plain for a non-ship (relationship
+    /// by shape and line pattern, P972 §4.1).</summary>
+    private void DrawDesignatorFrame(RectangleF box, float arm,
+        JetTargetGeometry.TargetRelationship relationship, Color ink, float scale)
+    {
+        float x0 = box.X, y0 = box.Y, x1 = box.X + box.Width, y1 = box.Y + box.Height;
+        if (!JetTargetGeometry.DashedDesignator(relationship))
+        {
+            _painter.CornerBrackets(box, arm, _painter.Stroke, ink);
+            if (relationship != JetTargetGeometry.TargetRelationship.Enemy) return;
+            // Hostile: a short inward tick at each corner.
+            float tick = MathF.Min(arm * 0.55f, 8f * scale);
+            _painter.Line(new(x0, y0), new(x0 + tick, y0 + tick), _painter.Stroke, ink);
+            _painter.Line(new(x1, y0), new(x1 - tick, y0 + tick), _painter.Stroke, ink);
+            _painter.Line(new(x0, y1), new(x0 + tick, y1 - tick), _painter.Stroke, ink);
+            _painter.Line(new(x1, y1), new(x1 - tick, y1 - tick), _painter.Stroke, ink);
+            return;
+        }
+        // Friendly: open (dashed) corner arms — no closed box, no hue change.
+        DashedLine(new(x0, y0), new(x0 + arm, y0), _painter.Stroke, ink);
+        DashedLine(new(x0, y0), new(x0, y0 + arm), _painter.Stroke, ink);
+        DashedLine(new(x1, y0), new(x1 - arm, y0), _painter.Stroke, ink);
+        DashedLine(new(x1, y0), new(x1, y0 + arm), _painter.Stroke, ink);
+        DashedLine(new(x0, y1), new(x0 + arm, y1), _painter.Stroke, ink);
+        DashedLine(new(x0, y1), new(x0, y1 - arm), _painter.Stroke, ink);
+        DashedLine(new(x1, y1), new(x1 - arm, y1), _painter.Stroke, ink);
+        DashedLine(new(x1, y1), new(x1, y1 - arm), _painter.Stroke, ink);
+    }
+
+    /// <summary>Two short monochrome bars under the designator readout: hull (ink)
+    /// and shield (dim). Nothing is drawn for an unknown fraction.</summary>
+    private void DrawTargetBars(float x, float y, float scale, float? hull, float? shield)
+    {
+        float barW = 54f * scale;
+        float barH = 3f * scale;
+        if (hull is { } h && h > 0f) Bar(x, y, barW, barH, h, _painter.Primary);
+        if (shield is { } s && s > 0f) Bar(x, y + barH + 2f * scale, barW, barH, s, _painter.Dim);
+    }
+
+    /// <summary>One fraction bar: dim rail plus an ink fill of the fraction width.</summary>
+    private void Bar(float x, float y, float width, float height, float fraction, Color ink)
+    {
+        float filled = width * Math.Clamp(fraction, 0f, 1f);
+        _painter.Surface.Fill(new(x, y), new(width, height), _painter.Dim * 0.35f);
+        if (filled > 0f) _painter.Surface.Fill(new(x, y), new(filled, height), ink);
+    }
+
+    /// <summary>
+    /// The off-screen target chevron (P972 §4.3): a chevron on the viewport edge
+    /// pointing at a selected target that does not project into view, using the same
+    /// normalized bearing the Classic target arrow reads
+    /// (<see cref="HudContext.TargetBearing"/>, <c>Game1.ComputeTargetBearing</c>).
+    /// The target data block already carries the readings, so no number is repeated
+    /// here — only the direction.
+    /// </summary>
+    private void DrawOffScreenTarget(HudModel model, float w, float h, float scale)
+    {
+        if (!model.IndicatorsVisible || model.Context.Target is not null) return;
+        if (model.Context.TargetBearing is not { } bearing) return;
+        if (model.Context.TargetPane is not { Present: true }) return;
+        Vector2 at = JetTargetGeometry.EdgeChevronAnchor(bearing, w, h, scale);
+        var direction = new Vector2(bearing.X, bearing.Y);
+        if (direction.LengthSquared() < 1e-6f) direction = new(0f, -1f);
+        direction.Normalize();
+        var side = new Vector2(-direction.Y, direction.X);
+        float len = 11f * scale;
+        float spread = 7f * scale;
+        Vector2 tip = at + direction * len;
+        _painter.Line(at + side - direction * len * 0.4f, tip, _painter.Stroke, _painter.Primary);
+        _painter.Line(at - side - direction * len * 0.4f, tip, _painter.Stroke, _painter.Primary);
+        // Fixed pivot dot so the chevron reads as an edge pointer.
+        _painter.Line(new(at.X - 2f * scale, at.Y), new(at.X + 2f * scale, at.Y), _painter.Hairline, _painter.Dim);
+    }
+
+    /// <summary>
+    /// The segmented missile lock (P972 §4.3): a diamond of 16 segments around the
+    /// lock target. Partial = every other segment inked (open/dashed, marching with
+    /// the shared <c>NowSeconds</c> feedback clock) plus <c>LOCK nn%</c>; full = all
+    /// segments (closed) in the hot colour plus <c>LOCK</c>; none = nothing. No lock
+    /// tone, timer or audio state is created or restarted here — the tone stays with
+    /// <see cref="MissileLockFeedback"/> and native dispatch.
+    /// </summary>
+    private void DrawLock(HudModel model, float w, float h, float scale)
+    {
+        if (!model.IndicatorsVisible || model.Context.Lock is not { } lockState) return;
+        if (lockState.State == MissileLockFeedback.LockState.None) return;
+        var center = new Vector2(lockState.Center.X, lockState.Center.Y);
+        if (center.X < 0f || center.Y < 0f || center.X > w || center.Y > h) return;
+
+        float toEdge = MathF.Min(MathF.Min(center.X, center.Y), MathF.Min(w - center.X, h - center.Y));
+        // The same per-state sizing the Classic flower uses (native
+        // radiusBracket + 40·(1−lock), radarimage.cpp:325-332).
+        float radius = LockBracketStyle.HalfSizeForFraction(lockState.State, lockState.Fraction, lockState.ScreenRadius, toEdge);
+        // The diamond sits just outside the designator so both read at once.
+        radius = MathF.Max(radius, JetTargetGeometry.DefaultHalf * scale + 8f * scale);
+        bool full = lockState.State == MissileLockFeedback.LockState.Full;
+        Color ink = full ? _painter.Hot : _painter.Dim;
+        int segments = JetTargetGeometry.LockSegmentsPerSide * 4;
+        for (int i = 0; i < segments; i++)
+        {
+            if (!JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockSegmentsPerSide, lockState.State, lockState.NowSeconds))
+                continue;
+            var (a, b) = JetTargetGeometry.LockSegment(i, JetTargetGeometry.LockSegmentsPerSide, center, radius);
+            _painter.Line(a, b, _painter.Stroke, ink);
+        }
+
+        // Text above the diamond: LOCK nn% while building, LOCK when full.
+        if (full)
+        {
+            Vector2 size = _painter.Measure(LockCaption, large: false, scale);
+            _painter.Text(LockCaption, new(center.X - size.X * 0.5f, center.Y - radius - size.Y - 4f * scale),
+                large: false, scale, _painter.Hot);
+            return;
+        }
+        string percent = LockText(lockState.Fraction);
+        float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
+        float width = MeasureRuns(scale, " ", LockCaption, percent, null, null);
+        float x = center.X - width * 0.5f;
+        float y = center.Y - radius - rowH;
+        DrawRuns(x, y, scale, _painter.Dim, " ", LockCaption, percent, null, null);
+    }
+
+    /// <summary>
+    /// Lead marker + aim predictor (P972 §4.2): the ballistic lead is an open circle
+    /// at the solved lead point (closed + <c>IN RANGE</c> when the intercept is in
+    /// weapon range, dashed/dim when out of it), the aim predictor is a bracket set
+    /// at the cockpit boresight (or the projected aim point in chase). Both map
+    /// native's green hit ramp to the one Jet hue's dim → hot; both are drawn only
+    /// under the model's own gates, so Jet cannot disagree with Classic about
+    /// visibility. They never reuse the gun-cross or FPM shapes.
+    /// </summary>
+    private void DrawLeadAndAim(HudModel model, float scale)
+    {
+        if (model.Context.Lead is not { } lead) return;
+        // In range the marker is hot (the ramp floored at half, P972 §4.2: "in-range
+        // shown by shape/hot colour"); out of range it stays on the dim half of the
+        // ramp (native's dimmed leadout surface).
+        Color ramp = RampColor(lead.InRange ? MathF.Max(lead.Green, .5f) : lead.Green * .5f);
+        if (model.LeadMarkerVisible)
+        {
+            var center = new Vector2(lead.Center.X, lead.Center.Y);
+            float radius = JetTargetGeometry.LeadRadius * scale;
+            if (lead.InRange)
+            {
+                _painter.Circle(center, radius, _painter.Stroke, ramp);
+                Vector2 size = _painter.Measure(InRangeLabel, large: false, scale);
+                _painter.Text(InRangeLabel, new(center.X - size.X * 0.5f, center.Y + radius + 3f * scale),
+                    large: false, scale, ramp);
+            }
+            else
+            {
+                // Out of range: open (broken) ring; native's dimmed leadout surface.
+                const int segments = 8;
+                for (int i = 0; i < segments; i += 2)
+                    _painter.Arc(center, radius, i * MathHelper.TwoPi / segments,
+                        MathHelper.TwoPi / segments * 0.55f, _painter.Stroke, _painter.Dim);
+            }
+            // Distinguishing mark from the FPM circle: a top tick.
+            _painter.Line(new(center.X, center.Y - radius - 4f * scale),
+                new(center.X, center.Y - radius), _painter.Stroke, ramp);
+        }
+
+        if (model.AimPredictorVisible)
+        {
+            // Native cockpit predictor sits on the centre crosshair; in chase/missile
+            // it is the projected aim point (indicator.cpp:334-362). Same split as
+            // the Classic renderer.
+            Vector2 center = model.Context.Camera == CameraMode.Cockpit
+                ? new(_viewportWidth * 0.5f, _viewportHeight * 0.5f)
+                : new Vector2(lead.Center.X, lead.Center.Y);
+            float half = JetTargetGeometry.AimRadius * scale;
+            var box = new RectangleF(center.X - half, center.Y - half, half * 2f, half * 2f);
+            _painter.CornerBrackets(box, half * 0.55f, _painter.Stroke, ramp);
+        }
+    }
+
+    /// <summary>Native chase/missile no-target aim (indicator.cpp:367-405): an open
+    /// grey cross, distinct from every other Jet marker (P972 §4.2).</summary>
+    private void DrawChaseAim(HudModel model, float scale)
+    {
+        if (!model.ChaseAimVisible || model.Context.ChaseAim is not { } aim) return;
+        var center = new Vector2(aim.X, aim.Y);
+        float arm = 8f * scale;
+        _painter.Line(new(center.X - arm, center.Y), new(center.X - arm * 0.35f, center.Y), _painter.Stroke, _painter.Dim);
+        _painter.Line(new(center.X + arm * 0.35f, center.Y), new(center.X + arm, center.Y), _painter.Stroke, _painter.Dim);
+        _painter.Line(new(center.X, center.Y - arm), new(center.X, center.Y - arm * 0.35f), _painter.Stroke, _painter.Dim);
+        _painter.Line(new(center.X, center.Y + arm * 0.35f), new(center.X, center.Y + arm), _painter.Stroke, _painter.Dim);
+    }
+
+    /// <summary>
+    /// Accepted/current order steering (P972 §4.2): open chevron + <c>ACC</c> for the
+    /// accepted turn, closed chevron + <c>CUR</c> for the current one, and a double
+    /// chevron when both name the same target. Directions, anchors
+    /// (centre + 108·normalized offset) and the visibility gate are exactly the
+    /// shared model's <see cref="HudOrderArrows"/>.
+    /// </summary>
+    private void DrawOrderArrows(HudModel model, float w, float h, float scale)
+    {
+        if (!model.OrderArrowsVisible || model.Context.OrderArrows is not { } arrows) return;
+        var center = new Vector2(w * 0.5f, h * 0.5f);
+        if (arrows.SameTarget && arrows.AcceptedDirection is { } same)
+        {
+            Vector2? direction = JetTargetGeometry.Direction(same);
+            if (direction is { } d)
+            {
+                Vector2 anchor = JetTargetGeometry.OrderAnchor(center, d, scale);
+                OpenChevron(anchor, d, scale, _painter.Primary, offset: 0f);
+                OpenChevron(anchor, d, scale, _painter.Primary, offset: 5f * scale);
+                DrawOrderLabel(anchor, d, scale, SameTargetLabel, _painter.Primary);
+            }
+            return;
+        }
+        if (arrows.AcceptedDirection is { } accepted && JetTargetGeometry.Direction(accepted) is { } accDir)
+        {
+            Vector2 anchor = JetTargetGeometry.OrderAnchor(center, accDir, scale);
+            OpenChevron(anchor, accDir, scale, _painter.Primary, offset: 0f);
+            DrawOrderLabel(anchor, accDir, scale, AcceptedLabel, _painter.Primary);
+        }
+        if (arrows.CurrentDirection is { } current && JetTargetGeometry.Direction(current) is { } curDir)
+        {
+            Vector2 anchor = JetTargetGeometry.OrderAnchor(center, curDir, scale);
+            ClosedChevron(anchor, curDir, scale, _painter.Dim);
+            DrawOrderLabel(anchor, curDir, scale, CurrentLabel, _painter.Dim);
+        }
+    }
+
+    /// <summary>An open chevron: two strokes meeting short of the tip (native's
+    /// accepted-turn arrow, indicator.cpp:411-457).</summary>
+    private void OpenChevron(Vector2 anchor, Vector2 direction, float scale, Color ink, float offset)
+    {
+        var side = new Vector2(-direction.Y, direction.X);
+        Vector2 tip = anchor + direction * (12f * scale + offset);
+        Vector2 back = anchor - direction * 4f * scale;
+        float spread = 7f * scale;
+        _painter.Line(back + side * spread * 0.6f + direction * 2f * scale, tip, _painter.Stroke, ink);
+        _painter.Line(back - side * spread * 0.6f + direction * 2f * scale, tip, _painter.Stroke, ink);
+    }
+
+    /// <summary>A closed chevron: a filled-outline triangle (native's current-turn
+    /// arrow) — closed shape, so it reads apart from the open accepted chevron.
+    /// Three strokes, not a collection expression, so a frame allocates nothing.</summary>
+    private void ClosedChevron(Vector2 anchor, Vector2 direction, float scale, Color ink)
+    {
+        var side = new Vector2(-direction.Y, direction.X);
+        Vector2 tip = anchor + direction * 12f * scale;
+        Vector2 back = anchor - direction * 5f * scale;
+        float spread = 6f * scale;
+        Vector2 left = back + side * spread;
+        Vector2 right = back - side * spread;
+        _painter.Line(left, tip, _painter.Stroke, ink);
+        _painter.Line(tip, right, _painter.Stroke, ink);
+        _painter.Line(right, left, _painter.Stroke, ink);
+    }
+
+    /// <summary>The order-arrow word beyond the chevron (ACC / CUR), keylined.</summary>
+    private void DrawOrderLabel(Vector2 anchor, Vector2 direction, float scale, string text, Color ink)
+    {
+        Vector2 at = anchor + direction * 22f * scale;
+        _painter.Text(text, new(at.X, at.Y), large: false, scale, ink);
+    }
+
+    /// <summary>
+    /// The native bottom target pane as a Jet data block (P972 §4.5, §5.2): name,
+    /// type, side, range or the native <c>LOC &lt;sector&gt;</c> fallback, closure,
+    /// speed, hull/shield, ore, kill bonus and TTI — each only when the shared model
+    /// supplies it, never a zero for an unknown. At 800×480 it collapses to
+    /// name + range/closure + the two bars (compact layout).
+    /// </summary>
+    private void DrawTargetBlock(HudModel model, float w, float h, float scale)
+    {
+        if (!model.TargetPaneVisible || model.Context.TargetPane is not { } pane || !pane.Present) return;
+        bool compact = h < CompactHeight;
+        float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
+        float barH = 3f * scale;
+        float barBlock = 2f * barH + 2f * scale;
+
+        // Row content first: rows only exist for the fields the shared model supplies
+        // (never a zero for an unknown, never a fabricated row).
+        string? range = pane.Distance is { } distance ? RangeText(distance) : null;
+        if (range is null && pane.SectorName is { } sector) range = SectorText(sector);
+        string? closure = pane.ClosingSpeed is { } closing ? ClosureText(closing) : null;
+        string? hull = pane.HullFraction is { } hullFraction && hullFraction > 0f
+            ? PercentText(hullFraction, ref _hullShown, ref _hullText) : null;
+        string? shield = pane.ShieldFraction is { } shieldFraction && shieldFraction > 0f
+            ? PercentText(shieldFraction, ref _shieldShown, ref _shieldText) : null;
+        bool hasType = !compact && (pane.TypeDescription is not null || pane.SideName is not null);
+        bool hasRange = range is not null || closure is not null;
+        bool hasHull = hull is not null || shield is not null;
+        bool hasSpeed = !compact && pane.Speed is { } sp && sp > 0f;
+        bool hasOre = !compact && pane.OreFraction is { } ore && ore > 0f;
+        bool hasKillBonus = !compact && pane.KillBonusPercent is not null;
+        bool hasTti = !compact && pane.TimeToIntercept is not null;
+        bool hasInRange = !compact && pane.InRange;
+
+        // Lay the block out top-down from a measured height, bottom-anchored above the
+        // tag line: every row (and the bar block) has its own slot, so nothing overlaps.
+        int rows = (pane.Name is null ? 0 : 1) + (hasType ? 1 : 0) + (hasRange ? 1 : 0) + (hasHull ? 1 : 0)
+            + (hasSpeed ? 1 : 0) + (hasOre ? 1 : 0) + (hasKillBonus ? 1 : 0) + (hasTti ? 1 : 0) + (hasInRange ? 1 : 0);
+        if (rows == 0) return;
+        float height = rows * rowH + (hasHull ? barBlock : 0f);
+        // Offset right of the boresight column so the block can never cover the ladder's
+        // centred current-pitch numeral (it still reads as the bottom target pane).
+        float x = w * 0.5f + 70f * scale;
+        float y = h - 34f * scale - height;
+
+        if (pane.Name is { } name)
+        {
+            _painter.Text(name, new(x, y), large: false, scale, _painter.Primary);
+            y += rowH;
+        }
+        if (hasType)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, " / ", pane.TypeDescription, pane.SideName, null, null);
+            y += rowH;
+        }
+        if (hasRange)
+        {
+            DrawRuns(x, y, scale, _painter.Primary, "  ", range, range is null ? null : ClosureWord, closure, null);
+            y += rowH;
+        }
+        if (hasHull)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, "  ", hull is null ? null : HullWord, hull,
+                shield is null ? null : ShieldWord, shield);
+            y += rowH;
+            // Native's 0 is its "not visible / not live" sentinel (consoledata.cpp:202-212),
+            // so a bar is only drawn for a real fraction.
+            DrawTargetBars(x, y, scale, pane.HullFraction, pane.ShieldFraction);
+            y += barBlock;
+        }
+        if (hasSpeed)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, "  ", TargetSpeedWord, TargetSpeedText(pane.Speed!.Value), null, null);
+            y += rowH;
+        }
+        if (hasOre)
+        {
+            DrawRuns(x, y, scale, _painter.Primary, "  ", OreWord,
+                PercentText(pane.OreFraction!.Value, ref _oreShown, ref _oreText), null, null);
+            y += rowH;
+        }
+        if (hasKillBonus)
+        {
+            DrawRuns(x, y, scale, _painter.Dim, "  ", KillBonusWord,
+                KillBonusText(pane.KillBonusPercent!.Value), null, null);
+            y += rowH;
+        }
+        if (hasTti)
+        {
+            _painter.Text(pane.TimeToIntercept!, new(x, y), large: false, scale, _painter.Dim);
+            y += rowH;
+        }
+        // In weapon range: a word, no hue change (P972 §5.2).
+        if (hasInRange)
+            _painter.Text(InRangeLabel, new(x, y), large: false, scale, _painter.Primary);
+    }
+
+    // ── P1037 text helpers (allocation-free on a steady frame) ───────────
+    /// <summary>Native hit-probability ramp mapped to the single Jet hue:
+    /// <c>green = 0</c> → dim, <c>green = 1</c> → hot (P972 §4.2).</summary>
+    private Color RampColor(float green)
+    {
+        float t = JetTargetGeometry.Ramp(green);
+        return Color.Lerp(_painter.Dim, _painter.Hot, t);
+    }
+
+    /// <summary>Width of up to four runs joined by <paramref name="separator"/>.</summary>
+    private float MeasureRuns(float scale, string separator, string? a, string? b, string? c, string? d)
+    {
+        float sep = _painter.Measure(separator, large: false, scale).X;
+        float width = 0f;
+        int count = 0;
+        if (a is not null) { width += _painter.Measure(a, large: false, scale).X; count++; }
+        if (b is not null) { width += _painter.Measure(b, large: false, scale).X; count++; }
+        if (c is not null) { width += _painter.Measure(c, large: false, scale).X; count++; }
+        if (d is not null) { width += _painter.Measure(d, large: false, scale).X; count++; }
+        return count > 1 ? width + sep * (count - 1) : width;
+    }
+
+    /// <summary>Draw up to four runs joined by <paramref name="separator"/> from
+    /// <paramref name="x"/> at <paramref name="y"/> (top-left anchored). Unrolled on
+    /// purpose: a capturing local function would allocate a display class every
+    /// frame.</summary>
+    private void DrawRuns(float x, float y, float scale, Color ink, string separator,
+        string? a, string? b, string? c, string? d)
+    {
+        float sep = _painter.Measure(separator, large: false, scale).X;
+        float cursor = x;
+        bool first = true;
+        if (a is not null)
+        {
+            _painter.Text(a, new(cursor, y), large: false, scale, ink);
+            cursor += _painter.Measure(a, large: false, scale).X;
+            first = false;
+        }
+        if (b is not null)
+        {
+            if (!first) cursor += sep;
+            _painter.Text(b, new(cursor, y), large: false, scale, ink);
+            cursor += _painter.Measure(b, large: false, scale).X;
+            first = false;
+        }
+        if (c is not null)
+        {
+            if (!first) cursor += sep;
+            _painter.Text(c, new(cursor, y), large: false, scale, ink);
+            cursor += _painter.Measure(c, large: false, scale).X;
+            first = false;
+        }
+        if (d is not null)
+        {
+            if (!first) cursor += sep;
+            _painter.Text(d, new(cursor, y), large: false, scale, ink);
+        }
+    }
+
+    /// <summary>The native <c>LOCATION:&lt;sector&gt;</c> fallback text, rebuilt only
+    /// when the model's sector name changes (never per frame).</summary>
+    private string SectorText(string sector)
+    {
+        if (!string.Equals(sector, _sectorShown, StringComparison.Ordinal))
+        {
+            _sectorShown = sector;
+            _sectorText = "LOC " + sector;
+        }
+        return _sectorText;
+    }
+
+    /// <summary>A rounded distance readout, cached by its integer value.</summary>
+    private string RangeText(float distance)
+    {
+        int rounded = (int)MathF.Round(distance);
+        if (rounded != _rangeShown)
+        {
+            _rangeShown = rounded;
+            _rangeText = rounded.ToString(CultureInfo.InvariantCulture) + " m";
+        }
+        return _rangeText;
+    }
+
+    /// <summary>A signed closure readout, cached by its integer value. Positive means
+    /// separation decreasing (TargetClosingSpeed), so it is printed as-is.</summary>
+    private string ClosureText(float closure)
+    {
+        int rounded = (int)MathF.Round(closure);
+        if (rounded != _closureShown)
+        {
+            _closureShown = rounded;
+            _closureText = rounded.ToString("+0;-0;0", CultureInfo.InvariantCulture);
+        }
+        return _closureText;
+    }
+
+    /// <summary>A target speed readout, cached by its integer value.</summary>
+    private string TargetSpeedText(float speed)
+    {
+        int rounded = (int)MathF.Round(speed);
+        if (rounded != _targetSpeedShown)
+        {
+            _targetSpeedShown = rounded;
+            _targetSpeedText = rounded.ToString(CultureInfo.InvariantCulture) + " mps";
+        }
+        return _targetSpeedText;
+    }
+
+    /// <summary>A kill-bonus readout (whole percent, no invented decimal).</summary>
+    private string KillBonusText(float bonus)
+    {
+        int rounded = (int)MathF.Round(bonus);
+        if (rounded != _killBonusShown)
+        {
+            _killBonusShown = rounded;
+            _killBonusText = rounded.ToString(CultureInfo.InvariantCulture);
+        }
+        return _killBonusText;
+    }
+
+    /// <summary>The partial lock's quality readout (<c>LOCK nn%</c>), cached by its
+    /// integer percent so a steady frame formats nothing.</summary>
+    private string LockText(float fraction)
+    {
+        int percent = (int)MathF.Round(Math.Clamp(fraction, 0f, 1f) * 100f);
+        if (percent != _lockPercentShown)
+        {
+            _lockPercentShown = percent;
+            _lockPercentText = percent.ToString(CultureInfo.InvariantCulture) + "%";
+        }
+        return _lockPercentText;
+    }
+
+    /// <summary>A zero-padded 0…100 fraction percentage (native pane digits are
+    /// three wide), cached by its integer value.</summary>
+    private string PercentText(float fraction, ref int shown, ref string text)
+    {
+        int percent = (int)MathF.Round(Math.Clamp(fraction, 0f, 1f) * 100f);
+        if (percent != shown)
+        {
+            shown = percent;
+            text = percent.ToString("000", CultureInfo.InvariantCulture);
+        }
+        return text;
     }
 
     // ── shared readout helpers ──────────────────────────────────────────
     /// <summary>How a readout box is anchored to its tape.</summary>
     private enum ReadoutAlign { Center, LeftEdge, RightEdge }
 
-    /// <summary>A boxed numeric on a plate with a keyline tick facing the tape.</summary>
-    private void DrawReadout(string text, float x, float y, float scale, ReadoutAlign align)
+    /// <summary>A boxed numeric on a plate with a keyline tick facing the tape.
+    /// <paramref name="topAnchored"/> places the plate's top edge at
+    /// <paramref name="y"/> instead of centring it (the heading tape stacks
+    /// downwards from the caret so gaps are guaranteed).</summary>
+    private void DrawReadout(string text, float x, float y, float scale, ReadoutAlign align, bool topAnchored = false)
     {
         Vector2 ink = _painter.Measure(text, large: true, scale);
         float pad = 7f * scale;
@@ -583,7 +1298,7 @@ public sealed class JetHudRenderer : IHudSkinRenderer
             ReadoutAlign.LeftEdge => x,
             _ => x - boxWidth,
         };
-        var box = new RectangleF(left, y - boxHeight * 0.5f, boxWidth, boxHeight);
+        var box = new RectangleF(left, topAnchored ? y : y - boxHeight * 0.5f, boxWidth, boxHeight);
         _painter.FillPlate(box, 0.82f);
         float tickX = align == ReadoutAlign.RightEdge
             ? box.X + boxWidth - tick * 0.5f

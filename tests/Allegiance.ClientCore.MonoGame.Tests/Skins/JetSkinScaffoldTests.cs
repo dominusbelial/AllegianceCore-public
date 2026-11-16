@@ -363,22 +363,38 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
             }
         }
         // Coverage is the elements Jet itself draws (story 2 adds the flight-path
-        // marker and the ladder's roll reference), not a native claim.
-        Assert.Equal(new[] { "Cockpit centre reticle", "Roll tutorial cue", "Speed", "Thrust setting", "Velocity direction marker" },
-            jet.Coverage!.OrderBy(id => id));
+        // marker and the ladder's roll reference; P1037 adds the whole target, lock,
+        // lead/aim and order-steering families), not a native claim.
+        Assert.Equal(new[]
+        {
+            "Accepted and current order turn arrows", "Aim hit-probability predictor",
+            "Ballistic lead marker", "Chase weapon aim without target", "Cockpit centre reticle",
+            "Missile lock flower", "Roll tutorial cue", "Selected target bracket", "Speed",
+            "Target hull", "Target in weapon range", "Target kill bonus", "Target name",
+            "Target ore", "Target range or sector", "Target shield", "Target side identity",
+            "Target speed", "Target time to intercept", "Target type description",
+            "Thrust setting", "Velocity direction marker",
+        }, jet.Coverage!.OrderBy(id => id));
     }
 
     [Fact]
     public void Jet_coverage_matches_the_elements_the_scaffold_draws()
     {
         using var jet = Jet(new CountingJetSurface());
-        Assert.Equal(5, jet.Coverage!.Count);
+        Assert.Equal(22, jet.Coverage!.Count);
         Assert.Contains("Cockpit centre reticle", jet.Coverage);
         Assert.Contains("Speed", jet.Coverage);
         Assert.Contains("Thrust setting", jet.Coverage);
         // P1036 — the flight-path marker and the ladder's roll reference.
         Assert.Contains("Velocity direction marker", jet.Coverage);
         Assert.Contains("Roll tutorial cue", jet.Coverage);
+        // P1037 — target designator/pane readouts, lock, lead/aim/chase, order arrows.
+        Assert.Contains("Selected target bracket", jet.Coverage);
+        Assert.Contains("Missile lock flower", jet.Coverage);
+        Assert.Contains("Ballistic lead marker", jet.Coverage);
+        Assert.Contains("Aim hit-probability predictor", jet.Coverage);
+        Assert.Contains("Chase weapon aim without target", jet.Coverage);
+        Assert.Contains("Accepted and current order turn arrows", jet.Coverage);
         Assert.Equal(HudSkinIds.Jet, jet.Id);
     }
 

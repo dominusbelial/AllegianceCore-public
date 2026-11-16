@@ -1020,6 +1020,28 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetFlightSymbologyTests.cs`;
   report: `docs/reports/JET_FLIGHT_SYMBOLOGY_P1036.md`.
 
+- **Jet target, lock, closure and order steering (P1037, skin story 3/9)** — the selected-target and indicator
+  families of the Jet skin (P972 §4.3 + §4.2, phase 3B). **`TargetClosingSpeed`**
+  (`src/Allegiance.ClientCore.Game/Rendering/TargetClosingSpeed.cs`) is the ONE closure derivation shared by the
+  projected selection bracket (`HudTarget.ClosingSpeed`) and the bottom target pane (`HudTargetPane.ClosingSpeed`,
+  new in P1037): `(ownVelocity − targetVelocity)·(targetPosition − ownPosition)/distance`, **positive = separation
+  decreasing** (Modern prints it as-is; Jet prints the same sign), null when the line of sight is degenerate, so an
+  off-screen target keeps its reading. **`JetTargetGeometry`**
+  (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetTargetGeometry.cs`) is the pure, allocation-free geometry:
+  designator half-span (projected radius × 1.05 clamped to 12…150 physical px and to the viewport edge with native
+  `c_flBorderSide`), relationship classification (enemy/friend/neutral by shape + word, never a second hue), the
+  16-segment **lock diamond** (partial = every other segment, marching on the shared `HudLock.NowSeconds` phase;
+  full = closed, hot) and the off-screen **edge chevron** anchor built from the shared normalized
+  `HudContext.TargetBearing` (`Game1.ComputeTargetBearing`). `JetHudRenderer` draws the **target designator** (four
+  corner strokes sized from `ScreenRadius`, relationship/name/range/closure/hull-shield beside it), the **segmented
+  lock**, the **lead marker** / **aim predictor** (native green ramp mapped to dim→hot, `IN RANGE` by shape/word) /
+  **chase aim**, the **order chevrons** (open+`ACC`, closed+`CUR`, double chevron when same-target, anchors at
+  centre + 108·direction) and the **target data block** (name, type/side, range or `LOC <sector>`, closure, speed,
+  hull/shield bars, ore, kill bonus, TTI only when the model supplies it; compact at 800×480), then names all of
+  them in `Coverage` (22 ids). Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetTargetLockTests.cs`; report:
+  `docs/reports/JET_TARGET_LOCK_P1037.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

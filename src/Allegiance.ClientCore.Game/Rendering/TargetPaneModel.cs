@@ -62,11 +62,19 @@ public static class TargetPaneModel
         // (272-276) reuse that same test, plus the docked-station exception.
         bool sameCluster = SameCluster(world, kind, id, out bool dockedStation);
         float? distance = null;
+        // P1037 — the pane's closure comes from the SAME derivation the projected
+        // selection bracket uses (TargetClosingSpeed, positive = separation
+        // decreasing), so an off-screen target keeps its reading (P972 §4.3).
+        float? closingSpeed = null;
         if (sameCluster
             && world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
             && own.Latest is { } ownUp
-            && TryTargetPose(world, kind, id, out var targetPos, out _))
+            && TryTargetPose(world, kind, id, out var targetPos, out var targetVelocity))
+        {
             distance = (targetPos - ownUp.Position).Length();
+            closingSpeed = TargetClosingSpeed.Compute(
+                ownUp.Position, ownUp.Velocity, targetPos, targetVelocity);
+        }
 
         switch (kind)
         {
@@ -231,7 +239,8 @@ public static class TargetPaneModel
             InRange: inRange,
             IsShip: isShip,
             SectorName: sectorName,
-            TimeToIntercept: timeToIntercept);
+            TimeToIntercept: timeToIntercept,
+            ClosingSpeed: closingSpeed);
     }
 
     /// <summary>

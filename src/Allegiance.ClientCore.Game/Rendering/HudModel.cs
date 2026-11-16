@@ -53,7 +53,12 @@ public readonly record struct HudTargetPane(
     // HUD-18 — native GHTTI (Artwork/dialog.mdl:1280-1355), GlassHUD-only;
     // the port draws it in the Modern (alternate-layout) pane. Null when
     // docked (:1327-1330).
-    string? TimeToIntercept = null);
+    string? TimeToIntercept = null,
+    // P1037 — the signed range rate from the ONE shared derivation
+    // (TargetClosingSpeed, positive = separation decreasing), independent of
+    // whether the target projects into the current view (P972 §4.3). Null when
+    // unknown so a renderer leaves the field blank.
+    float? ClosingSpeed = null);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 
 /// <summary>P948 — the transient mouse-option readout ("MOUSE SENSITIVITY 60 %")
