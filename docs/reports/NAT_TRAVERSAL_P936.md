@@ -209,9 +209,9 @@ Existing P901 LAN/TCP tests are retained. Final repetition counts are below.
 
 Actual Game1 captures, opened for visual inspection:
 
-- [Host form](docs/reports/P936_assets/host.png)
-- [Online browser](docs/reports/P936_assets/browser.png)
-- [Direct-connection failure](docs/reports/P936_assets/failure.png)
+- [Host form](P936_assets/host.png)
+- [Online browser](P936_assets/browser.png)
+- [Direct-connection failure](P936_assets/failure.png)
 
 Classic and Modern captures were byte-identical for all three forms (the intro
 forms share rendering across styles), so one capture of each is kept.

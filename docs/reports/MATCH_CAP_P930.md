@@ -94,9 +94,9 @@ P930 separately covers cap-plus-rotation behavior.
 
 ## Verification and evidence
 
-Raw local evidence is retained under [`.scratch/p930/`](.scratch/p930/).
+Raw local evidence is retained under [`.scratch/p930/`](../../.scratch/p930/).
 Compact results are in
-[`docs/reports/P930_assets/verification.json`](docs/reports/P930_assets/verification.json).
+[`docs/reports/P930_assets/verification.json`](P930_assets/verification.json).
 `local.env` was present and sourced for artwork/native paths. No private media
 was added. Builds/tests use the configured local .NET installation. NuGet cache,
 temporary files, AOT output and profile writes are redirected into task scratch

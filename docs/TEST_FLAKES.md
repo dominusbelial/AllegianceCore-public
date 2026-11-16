@@ -7956,7 +7956,7 @@ Raw evidence: task-worktree `.scratch/p930/fast-final/`,
 `.scratch/p930/{visibility,paths}-isolation-{1..3}.trx`; compact outcomes and
 parking controls: [P930 verification](reports/P930_assets/verification.json).
 Final gate qualifications and parking counts are in
-[P930 report](../MATCH_CAP_P930.md).
+[P930 report](reports/MATCH_CAP_P930.md).
 
 The complete final Fast gate covered **13,100 cases: 13,087 passed, 10 failed,
 3 skipped**, with four additional timing-limit violations. Other final failures

@@ -60,3 +60,6 @@ TestResults/
 
 # Runtime fallback configuration and logs (use a scratch XDG_CONFIG_HOME for proofs).
 /AllegianceCore/
+
+# allegiance-mcp bot worker stderr, written to the launch directory (tools/allegiance-mcp/WorkerRpc.cs)
+err.worker-*.log
