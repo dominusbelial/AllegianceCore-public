@@ -73,7 +73,8 @@ public sealed record ServerListing(
     /// 1498-1505</c>). This port advertises the FACT (never the password) so the
     /// browser can show a lock and the join screen can ask before connecting.
     /// </summary>
-    bool PasswordRequired = false)
+    bool PasswordRequired = false,
+    string? WebSocketUrl = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by

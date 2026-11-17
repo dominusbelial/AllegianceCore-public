@@ -90,7 +90,8 @@ services:
     ports:
       - "6073:6073"
       # P1048: webSocket.enabled defaults false in the mounted JSON. No HTTP/WS
-      # port is published here. An operator's private override can map loopback
+      # publicUrl is optional and absent by default; it advertises webSocketUrl
+      # in the lobby only with an enabled listener. No HTTP/WS port is published here. An operator's private override can map loopback
       # 6080 for a trusted TLS proxy; see docker/README.md "WebSocket game listener".
       # Desktop Host LAN also uses UDP 6074 (game port + 1) for discovery.
       # It runs in the client, outside Compose; dedicated discovery is opt-in

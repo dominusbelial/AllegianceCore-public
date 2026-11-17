@@ -4,6 +4,36 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1048B gate observations — 2026-11-17 UTC
+
+One complete Fast run on the final P1048B transport/browser-join tree covered
+**15,345 cases in 913.7 s: 15,333 passed / 6 failed / 6 skipped**. Infrastructure
+**9/9 passed**. Calibrated limit **11.579576 s**; the failed nanite, asteroid-combat
+and debug-elimination cases also exceeded it (21.865 / 14.326 / 16.730 s).
+No additional passing-only timing offender occurred. All 49 new tests and 135
+P1048 regressions passed in the sweep; new cases also passed 49/49 ×3 separately.
+
+All six failing exact facts were replayed in **three separate one-case processes**
+with artwork and passed every time:
+
+| Exact case | Fast failure | Three repetitions alone (seconds) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Remote death latch never arrived after 2,500 ticks | **pass / pass / pass**, 1.344 / 1.315 / 1.324 |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | Repair target never reached full; latest health fraction 0.554 | **pass / pass / pass**, 3.099 / 3.042 / 3.071 |
+| `AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission` | Lethal cross-side hit did not kill the asteroid | **pass / pass / pass**, 0.416 / 0.420 / 0.426 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | Accumulated roster time 8.25 outside [4, 8] | **pass / pass / pass**, 0.566 / 0.528 / 0.519 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Unexpected AsteroidMined broadcast after capacity (fraction 228) | **pass / pass / pass**, 1.754 / 1.759 / 1.758 |
+| `SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players` | Lethal hit did not destroy the debug station | **pass / pass / pass**, 0.326 / 0.325 / 0.326 |
+
+Repair, damage, mining, elimination and roster-clock implementations are unchanged.
+P1048B does change transport/client lifecycle seams; targeted TCP/UDP/P897, identity,
+credential and reconnect checks pass separately. The receipt/clock families above
+include previously ledgered cases, but these repetitions do not establish root
+cause and do not turn the failed full gate green. No assertion, calibration,
+quarantine or tier changed. Evidence:
+`docs/reports/BROWSER_WS_JOIN_P1048B_assets/fast-summary.json` and
+`docs/reports/BROWSER_WS_JOIN_P1048B_assets/isolation.json`.
+
 ## P1041 gate observations — 2026-11-17 UTC
 
 The P1041 gate ran one Fast sweep on the final tree (`tiers-20261117T170044.710662Z`): **15,161 cases in 548.7 s,

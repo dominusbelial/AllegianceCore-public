@@ -28,6 +28,10 @@ public sealed partial class ConnectionSession
     // the same completion stack (it would then wait for itself).
     private static Task<T> RunBackground<T>(Func<Task<T>> action)
     {
+#if BROWSER
+        return OnEventLoop();
+        async Task<T> OnEventLoop() { await Task.Yield(); return await action(); }
+#else
         var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         _ = Task.Run(async () =>
         {
@@ -36,6 +40,7 @@ public sealed partial class ConnectionSession
             catch (Exception ex) { completion.TrySetException(ex); }
         });
         return completion.Task;
+#endif
     }
 
     private bool Owns(ConnectionOwner owner) => !_disposed && ReferenceEquals(_owner, owner) && !owner.Token.IsCancellationRequested;
@@ -84,10 +89,10 @@ public sealed partial class ConnectionSession
                     {
                         try { await previous.Work.ConfigureAwait(false); }
                         catch (Exception) { /* observed; its caller owns the result */ }
-                        RetireTransport(previous);
+                        await RetireTransportAsync(previous).ConfigureAwait(false);
                         previous.Cancellation.Dispose();
                     }
-                    previousTransport?.Shutdown();
+                    await ShutdownTransportAsync(previousTransport).ConfigureAwait(false);
                     lock (_gate) RequireOwner(owner);
                     var result = await operation(owner).ConfigureAwait(false);
                     lock (_gate)
@@ -99,12 +104,12 @@ public sealed partial class ConnectionSession
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && OwnsDeadline(owner))
                 {
-                    RetireTransport(owner);
+                    await RetireTransportAsync(owner).ConfigureAwait(false);
                     throw new TimeoutException("timed out joining the server");
                 }
                 catch
                 {
-                    RetireTransport(owner);
+                    await RetireTransportAsync(owner).ConfigureAwait(false);
                     throw;
                 }
                 finally
@@ -123,7 +128,13 @@ public sealed partial class ConnectionSession
         lock (_gate) return !_disposed && ReferenceEquals(_owner, owner) && !owner.ExplicitlyCancelled && owner.Token.IsCancellationRequested;
     }
 
-    private void RetireTransport(ConnectionOwner owner)
+    private static async Task ShutdownTransportAsync(ITransport? transport)
+    {
+        if (transport is WebSocketTransport ws) await ws.DisposeAsync().ConfigureAwait(false);
+        else transport?.Shutdown();
+    }
+
+    private async Task RetireTransportAsync(ConnectionOwner owner)
     {
         ITransport? transport;
         lock (_gate)
@@ -133,7 +144,7 @@ public sealed partial class ConnectionSession
             owner.Site = null;
             if (ReferenceEquals(_owner, owner) && ReferenceEquals(_transport, transport)) _transport = null;
         }
-        transport?.Shutdown();
+        await ShutdownTransportAsync(transport).ConfigureAwait(false);
     }
 
     private async Task ConnectTransportAsync(ConnectionOwner owner, string host, ushort port, string playerName)
@@ -143,12 +154,16 @@ public sealed partial class ConnectionSession
         lock (_gate)
         {
             RequireOwner(owner);
-            transport = _joinedInternet is not null ? new UdpTransport(site)
-                : TransportFactoryForTesting?.Invoke(site) ?? TransportFactory.CreateClient(site, _joinedProtocol, _joinedUdpPort);
+            transport =
+#if !BROWSER
+                _joinedInternet is not null ? new UdpTransport(site) :
+#endif
+                TransportFactoryForTesting?.Invoke(site) ?? TransportFactory.CreateClient(site, _joinedProtocol, _joinedUdpPort, _joinedWebSocketEndpoint, _joinedWebSocketOrigin);
             owner.Site = site;
             owner.Transport = transport;
             _transport = transport;
         }
+#if !BROWSER
         if (_joinedInternet is { } internet)
         {
             var udp = (UdpTransport)transport;
@@ -157,7 +172,9 @@ public sealed partial class ConnectionSession
                 await NatTraversalClient.ConnectAsync(udp, http, internet.ListingId, playerName, owner.Token).ConfigureAwait(false);
             else await NatTraversalClient.ConnectAsync(udp, internet, playerName, owner.Token).ConfigureAwait(false);
         }
-        else await transport.JoinAsync(host, port, playerName, owner.Token).ConfigureAwait(false);
+        else
+#endif
+        await transport.JoinAsync(host, port, playerName, owner.Token).ConfigureAwait(false);
         lock (_gate) RequireOwner(owner);
     }
 
@@ -234,9 +251,9 @@ public sealed partial class ConnectionSession
                 {
                     try { await priorWork!.ConfigureAwait(false); }
                     catch (Exception) { /* observe cancelled/failed establishment */ }
-                    RetireTransport(previous);
+                    await RetireTransportAsync(previous).ConfigureAwait(false);
                 }
-                transport?.Shutdown();
+                await ShutdownTransportAsync(transport).ConfigureAwait(false);
                 return true;
             });
             if (previous is not null) previous.Work = work;

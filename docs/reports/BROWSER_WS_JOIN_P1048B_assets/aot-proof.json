@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "nativeAot": true,
+  "canonicalLogon": "AotPilot",
+  "sideSelect": true,
+  "pingEcho": true,
+  "replayRefused": true,
+  "listenerSubprotocol": "allegiance-fed-v1",
+  "shipId": 8098
+}

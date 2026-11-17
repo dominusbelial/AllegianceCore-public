@@ -51,6 +51,17 @@ list in **reverse**.
   join is enabled. Operator setup: `docker/README.md`; evidence:
   `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`. Reproduce native-binary and
   embedded-runtime proofs with `tools/p1048-ws-proof/Program.cs`.
+- **Browser WebSocket join (P1048B)** — shared asynchronous client
+  `src/Allegiance.Core/Transport/WebSocketTransport.cs`, bounded keyed queue in
+  `src/Allegiance.Core/Transport/WebSocketClientSendQueue.cs`, and validated
+  listing/config route in `src/Allegiance.Core/Transport/WebSocketEndpoint.cs`.
+  `src/Allegiance.ClientCore/Session/ConnectionSession.Ownership.cs` drains async
+  transports and freezes route/Origin for resume. Optional `webSocket.publicUrl`
+  advertises `webSocketUrl` through the heartbeat and lobby. The source-compiled
+  browser session uses an event loop; `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`
+  provides loopback identity/list/side/launch with the resident starter core.
+  Proof: `tools/p1048b-browser-join.cjs`, `tools/p1048b-browser-host/Program.cs`;
+  report: `docs/reports/BROWSER_WS_JOIN_P1048B.md`. No new native game rule.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and
@@ -72,7 +83,8 @@ list in **reverse**.
   The separate `menu.html` entry stages recorded desktop opens via
   `tools/p1047-menu-opens/Program.cs` and `tools/p1047-browser-packs.py`;
   publish locally with `scripts/publish-browser-menu.sh`. The slice-1 page stays
-  independent; no login, session or flight is enabled. Report:
+  independent; P1047 was intro-only, with loopback login/session added by P1048B
+  and flight rendering still excluded. Report:
   `docs/reports/BROWSER_SEAMS_P1047.md`.
 - **`src/Allegiance.ClientCore.Game`** — the MonoGame presentation layer
   (rendering, HUD, input, screens).

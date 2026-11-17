@@ -71,7 +71,8 @@ internal sealed record ServerListing(
     /// only — never the password itself, which stays on the server
     /// (<c>FedSrv/FedSrv.CPP:648-661</c>). Default off keeps every pre-P970
     /// payload meaning "no password advertised".</summary>
-    bool PasswordRequired = false);
+    bool PasswordRequired = false,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -136,7 +137,8 @@ public sealed record ServerListingDto(
     /// password protected, so the browser can show a lock and the join screen can
     /// ask for the password up front. The password value never leaves the server;
     /// this is the same read-only fact class as the game settings above.</summary>
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PasswordRequired = false);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PasswordRequired = false,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -241,6 +243,7 @@ public sealed class RegisterRequest
     public string? Address { get; set; }
     public int Port { get; set; }
     public int? UdpPort { get; set; }
+    public string? WebSocketUrl { get; set; }
     public int? PlayerCount { get; set; }
     public int? MaxPlayers { get; set; }
     public string? MissionName { get; set; }

@@ -7,6 +7,10 @@ namespace Allegiance.Server;
 public sealed class WebSocketConfig
 {
     public bool Enabled { get; set; }
+    /// <summary>Optional public route advertised by the lobby; never inferred from headers.</summary>
+    public string? PublicUrl { get; set; }
+    public string? AdvertisedUrl => Enabled && PublicUrl is { Length: > 0 }
+        ? Allegiance.Core.Transport.WebSocketEndpoint.FromConfiguration(PublicUrl).Uri.AbsoluteUri : null;
     public ushort Port { get; set; } = 6080;
     public string BindAddress { get; set; } = "127.0.0.1";
     public string Path { get; set; } = "/game";
@@ -37,6 +41,7 @@ public sealed class WebSocketConfig
     public void Validate()
     {
         if (!Enabled) return;
+        _ = AdvertisedUrl;
         if (!IPAddress.TryParse(BindAddress, out _)) throw new InvalidDataException("webSocket.bindAddress must be an IP address");
         if (Path.Length is < 2 or > 128 || Path[0] != '/' || Path.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '/' or '-' or '_')))
             throw new InvalidDataException("webSocket.path must be a simple absolute path");

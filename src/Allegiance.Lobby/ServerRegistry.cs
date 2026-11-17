@@ -147,7 +147,7 @@ public sealed class ServerRegistry
                 // listing hides on, and the host's stated lobby protocol version.
                 Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted,
                 // P970 — the advertised password-required fact (never the password).
-                req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false));
+                req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false), NormalizeWebSocketUrl(req.WebSocketUrl));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -172,6 +172,7 @@ public sealed class ServerRegistry
             Address = Sanitize(req.Address, AddressMax),
             Port = NormalizePort(req.Port),
             UdpPort = NormalizeUdpPort(req.UdpPort),
+            WebSocketUrl = NormalizeWebSocketUrl(req.WebSocketUrl),
             PlayerCount = ClampCount(req.PlayerCount, MaxPlayerCount),
             MaxPlayers = ClampCount(req.MaxPlayers, MaxPlayersCap),
             MissionName = Sanitize(req.MissionName, NameMax),
@@ -420,6 +421,13 @@ public sealed class ServerRegistry
     /// <summary>P810 — an absent optional field stays null (never an empty
     /// string) so the DTO shape matches the pre-P810 wire for hosts that do not
     /// declare a minimum client version.</summary>
+    private static string? NormalizeWebSocketUrl(string? route)
+    {
+        if (route is null) return null;
+        try { return Allegiance.Core.Transport.WebSocketEndpoint.FromServerListing(route).Uri.AbsoluteUri; }
+        catch (ArgumentException) { return null; }
+    }
+
     private static int? NormalizeUdpPort(int? port) => port is > 0 and <= 65535 ? port : null;
 
     private static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
@@ -479,7 +487,7 @@ public sealed class ServerRegistry
         l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion, VisibleMissions(l), l.CurrentGames, l.MaxGames,
         l.Location, PercentLoad(l), StartTimeUtc(l), l.UdpPort, l.PlayerHosted,
         // P970 — the directory relays the advertised password-required fact only.
-        l.PasswordRequired);
+        l.PasswordRequired, l.WebSocketUrl);
 
     /// <summary>P894 / LOB-0008 — the mission rows a client may see: native drops a
     /// zero-player non-arena mission from the advertisement

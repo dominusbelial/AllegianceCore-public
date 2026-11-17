@@ -60,6 +60,7 @@ public partial class Menu
             var dimensions = await JsRuntime.InvokeAsync<int[]>("menuViewport");
             StopGame();
             _game = new Game1(_assets, _style, dimensions[0], dimensions[1]);
+            _game.OpenOnline = () => _ = OpenOnlineAsync();
             _game.DownloadScreenshot = () => _ = ScreenshotAsync();
             _reference ??= DotNetObjectReference.Create(this);
             await JsRuntime.InvokeVoidAsync("menuText", _reference);
@@ -125,6 +126,7 @@ public partial class Menu
             if (_game is null) return false;
             if (!_game.Started) { _game.Run(); _game.Started = true; }
             _game.Tick();
+            RefreshOnline();
             // Snapshot in this RAF submission, before WebGL discards the drawing buffer.
             if (_captureRequested) { _captureRequested = false; _ = CaptureFrameAsync(); }
             if (_savedRevision != _storage.Revision) _ = FlushAsync();
@@ -149,7 +151,9 @@ public partial class Menu
     }
     public async ValueTask DisposeAsync()
     {
-        _disposed = true; _lifetime.Cancel(); StopGame();
+        _disposed = true; _lifetime.Cancel();
+        if (_session is not null) { await _session.DisposeAsync(); _session = null; }
+        StopGame();
         if (_reference is not null) await JsRuntime.InvokeVoidAsync("menuDetachText");
         _reference?.Dispose(); _lifetime.Dispose();
         if (_platform is not null) await _platform.DisposeAsync();
