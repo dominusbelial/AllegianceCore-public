@@ -363,6 +363,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _speedPlate = default;
         _throttleCaptionBox = default;
         _throttleBandLeft = 0f;
+        _trainingBox = default;
         // P1039 — the per-frame furniture/readout registry the placement rules read.
         ClearFurniture();
 
@@ -379,6 +380,11 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                     // (docked/dead/command/no own ship) clears it without
                     // inventing values.
                     _attitude.Update(model.Context.FlightReference);
+                    // P1040c — the shared training callout's measured text block is resolved
+                    // BEFORE the ladder: its anchor is native (indicator.cpp:461-701) and may
+                    // not move, so Jet's own ladder furniture yields to it (see DrawPitchLadder).
+                    _trainingBox = TryTrainingCallout(model, w, h, scale,
+                        out TrainingCalloutGeometry callout, out _) ? callout.Box : default;
                     DrawHeadingTape(w, h, scale);
                     DrawPitchLadder(w, h, scale);
                 }
@@ -591,6 +597,15 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         Vector2 center = new(w * 0.5f, h * 0.5f);
         float stroke = _painter.Stroke;
         _painter.Element("ladder");
+        // P1040c — Jet yields to the shared training callout: while a callout is up, any rung,
+        // rung numeral or the current-pitch caption whose INK would cross the callout's measured
+        // text block is not drawn this frame (the callout's anchor is native and may not move).
+        // Each stroke is tested with its full INK width (the line plus its keyline allowance),
+        // which is exactly what the layout audit measures a crossing with, so a stroke whose
+        // centre line only grazes the block is withdrawn too.
+        bool yields = _trainingBox.Width > 0f && _trainingBox.Height > 0f;
+        RectangleF calloutAvoid = yields ? CalloutAvoid(stroke) : default;
+        RectangleF calloutAvoidTick = yields ? CalloutAvoid(_painter.Hairline) : default;
 
         int limit = (int)JetFlightGeometry.LadderLimitDegrees;
         int step = fineRungs ? (int)JetFlightGeometry.LadderFineStepDegrees
@@ -613,6 +628,8 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
             {
                 // 5° refinement tick: short, dim, never labelled.
                 Vector2 shortHalf = new(cosA * halfWidth * 0.45f, sinA * halfWidth * 0.45f);
+                if (yields && JetFlightGeometry.SegmentHitsBox(at - shortHalf, at + shortHalf, calloutAvoidTick))
+                    continue;
                 _painter.Line(at - shortHalf, at + shortHalf, _painter.Hairline, _painter.Dim);
                 continue;
             }
@@ -624,24 +641,37 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 // and the FPM (the gap stays centred on the ladder axis, i.e. the
                 // boresight column, at every pitch).
                 Vector2 gap = new(cosA * HorizonGapHalfWidth * scale, sinA * HorizonGapHalfWidth * scale);
+                if (yields && (JetFlightGeometry.SegmentHitsBox(at - half, at - gap, calloutAvoid)
+                    || JetFlightGeometry.SegmentHitsBox(at + gap, at + half, calloutAvoid)))
+                    continue;
                 _painter.Line(at - half, at - gap, stroke, ink);
                 _painter.Line(at + gap, at + half, stroke, ink);
             }
-            else if (belowPlane)
-                DashedLine(at - half, at + half, stroke, ink);   // dashed below the sector plane
             else
-                _painter.Line(at - half, at + half, stroke, ink);
+            {
+                if (yields && JetFlightGeometry.SegmentHitsBox(at - half, at + half, calloutAvoid)) continue;
+                if (belowPlane)
+                    DashedLine(at - half, at + half, stroke, ink);   // dashed below the sector plane
+                else
+                    _painter.Line(at - half, at + half, stroke, ink);
+            }
             // Labels stay horizontal even when the ladder rolls.
             string label = RungLabels[(rungPitch + limit) / (int)JetFlightGeometry.LadderStepDegrees];
             Vector2 size = _painter.Measure(label, large: false, scale);
             float leftX = at.X - width - size.X - 4f * scale;
             float rightX = at.X + width + 4f * scale;
             float labelY = at.Y - size.Y * 0.5f;
-            _painter.Text(label, new(leftX, labelY), large: false, scale, ink);
-            _painter.Text(label, new(rightX, labelY), large: false, scale, ink);
-            // P1039 — every numeral is fixed furniture (a readout may not be placed over it).
-            AddFurniture(new RectangleF(leftX, labelY, size.X, size.Y));
-            AddFurniture(new RectangleF(rightX, labelY, size.X, size.Y));
+            if (!yields || !JetRadarLabels.Intersects(new RectangleF(leftX, labelY, size.X, size.Y), _trainingBox))
+            {
+                _painter.Text(label, new(leftX, labelY), large: false, scale, ink);
+                // P1039 — every numeral is fixed furniture (a readout may not be placed over it).
+                AddFurniture(new RectangleF(leftX, labelY, size.X, size.Y));
+            }
+            if (!yields || !JetRadarLabels.Intersects(new RectangleF(rightX, labelY, size.X, size.Y), _trainingBox))
+            {
+                _painter.Text(label, new(rightX, labelY), large: false, scale, ink);
+                AddFurniture(new RectangleF(rightX, labelY, size.X, size.Y));
+            }
         }
 
         // Off-scale chevrons: the ladder has run past its last usable rung.
@@ -662,8 +692,22 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         Vector2 pitchSize = _painter.Measure(_pitchText, large: false, scale);
         float pitchX = center.X - pitchSize.X * 0.5f;
         float pitchY = center.Y + span * pxPerDegree + 20f * scale;
+        // P1040c — the caption yields to a shared training callout like the rungs do.
+        if (yields && JetRadarLabels.Intersects(new RectangleF(pitchX, pitchY, pitchSize.X, pitchSize.Y), _trainingBox))
+            return;
         _painter.Text(_pitchText, new(pitchX, pitchY), large: false, scale, _painter.Dim);
         AddFurniture(new RectangleF(pitchX, pitchY, pitchSize.X, pitchSize.Y));
+    }
+
+    /// <summary>P1040c — the training callout's block inflated by the full ink width of a
+    /// <paramref name="width"/>-px stroke (half the line plus its keyline allowance), so a
+    /// ladder mark whose centre line only grazes the callout is withdrawn as well.</summary>
+    private RectangleF CalloutAvoid(float width)
+    {
+        float ink = MathF.Max(width, _painter.Hairline);
+        float pad = ink * 0.5f + _painter.LineKeylineAllowance(ink);
+        return new RectangleF(_trainingBox.X - pad, _trainingBox.Y - pad,
+            _trainingBox.Width + 2f * pad, _trainingBox.Height + 2f * pad);
     }
 
     /// <summary>One off-scale chevron: two strokes forming a "V" along the ladder's

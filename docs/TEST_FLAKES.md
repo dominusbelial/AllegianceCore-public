@@ -4,6 +4,24 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1040c gate observations — 2026-11-17 UTC
+
+The P1040c gate ran one Fast sweep on the final tree (`tiers-20261117T135903.252301Z`): **15,137 cases in
+550.4 s, 4 failed / 7 not executed**, the infrastructure checks passed, and 7 executions exceeded the calibrated
+10 s limit (all passed, timing only). The change is Jet presentation only (`Rendering/Jet/`, the HUD proof tool
+and the skin tests): `git diff -- src/Allegiance.Core src/Allegiance.Server` is empty, so no Core, server, sim,
+clock, mining, throttle or broadcast path is touched. All four failures pass **3/3 alone** on the changed tree:
+
+| Exact case | Failure in the sweep | Three repetitions alone | Diagnosis |
+|---|---|---|---|
+| `P985RemoteTimelineTests.Pose_queries_allocate_no_managed_bytes` | 6,088 B over the steady window (expected 0), 29 ms | **pass / pass / pass** (~11 ms each) | Allocation-measurement-under-load family (the ledgered `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` records 6,072 B in a P1039c sweep and passes 3/3 alone); no timeline path changed. |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | `B never saw A's death` after 2,500 ticks, 4 s | **pass / pass / pass** | Already ledgered asynchronous remote death-receipt family (rows above). |
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` | Expected 16, got 640 | **pass / pass / pass** | Already ledgered live throttle-state family (row above). |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | two queued ASTEROID_MINED after the capacity receipt | **pass / pass / pass** | Already ledgered intermittent mining-receipt family (many rows above). |
+
+The 7 timing-only exceedances were the Jet allocation tests (11.7 s and 12.8 s — they run 20,000 frames by
+design) and five civ/loadout scans at 13.9–16.4 s; all passed.
+
 ## P1039c gate observations — 2026-11-17 UTC
 
 The P1039c gate ran two Fast sweeps. The **final-tree** sweep (after the last source edit,

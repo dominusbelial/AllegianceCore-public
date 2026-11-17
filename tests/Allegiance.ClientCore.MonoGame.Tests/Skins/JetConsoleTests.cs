@@ -668,6 +668,239 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
         }
     }
 
+    // ── P1040c: the CMD wing cell, the bounded bottom band, the pod word gap ──────
+
+    [Fact]
+    public void The_lifepod_compact_row_separates_LIFEPOD_and_OXY_by_the_word_gap()
+    {
+        // P1040c defect 4: at 800x480 the 5 px unit word gap scales to 3.3 px and the baked
+        // face's tight glyph cells close it up, so `LIFEPOD` and `OXY` read as one run.
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel pod = PodModel();
+        jet.Draw(pod, Frame(800, 480));           // the console column rides the HUD pass
+        RectangleF block = jet.LifepodBox;
+        TextRun lifepod = surface.RunsOf("LIFEPOD").First(r => Inside(r, block));
+        // The stores block also prints an `OXY` row; take the pod block's own.
+        TextRun oxy = surface.RunsOf("OXY").First(r => Inside(r, block));
+        Assert.Equal(lifepod.Y, oxy.Y, 2);                       // one compact row
+        float gap = oxy.X - (lifepod.X + lifepod.Width);
+        float fieldGap = JetConsoleLayout.PodFieldGapAt(ScaleFor(480));
+        Assert.True(gap >= fieldGap - 0.5f,
+            $"LIFEPOD/OXY gap {gap:0.##} px is below the {fieldGap:0.##} px field gap");
+        // The row still fits the column it belongs to.
+        Assert.True(oxy.X + oxy.Width <= jet.LifepodBox.X + jet.LifepodBox.Width + 0.5f);
+    }
+
+    [Fact]
+    public void The_wing_combo_plate_is_drawn_between_the_verb_bar_strokes_and_its_words()
+    {
+        // P1040c defect 1: the native `WingCombo` cell (216,8,54,42) overlaps the verb bar
+        // (`VerbsBB` at (2,38,268,54)): the bar's top edge and the MINE|BLD divider run through
+        // `DELTA`. The fix paints the wing cell's near-opaque plate after those strokes and
+        // before its words — the native paint order (WingCombo is drawn after VerbsBB,
+        // Game1.Commanding.cs:355-382).
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = CommandModel(1f, wing: 8, recipient: 3, verb: 4);
+        jet.Draw(model, Frame(800, 480));
+        jet.DrawCommand(model);
+        RectangleF panel = jet.CommandPanel;
+        RectangleF cell = new(panel.X + JetCommandConsole.WingCell.X, panel.Y + JetCommandConsole.WingCell.Y,
+            JetCommandConsole.WingCell.Width, JetCommandConsole.WingCell.Height);
+        // The overlap is native geometry: cell frames of OTHER cells cross the wing cell's interior.
+        // Inset past the 2 px frame strokes: the cell's OWN border is not a crossing.
+        var inner = new RectangleF(cell.X + 3f, cell.Y + 3f, cell.Width - 6f, cell.Height - 6f);
+        List<Stroke> crossing = surface.Segments
+            .Where(s => s.Element == "cmd" && StrokeHitsBox(s, inner)).ToList();
+        Assert.NotEmpty(crossing);
+        // One near-opaque plate covers the cell, drawn after every crossing stroke.
+        Fill plate = surface.Fills.Single(f => f.Tint.A >= 240
+            && f.Box.X <= cell.X + 0.5f && f.Box.Y <= cell.Y + 0.5f
+            && f.Box.X + f.Box.Width >= cell.X + cell.Width - 0.5f
+            && f.Box.Y + f.Box.Height >= cell.Y + cell.Height - 0.5f);
+        Assert.All(crossing, s => Assert.True(plate.Seq > s.Seq,
+            $"a cmd stroke at {s.A.X:0.#},{s.A.Y:0.#} is drawn after the wing cell's plate"));
+        // And before the words it backs (so no stroke is left over the ink).
+        TextRun delta = surface.RunsOf("DELTA").Single();
+        Assert.True(delta.Seq > plate.Seq, "DELTA is drawn before its cell's plate");
+        Assert.True(delta.X >= cell.X - 1.5f && delta.X + delta.Width <= cell.X + cell.Width + 1.5f);
+        Assert.True(delta.Y >= cell.Y - 1.5f && delta.Y + delta.Height <= cell.Y + cell.Height + 1.5f);
+        // The drawn cell is still the native rectangle the hit test resolves.
+        Assert.Equal(CommandBarLayout.WingLeft, JetCommandConsole.WingCell.X);
+        Assert.Equal(CommandBarLayout.WingTop, JetCommandConsole.WingCell.Y);
+        Assert.Equal(CommandBarLayout.WingWidth, JetCommandConsole.WingCell.Width);
+        Assert.Equal(CommandBarLayout.WingHeight, JetCommandConsole.WingCell.Height);
+    }
+
+    [Fact]
+    public void A_click_in_the_wing_combo_overlap_resolves_to_the_wing_in_the_native_order()
+    {
+        // P1040c — the wing combo and the last verb column overlap (native geometry). The
+        // production picker tests the wing combo FIRST (`Game1.Commanding.cs:399-437`, the
+        // console.cpp:748-763 event order with the later-painted combo on top), so a click in
+        // the overlap is the WING control in both renderers; the fix must not change that.
+        RectangleF wing = JetCommandConsole.WingCell;
+        RectangleF verb = JetCommandConsole.VerbCell(JetCommandConsole.VerbCount - 1);
+        int lowestVerbRow = CommandBarLayout.VerbsTop;
+        int x = (int)MathF.Max(wing.X + 2f, verb.X + 2f);
+        int y = lowestVerbRow + 4;
+        Assert.True(x < wing.X + wing.Width && x < verb.X + verb.Width);
+        Assert.True(y < wing.Y + wing.Height, "the overlap point is not inside the wing combo");
+        Assert.True(x >= verb.X && x < verb.X + verb.Width, "the overlap point is not inside the verb cell");
+        Assert.True(CommandBarLayout.InWingCombo(x, y));
+        Assert.True(CommandBarLayout.VerbColumn(x, y) >= 0);
+
+        JetCommandControl hit = JetCommandConsole.HitTest(x, y);
+        Assert.Equal(JetCommandControlKind.Wing, hit.Kind);
+        int classic = CommandBarLayout.InWingCombo(x, y) ? 0
+            : CommandBarLayout.VerbColumn(x, y) >= 0 ? 1 : 2;      // the production order
+        Assert.Equal(0, classic);
+        // The action is the wing's own (the combo advances to the next wing name).
+        Assert.Equal("wing command", JetCommandConsole.ActionWord(hit, 8));
+    }
+
+    [Fact]
+    public void The_command_view_bottom_rows_keep_the_selected_weapon_and_the_boost_state()
+    {
+        // P1040c defect 2: in the command view the CMD panel bounds the bottom band, and at
+        // 800x480 the flight-parts row was cut to `WEAPONS: GROUP  BOOST: O...` — the selected
+        // weapon (`[1:Plasma]`) and the boost state were lost. The stated compact form keeps
+        // them whole: `WPN GROUP [1:Plasma] BST ON`.
+        const string parts = "WEAPONS: GROUP  BOOST: ON  [1:Plasma]  PART: Plasma @2 x3";
+        const string cargo = "CARGO: @1#33x3 @2#35x1  >> SELECTED mount 0 Part #33 x3 (Ctrl+, drop)";
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = HudModelAdapter.Create(Frame(260f, .6f, 1920, 1080), CameraMode.Command,
+            commandView: true, flightReference: Reference(0f, 0f, 45f),
+            chat: Chat(new[] { "[TEAM] A: b" }),
+            console: new HudConsoleText { SectorName = "Alystra" },
+            commandPaneSlide: 1f, commandWing: 8, commandLines: new[] { "COMMAND SHIP: Scout" },
+            cargoLine: cargo, flightPartsLine: parts);
+        jet.Draw(model, Frame(800, 480));
+        jet.DrawCommand(model);
+        jet.DrawConsole(model);
+
+        string flightParts = surface.Seen.First(t => t.StartsWith("WPN", StringComparison.Ordinal)
+            || t.StartsWith("WEAPONS:", StringComparison.Ordinal));
+        // Group, selected weapon and boost state are all present and none is cut.
+        Assert.Contains("GROUP", flightParts);
+        Assert.Contains("[1:Plasma]", flightParts);
+        Assert.Contains("ON", flightParts);
+        Assert.DoesNotContain("...", flightParts);
+        // The compact row stays left of the CMD panel.
+        TextRun partsRun = surface.RunsOf(flightParts)[0];
+        Assert.True(partsRun.X + partsRun.Width <= jet.FlightPartsBox.X + jet.FlightPartsBox.Width + 0.5f);
+
+        // The cargo row keeps its occupancy and its item when the band is bounded.
+        string cargoDrawn = surface.Seen.First(t => t.StartsWith("CARGO", StringComparison.Ordinal));
+        Assert.Contains("CARGO", cargoDrawn);
+        Assert.Contains("@1#33x3", cargoDrawn);
+        Assert.DoesNotContain("...", cargoDrawn);
+    }
+
+    [Fact]
+    public void A_training_callout_withdraws_only_the_ladder_furniture_it_would_cross()
+    {
+        // P1040c defect 3: the shared callout (`PUSH V TO TOGGLE MOUSE CONTROL`) is drawn across
+        // the `-20` rung numerals at 1920x1080. Its anchor is native (indicator.cpp:634-641) and
+        // may not move, so Jet's ladder furniture yields: a rung, a rung numeral or the caption
+        // whose ink would cross the callout's measured block is not drawn that frame. Every
+        // overlay at both required resolutions is checked.
+        // Every overlay the shared table defines (23); 12's native absolute anchor puts its
+        // callout off-screen at 800×480, where the check is then vacuous but harmless.
+        int[] overlays = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+        foreach ((int w, int h) in new[] { (1920, 1080), (800, 480) })
+            foreach (int overlay in overlays)
+            {
+                string where = $"{overlay} at {w}x{h}";
+                var with = new Recorder();
+                RectangleF box;
+                using (var jet = Jet(with))
+                {
+                    jet.Draw(Model(Chat(new[] { "[TEAM] A: b" }), trainingOverlay: overlay), Frame(w, h));
+                    box = jet.TrainingCalloutBox;
+                }
+                Assert.True(box.Width > 0f && box.Height > 0f, $"{where}: no callout box");
+                Assert.Contains(HudTrainingCallout.For(overlay)!.Value.Description, with.Seen);
+                // Nothing Jet's ladder OWNS is drawn across the callout's ink.
+                foreach (Stroke stroke in with.Segments)
+                {
+                    if (!string.Equals(stroke.Element, "ladder", StringComparison.Ordinal)) continue;
+                    Assert.False(StrokeHitsBox(stroke, box),
+                        $"{where}: a ladder stroke crosses the callout {box.X:0.#},{box.Y:0.#} "
+                        + $"{box.Width:0.#}x{box.Height:0.#} at {stroke.A.X:0.#},{stroke.A.Y:0.#}->"
+                        + $"{stroke.B.X:0.#},{stroke.B.Y:0.#} w{stroke.Width:0.#}");
+                }
+                foreach (TextRun run in with.AllRuns)
+                {
+                    if (!string.Equals(run.Element, "ladder", StringComparison.Ordinal)) continue;
+                    Assert.False(Overlaps(new RectangleF(run.X, run.Y, run.Width, run.Height), box),
+                        $"{where}: ladder text {run.Text} crosses the callout");
+                }
+
+                // The same frame WITHOUT a callout shows what the ladder would have drawn:
+                // every one of its marks is either still drawn or is exactly the withdrawn
+                // crossing (nothing else may disappear).
+                var without = new Recorder();
+                using (var jet = Jet(without))
+                    jet.Draw(Model(Chat(new[] { "[TEAM] A: b" })), Frame(w, h));
+                foreach (Stroke stroke in without.Segments)
+                {
+                    if (!string.Equals(stroke.Element, "ladder", StringComparison.Ordinal)) continue;
+                    // A mark is "crossing" when its place crosses under ANY of its two passes (the
+                    // keyline under-stroke is the wider one); presence is judged by place, so the
+                    // keyline/ink pair is one mark.
+                    bool crosses = without.Segments.Any(t => SameStroke(t, stroke) && StrokeHitsBox(t, box));
+                    bool drawn = with.Segments.Any(s => SameStroke(s, stroke));
+                    if (crosses) Assert.False(drawn, $"{where}: a crossing rung is still drawn");
+                    else Assert.True(drawn, $"{where}: a clear rung disappeared");
+                }
+            }
+    }
+
+    private static bool SameStroke(Stroke a, Stroke b)
+        => MathF.Abs(a.A.X - b.A.X) < 0.01f && MathF.Abs(a.A.Y - b.A.Y) < 0.01f
+            && MathF.Abs(a.B.X - b.B.X) < 0.01f && MathF.Abs(a.B.Y - b.B.Y) < 0.01f;
+
+    /// <summary>Does a stroke's ink cross <paramref name="box"/> (Liang–Barsky slab clip)?</summary>
+    private static bool StrokeHitsBox(Stroke stroke, RectangleF box)
+    {
+        float pad = stroke.Width * 0.5f;
+        float x0 = box.X - pad, y0 = box.Y - pad;
+        float x1 = box.X + box.Width + pad, y1 = box.Y + box.Height + pad;
+        float dx = stroke.B.X - stroke.A.X, dy = stroke.B.Y - stroke.A.Y;
+        if (MathF.Abs(dx) < 1e-5f && MathF.Abs(dy) < 1e-5f)
+            return stroke.A.X >= x0 && stroke.A.X <= x1 && stroke.A.Y >= y0 && stroke.A.Y <= y1;
+        float t0 = 0f, t1 = 1f;
+        return Clip(-dx, stroke.A.X - x0, ref t0, ref t1)
+            && Clip(dx, x1 - stroke.A.X, ref t0, ref t1)
+            && Clip(-dy, stroke.A.Y - y0, ref t0, ref t1)
+            && Clip(dy, y1 - stroke.A.Y, ref t0, ref t1) && t0 <= t1;
+    }
+
+    private static bool Clip(float p, float q, ref float t0, ref float t1)
+    {
+        if (MathF.Abs(p) < 1e-6f) return q >= 0f;
+        float r = q / p;
+        if (p < 0f)
+        {
+            if (r > t1) return false;
+            if (r > t0) t0 = r;
+        }
+        else
+        {
+            if (r < t0) return false;
+            if (r < t1) t1 = r;
+        }
+        return true;
+    }
+
+    /// <summary>Is a run's box inside <paramref name="block"/>?</summary>
+    private static bool Inside(TextRun run, RectangleF block)
+        => run.X >= block.X - 0.5f && run.X + run.Width <= block.X + block.Width + 0.5f
+            && run.Y >= block.Y - 0.5f && run.Y + run.Height <= block.Y + block.Height + 0.5f;
+
     /// <summary>Do two boxes share more than a half pixel in each axis?</summary>
     private static bool Overlaps(RectangleF a, RectangleF b)
     {
@@ -852,23 +1085,46 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
     private static HudSkinResources NoopResources { get; } = new(
         _ => { }, (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
 
-    public readonly record struct TextRun(string Text, float X, float Y, float Width, float Height);
+    /// <summary>P1040c — one recorded run, with the element that drew it and its draw order.</summary>
+    public readonly record struct TextRun(string Text, float X, float Y, float Width, float Height,
+        string? Element = null, int Seq = 0);
 
-    private sealed class Recorder : IJetVectorSurface
+    /// <summary>P1040c — one recorded stroke, with the element that drew it and its draw order.</summary>
+    public readonly record struct Stroke(Vector2 A, Vector2 B, float Width, string? Element, int Seq);
+
+    /// <summary>P1040c — one recorded fill (plate/bar), with its tint and draw order.</summary>
+    public readonly record struct Fill(RectangleF Box, Color Tint, int Seq);
+
+    private sealed class Recorder : IJetVectorSurface, IJetElementAudit
     {
         private readonly List<TextRun> _runs = new();
-        private readonly List<(Vector2 A, Vector2 B)> _segments = new();
+        private readonly List<Stroke> _strokes = new();
+        private readonly List<Fill> _fills = new();
         private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
         private readonly HashSet<string> _large = new(StringComparer.Ordinal);
+        private string? _element;
+        private int _seq;
 
         public IReadOnlySet<string> Seen => _seen;
         public IReadOnlySet<string> LargeRuns => _large;
-        public IReadOnlyList<(Vector2 A, Vector2 B)> Segments => _segments;
+        public IReadOnlyList<Stroke> Segments => _strokes;
+        public IReadOnlyList<Fill> Fills => _fills;
+        public IReadOnlyList<TextRun> AllRuns => _runs;
 
         public void Begin() { }
         public void End() { }
-        public void Line(Vector2 a, Vector2 b, float width, Color color) => _segments.Add((a, b));
-        public void Fill(Vector2 min, Vector2 size, Color color) { }
+
+        /// <summary>P1040c — the element stamp (the renderer announces each block once).</summary>
+        public void Element(string id) => _element = id;
+
+        /// <summary>P1040c — the drawn-result channel is not read by these tests.</summary>
+        public void Drawn(string id) { }
+
+        public void Line(Vector2 a, Vector2 b, float width, Color color)
+            => _strokes.Add(new Stroke(a, b, width, _element, _seq++));
+
+        public void Fill(Vector2 min, Vector2 size, Color color)
+            => _fills.Add(new Fill(new RectangleF(min.X, min.Y, size.X, size.Y), color, _seq++));
 
         public void Text(string text, Vector2 position, bool large, float scale, Color color)
         {
@@ -880,11 +1136,11 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
                 TextRun run = _runs[i];
                 if (run.Text == text && MathF.Abs(run.X - position.X) <= 2.5f && MathF.Abs(run.Y - position.Y) <= 2.5f)
                 {
-                    _runs[i] = new TextRun(text, position.X, position.Y, size.X, size.Y);
+                    _runs[i] = new TextRun(text, position.X, position.Y, size.X, size.Y, _element, _seq++);
                     return;
                 }
             }
-            _runs.Add(new TextRun(text, position.X, position.Y, size.X, size.Y));
+            _runs.Add(new TextRun(text, position.X, position.Y, size.X, size.Y, _element, _seq++));
         }
 
         public Vector2 Measure(string text, bool large, float scale)

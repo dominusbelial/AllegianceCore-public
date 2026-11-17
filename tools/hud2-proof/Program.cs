@@ -524,6 +524,11 @@ sealed class Proof : Game
             ("jet-training", 800, 480, "bright"),
             ("jet-rollcue", 1920, 1080, "dark"),
             ("jet-rollcue", 800, 480, "dark"),
+            // P1040c — the roll lesson on the bright backdrop too, so every training scene
+            // (jet-training overlay 17 + the roll lesson) has dark+bright evidence at both
+            // required resolutions.
+            ("jet-rollcue", 1920, 1080, "bright"),
+            ("jet-rollcue", 800, 480, "bright"),
         };
         static object Box(RectangleF box) => new { x = box.X, y = box.Y, w = box.Width, h = box.Height };
         List<object> Furniture()
@@ -717,11 +722,16 @@ sealed class Proof : Game
                     // P1040b — the bottom band and the diagnostic rows at this frame's scale.
                     hint = Box(_jetAudit.HintBox),
                     hintClear = _jetAudit.HintClear,
+                    // P1040c — the shared training callout's measured text block and the lifepod
+                    // block's own rows (the word-gap evidence).
+                    callout = Box(_jetAudit.TrainingCalloutBox),
+                    podRows = _jetAuditSurface!.RunsInside(_jetAudit.LifepodBox),
                     tips = Box(_jetAudit.TipBlock),
                     tipRows = _jetAuditSurface!.TextsInside(_jetAudit.TipBlock),
                     cargo = Box(_jetAudit.CargoBox),
                     flightParts = Box(_jetAudit.FlightPartsBox),
                     cargoTexts = _jetAuditSurface!.TextsInside(_jetAudit.CargoBox),
+                    flightPartsTexts = _jetAuditSurface!.TextsInside(_jetAudit.FlightPartsBox),
                     chatLines = model.Context.Chat?.Lines.Count ?? 0,
                     chatOffset = model.Context.Chat?.Offset ?? 0,
                     composeState = model.Context.Chat?.ComposeState.ToString(),
@@ -765,6 +775,8 @@ sealed class Proof : Game
         // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
         int inPlate = 0, cueHits = 0, legible = 0, cross = 0, same = 0, overGlyph = 0, strokeText = 0, plates = 0;
+        int calloutCrossed = 0;
+        var calloutScenes = new List<string>();
         int radarPlaced = 0, radarShortened = 0, radarHidden = 0, radarOverflow = 0, radarMisses = 0, radarWords = 0;
         int radarPriorityHidden = 0;
         foreach (var scene in summaries)
@@ -782,6 +794,9 @@ sealed class Proof : Game
             overGlyph += layout.TextOverGlyph;
             strokeText += layout.StrokeThroughText;
             plates += layout.RadarPlates;
+            calloutCrossed += layout.CalloutCrossed;
+            if (layout.CalloutCrossed > 0)
+                calloutScenes.Add($"{scene.GetType().GetProperty("scene")!.GetValue(scene)}:{layout.CalloutCrossed}");
             object? radar = scene.GetType().GetProperty("radar")!.GetValue(scene);
             if (radar is null) continue;
             var type = radar.GetType();
@@ -807,8 +822,11 @@ sealed class Proof : Game
         Console.WriteLine($"HUD2_JET_ELEMENTS element-missing {missingTotal} over {scenes.Length} scenes"
             + (missingScenes.Count > 0 ? " [" + string.Join(", ", missingScenes) + "]" : ""));
         Console.WriteLine($"HUD2_JET_CONSOLE hint-blocked {hintBlocked}, cmd-cell leaks {cellLeaks} over {scenes.Length} scenes");
+        // P1040c — Jet furniture drawn across a shared training callout's ink (must be 0).
+        Console.WriteLine($"HUD2_JET_CALLOUT callout-crossed {calloutCrossed} over {scenes.Length} scenes"
+            + (calloutScenes.Count > 0 ? " [" + string.Join(", ", calloutScenes) + "]" : ""));
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
-        return missingTotal == 0 && hintBlocked == 0 && cellLeaks == 0 ? 0 : 1;
+        return missingTotal == 0 && hintBlocked == 0 && cellLeaks == 0 && calloutCrossed == 0 ? 0 : 1;
     }
 
     /// <summary>
@@ -2635,7 +2653,13 @@ sealed class Proof : Game
                         // The instrument's own marks (same element) and world-anchored markers
                         // (order arrows over the ladder, native by design) stay exempt.
                         if (!IsFixedInstrumentStroke(stroke.Element)) continue;
-                        if (string.Equals(stroke.Element, text.Element, StringComparison.Ordinal)) continue;
+                        // P1040c — the own-element exemption covers an instrument's OWN mark (a
+                        // rung under the numeral it labels). The CMD panel draws its grid FRAMES
+                        // and its words from one element (`cmd`), so that exemption hid the verb
+                        // bar's top edge running through `DELTA` (the P1040b `DEL`/`TA`): a frame
+                        // stroke is the grid the word sits in, never the word's own mark.
+                        if (string.Equals(stroke.Element, text.Element, StringComparison.Ordinal)
+                            && !IsGridElement(stroke.Element)) continue;
                         if (IsInstrumentFurniture(text.Element ?? "") || IsWorldMarker(text.Element)) continue;
                         // A near-opaque plate drawn AFTER the stroke and BEFORE the run hides
                         // the instrument behind the run (the F4 pane's 0.97 backing): the rung
@@ -2660,6 +2684,42 @@ sealed class Proof : Game
                     strokeHits.Add($"{text.Element}:{text.Text}@{text.X:0.#},{text.Y:0.#} x "
                         + $"stroke[{stroke.Element}] {stroke.A.X:0.#},{stroke.A.Y:0.#}->{stroke.B.X:0.#},{stroke.B.Y:0.#} w{stroke.Width:0.#}");
                 }
+
+            // ── P1040c: callout-crossed ─────────────────────────────────────
+            // The shared training callout's POSITION is native (HudTrainingCallout,
+            // indicator.cpp:461-701) and may not move, so it keeps its exemption in the
+            // text-overlap classes. Jet's own furniture, however, must YIELD: this class counts
+            // every Jet instrument stroke or run that is drawn across a callout's ink box. P1040b
+            // read 0 for the `-20` rung numerals crossed at 1920x1080 because the pair
+            // callout-vs-ladder was exempt from both sides ("fixed instrument furniture"), and
+            // the rungs are drawn before the callout's run.
+            var calloutHits = new List<string>();
+            foreach (LayoutBox callout in _texts)
+            {
+                if (!string.Equals(callout.Element, "training", StringComparison.Ordinal)) continue;
+                float inkTop = callout.Y + callout.H * InkTopFraction + 1f;
+                float inkBottom = callout.Y + callout.H * InkBottomFraction - 1f;
+                if (inkBottom <= inkTop) continue;
+                foreach (LayoutStroke stroke in _strokes)
+                {
+                    if (!IsJetFurniture(stroke.Element)) continue;
+                    // A near-opaque plate drawn after the stroke and before the callout's run
+                    // hides the stroke under the callout (the same rule stroke-vs-text uses).
+                    if (OpaquePlateBetween(callout, stroke.Seq)) continue;
+                    float pad = stroke.Width * 0.5f;
+                    if (!SegmentHitsBox(stroke.A, stroke.B, callout.X - pad, inkTop - pad,
+                        callout.X + callout.W + pad, inkBottom + pad)) continue;
+                    calloutHits.Add($"callout:{callout.Text}@{callout.X:0.#},{callout.Y:0.#} x "
+                        + $"stroke[{stroke.Element}] {stroke.A.X:0.#},{stroke.A.Y:0.#}->{stroke.B.X:0.#},{stroke.B.Y:0.#}");
+                }
+                foreach (LayoutBox other in _texts)
+                {
+                    if (!IsJetFurniture(other.Element)) continue;
+                    if (!Intersects(callout, other)) continue;
+                    calloutHits.Add($"callout:{callout.Text}@{callout.X:0.#},{callout.Y:0.#} x "
+                        + $"{other.Element}:{other.Text}@{other.X:0.#},{other.Y:0.#} {other.W:0.#}x{other.H:0.#}");
+                }
+            }
 
             // ── P1038b: text-outside-plate ─────────────────────────────────
             // Only a plate drawn BEFORE the run can be the plate that run belongs to (a
@@ -2871,7 +2931,8 @@ sealed class Proof : Game
                 offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray(),
                 inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray(),
                 crossOverlaps.Take(4).ToArray(), sameOverlaps.Take(4).ToArray(),
-                overGlyph.Take(4).ToArray(), strokeText.Take(4).ToArray());
+                overGlyph.Take(4).ToArray(), strokeText.Take(4).ToArray(), calloutHits.Count,
+                calloutHits.Take(4).ToArray());
         }
 
         /// <summary>P1039 — the one stated stroke-vs-text exception: the Jet radar's fixed
@@ -2902,11 +2963,24 @@ sealed class Proof : Game
         private static bool IsInstrumentFurniture(string element)
             => element is "ladder" or "order" or "hdg" or "spd" or "thr" or "training";
 
+        /// <summary>P1040c — the elements that ARE fixed instrument furniture even though they
+        /// are not exempt from the callout rule: Jet's own navigation furniture may not be drawn
+        /// across a shared training callout (the callout's position is native and may not move,
+        /// so Jet yields).</summary>
+        private static bool IsJetFurniture(string? element)
+            => element is "ladder" or "hdg" or "spd" or "thr" or "radar";
+
+        /// <summary>P1040c — the elements whose STROKES are a grid, not a run's own mark: the
+        /// CMD panel's cell frames. A frame stroke crossing a word is a strikethrough.</summary>
+        private static bool IsGridElement(string? element) => element is "cmd";
+
         /// <summary>P1040b — the fixed instrument whose STROKES (rungs, rails, graduations,
         /// ring frame) are drawn before every label: a run drawn over one is the hint-over-the-
-        /// ladder class the P1040 audit could not see.</summary>
+        /// ladder class the P1040 audit could not see. P1040c adds the CMD panel: its cell frames
+        /// are drawn before its words, and the native wing combo overlaps the verb bar's band, so
+        /// the verb bar's top edge ran through `DELTA`.</summary>
         private static bool IsFixedInstrumentStroke(string? element)
-            => element is "ladder" or "hdg" or "spd" or "thr" or "radar";
+            => element is "ladder" or "hdg" or "spd" or "thr" or "radar" or "cmd";
 
         /// <summary>P1040b — is <paramref name="text"/> INSIDE a near-opaque plate (alpha
         /// ≥ 240/255, the F4 pane's backing) drawn after <paramref name="strokeSeq"/> and
@@ -3220,5 +3294,5 @@ sealed class Proof : Game
         string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples,
         string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples,
         string[] TextOverlapCrossSamples, string[] TextOverlapSameSamples, string[] TextOverGlyphSamples,
-        string[] StrokeThroughTextSamples);
+        string[] StrokeThroughTextSamples, int CalloutCrossed, string[] CalloutCrossedSamples);
 }

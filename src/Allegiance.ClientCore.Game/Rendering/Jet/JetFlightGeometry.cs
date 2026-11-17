@@ -255,6 +255,44 @@ public static class JetFlightGeometry
     public static bool LadderOffScaleBottom(float pitchDegrees, float halfSpanDegrees)
         => pitchDegrees - halfSpanDegrees < -LadderLimitDegrees;
 
+    /// <summary>
+    /// P1040c — does the segment <paramref name="a"/>→<paramref name="b"/> cross
+    /// <paramref name="box"/>? A Liang–Barsky slab clip: the same test the layout audit uses,
+    /// so a rung the renderer withdraws is exactly a rung the audit would have counted as
+    /// crossing the shared training callout. Allocation-free.
+    /// </summary>
+    public static bool SegmentHitsBox(Vector2 a, Vector2 b, RectangleF box)
+    {
+        if (box.Width <= 0f || box.Height <= 0f) return false;
+        float x0 = box.X, x1 = box.X + box.Width, y0 = box.Y, y1 = box.Y + box.Height;
+        float dx = b.X - a.X, dy = b.Y - a.Y;
+        if (MathF.Abs(dx) < 1e-5f && MathF.Abs(dy) < 1e-5f)
+            return a.X >= x0 && a.X <= x1 && a.Y >= y0 && a.Y <= y1;
+        float t0 = 0f, t1 = 1f;
+        if (!Clip(-dx, a.X - x0, ref t0, ref t1)) return false;
+        if (!Clip(dx, x1 - a.X, ref t0, ref t1)) return false;
+        if (!Clip(-dy, a.Y - y0, ref t0, ref t1)) return false;
+        if (!Clip(dy, y1 - a.Y, ref t0, ref t1)) return false;
+        return t0 <= t1;
+    }
+
+    private static bool Clip(float p, float q, ref float t0, ref float t1)
+    {
+        if (MathF.Abs(p) < 1e-6f) return q >= 0f;
+        float r = q / p;
+        if (p < 0f)
+        {
+            if (r > t1) return false;
+            if (r > t0) t0 = r;
+        }
+        else
+        {
+            if (r < t0) return false;
+            if (r < t1) t1 = r;
+        }
+        return true;
+    }
+
     /// <summary>Offset in px of a tape tick relative to the fixed readout row:
     /// (tick − value) × px per unit. Used by both moving tapes.</summary>
     public static float TapeOffset(float value, float tickValue, float pixelsPerUnit)
