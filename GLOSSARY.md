@@ -1213,6 +1213,34 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
   `docs/reports/JET_RADAR_FIXES_P1039C.md`.
 
+- **Jet console, chat/command, lifecycle and training (P1040, skin story 6/9)** — the console family
+  (P972 slice 3D: §5.5 rows 1-18, §5.3 training callouts, §5.1 roll row, §5.6 command-view summary).
+  `Rendering/Jet/JetConsoleLayout.cs` owns the placement rules: the console's left edge
+  (`ConsoleLeft` 84 units, pushed right of the MEASURED speed readout plate), the native chat-pane box
+  (355 px wide, `8 + rowPitch·ConfiguredLines` tall) below the heading plate and the speed caption with
+  one reserved marker row, the console column's right bound (`min(ladder−6, w/2−190)`), the centred
+  banner span, the pinned tip stack (`h−108`, 19 px) and the native cargo/flight-parts offsets. The
+  chat pane draws the shared `HudChat` window (`ChatLogFormat` lines already carry channel + sender,
+  `LeaderLines` use Jet's LARGER face scaled to the row — the native `largeBoldFont` equivalent, the
+  `Offset` OLDER marker, the filter label, the configured height) and all five
+  `ComposePaneLayout` states with the resolved recipient, the native `|` caret and the shared 0.5 s
+  `ComposeProgress`; typing and focus are untouched. `Rendering/Jet/JetCommandConsole.cs` derives the
+  `CMD` panel's recipient/verb/wing cells from the SAME `CommandBarLayout` rectangles
+  `Game1.Commanding.TryCommandBarPick` hit-tests (precedence wing → verb → recipient; unscaled, so the
+  drawn cell IS the hit rectangle) and the renderer draws them plus the command-view summary
+  (`HudContext.CommandLines` verbatim). `JetHudRenderer.Console.cs` (partial) also draws the console
+  column (`SECTOR`/`VIEWING`, `TURRET / carrier`, `QUE`/`ACC`, `MISSION T-/T+`, `LIFEPOD` + `OXY`
+  segmented endurance + `RETURN`), the vote banner at the native offset (clamped above the ladder's top
+  numeral at 800×480), the three ordinary tips, the P949 controls hint, the thin-vector
+  `HudTrainingCallout` callouts and the ladder roll pointer. New presentation-only context values:
+  `CommandPaneSlide`/`CommandWing`/`CommandRecipientColumn`/`CommandVerb`, `MissionClockSeconds`/
+  `MissionCountdown`, and `HudSkinResources.CommandChrome` (native NORTH + drag rectangle for a skin
+  that owns the console). One display per reading: the vote banner replaced the caution line and the
+  `LIFEPOD` panel owns the pod's OXY endurance, so the caution stack compacts those out. Coverage 76
+  ids; the proof's layout audit is 0 in all 139 scenes (schema 11). Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetConsoleTests.cs`; report:
+  `docs/reports/JET_CONSOLE_P1040.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

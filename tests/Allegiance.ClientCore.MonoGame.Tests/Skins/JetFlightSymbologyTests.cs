@@ -251,8 +251,9 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
         using var jet = Jet(new CountingSurface());
         // P1036's five flight ids are still there; P1037 adds the target, lock,
         // lead/aim and order families; P1038 adds the stores block, the caution
-        // panel and the F4 inventory pane on top (64 ids total).
-        Assert.Equal(64, JetHudRenderer.ElementIds.Count);
+        // panel and the F4 inventory pane; P1040 adds the console/chat/command/
+        // lifecycle/training family (76 ids total).
+        Assert.Equal(76, JetHudRenderer.ElementIds.Count);
         Assert.Equal(JetHudRenderer.ElementIds.OrderBy(id => id, StringComparer.Ordinal),
             jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal));
         Assert.Contains("Velocity direction marker", jet.Coverage);
@@ -453,11 +454,13 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
         Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
-        Assert.Equal(1, resources.Chat);
-        Assert.Equal(1, resources.Cargo);
-        Assert.Equal(1, resources.Parts);
-        Assert.Equal(1, resources.Command);
-        Assert.True(resources.CommandWasClassicComposition);
+        // P1040 — chat/cargo/flight-parts and the command composition are the skin's own;
+        // the host supplies only the command-camera chrome.
+        Assert.Equal(0, resources.Chat);
+        Assert.Equal(0, resources.Cargo);
+        Assert.Equal(0, resources.Parts);
+        Assert.Equal(0, resources.Command);
+        Assert.Equal(1, resources.Chrome);
         Assert.False(resources.TagsWereModern);
 
         if (state == "hidden")
@@ -576,7 +579,7 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
     /// <summary>The shared-pass counters (HudSkinResources is a record of callbacks).</summary>
     private sealed class Counting
     {
-        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts;
+        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts, Chrome;
         public bool TagsWereModern, CommandWasClassicComposition;
         public HudSkinResources Resources { get; }
 
@@ -589,7 +592,10 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
                 (_, classic) => { Command++; CommandWasClassicComposition = classic; },
                 _ => Chat++,
                 _ => Cargo++,
-                _ => Parts++);
+                _ => Parts++)
+            {
+                CommandChrome = _ => Chrome++
+            };
         }
     }
 }

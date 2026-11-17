@@ -479,6 +479,51 @@ sealed class Proof : Game
             ("lifepod", 800, 480, "dark"),
             ("docked", 800, 480, "dark"),
             ("command", 1920, 1080, "dark"),
+            // P1040 — the console/chat/lifecycle/training states at both required
+            // resolutions on dark and bright backdrops, plus one 4K CMD frame.
+            ("jet-chat-long", 1920, 1080, "dark"),
+            ("jet-chat-long", 1920, 1080, "bright"),
+            ("jet-chat-long", 800, 480, "dark"),
+            ("jet-chat-long", 800, 480, "bright"),
+            ("jet-compose-mouse", 1920, 1080, "dark"),
+            ("jet-compose-mouse", 800, 480, "dark"),
+            ("jet-compose-chat", 1920, 1080, "dark"),
+            ("jet-compose-chat", 800, 480, "dark"),
+            ("jet-compose-command", 1920, 1080, "dark"),
+            ("jet-compose-command", 800, 480, "dark"),
+            ("jet-compose-shell", 1920, 1080, "dark"),
+            ("jet-compose-shell", 800, 480, "dark"),
+            ("jet-compose-quick", 1920, 1080, "dark"),
+            ("jet-compose-quick", 800, 480, "dark"),
+            ("jet-cmd", 1920, 1080, "dark"),
+            ("jet-cmd", 1920, 1080, "bright"),
+            ("jet-cmd", 800, 480, "dark"),
+            ("jet-cmd", 800, 480, "bright"),
+            ("jet-cmd", 3840, 2160, "dark"),
+            ("jet-commandview", 1920, 1080, "dark"),
+            ("jet-commandview", 800, 480, "dark"),
+            ("jet-tips", 1920, 1080, "dark"),
+            ("jet-tips", 1920, 1080, "bright"),
+            ("jet-tips", 800, 480, "dark"),
+            ("jet-tips", 800, 480, "bright"),
+            ("jet-orders-text", 1920, 1080, "dark"),
+            ("jet-orders-text", 800, 480, "dark"),
+            ("jet-podoxy", 1920, 1080, "dark"),
+            ("jet-podoxy", 1920, 1080, "bright"),
+            ("jet-podoxy", 800, 480, "dark"),
+            ("jet-podoxy", 800, 480, "bright"),
+            ("jet-ghost", 1920, 1080, "bright"),
+            ("jet-ghost", 800, 480, "bright"),
+            ("jet-turret", 1920, 1080, "dark"),
+            ("jet-turret", 1920, 1080, "bright"),
+            ("jet-turret", 800, 480, "dark"),
+            ("jet-turret", 800, 480, "bright"),
+            ("jet-training", 1920, 1080, "dark"),
+            ("jet-training", 1920, 1080, "bright"),
+            ("jet-training", 800, 480, "dark"),
+            ("jet-training", 800, 480, "bright"),
+            ("jet-rollcue", 1920, 1080, "dark"),
+            ("jet-rollcue", 800, 480, "dark"),
         };
         static object Box(RectangleF box) => new { x = box.X, y = box.Y, w = box.Width, h = box.Height };
         List<object> Furniture()
@@ -503,8 +548,13 @@ sealed class Proof : Game
             GraphicsDevice.Clear(backdrop);
             try
             {
-                // Same frame-boundary call Game1 makes, with no target preview.
-                _jet.Draw(model, new(GraphicsDevice.Viewport, null, false));
+                // Same frame-boundary call Game1 makes, with no target preview, in the
+                // production pass order: HUD, then the command composition, then the
+                // console composition.
+                var drawFrame = new HudDrawFrame(GraphicsDevice.Viewport, null, false);
+                _jet.Draw(model, drawFrame);
+                _jet.DrawCommand(model);
+                _jet.DrawConsole(model);
             }
             finally
             {
@@ -522,7 +572,10 @@ sealed class Proof : Game
             {
                 _jetAuditSurface!.Reset();
                 _jetAudit!.ResetFlightState();
-                _jetAudit.Draw(model, new(GraphicsDevice.Viewport, null, false));
+                var auditFrame = new HudDrawFrame(GraphicsDevice.Viewport, null, false);
+                _jetAudit.Draw(model, auditFrame);
+                _jetAudit.DrawCommand(model);
+                _jetAudit.DrawConsole(model);
                 audit = _jetAuditSurface.Audit(width, height, scale, backdrop);
             }
             finally
@@ -623,6 +676,26 @@ sealed class Proof : Game
                 // was drawn with (the `AUTOVLOCK FLAG` defect's evidence).
                 annunciatorRow = Box(_jetAudit!.AnnunciatorRow),
                 annunciatorWordGap = _jetAudit!.AnnunciatorGap,
+                // P1040 — the console/chat/lifecycle boxes the renderer committed this frame,
+                // so the placement is evidence rather than an assertion.
+                console = new
+                {
+                    chatPane = Box(_jetAudit!.ChatPane),
+                    consoleColumn = Box(_jetAudit.ConsoleColumn),
+                    vote = Box(_jetAudit.VoteBox),
+                    compose = Box(_jetAudit.ComposeBox),
+                    commandPanel = Box(_jetAudit.CommandPanel),
+                    lifepod = Box(_jetAudit.LifepodBox),
+                    chatLines = model.Context.Chat?.Lines.Count ?? 0,
+                    chatOffset = model.Context.Chat?.Offset ?? 0,
+                    composeState = model.Context.Chat?.ComposeState.ToString(),
+                    composeProgress = model.Context.Chat?.ComposeProgress ?? 0f,
+                    paneLines = model.Context.Chat?.PaneLines ?? 0,
+                    missionClock = model.Context.MissionClockSeconds,
+                    missionCountdown = model.Context.MissionCountdown,
+                    commandSlide = model.Context.CommandPaneSlide,
+                    commandView = model.Context.CommandView,
+                },
                 tag = JetHudRenderer.TagText,
             });
         }
@@ -1607,7 +1680,14 @@ sealed class Proof : Game
                     or "jet-radar" or "jet-radar-round" or "jet-radar-dense"
                     or "jet-radar-dense-round" or "jet-radar-kinds" or "jet-radar-nobearing"
                     or "jet-radar-All" or "jet-radar-Default" or "jet-radar-Target" or "jet-radar-Minimal"
+                    // P1040 — the console/chat/lifecycle/training scenes fly level, heading 045.
+                    or "jet-chat-long" or "jet-compose-mouse" or "jet-compose-chat"
+                    or "jet-compose-command" or "jet-compose-shell" or "jet-compose-quick"
+                    or "jet-cmd" or "jet-commandview" or "jet-tips" or "jet-orders-text"
+                    or "jet-podoxy" or "jet-turret" or "jet-training"
                     => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
+                // P1040 — the roll pointer scene carries a real bank so the mark is off-centre.
+                "jet-rollcue" => (FlightReference(4f, -28f, 45f), 260f, .6f, false),
                 _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown Jet scene"),
             };
         }
@@ -1661,6 +1741,7 @@ sealed class Proof : Game
                     };
                     break;
                 case "jet-pod":
+                case "jet-podoxy":
                     frame = frame with
                     {
                         IsAdriftLifepod = true, OxygenSecondsRemaining = 95,
@@ -1747,11 +1828,67 @@ sealed class Proof : Game
         }
         if (scenario.StartsWith("jet-radar", StringComparison.Ordinal))
             contacts = JetRadarContacts(mode, scenario, w, h);
+        // P1040 — the console/chat/lifecycle/training scenes. The chat window, the compose
+        // state and the console text are the SAME shared-model values the live client builds
+        // (BuildChatModel/BuildConsoleText); only which of them is present changes per scene.
+        bool jetChatLong = scenario == "jet-chat-long";
+        NativeComposeState composeState = scenario switch
+        {
+            "jet-compose-mouse" => NativeComposeState.MouseCommand,
+            "jet-compose-chat" => NativeComposeState.Chat,
+            "jet-compose-command" => NativeComposeState.Command,
+            "jet-compose-shell" => NativeComposeState.Shell,
+            "jet-compose-quick" => NativeComposeState.Quick,
+            _ => NativeComposeState.NotComposing,
+        };
+        bool composing = composeState != NativeComposeState.NotComposing;
+        string[] chatLines = jetChatLong
+            ? new[]
+            {
+                "[TEAM] Pilot Alpha: defend the base",
+                "[ALL] Pilot Bravo: incoming enemy fighter at the north gate, two of them closing fast",
+                "[SECTOR] Pilot Charlie: " + new string('W', 210),
+                "[TEAM] Pilot Delta: acknowledged, moving to the north gate now",
+                "[ADMIN] Pilot Echo: quiet sector",
+                "[ALLIES] Pilot Foxtrot: mining the far rock",
+                "[TEAM] Pilot Golf: on my way, eta 30 seconds",
+            }
+            : new[] { "[TEAM] Pilot: defend the base", "[ALL] Enemy: incoming" };
+        bool[] chatLeaders = jetChatLong
+            ? new[] { true, false, false, false, false, false, true }
+            : new[] { true, false };
+        HudColor?[] chatColors = jetChatLong
+            ? new HudColor?[]
+            {
+                new(.07f, .95f, .84f), new(.90f, .40f, .30f), new(.07f, .95f, .84f),
+                new(.07f, .95f, .84f), new(.70f, .70f, .70f), new(.30f, .60f, .90f),
+                new(.07f, .95f, .84f),
+            }
+            : new HudColor?[] { new(.07f, .95f, .84f), new(.90f, .40f, .30f) };
+        string chatInput = scenario switch
+        {
+            "jet-compose-command" => "attack Enemy fighter with a long pilot name",
+            "jet-compose-shell" => "!mute Pilot Alpha",
+            _ => "returning to base with a long typed line so the field must fit",
+        };
+        HudChat chatModel = new(chatLines,
+            jetChatLong ? 3 : 0, chatInput, composing, 1,
+            scenario == "jet-compose-chat" ? "TEAM - Rixian" : "[TEAM] ",
+            jetChatLong ? "TEAM" : null, composeState, composing ? .55f : 0f,
+            new HudColor(.07f, .95f, .84f), chatColors, chatLeaders,
+            scenario == "jet-chat-long" ? 9 : ChatPaneLayout.DefaultLines);
+        bool tipsScene = scenario == "jet-tips";
+        bool orderScene = scenario == "jet-orders-text";
+        bool turretScene = scenario == "jet-turret";
+        bool trainingScene = scenario == "jet-training";
+        bool cmdScene = scenario is "jet-cmd" or "jet-commandview";
+        string? voteText = tipsScene ? "Vote: Mutiny against the commander? (Y/N)" : null;
         return HudModel.Create(frame, new HudContext
         {
             Docked = scenario == "docked", Dead = scenario == "dead",
-            CommandView = scenario == "command", Hidden = scenario == "hidden",
-            Camera = scenario == "command" ? CameraMode.Command : chase ? CameraMode.Chase : CameraMode.Cockpit,
+            CommandView = scenario == "command" || cmdScene, Hidden = scenario == "hidden",
+            Camera = scenario == "command" || cmdScene ? CameraMode.Command : chase ? CameraMode.Chase : CameraMode.Cockpit,
+            Turret = turretScene,
             VelocityMarker = flightCockpit ? new(w / 2f - 60, h / 2f + 20) : null,
             FlightReference = flightReference,
             // P1037 — the order-steering scene points the accepted and current arrows
@@ -1790,12 +1927,23 @@ sealed class Proof : Game
             HitConfirmation = target, PodReturnInstruction = "Shift+Z / G AUTOPILOT TO BASE",
             TargetBearing = anyTarget ? new(.8f, -.2f) : null,
             Notices = new[] { new HudNotice("NO ENEMY FIGHTER IN SECTOR", false, 1), new HudNotice("Reloading ammo...", true, 1) },
-            Chat = new(scenario == "chat-stress" ? Enumerable.Range(0, 8).Select(i => $"[TEAM] Pilot {i}: " + new string('W', 250)).ToArray() : new[] { "[TEAM] Pilot: defend the base", "[ALL] Enemy: incoming" }, 0, scenario == "chat-stress" ? new string('W', 250) : "returning", true, 1, "[TEAM] "),
+            Chat = jetScene ? chatModel
+                : new(scenario == "chat-stress" ? Enumerable.Range(0, 8).Select(i => $"[TEAM] Pilot {i}: " + new string('W', 250)).ToArray() : new[] { "[TEAM] Pilot: defend the base", "[ALL] Enemy: incoming" }, 0, scenario == "chat-stress" ? new string('W', 250) : "returning", true, 1, "[TEAM] "),
             FlightPartsLine = "WEAPONS: GROUP  BOOST: ON  [1:Plasma]", CargoLine = "CARGO 1/5  Ammo pack x3",
             // P980 — P785 training callout (native RenderTrainingOverlay case 17,
             // indicator.cpp:634-641) and P949's one-time control hint.
-            TrainingOverlayId = scenario == "training" ? 17 : 0,
-            ControlHint = scenario == "training" ? "Shift+F1 opens the controls" : null,
+            TrainingOverlayId = scenario == "training" ? 17 : trainingScene ? 17 : 0,
+            ControlHint = scenario == "training" ? "Shift+F1 opens the controls"
+                : trainingScene ? "Shift+F1 opens the controls" : null,
+            // P1040 — the Jet console/lifecycle presentation values (Classic/Modern never
+            // read them): the command-pane slide + the handler's wing/recipient/verb, and
+            // the shared mission clock.
+            CommandPaneSlide = cmdScene ? 1f : 0f,
+            CommandWing = cmdScene ? 8 : 0,
+            CommandRecipientColumn = cmdScene ? 3 : 0,
+            CommandVerb = cmdScene ? 4 : 0,
+            MissionClockSeconds = cmdScene ? 143 : jetScene ? 125 : null,
+            MissionCountdown = cmdScene,
             // P980 — the native command recipient/verb row (HUD-10).
             Commandee = scenario == "commandee" ? "attack Enemy fighter" : null,
             // P980 — a mid-slide pane (native .5 s slide, dialog.mdl:5387,5404).
@@ -1820,7 +1968,14 @@ sealed class Proof : Game
             // P1038 — the Jet scenes default the F4 pane CLOSED (the pane is its own scene);
             // the Classic/Modern matrix keeps the fixture's original rule.
             InventoryVisible = jetScene ? scenario is "jet-f4" or "jet-f4-empty" : scenario != "systems",
-            CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
+            CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" }
+                : cmdScene ? new[]
+                {
+                    "COMMAND SHIP: Fig Adv",
+                    "Hull 82%  Shield 70%  Speed 260 mps",
+                    "RECIPIENTS: 9 wings + 3 ships | LEFT SELECT / DRAG | RIGHT ORDER",
+                }
+                : Array.Empty<string>(),
             RadarMode = mode,
             RoundRadar = scenario.StartsWith("radar-") || scenario == "jet-radar-round"
                 || scenario == "jet-radar-dense-round",
@@ -1830,13 +1985,17 @@ sealed class Proof : Game
             Console = new HudConsoleText
             {
                 SectorName = "Alystra",
-                CarrierName = scenario is "flight" or "chat-stress" ? "Pilot Alpha" : null,
-                BoardState = scenario is "flight" or "chat-stress" ? 2 : 0,
-                AcceptedOrder = scenario is "flight" or "combat" ? "defend Garrison" : null,
-                QueuedOrder = scenario is "flight" or "combat" ? "attack Enemy fighter" : null,
-                VoteText = scenario is "critical" or "jet-caution" ? "Vote: Mutiny against the commander? (Y/N)" : null,
-                OrdinaryTips = new[] { "Welcome to the sector", "Alystra: 3 miners on duty", "Payday: $500" },
-                CriticalTips = new[] { new HudNotice("Reloading ammo...", true, 1) },
+                CarrierName = scenario is "flight" or "chat-stress" ? "Pilot Alpha" : turretScene ? "Pilot Alpha" : null,
+                BoardState = scenario is "flight" or "chat-stress" ? 2 : turretScene ? 2 : 0,
+                AcceptedOrder = scenario is "flight" or "combat" ? "defend Garrison" : orderScene ? "defend Garrison" : null,
+                QueuedOrder = scenario is "flight" or "combat" ? "attack Enemy fighter" : orderScene ? "attack Enemy fighter" : null,
+                VoteText = scenario is "critical" or "jet-caution" ? "Vote: Mutiny against the commander? (Y/N)" : voteText,
+                OrdinaryTips = tipsScene
+                    ? new[] { "Welcome to the sector", "Alystra: 3 miners on duty", "Payday: $500 deposited into your account balance" }
+                    : jetScene ? Array.Empty<string>() : new[] { "Welcome to the sector", "Alystra: 3 miners on duty", "Payday: $500" },
+                CriticalTips = tipsScene
+                    ? new[] { new HudNotice("Reloading ammo...", true, 1), new HudNotice("Enemy carrier spotted in sector seven", true, 1) }
+                    : jetScene && scenario != "jet-caution" ? Array.Empty<HudNotice>() : new[] { new HudNotice("Reloading ammo...", true, 1) },
                 SideColor = new(0.07f, 0.95f, 0.84f),
                 // P980 — lives/kills badges (native console.cpp:812-821): the
                 // lives badge is only drawn below 10, the kills badge in a deathmatch.
@@ -2564,7 +2723,11 @@ sealed class Proof : Game
         /// graduations). They are the same navigation instrument and native draws them over
         /// one another; the exception is stated in the report.</summary>
         private static bool IsInstrumentFurniture(string element)
-            => element is "ladder" or "order" or "hdg" or "spd" or "thr";
+            // P1040 — the training callout and the fresh-profile controls hint are FIXED
+            // tutorial furniture at shared anchors: native draws them over the ladder and the
+            // order arrows with the same geometry (indicator.cpp:461-701, P949), so a
+            // furniture-vs-furniture pair stays informational.
+            => element is "ladder" or "order" or "hdg" or "spd" or "thr" or "training" or "hint";
 
         /// <summary>P1039 — is the INTERSECTION of two runs covered by a plate that was drawn
         /// after the earlier of them (alpha ≥ 240/255: the F4 pane's 0.97 backing)? Then the

@@ -453,6 +453,18 @@ public sealed partial class JetHudRenderer
     {
         if (!model.FlightVisible) return;
         int count = JetCautionModel.Build(model, _cautionBuffer);
+        // P1040 — one display per reading: the LIFEPOD panel owns the pod's OXY endurance
+        // and the centred VOTE banner owns the ballot text, so those two lines leave the
+        // caution stack before it is measured (no empty row band is left behind).
+        int kept = 0;
+        for (int i = 0; i < count; i++)
+        {
+            JetCaution candidate = _cautionBuffer[i];
+            if (candidate.Kind == JetCautionKind.Vote) continue;
+            if (candidate.Kind == JetCautionKind.PodOxygen && model.PodVisible) continue;
+            _cautionBuffer[kept++] = candidate;
+        }
+        count = kept;
         if (count == 0) return;
         bool compact = JetStoresPanel.Compact(h);
         int limit = JetCautionModel.LineLimit(compact);

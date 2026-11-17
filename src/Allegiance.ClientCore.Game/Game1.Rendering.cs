@@ -3586,6 +3586,16 @@ public sealed partial class Game1
             // P1038 — the world's MISSILE_TRACK_WARNING snapshot for the Jet caution
             // panel. Presentation only; Classic/Modern never read it.
             missileTrack: missileTrack,
+            // P1040 — the Jet console/lifecycle presentation values: the shared command
+            // pane slide + the handler's own wing/recipient/verb columns, and the shared
+            // mission clock (remaining in a countdown game, elapsed otherwise).
+            commandPaneSlide: _paneSlides.Progress(SlidingPane.CommandPane, _nowSeconds),
+            commandWing: _commandWing,
+            commandRecipientColumn: _commandRecipientColumn,
+            commandVerb: _commandVerb,
+            missionClockSeconds: MissionClockSeconds(),
+            missionCountdown: _session.World.Mission is { } clockMission
+                && Rendering.MissionClock.IsCountdownGame(clockMission.GameLengthSeconds),
             buffers: _hudSnapshotBuffers);
         ActiveHud.Draw(model, new(GraphicsDevice.Viewport, _hudTargetModelPreview, _hudSettings.SelectionBracketOn));
         DrawTargetNoMatchFeedback();
@@ -3653,6 +3663,17 @@ public sealed partial class Game1
             leaders,
             Rendering.ChatPaneLayout.ConfiguredLines(_hudSettings.ChatLines, _dockedActive));
     }
+
+    /// <summary>
+    /// P1040 — the shared mission clock in seconds (native <c>dt = time - timeStart</c>;
+    /// a countdown game reports the remainder, otherwise the elapsed time, WinTrek.cpp:8128-8143)
+    /// or null when the world has no mission/elapsed reading. Presentation only: Classic and
+    /// Modern draw their own game-state pane from the same <see cref="MissionClock"/> rule.
+    /// </summary>
+    private int? MissionClockSeconds()
+        => _session.World.Mission is { } mission && _session.World.MissionElapsedSeconds() is { } elapsed
+            ? Rendering.MissionClock.DisplaySeconds(mission.GameLengthSeconds, elapsed)
+            : null;
 
     /// <summary>HUD-6 — native signature percentage = 100·signature / side
     /// c_gaSignature (WinTrek/console.cpp:865-866), evaluated on the SOURCE ship

@@ -9760,3 +9760,24 @@ log: `~/allegiance-evidence/P1038C/fast-tier2.log` + `~/allegiance-evidence/P103
 
 Raw log: `~/allegiance-evidence/P1039/fast.log`; the 3×/3× confirmations are in
 `~/allegiance-evidence/P1039/flakes3x.log`.
+
+### P1040 — Jet console/chat/lifecycle gate (fast tier, one run: 15,240 tests, 669 s)
+
+| Test | Failure in the run | Alone | Diagnosis |
+|---|---|---|---|
+| `Allegiance.ClientCore.MonoGame.Tests.Keybinding.P949FreshProfileDefaultsTests.An_existing_keymap_file_is_never_changed_by_loading_it` | keymap rebuild, 1 s. `tools/run-tests.sh --tier fast` starts every project's tests in the same process? No: the local `dotnet test` runs the assembly in one process, and the P1040 harness called `KeyBindingStore.Instance.Map.ResetToDefaults()`/`ApplyJson` (inside `ReleaseTraining`) without restoring the map, so a parallel test in the same assembly saw the mutated store. Hardened: the harness saves and restores `ToJson()`/`Layout`/`ActionFilter` in `Dispose`. | **pass / pass / pass** after the fix (skin suite 387/387 ×3) | P1040 test-harness leak, not a product bug; fixed, not a flake. |
+| `Allegiance.ClientCore.Tests.P658SupervisorTests.SpawnRunsInParallelAndMergesHonestCountsFailuresAndBotList` | supervisor spawn/merge under the sweep, 3 s | **pass / pass / pass** (98-102 ms) | The ledgered parallel-spawn family; spawns subprocesses and is sensitive to the sweep's load. No P1040 file is on its path. |
+| `Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Next_match_start_is_announced_once_and_resets_the_result` | live match start, 1 s | **pass / pass / pass** | Ledgered live-server start family. |
+| `Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_gives_up_a_distant_range_and_reports_back` | live wingman range, 1 s | **pass / pass / pass** | Ledgered live NPC family. |
+| `Allegiance.Core.Tests.GameOverPlayersWireTests.The_game_over_frame_carries_every_players_position_and_persist` | wire frame, 1 s | **pass / pass / pass** | Ledgered P1039 wire family (same test, same shard). |
+| `Allegiance.Core.Tests.AsteroidMinedLiveTests.Mined_asteroid_is_announced_and_persisted_once` | live asteroid mined, 1 s | **pass / pass / pass** | Ledgered live asteroid family. |
+| `Allegiance.Core.Tests.NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid` | NPC stands-by decision, 1 s | **pass / pass / pass** (1-2 s) | Ledgered live NPC-decision family. |
+
+The six calibrated-limit offenders are timing-only and already ledgered for their families
+(`P796VariedLoadoutTests...civ: 35`, `P814GunnerTests.P814b...`, `SC2NaniteSupportTests...civ: 25`,
+`P999CivStrategyTests...civ: 5`, `P968PublisherStreamIndexTests...`, and the two Jet
+100,000-frame allocation tests `JetTargetLockTests.Draw_with_a_locked_leading_ordered_target_allocates_nothing`
+(11.9 s) and `JetFlightSymbologyTests.Jet_draw_allocates_zero_bytes_per_frame_with_the_full_symbology`
+(12.0 s), both **3/3 alone** in the skin suite). No tier, limit or assertion was relaxed; P1040
+changes no sim, server, wire, audio or buy/drone code.
+3×/3× confirmations in `~/allegiance-evidence/P1040/flakes3x.log`.

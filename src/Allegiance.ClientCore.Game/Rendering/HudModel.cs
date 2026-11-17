@@ -240,6 +240,29 @@ public sealed record HudContext
     public LeaderBotCommand? LeaderCommand { get; init; }
     public string? Ripcord { get; init; }
     public string? Commandee { get; init; }
+    /// <summary>P1040 — native <c>CommandPane</c> slide progress (0 off, 1 on;
+    /// <c>dialog.mdl:5416</c> <c>SideBottom(-135,-190)→(-135,40)</c>, .5 s), the shared
+    /// <see cref="PaneSlideTracker"/> value for <see cref="SlidingPane.CommandPane"/>.
+    /// Presentation only: Classic/Modern read their own tracker.</summary>
+    public float CommandPaneSlide { get; init; }
+    /// <summary>P1040 — the current command wing index (<c>CommandBarLayout.WingNames</c>),
+    /// so the Jet <c>CMD</c> console can label the native wing combo. Presentation only.</summary>
+    public int CommandWing { get; init; }
+    /// <summary>P1040 — the selected command recipient column (0..3), so the Jet
+    /// <c>CMD</c> console can mark the active recipient row. Presentation only.</summary>
+    public int CommandRecipientColumn { get; init; }
+    /// <summary>P1040 — the armed command verb: the native <c>CommandID</c> the command
+    /// handler armed (0 = <c>c_cidNone</c>, 1..9 = attack..build, <c>console.cpp:1276</c>).
+    /// Presentation only.</summary>
+    public int CommandVerb { get; init; }
+    /// <summary>P1040 — the shared mission clock in seconds
+    /// (<see cref="MissionClock.DisplaySeconds"/>: remaining for a countdown game, elapsed
+    /// otherwise, WinTrek.cpp:8128-8143). Null when the world has no mission/elapsed
+    /// reading, so no clock is invented.</summary>
+    public int? MissionClockSeconds { get; init; }
+    /// <summary>P1040 — <see cref="MissionClock.IsCountdownGame"/> for the same mission
+    /// (the T− / T+ form of the clock row).</summary>
+    public bool MissionCountdown { get; init; }
     public string? Diagnostics { get; init; }
     public IReadOnlyList<HudNotice> Notices { get; init; } = Array.Empty<HudNotice>();
     /// <summary>P745b last-restart-base objectives (attack/defend lines, bracket, bearing).</summary>

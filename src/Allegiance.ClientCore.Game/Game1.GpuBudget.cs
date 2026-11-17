@@ -40,7 +40,12 @@ public sealed partial class Game1
         var resources = new HudSkinResources(
             model => _radarRenderer.Draw(model, GraphicsDevice.Viewport),
             DrawHudShipTags, DrawEjectDeathOverlays, DrawCommandHud,
-            DrawChat, DrawCargoHud, DrawFlightPartsHud);
+            DrawChat, DrawCargoHud, DrawFlightPartsHud)
+        {
+            // P1040 — Jet draws its own CMD console; it still gets the native
+            // command-camera chrome (NORTH + drag rectangle) through this pass.
+            CommandChrome = DrawCommandChrome
+        };
         var classic = new HudSkinRenderer(_hudRenderer, resources, _radarRenderer.SetRadarIcons);
         var modern = new HudSkinRenderer(_modernHudRenderer, resources);
         // P1035 — Jet is installed (preloaded) but gated behind hud.jetSkin: the
