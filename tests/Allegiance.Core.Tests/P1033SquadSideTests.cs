@@ -1,3 +1,4 @@
+using Allegiance.Core.Tests.Transport;
 using Allegiance.Core.Identity;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -13,8 +14,12 @@ namespace Allegiance.Core.Tests;
 /// with verified identity claims supplied through the existing lobby test seam.</summary>
 [Trait("Requires", "Artwork")]
 [Collection("LiveNetwork")]
-public sealed class P1033SquadSideTests
+public class P1033SquadSideTests
 {
+    private readonly bool _webSocket;
+    public P1033SquadSideTests() { }
+    protected P1033SquadSideTests(bool webSocket) => _webSocket = webSocket;
+
     private static readonly SquadClaim Alpha = new("alpha", "Squad Alpha", true);
     private static readonly SquadClaim Beta = new("beta", "Squad Beta", true);
 
@@ -25,7 +30,8 @@ public sealed class P1033SquadSideTests
         public Mission Mission => Server.Missions[0];
         public Side Side => Mission.Sides[0];
 
-        public World(bool squadGame = true)
+        private readonly WebSocketRegressionIngress? _ingress;
+        public World(bool webSocket, bool squadGame = true)
         {
             Require.Artwork();
             Server.Boot(new ServerConfig
@@ -37,13 +43,16 @@ public sealed class P1033SquadSideTests
                     SideNames = ["Alpha", "Beta"], SquadGame = squadGame, AutoStart = false,
                 }],
             });
+            if (webSocket) _ingress = new WebSocketRegressionIngress(Server, 5);
             Server._testSendCapture = (peer, packet) => Sent.AddRange(
                 FedPacket.Unpack(packet).Select(m => ((int)peer.Value, m)));
         }
 
         public void Send(int peer, IFedMessage message)
         {
-            Server.TestProcessDatagram(new ConnectionId((uint)peer), FedPacket.Pack([message.Encode()]));
+            var packet = FedPacket.Pack([message.Encode()]);
+            if (_ingress is null) Server.TestProcessDatagram(new ConnectionId((uint)peer), packet);
+            else _ingress.Send(new ConnectionId((uint)peer), packet);
             // Initial POSITIONREQs drain in logon order on the next server tick.
             if (message is PositionReq) Server.TickSim();
             Server.FlushBroadcastSnapshots();
@@ -89,7 +98,7 @@ public sealed class P1033SquadSideTests
         public void SetSquad(SquadClaim squad) => Send(1, new SetTeamInfo
         { SideId = 0, SquadId = WireSquadId(squad.Id), SideName = squad.Name });
 
-        public void Dispose() => Server.Dispose();
+        public void Dispose() { _ingress?.Dispose(); Server.Dispose(); }
     }
 
     // Same stable FNV-1a mapping as the existing P853 wire fixture.
@@ -105,7 +114,7 @@ public sealed class P1033SquadSideTests
     [InlineData((short)-1)]
     public void Initial_leader_establishes_preferred_squad_and_receives_team_info(short requestedSide)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         // First claim is membership only; prefer the squad the pilot can lead.
         var leader = w.Seat(1, [Beta with { CanLead = false }, Alpha], requestedSide);
         Assert.Equal(leader.Id, w.Side.LeaderShipId);
@@ -126,7 +135,7 @@ public sealed class P1033SquadSideTests
     [InlineData(true, "anonymous")]
     public void Initial_nonmember_is_refused_on_an_occupied_squad_side(bool autoPick, string kind)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.RestrictOccupiedSide();
         // Rival membership alone cannot lead the other, empty side on auto-pick.
         SquadClaim[]? squads = kind == "rival" ? [Beta with { CanLead = false }]
@@ -154,7 +163,7 @@ public sealed class P1033SquadSideTests
     [InlineData(true, true)]
     public void Members_can_join_and_non_squad_games_still_accept_squadless_peers(bool squadGame, bool autoPick)
     {
-        using var w = new World(squadGame: false);
+        using var w = new World(_webSocket, squadGame: false);
         w.Seat(1, [Alpha]);
         // Occupy both sides so auto-pick selects side 0 by equal population.
         w.Seat(3, [Beta], side: 1);
@@ -170,7 +179,7 @@ public sealed class P1033SquadSideTests
     [SkippableFact]
     public void Auto_pick_skips_a_rival_squad_side_and_establishes_its_own_empty_side()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.RestrictOccupiedSide();
         var rival = w.Seat(2, [Beta], side: -1);
         Assert.Equal((short)1, rival.SideId);
@@ -185,7 +194,7 @@ public sealed class P1033SquadSideTests
     [InlineData("rival")]
     public void Squad_change_boots_every_verified_nonmember_but_keeps_members_and_unverified_peers(string kind)
     {
-        using var w = new World(squadGame: false);
+        using var w = new World(_webSocket, squadGame: false);
         var leader = w.Seat(1, [Alpha, Beta]);
         SquadClaim[]? squads = kind == "rival" ? [Alpha] : kind == "empty" ? [] : null;
         var nonmember = w.Seat(2, squads);
@@ -221,7 +230,7 @@ public sealed class P1033SquadSideTests
     [InlineData("anonymous")]
     public void Empty_squad_side_still_requires_a_squad_leader(string kind)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         SquadClaim[]? squads = kind == "member" ? [Alpha with { CanLead = false }]
             : kind == "empty" ? [] : null;
         short id = w.Logon(1, squads, verified: kind != "anonymous");
@@ -231,4 +240,11 @@ public sealed class P1033SquadSideTests
         Assert.DoesNotContain(w.Server.Ships, s => s.Ship.Id == id);
         Assert.Null(w.Side.SquadId);
     }
+}
+
+/// <summary>The same R1b assertions through real WebSocket input.</summary>
+[Collection("LiveNetwork")]
+public sealed class P1048SquadSideTests : P1033SquadSideTests
+{
+    public P1048SquadSideTests() : base(true) { }
 }

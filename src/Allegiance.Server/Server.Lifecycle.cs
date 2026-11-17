@@ -71,6 +71,7 @@ public sealed partial class Server
         _config.ApplyDuplicateLogonEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_ALWAYS_REFUSE_DUPLICATE_LOGONS"));
         _config.ApplyMinimumClientVersionEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_MINIMUM_CLIENT_VERSION"));
         ValidateIdentityConfiguration();
+        _config.WebSocket.Validate();
         _rand = SimulationRandom ?? (config.BenchmarkSeed is { } seed ? new Random(seed) : new Random());
         _config.ResolveShowcaseMode();
         // Preserve corpus-independent broadcast validation. Its profiler callback
@@ -325,7 +326,7 @@ public sealed partial class Server
             _heartbeat = factory(_config.Lobby);
             _heartbeat.LiveMissions = () => LiveMissions;
             _heartbeat.MaxGames = _config.MaxGames;
-            _heartbeat.UdpPort = (_host?.Transport as IUdpListenerInfo)?.UdpPort;
+            _heartbeat.UdpPort = UdpListenerPort;
             if (_config.Identity is not null)
                 _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
             Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
@@ -360,7 +361,7 @@ public sealed partial class Server
             _config.ResolveMinimumClientVersion());
         _heartbeat.LiveMissions = () => LiveMissions;
         _heartbeat.MaxGames = _config.MaxGames;
-        _heartbeat.UdpPort = (_host?.Transport as IUdpListenerInfo)?.UdpPort;
+        _heartbeat.UdpPort = UdpListenerPort;
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -942,10 +943,12 @@ public sealed partial class Server
         _host.ChatRequested = SendSiteChat;
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
-        var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+        var egress = TickProfiler.Instance is not null ? new EgressAccounting() : null;
+        var reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null;
+        TcpTransport CreateTcp(ITransportSite site) => new(site, _transportMode, _transportPoolWorkers)
         {
-            Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
-            Reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null,
+            Egress = egress,
+            Reliable = reliable,
             ReliableOneShot = _reliableOneShot,
             TcpBatchWrites = _config.Transport?.TcpBatchWrites == true,
             // P866 — native g.pServerCounters (FedSrv/counters.h) is ALWAYS on in
@@ -954,7 +957,7 @@ public sealed partial class Server
             // independent of the profiler-gated egress lane above.
             ServerCounters = Counters,
         }; // site set; assign the back-ref next
-        if (transport.TcpBatchWrites && _transportMode == TransportMode.Pool)
+        if (_config.Transport?.TcpBatchWrites == true && _transportMode == TransportMode.Pool)
             Console.WriteLine("[boot] transport tcpBatchWrites=ON (EXPERIMENTAL; pool gather sends, 8 KiB socket buffer retained)");
         if (_reliableOneShot)
             Console.WriteLine("[boot] transport reliableOneShot=PARK-LANE (EXPERIMENTAL; one-shots parked ahead of stream/ordered)");
@@ -968,17 +971,35 @@ public sealed partial class Server
         ushort udpPort = _config.Transport?.UdpPort ?? 0;
         if (!RequireLanListeners && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
             udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
+        _udpGameTransport = null;
+        _webSocketTransport = null;
+        ServerTransportMux? mux = null;
         if (protocol == "udp")
         {
-            var dual = new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
-                measureReceiveDelay: _threadPoolTelemetry is not null)
-                { UdpBindAddress = RequireUdpIntroductions ? System.Net.IPAddress.IPv6Any : null };
-            dual.Udp.RequireIntroductions = RequireUdpIntroductions;
+            var dual = new DualTransport(_host, CreateTcp, udpPort, egress, reliable, Counters, _reliableOneShot,
+                measureReceiveDelay: _threadPoolTelemetry is not null,
+                udpBindAddress: RequireUdpIntroductions ? System.Net.IPAddress.IPv6Any : null,
+                requireIntroductions: RequireUdpIntroductions);
+            _udpGameTransport = dual.Udp;
+            mux = dual;
             _host.Transport = dual;
         }
-        else _host.Transport = transport;
+        else if (_config.WebSocket.Enabled)
+        {
+            mux = new ServerTransportMux(_host);
+            mux.Add(CreateTcp);
+            _host.Transport = mux;
+        }
+        else _host.Transport = CreateTcp(_host);
+        if (_config.WebSocket.Enabled)
+        {
+            _webSocketTransport = mux!.Add(site => new WebSocketServerTransport(site, _config.WebSocket)
+            { Egress = egress, Reliable = reliable, ServerCounters = Counters },
+                _config.WebSocket.Port, System.Net.IPAddress.Parse(_config.WebSocket.BindAddress));
+        }
         _host.Transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);
-        if (_host.Transport is IUdpListenerInfo udpListener) Console.WriteLine($"[boot] UDP transport listening on {udpListener.UdpPort} (TCP remains available)");
+        if (_webSocketTransport is { } ws) Console.WriteLine($"[boot] WebSocket transport listening on {ws.BoundPort}{_config.WebSocket.Path} ({WebSocketServerTransport.Subprotocol}; TLS proxy or explicit loopback development)");
+        if (_host.Transport is IUdpListenerInfo { UdpPort: > 0 } udpListener) Console.WriteLine($"[boot] UDP transport listening on {udpListener.UdpPort} (TCP remains available)");
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
 
         StartDiscoveryResponder();
@@ -1028,7 +1049,7 @@ public sealed partial class Server
                         MaxPlayers: 0,
                         Version: _core?.Version.ToString() ?? "",
                         GamePort: BoundPort,
-                        UdpPort: (_host?.Transport as IUdpListenerInfo)?.UdpPort);
+                        UdpPort: UdpListenerPort);
                 },
                 port, rate, mgroup);
             _discoveryResponder.Start();

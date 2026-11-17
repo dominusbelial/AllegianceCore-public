@@ -25,6 +25,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The embedded single-player host keeps its existing runtime requirements.
+         Only the dedicated server enables the optional HTTP listener. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" PrivateAssets="all" />
     <Content Include="../../data/showcase-plans/**/*.json" Link="showcase-plans/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <ProjectReference Include="..\Allegiance.Core\Allegiance.Core.csproj" />
     <ProjectReference Include="..\Allegiance.Update\Allegiance.Update.csproj" />

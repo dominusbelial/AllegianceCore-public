@@ -87,7 +87,7 @@ public sealed class P897ClientTransportTests
     public async Task Real_discovery_and_session_use_selected_protocol(ClientTransportSetting setting, bool advertiseUdp, string expected, bool blocked)
     {
         var site = new Site();
-        var host = new DualTransport(site, new TcpTransport(site, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
+        var host = new DualTransport(site, s => new TcpTransport(s, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
         host.Host();
         using var blackhole = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
         int advertised = advertiseUdp && !blocked ? host.UdpPort : ((IPEndPoint)blackhole.Client.LocalEndPoint!).Port;
@@ -126,7 +126,7 @@ public sealed class P897ClientTransportTests
     public void Reconnect_reuses_initial_protocol_even_after_preference_changes(string protocol)
     {
         var site = new Site();
-        var host = new DualTransport(site, new TcpTransport(site, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
+        var host = new DualTransport(site, s => new TcpTransport(s, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
         host.Host();
         using var session = new ConnectionSession { TransportProtocol = protocol, UdpPort = host.UdpPort };
         site.Receive = id => host.Send(id, FedPacket.Pack(new LogonAck { FValidated = true, ShipID = 1 }.Encode()), true);

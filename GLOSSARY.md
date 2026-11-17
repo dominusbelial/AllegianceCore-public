@@ -40,6 +40,17 @@ list in **reverse**.
   `/play/preview/` before the API limiter. Publish with
   `scripts/publish-browser-preview.sh`; optional compose exporter and setup in
   `docker/README.md`. Report: `docs/reports/BROWSER_PREVIEW_P1046.md`.
+- **Direct browser server transport (P1048)** — default-off `webSocket` JSON
+  settings in `src/Allegiance.Server/Transport/WebSocketConfig.cs`; Kestrel-based
+  `src/Allegiance.Server/Transport/WebSocketServerTransport.cs` accepts binary
+  `allegiance-fed-v1` FedPackets through the existing tick-owned ingress and
+  identity dispatcher. Bounded admission and send queues live beside it;
+  `src/Allegiance.Core/Transport/ServerTransportMux.cs` maps full-width listener
+  IDs without reserved bits. WS sources use the lobby's explicit one-hop
+  `KnownProxies` policy and never receive loopback privileges. No browser client
+  join is enabled. Operator setup: `docker/README.md`; evidence:
+  `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`. Reproduce native-binary and
+  embedded-runtime proofs with `tools/p1048-ws-proof/Program.cs`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

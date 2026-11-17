@@ -88,6 +88,8 @@ COPY --from=build /app .
 
 # Documentation only — the real port is set by the mounted config's `port`.
 EXPOSE 6073/tcp 6073/udp
+# Optional, default-off WebSocket endpoint; no port mapping is enabled by default.
+EXPOSE 6080/tcp
 
 # Requires a config file and artwork at runtime; see the header comment. Invokes
 # the self-contained native AOT binary directly (P185) — no `dotnet` launcher.

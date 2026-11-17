@@ -1,3 +1,4 @@
+using Allegiance.Core.Tests.Transport;
 using System.Reflection;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -42,8 +43,12 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 [Trait("Requires", "Artwork")]
 [Collection("LiveNetwork")]
-public sealed class P1032BuildOrderOracleTests
+public class P1032BuildOrderOracleTests
 {
+    private readonly bool _webSocket;
+    public P1032BuildOrderOracleTests() { }
+    protected P1032BuildOrderOracleTests(bool webSocket) => _webSocket = webSocket;
+
     /// <summary>Two-side world with a leader commander, a non-leader teammate,
     /// an enemy peer and a real side-0 Builder drone, over <c>XXV_simple</c>:
     /// <c>Home</c> (sector 0, where the side-0 ships and the constructor live)
@@ -70,7 +75,8 @@ public sealed class P1032BuildOrderOracleTests
         public readonly List<(ConnectionId Peer, byte[] Msg)> Sent = [];
         public readonly ConnectionId A = new(1), B = new(2), D = new(3), C = new(4);
 
-        public World()
+        private readonly WebSocketRegressionIngress? _ingress;
+        public World(bool webSocket = false)
         {
             Require.Artwork();
             Core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
@@ -133,6 +139,7 @@ public sealed class P1032BuildOrderOracleTests
             Server.TestSeedPeers([(A, Commander, Home), (B, Mate, Home), (D, WingZeroMate, Home), (C, Enemy, Remote)]);
             Server._testSendCapture = (c, p) => Sent.AddRange(FedPacket.Unpack(p).Select(m => (c, m)));
             Set("_simNow", 10d);
+            if (webSocket) _ingress = new WebSocketRegressionIngress(Server, Host, 4);
         }
 
         private Ship Place(short id, short side, Sector sector, DataHullTypeIGC hull)
@@ -143,11 +150,14 @@ public sealed class P1032BuildOrderOracleTests
             return ship;
         }
 
+        private void Dispatch(ConnectionId from, byte[] packet)
+        { if (_ingress is null) Server.TestProcessDatagram(from, packet); else _ingress.Send(from, packet); }
+
         public void Set(string field, object value) =>
             typeof(Srv).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(Server, value);
 
         public void Route(ConnectionId from, IFedMessage message) =>
-            Server.TestProcessDatagram(from, FedPacket.Pack([message.Encode()]));
+            Dispatch(from, FedPacket.Pack([message.Encode()]));
 
         public void ResetCapture() => Sent.Clear();
 
@@ -181,6 +191,7 @@ public sealed class P1032BuildOrderOracleTests
 
         public void Dispose()
         {
+            _ingress?.Dispose();
             Host.Transport!.Shutdown();
             Server.Dispose();
         }
@@ -207,7 +218,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Leader_build_order_at_an_unseen_wrong_type_rock_reveals_no_capability_mask()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         Assert.False(w.RemoteWrongRock.SeenBySide(0), "precondition: the remote rock is unexplored");
 
         w.Route(w.A, w.Order(w.Builder, w.RemoteWrongRock.Data.AsteroidId));
@@ -227,7 +238,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Leader_build_order_at_a_nonexistent_asteroid_id_reveals_nothing()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
 
         w.Route(w.A, w.Order(w.Builder, 32700));
 
@@ -244,7 +255,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Chat_build_order_at_an_unseen_asteroid_reveals_no_sector_name()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         Assert.False(w.RemoteRock.SeenBySide(0), "precondition: the remote rock is unexplored");
 
         w.Route(w.B, w.ChatOrder(w.Builder, w.RemoteRock.Data.AsteroidId));
@@ -263,7 +274,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Leader_build_order_at_an_unseen_asteroid_reveals_no_sector_name()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         Assert.False(w.RemoteRock.SeenBySide(0), "precondition: the remote rock is unexplored");
 
         w.Route(w.A, w.Order(w.Builder, w.RemoteRock.Data.AsteroidId));
@@ -281,7 +292,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Seen_rock_in_another_sector_is_refused_silently()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.RemoteRock.SideVisibility.RevealToSide(0);
         Assert.True(w.RemoteRock.SeenBySide(0), "precondition: the side has scouted the rock");
 
@@ -299,7 +310,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Rock_already_under_construction_refusal_is_silent()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.HomeRock.SideVisibility.RevealToSide(0);
         var rivalBuilder = w.Server.SpawnNpcShip(w.Mission, w.Home, 1, new Vector3(280f, 0f, 0f), w.BuilderDroneTypeId);
         rivalBuilder.BuilderStationType = w.StationType;
@@ -321,14 +332,14 @@ public sealed class P1032BuildOrderOracleTests
     public void Seen_asteroid_build_orders_still_start_construction_from_both_paths()
     {
         Require.Artwork();
-        using (var w = new World())
+        using (var w = new World(_webSocket))
         {
             w.HomeRock.SideVisibility.RevealToSide(0);
             w.Route(w.A, w.Order(w.Builder, w.HomeRock.Data.AsteroidId));
             Assert.Same(w.HomeRock, w.Builder.BuilderAsteroidTarget);   // accepted: travel before drilling
             Assert.Empty(w.ChatsTo(w.A));                              // the order path has no native reply
         }
-        using (var w = new World())
+        using (var w = new World(_webSocket))
         {
             w.HomeRock.SideVisibility.RevealToSide(0);
             w.Route(w.A, w.ChatOrder(w.Builder, w.HomeRock.Data.AsteroidId));
@@ -347,13 +358,13 @@ public sealed class P1032BuildOrderOracleTests
     public void Non_leader_teammate_commands_a_constructor_on_both_paths()
     {
         Require.Artwork();
-        using (var w = new World())
+        using (var w = new World(_webSocket))
         {
             w.HomeRock.SideVisibility.RevealToSide(0);
             w.Route(w.B, w.Order(w.Builder, w.HomeRock.Data.AsteroidId));
             Assert.Same(w.HomeRock, w.Builder.BuilderAsteroidTarget);
         }
-        using (var w = new World())
+        using (var w = new World(_webSocket))
         {
             w.HomeRock.SideVisibility.RevealToSide(0);
             w.Route(w.B, w.ChatOrder(w.Builder, w.HomeRock.Data.AsteroidId));
@@ -374,7 +385,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Replaced_rock_gets_the_native_decoy_affirmative()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         var station = w.Home.BuildStation(w.DecoyRock, w.EnemySide, w.StationType, 10d, new bool[w.Mission.Sides.Count]);
         Assert.False(station.SeenBySide(0), "precondition: the replacement station is unseen by side 0");
         Assert.DoesNotContain(w.DecoyRock, w.Home.Mineable);
@@ -400,7 +411,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Replaced_rock_of_the_drones_own_side_is_not_a_decoy()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         var ownSide = w.Mission.Sides.Single(s => s.Id == 0);
         w.Home.BuildStation(w.DecoyRock, ownSide, w.StationType, 10d, new bool[w.Mission.Sides.Count]);
 
@@ -421,7 +432,7 @@ public sealed class P1032BuildOrderOracleTests
     public void Accepted_drone_command_is_echoed_to_the_command_wings()
     {
         Require.Artwork();
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.HomeRock.SideVisibility.RevealToSide(0);
         w.Mate.WingId = 7;         // Charlie
         w.WingZeroMate.WingId = 0; // Command
@@ -439,4 +450,11 @@ public sealed class P1032BuildOrderOracleTests
         // The commander gets the drone's reply but no echo of his own order.
         Assert.All(w.ChatsTo(w.A), c => Assert.NotEqual((int)ChatTarget.IndividualEcho, c.ChatTarget));
     }
+}
+
+/// <summary>The same R1/R1b assertions through real WebSocket input.</summary>
+[Collection("LiveNetwork")]
+public sealed class P1048BuildOrderOracleTests : P1032BuildOrderOracleTests
+{
+    public P1048BuildOrderOracleTests() : base(true) { }
 }

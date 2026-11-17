@@ -10,7 +10,7 @@ public sealed partial class Server
 
     private bool PrivilegedConnection(ConnectionId from, string? secret, HashSet<ConnectionId> authenticated)
         => string.IsNullOrEmpty(secret)
-            ? _host.Transport is { } tcp && tcp.IsPeerLoopback(from)
+            ? _host.Transport is { } transport && transport.IsPeerLoopback(from)
             : authenticated.Contains(from);
 
     private bool IsHarnessPeer(ConnectionId from, string? name)

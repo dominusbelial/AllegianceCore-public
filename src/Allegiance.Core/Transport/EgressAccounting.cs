@@ -31,11 +31,27 @@ public sealed class EgressAccounting
         EgressEvent ev, int offset = 0, int count = -1)
     {
         if (frame.Length < 5 || frame[0] != 2) return; // greetings aren't egress
+        RecordCore(frame, harness, stream, ev, offset, count, 5);
+    }
+
+    /// <summary>Direct FedPacket carrier accounting, including its actual WS
+    /// header (server frames are unmasked). TCP's existing partial-write path is unchanged.</summary>
+    internal void RecordFedPacket(ReadOnlySpan<byte> packet, bool harness, bool stream, EgressEvent ev)
+    {
+        RecordCore(packet, harness, stream, ev, 0, packet.Length, 0);
+        int header = packet.Length < 126 ? 2 : packet.Length <= ushort.MaxValue ? 4 : 10;
+        int group = (harness ? 2 : 0) + (stream ? 1 : 0);
+        Add(ref _counters[group * Types + OverheadFmid], ev, header, 0, 0);
+    }
+
+    private void RecordCore(ReadOnlySpan<byte> frame, bool harness, bool stream,
+        EgressEvent ev, int offset, int count, int prefix)
+    {
         if (count < 0) count = frame.Length;
         int end = offset + count;
         int group = (harness ? 2 : 0) + (stream ? 1 : 0);
-        int messageEnd = Math.Max(5, frame.Length - 4);
-        int pos = 5;
+        int messageEnd = Math.Max(prefix, frame.Length - 4);
+        int pos = prefix;
         int attributed = 0;
         while (messageEnd - pos >= 4)
         {
@@ -59,7 +75,7 @@ public sealed class EgressAccounting
                     // One discarded FRAME per distinct fmid, even if a batch
                     // contains several messages of that type. Discards are rare;
                     // this walk avoids a per-peer scratch array or HashSet.
-                    for (int prior = 5; prior < pos;)
+                    for (int prior = prefix; prior < pos;)
                     {
                         if (BinaryPrimitives.ReadUInt16LittleEndian(frame[(prior + 2)..]) == fmid)
                         { firstOfType = false; break; }

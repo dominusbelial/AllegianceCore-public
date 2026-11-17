@@ -857,7 +857,11 @@ public sealed partial class Server : IDisposable
     public bool RequireLanListeners { get; init; }
     /// <summary>P936 embedded internet host admission; dedicated/LAN defaults remain false.</summary>
     public bool RequireUdpIntroductions { get; init; }
-    public UdpTransport? UdpGameTransport => (_host?.Transport as DualTransport)?.Udp;
+    private UdpTransport? _udpGameTransport;
+    private WebSocketServerTransport? _webSocketTransport;
+    public UdpTransport? UdpGameTransport => _udpGameTransport;
+    public ushort WebSocketPort => _webSocketTransport?.BoundPort ?? 0;
+    private ushort? UdpListenerPort => _host?.Transport is IUdpListenerInfo { UdpPort: > 0 } udp ? udp.UdpPort : null;
 
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");
 

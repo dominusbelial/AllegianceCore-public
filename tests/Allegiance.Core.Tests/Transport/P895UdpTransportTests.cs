@@ -309,8 +309,7 @@ public sealed class P895UdpTransportTests
     public void Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols()
     {
         var hs = new Site(); var ts = new Site(); var us = new Site();
-        var tcp = new TcpTransport(hs, TransportMode.Pool, 1);
-        var host = new DualTransport(hs, tcp, 0, null, null, new ServerCounters(), false);
+        var host = new DualTransport(hs, s => new TcpTransport(s, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
         var tc = new TcpTransport(ts); using var uc = new UdpTransport(us);
         // Deterministically model a constructor keepalive racing Join's return.
         // The greeting must already own ordered frame zero when IsConnected is true.

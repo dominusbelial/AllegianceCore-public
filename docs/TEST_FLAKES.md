@@ -9841,3 +9841,64 @@ Fast failed with 15,151 passed, 3 failed and 7 skipped; the calibrated case limi
 | `Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | passed, 18.572 s | pass / pass / pass |
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | failed: 7.0000000000000009 above 7 | pass / pass / pass |
 | `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | failed: unexpected mining broadcast | pass / pass / fail |
+
+
+## P1048 completed transport regression selection (2026-11-17)
+
+The broader Core server/transport/identity/credential selection ran 686 cases:
+683 passed, one failed, two existing dock-gate cases skipped. The sole failure
+was the already ledgered Perf test
+`Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout`:
+“peers must keep receiving per-tick updates while stdout is stalled” (142 ms).
+Three exact-method reruns in separate processes **passed / passed / passed**
+(540 / 546 / 542 ms). This is an observation of the existing console/timing
+family, not a new root-cause claim. No assertion, tier or deadline was changed.
+The new WS tests passed 133/133 in each of three separate isolated processes.
+
+Local evidence: `.scratch/p1048/regressions.log`, `console-1.log` through
+`console-3.log`, and ignored per-project TRX files named `p1048-regressions.trx`
+and `p1048-console-*.trx`.
+
+
+### P1048 first full fast run and exact-case isolation (2026-11-17)
+
+`TestResults/p1048-final-fast/summary.json`: **15,285 passed, 2 failed, 7 skipped**;
+15,294 cases, 998.6 s, projects serial, calibrated limit 12.733 s. All 133 P1048
+cases present in this run passed. A subsequently found per-source/global admission
+fairness issue was fixed and covered by two more tests (135/135 × 3 isolated), so
+this run is superseded by a final-source full fast rerun.
+
+| Case | First fast result | Three exact-case isolated reruns (case seconds) |
+|---|---|---|
+| `P865bCarrierRetaskTests.Relaunch_retasks_an_accepted_goto_onto_the_carrier_to_defend` | No expected carrier re-task within 200 ticks; accepted command still goto, 0.571 s | **pass / pass / pass**, 0.442 / 0.467 / 0.435 |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Target instance mismatch, 1 s; existing defend-family observation | **pass / pass / pass**, 0.901 / 0.886 / 0.880 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | Passed assertions but 14.912 s exceeded 12.733 s; existing timing family | **pass / pass / pass**, 3.631 / 3.854 / 3.666 |
+
+Each invocation selected exactly **one case**, including the civ-5 theory row.
+No simulation source, assertion, timeout or tier was changed. This records the
+observations rather than asserting a new root cause. Local TRX/log evidence:
+`.scratch/p1048/first-fast-isolation/` and `first-fast-isolation.log`.
+
+
+### P1048 final-source fast run and exact-case isolation (2026-11-17)
+
+`TestResults/p1048-final-fast-2/summary.json`: **15,287 passed, 2 failed, 7 skipped**;
+15,296 total, 998.1 s, projects serial, calibrated limit 12.773 s. All **135 new
+P1048 cases passed**, as did nine infrastructure checks. The three exact-case
+isolations each selected one case per process, run three times after the suite.
+
+| Case | Final fast result | Three isolated outcomes |
+|---|---|---|
+| `MineCombatTests.Live_crossing_broadcasts_a_mine_pop_ahead_of_the_ship_not_at_the_field_centre` | `First` found no matching mine explosion after the fixture's pump (3 s) | **pass / pass / pass** |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Unexpected `AsteroidMined` broadcast (1 s) | **fail / pass / pass**; first isolated failure was the same unexpected broadcast. This case already failed one of three isolated reruns in the baseline partial P1048 ledger above. |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | Assertions passed; **15.490 s > 12.773 s** | **pass / pass / pass**, below the timing limit |
+
+The earlier first-fast carrier/defender failures passed in the final run. No
+simulation, assertion, tier or timeout was changed. The mining-capacity
+observation remains unresolved; these are recorded outcomes, not a root-cause
+claim or a green fast-gate claim. Source changes in P1048 concern transport and
+admission; the mine/miner simulation and these tests are unchanged.
+
+Local evidence: `.scratch/p1048/final-fast-isolation/` and
+`final-fast-isolation.log`. Sanitized outcomes and case durations are retained in
+`docs/reports/BROWSER_WS_TRANSPORT_P1048_assets/verification.json`.

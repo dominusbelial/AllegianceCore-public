@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "nativeAot": true,
+  "canonicalLogon": "AotPilot",
+  "sideSelect": true,
+  "pingEcho": true,
+  "replayRefused": true,
+  "listenerSubprotocol": "allegiance-fed-v1",
+  "shipId": 8098,
+  "sdk": "10.0.404",
+  "rid": "linux-x64",
+  "publishWarnings": 0,
+  "trimWarnings": 0,
+  "aotWarnings": 0,
+  "binaryBytes": 26847952,
+  "sha256": "91fd04f53ad4e46a3155f5165cf734834c0440bfb4936e14c66bb2c6932c9afe",
+  "managedDllsInPublish": 0,
+  "cleanShutdown": true,
+  "embeddedWithoutAspNet": true,
+  "admissionFairnessFixIncluded": true
+}

@@ -1,3 +1,4 @@
+using Allegiance.Core.Tests.Transport;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Allegiance.Core;
@@ -23,8 +24,12 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 [Trait("Requires", "Artwork")]
 [Collection("LiveNetwork")]
-public sealed class P1030CombatGatesTests
+public class P1030CombatGatesTests
 {
+    private readonly bool _webSocket;
+    public P1030CombatGatesTests() { }
+    protected P1030CombatGatesTests(bool webSocket) => _webSocket = webSocket;
+
     /// <summary>A seeded in-space combat world: two sides, real ships placed in
     /// the map's first sector, every egress frame captured.</summary>
     private sealed class World : IDisposable
@@ -42,7 +47,8 @@ public sealed class P1030CombatGatesTests
         public readonly List<(ConnectionId Peer, byte[] Msg)> Sent = [];
         public readonly ConnectionId A = new(1), B = new(2), C = new(3);
 
-        public World()
+        private readonly WebSocketRegressionIngress? _ingress;
+        public World(bool webSocket = false)
         {
             Require.Artwork();
             Core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
@@ -60,6 +66,7 @@ public sealed class P1030CombatGatesTests
             Mission.MissionOwnerSideId = 0; Mission.Sides[0].LeaderShipId = Owner.Id; Mission.Sides[1].LeaderShipId = Enemy.Id;
             Server._testSendCapture = (c, p) => Sent.AddRange(FedPacket.Unpack(p).Select(m => (c, m)));
             Set("_simNow", 0d);
+            if (webSocket) _ingress = new WebSocketRegressionIngress(Server, Host, 3);
         }
 
         /// <summary>A hull that can carry a full mine/probe/chaff/missile reserve
@@ -75,6 +82,9 @@ public sealed class P1030CombatGatesTests
             return ship;
         }
 
+        private void Dispatch(ConnectionId from, byte[] packet)
+        { if (_ingress is null) Server.TestProcessDatagram(from, packet); else _ingress.Send(from, packet); }
+
         public void Set(string field, object value) =>
             typeof(Srv).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(Server, value);
         public T Get<T>(string field) =>
@@ -86,10 +96,10 @@ public sealed class P1030CombatGatesTests
         }
 
         public void Send(ConnectionId from, IFedMessage message) =>
-            Server.TestProcessDatagram(from, FedPacket.Pack([message.Encode()]));
+            Dispatch(from, FedPacket.Pack([message.Encode()]));
         /// <summary>One wire packet carrying <paramref name="count"/> copies of a message.</summary>
         public void SendBurst(ConnectionId from, IFedMessage message, int count) =>
-            Server.TestProcessDatagram(from, FedPacket.Pack(Enumerable.Repeat(message.Encode(), count)));
+            Dispatch(from, FedPacket.Pack(Enumerable.Repeat(message.Encode(), count)));
         public IEnumerable<(ConnectionId Peer, byte[] Msg)> Messages(ushort fmid) =>
             Sent.Where(s => FedMessageHeader.Read(s.Msg).Fmid == fmid);
 
@@ -131,7 +141,7 @@ public sealed class P1030CombatGatesTests
         public MountedPart Mount(Ship ship, DataPartTypeIGC type, short amount, byte fraction = ExpandedPartData.FullyMounted)
             => ship.MountPart(type, amount, 0, fraction)!;
 
-        public void Dispose() { Host.Transport!.Shutdown(); Server.Dispose(); }
+        public void Dispose() { _ingress?.Dispose(); Host.Transport!.Shutdown(); Server.Dispose(); }
     }
 
     private static int Mines(World w) => w.Owner.Sector!.Models.OfType<Mine>().Count();
@@ -149,7 +159,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void One_packet_of_30_fire_expendable_requests_deploys_one_round()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var part = w.Mount(w.Owner, w.MineLauncherPart(), 8);
         w.SendBurst(w.A, new FireExpendableRequest { Et = EquipmentType.Dispenser }, 30);
         Assert.Equal(1, Mines(w));
@@ -163,7 +173,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void Fire_expendable_is_refused_while_the_dispenser_is_still_mounting()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var part = w.Mount(w.Owner, w.MineLauncherPart(), 4, fraction: 0);
         Assert.True(part.MountedFraction < 1f);
         w.Send(w.A, new FireExpendableRequest { Et = EquipmentType.Dispenser });
@@ -178,7 +188,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void Fire_expendable_obeys_the_load_deadline_and_rearms()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mount(w.Owner, w.MineLauncherPart(), 5);
         double now = w.Mission.LastUpdate;
         double load = w.Core.MineTypes.Values.First().LoadTime;
@@ -205,7 +215,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void Ripcord_refuses_mines_but_allows_chaff_over_the_wire()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mount(w.Owner, w.MineLauncherPart(), 3);
         w.Mount(w.Owner, w.ChaffLauncherPart(), 3);
         w.Owner.SetRipcordModel(new Ship.RipcordTarget(1, 5, 0));
@@ -227,7 +237,7 @@ public sealed class P1030CombatGatesTests
     [InlineData("lobby")]
     public void Dead_or_lobbied_ships_cannot_fire_expendables(string gate)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mount(w.Owner, w.MineLauncherPart(), 3);
         if (gate == "dead") w.Owner.SetFraction(0f); else w.Owner.SideId = -2;
         w.Send(w.A, new FireExpendableRequest { Et = EquipmentType.Dispenser });
@@ -247,7 +257,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void Fire_missile_while_the_rack_is_mounting_is_a_dud_and_keeps_the_mount_deadline()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mount(w.Owner, w.MissileLauncherPart(), 9, fraction: 0);
         var launcher = Mounted(w, EquipmentType.Magazine);
         double mountDeadline = launcher.TimeLoaded;
@@ -269,7 +279,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void Fire_missile_lock_is_bounded_by_the_server_tracked_lock()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var mt = w.LockMissile();
         w.Mount(w.Owner, w.MissileLauncherPart(), 9);
         var target = w.Place(103, 1, w.CombatHull());
@@ -300,7 +310,7 @@ public sealed class P1030CombatGatesTests
     [InlineData("lobby")]
     public void Dead_or_lobbied_ships_cannot_fire_missiles(string gate)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mount(w.Owner, w.MissileLauncherPart(), 3);
         if (gate == "dead") w.Owner.SetFraction(0f); else w.Owner.SideId = -2;
         w.Send(w.A, new FireMissile { Lock = 0f });
@@ -317,7 +327,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void A_part_accepted_into_an_active_mount_starts_unmounted()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pack = w.Pack();
         w.Owner.PendingTreasureOffer = (pack.PartId, 20);
         w.Send(w.A, new TreasureAck { MountId = 0 });
@@ -338,7 +348,7 @@ public sealed class P1030CombatGatesTests
     [SkippableFact]
     public void A_stackable_pickup_into_an_occupied_cargo_slot_merges_the_cargo_stack()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pack = w.Pack();
         Assert.True(w.Owner.TryMountCargoPart(pack, 40, -1, 0));
         Assert.Equal((short)40, w.Owner.CargoHold[0]!.Amount);
@@ -351,4 +361,11 @@ public sealed class P1030CombatGatesTests
         Assert.Empty(w.Owner.Parts);                                 // not mounted, not lost
         Assert.NotEmpty(w.Messages(AddPart.Fmid));                   // merged stack echoed to the sector
     }
+}
+
+/// <summary>The same R1/R1b assertions through real WebSocket input.</summary>
+[Collection("LiveNetwork")]
+public sealed class P1048CombatGatesTests : P1030CombatGatesTests
+{
+    public P1048CombatGatesTests() : base(true) { }
 }

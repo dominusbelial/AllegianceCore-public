@@ -1,10 +1,10 @@
 using Allegiance.Core;
-using Allegiance.Server;
-
-return ServerMain.RunAsync(args);
+namespace Allegiance.Server;
 
 internal static partial class ServerMain
 {
+    private static int Main(string[] args) => RunAsync(args);
+
     /// <summary>
     /// Entry point: split args into --config and `--key value` / `--key=value`
     /// overrides, load the config, then hand control to <see cref="Server"/>.

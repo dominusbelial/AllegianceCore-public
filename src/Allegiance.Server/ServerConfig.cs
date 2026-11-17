@@ -1399,6 +1399,9 @@ public sealed class ServerConfig
     /// </summary>
     public TransportConfig? Transport { get; set; }
 
+    /// <summary>Default-off direct WebSocket listener; ordinary LOGONREQ authentication.</summary>
+    public WebSocketConfig WebSocket { get; set; } = new();
+
     /// <summary>
     /// P731 — the UDP discovery responder. Null/absent (the default) = enabled
     /// on the game port + 1 with the default rate limit, i.e. today's installs

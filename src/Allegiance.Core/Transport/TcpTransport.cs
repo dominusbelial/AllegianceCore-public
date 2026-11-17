@@ -640,6 +640,11 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     /// <see cref="NoWriteProgressTimeout"/> + overflow limits. Idempotent;
     /// unknown/already-gone ids are ignored.
     /// </summary>
+    public bool IsPeerHuman(ConnectionId id)
+    {
+        lock (_gate) return _peers.TryGetValue(id, out var peer) && peer.IsHuman;
+    }
+
     public void SetPeerHuman(ConnectionId id, bool human)
     {
         lock (_gate)
