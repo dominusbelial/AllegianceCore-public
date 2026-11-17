@@ -330,6 +330,7 @@ public sealed partial class Server
                     // gate answer is a refusal — the peer is a real client by then
                     // (that separate retry policy belongs to the logon handlers).
                     _preLogonSinceMs.Remove(from);
+                    _host.Transport?.MarkPeerAuthenticated(from);
                 }
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness

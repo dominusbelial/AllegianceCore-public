@@ -1,0 +1,132 @@
+{
+  "newCasesPerIsolatedRun": 135,
+  "isolatedRuns": 3,
+  "newPassedInFinalFast": 135,
+  "solutionBuildWarnings": 0,
+  "solutionBuildErrors": 0,
+  "toolsBuilt": 143,
+  "finalFast": {
+    "passed": 15287,
+    "failed": 2,
+    "skipped": 7,
+    "total": 15296,
+    "seconds": 998.1,
+    "timingOffenders": 1,
+    "calibratedLimitSeconds": 12.773,
+    "infrastructureChecks": 9,
+    "projectParallelism": 1
+  },
+  "isolation": [
+    {
+      "case": "mine",
+      "repeat": 1,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 2.075,
+      "caseSeconds": 0.541571,
+      "failure": null
+    },
+    {
+      "case": "mine",
+      "repeat": 2,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 2.072,
+      "caseSeconds": 0.536777,
+      "failure": null
+    },
+    {
+      "case": "mine",
+      "repeat": 3,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 2.06,
+      "caseSeconds": 0.541173,
+      "failure": null
+    },
+    {
+      "case": "capacity",
+      "repeat": 1,
+      "exitCode": 1,
+      "count": 1,
+      "outcomes": [
+        "Failed"
+      ],
+      "seconds": 3.386,
+      "caseSeconds": 1.882578,
+      "failure": "Assert.Empty() Failure: Collection was not empty\nCollection: [AsteroidMined { AsteroidId = 248, BpOreFraction = 228, ClusterId = 1061 }]"
+    },
+    {
+      "case": "capacity",
+      "repeat": 2,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 3.419,
+      "caseSeconds": 1.910878,
+      "failure": null
+    },
+    {
+      "case": "capacity",
+      "repeat": 3,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 3.421,
+      "caseSeconds": 1.921382,
+      "failure": null
+    },
+    {
+      "case": "civ5",
+      "repeat": 1,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 5.262,
+      "caseSeconds": 3.797964,
+      "failure": null
+    },
+    {
+      "case": "civ5",
+      "repeat": 2,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 5.241,
+      "caseSeconds": 3.767619,
+      "failure": null
+    },
+    {
+      "case": "civ5",
+      "repeat": 3,
+      "exitCode": 0,
+      "count": 1,
+      "outcomes": [
+        "Passed"
+      ],
+      "seconds": 5.338,
+      "caseSeconds": 3.884165,
+      "failure": null
+    }
+  ],
+  "dockerCompose": "Not run: Docker unavailable",
+  "commits": 0,
+  "pushes": 0
+}

@@ -147,7 +147,7 @@ public enum DisconnectReason
 /// only that connection — never the next <c>AcceptTcpClient()</c> — and a
 /// socket <c>ReceiveTimeout</c> bounds even that read.
 /// </summary>
-public sealed class TcpTransport : IServerTransport
+public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
 {
     private enum FrameType : byte { Greet = 0x01, Data = 0x02 }
 
@@ -640,6 +640,11 @@ public sealed class TcpTransport : IServerTransport
     /// <see cref="NoWriteProgressTimeout"/> + overflow limits. Idempotent;
     /// unknown/already-gone ids are ignored.
     /// </summary>
+    public bool IsPeerHuman(ConnectionId id)
+    {
+        lock (_gate) return _peers.TryGetValue(id, out var peer) && peer.IsHuman;
+    }
+
     public void SetPeerHuman(ConnectionId id, bool human)
     {
         lock (_gate)
@@ -1105,6 +1110,8 @@ public sealed class TcpTransport : IServerTransport
     /// accepted (the same value the accept-time log prints, the port's whole
     /// <c>OnNewConnection</c> body, <c>FedSrv.CPP:4536-4546</c>). <c>null</c> for
     /// an unknown/already-reaped peer or on the client half.</summary>
+    public string ProtocolName => "tcp";
+
     public IPAddress? PeerAddress(ConnectionId id)
     {
         lock (_gate) return _peerIpById.GetValueOrDefault(id);

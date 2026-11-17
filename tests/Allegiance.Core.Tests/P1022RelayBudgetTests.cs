@@ -1,3 +1,4 @@
+using Allegiance.Core.Tests.Transport;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Allegiance.Core;
@@ -28,8 +29,12 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 [Trait("Requires", "Artwork")]
 [Collection("LiveNetwork")]
-public sealed class P1022RelayBudgetTests
+public class P1022RelayBudgetTests
 {
+    private readonly bool _webSocket;
+    public P1022RelayBudgetTests() { }
+    protected P1022RelayBudgetTests(bool webSocket) => _webSocket = webSocket;
+
     /// <summary>The largest number of relays a packet may produce: the P654
     /// dedicated profile allows ~50 paid sends from a full budget (1000 / 20);
     /// 64 is the loose bound the R1 proof tests use, so a fix that merely halves
@@ -52,7 +57,8 @@ public sealed class P1022RelayBudgetTests
         public readonly Ship Owner, Mate, Enemy, Lobby, Outsider;
         public readonly List<(ConnectionId Peer, byte[] Msg)> Sent = [];
         public readonly ConnectionId A = new(1), B = new(2), C = new(3), L = new(4), X = new(5);
-        public World()
+        private readonly WebSocketRegressionIngress? _ingress;
+        public World(bool webSocket = false)
         {
             Require.Artwork();
             Core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
@@ -77,17 +83,21 @@ public sealed class P1022RelayBudgetTests
             Mission.MissionOwnerSideId = 0; Mission.Sides[0].LeaderShipId = Owner.Id; Mission.Sides[1].LeaderShipId = Enemy.Id;
             Server._testSendCapture = (c, p) => Sent.AddRange(FedPacket.Unpack(p).Select(m => (c, m)));
             Set("_simNow", 10d);
+            if (webSocket) _ingress = new WebSocketRegressionIngress(Server, Host, 5);
         }
+        private void Dispatch(ConnectionId from, byte[] packet)
+        { if (_ingress is null) Server.TestProcessDatagram(from, packet); else _ingress.Send(from, packet); }
+
         public void Set(string field, object value) => typeof(Srv).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(Server, value);
         public T Get<T>(string field) => (T)typeof(Srv).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(Server)!;
         public Srv.LiveShip Live(ConnectionId peer) => Get<Dictionary<ConnectionId, Srv.LiveShip>>("_peerShips")[peer];
-        public void Send(ConnectionId from, IFedMessage message) => Server.TestProcessDatagram(from, FedPacket.Pack([message.Encode()]));
+        public void Send(ConnectionId from, IFedMessage message) => Dispatch(from, FedPacket.Pack([message.Encode()]));
         /// <summary>One wire packet carrying <paramref name="count"/> copies of a message.</summary>
         public void SendBurst(ConnectionId from, IFedMessage message, int count) =>
-            Server.TestProcessDatagram(from, FedPacket.Pack(Enumerable.Repeat(message.Encode(), count)));
+            Dispatch(from, FedPacket.Pack(Enumerable.Repeat(message.Encode(), count)));
         public int Count(ushort fmid) => Sent.Count(s => FedMessageHeader.Read(s.Msg).Fmid == fmid);
         public string Tally() => string.Join(", ", Sent.GroupBy(s => FedMessageHeader.Read(s.Msg).Fmid).Select(g => $"fmid {g.Key} x{g.Count()}"));
-        public void Dispose() { Host.Transport!.Shutdown(); Server.Dispose(); }
+        public void Dispose() { _ingress?.Dispose(); Host.Transport!.Shutdown(); Server.Dispose(); }
     }
 
     /// <summary>One whole-mission relay is what a legitimate client pays for, and
@@ -96,7 +106,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_legitimate_side_request_still_relays_once()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         Assert.True(w.Mission.Sides[0].AutoAccept, "fixture: the sides auto-accept (Side.AutoAccept default)");
         w.Send(w.L, new PositionReq { SideId = 0 });
         Assert.True(4 == w.Count(JoinSide.Fmid), $"JOIN_SIDE frames: {w.Tally()}");   // Owner, Mate, Enemy, Lobby
@@ -108,7 +118,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_pending_side_request_still_relays_once()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mission.Sides[0].AutoAccept = false;
         w.Send(w.L, new PositionReq { SideId = 0 });
         Assert.True(4 == w.Count(PositionReqBroadcast.Fmid), $"POSITIONREQ(40) frames: {w.Tally()}");
@@ -122,7 +132,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_side_request_for_the_ships_own_side_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.SendBurst(w.B, new PositionReq { SideId = 0 }, 256);
         int relays = w.Count(PositionReqBroadcast.Fmid) + w.Count(JoinSide.Fmid);
         Assert.True(relays >= 4, $"{relays} relays — a legitimate relay must still happen");
@@ -136,7 +146,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_swap_part_at_the_same_mount_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mission.Stage = MissionStage.Started;
         var weapon = w.Core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon && w.Mate.HullType.CanMountPart(p, 0));
         w.Mate.MountPart(weapon, 1, 0, 1);
@@ -153,7 +163,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_self_donation_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mission.Stage = MissionStage.Started;
         w.Live(w.B).Wallet.Money = 5000;
         w.SendBurst(w.B, new PlayerDonate { ShipID = w.Mate.Id, MoneyGiven = 1 }, 256);
@@ -169,7 +179,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void A_zero_bucket_donation_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mission.Stage = MissionStage.Started;
         var bucket = w.Mission.Sides[0].Buckets.FirstOrDefault(b => w.Mission.Sides[0].CanBuy(b));
         Assert.True(bucket is not null, "the assembled core has no buyable bucket for side 0");
@@ -185,7 +195,7 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void The_leaders_autoaccept_missiondef_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.Mission.Stage = MissionStage.Started;
         w.SendBurst(w.A, new ChatMessage { Message = "#autoaccept", ChatTarget = (int)ChatTarget.Everyone }, 256);
         int relays = w.Count(MissionDef.Fmid);
@@ -198,10 +208,17 @@ public sealed class P1022RelayBudgetTests
     [SkippableFact]
     public void The_owners_side_inactive_relay_is_charged()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         w.SendBurst(w.A, new SideInactive { SideId = 1, BActive = false }, 256);
         int relays = w.Count(SideInactive.Fmid);
         Assert.True(relays >= 4, $"{relays} SIDE_INACTIVE frames — the legitimate relay must still happen");
         Assert.True(relays <= FairShare * 4, $"256 SIDE_INACTIVEs produced {relays} whole-mission frames");
     }
+}
+
+/// <summary>The same R1/R1b assertions through real WebSocket input.</summary>
+[Collection("LiveNetwork")]
+public sealed class P1048RelayBudgetTests : P1022RelayBudgetTests
+{
+    public P1048RelayBudgetTests() : base(true) { }
 }

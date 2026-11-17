@@ -89,6 +89,9 @@ services:
     command: ["--identity-issuer", "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"]
     ports:
       - "6073:6073"
+      # P1048: webSocket.enabled defaults false in the mounted JSON. No HTTP/WS
+      # port is published here. An operator's private override can map loopback
+      # 6080 for a trusted TLS proxy; see docker/README.md "WebSocket game listener".
       # Desktop Host LAN also uses UDP 6074 (game port + 1) for discovery.
       # It runs in the client, outside Compose; dedicated discovery is opt-in
       # through an operator port mapping, preserving this service's exposure.

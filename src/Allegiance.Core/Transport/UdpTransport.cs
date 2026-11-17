@@ -13,7 +13,7 @@ namespace Allegiance.Core.Transport;
 /// Wire protocol and congestion/security policy are modern port infrastructure.
 /// Socket sends and protocol state are serialized; callbacks execute outside the state lock.
 /// </summary>
-public sealed partial class UdpTransport : IServerTransport, IDisposable
+public sealed partial class UdpTransport : IServerTransport, IUdpReceiveDiagnostics, IUdpListenerInfo, IDisposable
 {
     internal const int Mtu = 1200;
     internal const int Header = 32;
@@ -94,6 +94,7 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     public bool ReliableOneShot { get; init; }
     public bool IsConnected { get; private set; }
     public ConnectionId LocalId => ConnectionId.Me;
+    public ushort UdpPort => BoundPort;
     public ushort BoundPort => _host ? _boundPort : (ushort)0;
     public long TotalWrittenBytes => Interlocked.Read(ref _written);
     public long TotalEnqueuedBytes => Interlocked.Read(ref _enqueued);
@@ -754,6 +755,8 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     /// credential-guessing address key), or <c>null</c> for an unknown/retired
     /// peer. Endpoints are stored IPv6-normalised, so an IPv4 peer is mapped
     /// back to its IPv4 form.</summary>
+    public string ProtocolName => "udp";
+
     public IPAddress? PeerAddress(ConnectionId id)
     {
         lock (_gate)
@@ -762,6 +765,7 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
             return p.Endpoint.Address.IsIPv4MappedToIPv6 ? p.Endpoint.Address.MapToIPv4() : p.Endpoint.Address;
         }
     }
+    public bool IsPeerHuman(ConnectionId id) { lock (_gate) return _peers.TryGetValue(id, out var p) && p.Human; }
     public void SetPeerHuman(ConnectionId id, bool human) { lock (_gate) if (_peers.TryGetValue(id, out var p)) p.Human = human; }
     public bool IsPeerClosed(ConnectionId id) { lock (_gate) return !_peers.TryGetValue(id, out var p) || p.Closing; }
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown)

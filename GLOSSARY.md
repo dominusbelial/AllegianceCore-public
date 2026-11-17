@@ -40,6 +40,17 @@ list in **reverse**.
   `/play/preview/` before the API limiter. Publish with
   `scripts/publish-browser-preview.sh`; optional compose exporter and setup in
   `docker/README.md`. Report: `docs/reports/BROWSER_PREVIEW_P1046.md`.
+- **Direct browser server transport (P1048)** — default-off `webSocket` JSON
+  settings in `src/Allegiance.Server/Transport/WebSocketConfig.cs`; Kestrel-based
+  `src/Allegiance.Server/Transport/WebSocketServerTransport.cs` accepts binary
+  `allegiance-fed-v1` FedPackets through the existing tick-owned ingress and
+  identity dispatcher. Bounded admission and send queues live beside it;
+  `src/Allegiance.Core/Transport/ServerTransportMux.cs` maps full-width listener
+  IDs without reserved bits. WS sources use the lobby's explicit one-hop
+  `KnownProxies` policy and never receive loopback privileges. No browser client
+  join is enabled. Operator setup: `docker/README.md`; evidence:
+  `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`. Reproduce native-binary and
+  embedded-runtime proofs with `tools/p1048-ws-proof/Program.cs`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and
@@ -765,6 +776,7 @@ list in **reverse**.
   retain their TCP default. Proof: `tools/p897-transport-proof/`,
   `tests/Allegiance.ClientCore.MonoGame.Tests/P897ClientTransportTests.cs`;
   report `docs/reports/P897_REPORT.md`, operator guide `docs/UDP_TRANSPORT.md`.
+- **Transport peer facts (P1048, partial)** — `src/Allegiance.Core/Transport/IServerTransport.cs` exposes transport-observed source addresses, UDP listener information and optional diagnostic interfaces; `src/Allegiance.Core/Transport/ITransport.cs` supplies an honest protocol label. Work remaining: `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`.
 - **Optional UDP transport (P895, default off)** — `transport.protocol=udp`
   adds UDP alongside TCP pool: `src/Allegiance.Core/Transport/UdpTransport.cs`
   (cookie handshake, ordered/independent latest-wins channels, fragmentation,

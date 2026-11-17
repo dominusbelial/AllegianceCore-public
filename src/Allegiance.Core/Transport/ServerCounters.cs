@@ -75,8 +75,16 @@ public sealed class ServerCounters
     public void RecordFrame(ReadOnlySpan<byte> frame, bool guaranteed)
     {
         if (!guaranteed || frame.Length < 9 || frame[0] != 2) return; // 5-byte prefix + 4-byte CRC
+        RecordPacket(frame[5..], guaranteed);
+    }
+
+    /// <summary>Same native message counters for a direct FedPacket carrier.
+    /// FedSrv/FedSrv.CPP:4617-4636; carrier framing is never counted as cbmsg.</summary>
+    public void RecordPacket(ReadOnlySpan<byte> frame, bool guaranteed)
+    {
+        if (!guaranteed || frame.Length < 4) return;
         int messageEnd = frame.Length - 4;
-        int pos = 5;
+        int pos = 0;
         while (messageEnd - pos >= 4)
         {
             int size = BinaryPrimitives.ReadUInt16LittleEndian(frame[pos..]);

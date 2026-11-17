@@ -1,0 +1,32 @@
+{
+  "payloadBytes": 20,
+  "roundsPerTransport": 128,
+  "warmupRounds": 16,
+  "clientToServerWebSocketOverheadBytes": 6,
+  "serverToClientWebSocketOverheadBytes": 2,
+  "tcpFrameOverheadBytes": 5,
+  "runs": [
+    {
+      "run": 1,
+      "wsP50Ms": 0.0204,
+      "wsP95Ms": 0.0464,
+      "tcpP50Ms": 0.0192,
+      "tcpP95Ms": 0.0514
+    },
+    {
+      "run": 2,
+      "wsP50Ms": 0.0171,
+      "wsP95Ms": 0.0314,
+      "tcpP50Ms": 0.0183,
+      "tcpP95Ms": 0.0468
+    },
+    {
+      "run": 3,
+      "wsP50Ms": 0.0156,
+      "wsP95Ms": 0.0336,
+      "tcpP50Ms": 0.0174,
+      "tcpP95Ms": 0.0548
+    }
+  ],
+  "scope": "Measured loopback echoes; no tick, TLS, proxy or WAN."
+}

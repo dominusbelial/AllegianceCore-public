@@ -479,3 +479,87 @@ preferences cannot survive closing the tab. Saved passwords, credentials and
 identity tokens have no persistent browser path. The existing bundle-exporter
 Dockerfile includes the new library sources; Docker execution remains a separate
 qualification on lanes that have Docker installed.
+
+## WebSocket game listener (P1048)
+
+The server's optional direct WebSocket listener is **off by default**. Configure
+`webSocket` in the mounted server JSON, not in lobby settings. No new environment
+variables, client transport or browser join UI are introduced in this slice.
+TCP/UDP ports and default admission behavior are unchanged. The server remains a
+self-contained Native AOT executable in the runtime-deps image; ASP.NET is a build
+framework reference, not a managed runtime requirement in that image. The reference
+is private to the server, so desktop and embedded single-player consumers retain
+their existing Microsoft.NETCore.App runtime requirement.
+
+For a standalone loopback development server (outside Docker), add:
+
+```json
+"webSocket": {
+  "enabled": true,
+  "bindAddress": "127.0.0.1",
+  "port": 6080,
+  "path": "/game",
+  "allowedOrigins": ["http://localhost:8080"],
+  "knownProxies": [],
+  "allowLoopbackDevelopment": true
+}
+```
+
+Clients must request **only** `allegiance-fed-v1`. Each binary WebSocket message
+contains one complete ordinary FedPacket, CRC included; fragments are reassembled
+before the shared decoder. There is no type-byte greeting. Authentication remains
+`LOGONREQ.ZoneTicket` and the existing configured signature/issuer/audience/time/
+single-use checks. Keep production `identity.allowAnonymous` false. Tokens stay in
+memory and out of URLs, headers, configuration, logs and asset caches. P1048b will
+fetch a fresh join ticket after asset staging; audio/pointer activation requires a
+fresh user gesture when entering flight.
+
+For production, terminate TLS at an explicitly trusted reverse proxy and set
+`allowLoopbackDevelopment: false`, an exact HTTPS `allowedOrigins` list and explicit
+proxy IPs in `knownProxies`. This uses the **same policy as Lobby.KnownProxies**:
+clear all framework default trusted networks/proxies, allow only configured IPs,
+consume at most one matching `X-Forwarded-For`/`X-Forwarded-Proto` pair (header
+symmetry required), never trust forwarded Host. The game server has its own JSON
+list because it is a separate process; configure the same actual trust boundary
+as the lobby. Untrusted forwarded headers are ignored. Every WS peer, including a
+source of 127.0.0.1 through a trusted proxy, reports **false** for local privilege
+checks. Origins do not authenticate a pilot or confer any role.
+
+The application rejects plaintext unless both socket endpoints are loopback,
+loopback development is explicitly enabled and no proxy trust is configured. A
+container's bridge address is not a loopback exception. For container use, bind
+its internal listener explicitly and use a trusted TLS proxy; a private compose
+override may add `ports: ["127.0.0.1:6080:6080"]`. The default compose file publishes
+no WebSocket port. Restrict the backend port to that proxy; do not expose an
+unauthenticated forwarding service. No public proxy/hosting route is added here.
+
+Other `webSocket` settings (all numeric limits must be positive; deadlines finite
+and at most one hour):
+
+| JSON key | Default | Meaning |
+|---|---:|---|
+| `maxConnections` / `maxConnectionsPerIp` | 1024 / 64 | Physical socket and effective source admission ceilings, including pre-logon peers |
+| `maxPendingHandshakes` | 256 | Concurrent physical HTTP handshakes and concurrent upgrades |
+| `handshakeAttemptsPerWindow` / `handshakeAttemptsPerIpPerWindow` | 2048 / 128 | Separate global/source fixed-window caps at physical accept and every HTTP request; failures are charged |
+| `handshakeWindowSeconds` / `maxTrackedSources` | 60 / 4096 | Bounded attempt tables, retained across disconnects; full tables fail closed |
+| `handshakeTimeoutSeconds` | 10 | Absolute accept-to-upgrade deadline, not restarted by header bytes |
+| `authenticationTimeoutSeconds` | 60 | Absolute accept-to-validated-LOGONREQ deadline; the shared transport pre-logon sweep also remains active |
+| `fragmentProgressTimeoutSeconds` / `messageTimeoutSeconds` | 5 / 30 | Progress between receive segments and absolute assembly deadline |
+| `idleTimeoutSeconds` | 30 | Silence before a message starts |
+| `preLogonMaxMessageBytes` | 16384 | Initial envelope, configurable 8192–16384; accommodates the maximum join token |
+| `maxFragments` | 256 | Receive segments per message, including empty/non-final segments |
+| `maxQueuedBytes` / `maxQueuedEntries` | 33554432 / 8192 | Hard outbound payload and entry caps, including the in-flight message; byte cap cannot exceed the existing TCP hard ceiling |
+| `maxGuaranteedAgeSeconds` / `sendTimeoutSeconds` | 60 / 30 | Oldest guaranteed queued/in-flight age and single socket-write deadline, with no human exemption |
+
+The authenticated inbound ceiling is the smaller of **65536 bytes** and the
+existing `transport.maxFrameBytes` setting. CRC/cbmsg/message-count validation,
+per-peer byte/event ingress reservations, per-tick fairness and credential limits
+are shared with TCP/UDP. Raw socket caps also apply to the proxy's own source IP:
+size that physical per-IP budget for the intended proxy population explicitly.
+Send queues preserve ordered zero-key traffic and replace only unsent keyed
+snapshots; replacing a guaranteed snapshot does not reset its age. Stalled readers
+are disconnected. WebSocket/TCP retransmission can still block later messages
+behind earlier wire bytes; coalescing cannot retract bytes already sent.
+
+See [the implementation and proof report](../docs/reports/BROWSER_WS_TRANSPORT_P1048.md)
+for the measured AOT join, security tests, TCP comparison and lane limitations.

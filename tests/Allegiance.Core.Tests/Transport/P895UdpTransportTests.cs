@@ -286,6 +286,7 @@ public sealed class P895UdpTransportTests
             client.Send(ConnectionId.Server, Value(895), true);
             Until(() => hs.Data.Count == 1);
             Assert.Equal(0, cs.Lost);
+            Assert.Equal("tcp", TransportFactory.ActiveTransport(client).ProtocolName);
         }
         finally { client.Shutdown(); host.Shutdown(); }
     }
@@ -308,8 +309,7 @@ public sealed class P895UdpTransportTests
     public void Mixed_listener_uses_unique_peer_ids_and_routes_both_protocols()
     {
         var hs = new Site(); var ts = new Site(); var us = new Site();
-        var tcp = new TcpTransport(hs, TransportMode.Pool, 1);
-        var host = new DualTransport(hs, tcp, 0, null, null, new ServerCounters(), false);
+        var host = new DualTransport(hs, s => new TcpTransport(s, TransportMode.Pool, 1), 0, null, null, new ServerCounters(), false);
         var tc = new TcpTransport(ts); using var uc = new UdpTransport(us);
         // Deterministically model a constructor keepalive racing Join's return.
         // The greeting must already own ordered frame zero when IsConnected is true.
@@ -317,6 +317,7 @@ public sealed class P895UdpTransportTests
         try
         {
             host.Host(); tc.Join("127.0.0.1", host.BoundPort, "TCP"); uc.Join("127.0.0.1", host.UdpPort, "UDP");
+            Assert.Equal(host.UdpPort, Assert.IsAssignableFrom<IUdpListenerInfo>(host).UdpPort);
             Until(() => hs.Joins.Count == 2 && hs.Data.Count == 1);
             Assert.Equal(42, Number(hs.Data.Single()));
             Assert.Equal("join", hs.Events.First());
@@ -324,7 +325,15 @@ public sealed class P895UdpTransportTests
             Until(() => ts.Data.Count == 1 && us.Data.Count == 1);
             Assert.Equal(1, Number(ts.Data.Single())); Assert.Equal(2, Number(us.Data.Single()));
             Assert.Equal(2, hs.Joins.Select(j => j.Id).Distinct().Count());
-            Assert.All(hs.Joins, join => Assert.True(host.IsPeerLoopback(join.Id)));
+            IServerTransport server = host;
+            Assert.All(hs.Joins, join =>
+            {
+                Assert.True(server.IsPeerLoopback(join.Id));
+                Assert.Equal(IPAddress.Loopback, server.PeerAddress(join.Id));
+                Assert.Equal(join.Name.ToLowerInvariant(), server.PeerProtocolName(join.Id));
+            });
+            Assert.Equal("tcp", tc.ProtocolName);
+            Assert.Equal("udp", uc.ProtocolName);
         }
         finally { tc.Shutdown(); host.Shutdown(); }
     }

@@ -1,3 +1,4 @@
+using Allegiance.Core.Tests.Transport;
 using System.Reflection;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
@@ -13,13 +14,18 @@ namespace Allegiance.Core.Tests;
 /// <summary>R1b F3: real booted server, production wire dispatch and captured replies.</summary>
 [Trait("Requires", "Artwork")]
 [Collection("LiveNetwork")]
-public sealed class P1034BoardingParityTests
+public class P1034BoardingParityTests
 {
+    private readonly bool _webSocket;
+    public P1034BoardingParityTests() { }
+    protected P1034BoardingParityTests(bool webSocket) => _webSocket = webSocket;
+
     private sealed class World : IDisposable
     {
         public readonly Srv Server = new() { SpawnInitialMinersAtBoot = false };
         public readonly List<(int Conn, byte[] Message)> Output = [];
-        public World(bool adminEnabled = false, bool twoMissions = false)
+        private readonly WebSocketRegressionIngress? _ingress;
+        public World(bool webSocket, bool adminEnabled = false, bool twoMissions = false)
         {
             Require.Artwork();
             GameConfig Game(string name) => new() { Name = name, Map = "XXV_simple.igc", Teams = 2,
@@ -31,10 +37,16 @@ public sealed class P1034BoardingParityTests
                 LiveSettings = new() { AdminCheats = new() { Enabled = adminEnabled,
                     AllowNames = ["ADMIN"], Secret = "p1034-test" } },
             });
+            if (webSocket) _ingress = new WebSocketRegressionIngress(Server, 4);
             Server._testSendCapture = (c, p) => Output.AddRange(FedPacket.Unpack(p).Select(m => ((int)c.Value, m)));
         }
         public Mission Mission => Server.Missions[0];
-        public void Send(int conn, IFedMessage message) => Server.TestProcessDatagram(new ConnectionId((uint)conn), FedPacket.Pack([message.Encode()]));
+        public void Send(int conn, IFedMessage message)
+        {
+            var packet = FedPacket.Pack([message.Encode()]);
+            if (_ingress is null) Server.TestProcessDatagram(new ConnectionId((uint)conn), packet);
+            else _ingress.Send(new ConnectionId((uint)conn), packet);
+        }
         public List<byte[]> Sent(int conn, ushort fmid) => Output.Where(o => o.Conn == conn
             && FedMessageHeader.Read(o.Message).Fmid == fmid).Select(o => o.Message).ToList();
         public Ship Seat(int conn, string name, string credential = "")
@@ -48,7 +60,7 @@ public sealed class P1034BoardingParityTests
             for (int i = 0; i < 400 && Server.Ships.All(s => s.Ship.Id != ack.ShipID); i++) Server.TickSim();
             return Server.Ships.Single(s => s.Ship.Id == ack.ShipID).Ship;
         }
-        public void Dispose() => Server.Dispose();
+        public void Dispose() { _ingress?.Dispose(); Server.Dispose(); }
     }
 
     private static void Invoke(World w, string method, params object[] args) =>
@@ -93,7 +105,7 @@ public sealed class P1034BoardingParityTests
     [InlineData(true, "ADMIN", "p1034-test", true)]
     public void Observer_requires_enabled_authenticated_allowlisted_admin(bool enabled, string name, string secret, bool allowed)
     {
-        using var w = new World(enabled);
+        using var w = new World(_webSocket, enabled);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, name, secret);
         pilot.ClearLoadout(); // No equipped turret: observer fallback.
@@ -117,7 +129,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Cross_sector_board_leave_buy_launch_uses_carriers_station_sector()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -163,7 +175,7 @@ public sealed class P1034BoardingParityTests
     [InlineData("undock")]
     public void Passengers_follow_sector_membership_peer_routing_and_launch_burst(string path)
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -222,7 +234,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Leave_is_scoped_to_the_boarders_mission()
     {
-        using var w = new World(twoMissions: true);
+        using var w = new World(_webSocket, twoMissions: true);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -240,7 +252,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Cross_sector_board_is_coherent_while_still_docked()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -257,7 +269,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Full_turrets_refuse_ordinary_boarder_without_mutating_hardware_or_money()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -284,7 +296,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Same_sector_arrivals_keep_both_gunners_and_send_each_the_identical_source_burst()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var first = w.Seat(2, "CREW");
         var second = w.Seat(3, "OTHER");
@@ -311,7 +323,7 @@ public sealed class P1034BoardingParityTests
     [SkippableFact]
     public void Cross_sector_board_immediate_status_uses_current_peer_sector()
     {
-        using var w = new World();
+        using var w = new World(_webSocket);
         var pilot = w.Seat(1, "PILOT");
         var child = w.Seat(2, "CREW");
         Equip(w, pilot);
@@ -326,4 +338,11 @@ public sealed class P1034BoardingParityTests
         Assert.Equal(pilot.Id, status.ParentId);
     }
 
+}
+
+/// <summary>The same R1b assertions through real WebSocket input.</summary>
+[Collection("LiveNetwork")]
+public sealed class P1048BoardingParityTests : P1034BoardingParityTests
+{
+    public P1048BoardingParityTests() : base(true) { }
 }

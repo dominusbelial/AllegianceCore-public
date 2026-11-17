@@ -4,6 +4,9 @@
   "staticCoreEncrypted": false,
   "botAuthenticationSecret": null,
   "port": 6073,
+  "webSocket": {
+    "enabled": false
+  },
   "updatesPerSecond": 20,
   "games": [
     {
