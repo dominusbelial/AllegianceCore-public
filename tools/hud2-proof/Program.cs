@@ -587,6 +587,9 @@ sealed class Proof : Game
                 placement = new
                 {
                     targetReadout = Box(_jetAudit!.TargetReadoutBox),
+                    // P1039c — the designator readout's own rows (the fallback block prints only
+                    // what the pane lacks; the pane's readings are not repeated).
+                    targetReadoutTexts = _jetAuditSurface!.TextsInside(_jetAudit.TargetReadoutBox),
                     lockReadout = Box(_jetAudit.LockReadoutBox),
                     targetSlot = _jetAudit.TargetReadoutSlot,
                     lockSlot = _jetAudit.LockReadoutSlot,
@@ -608,8 +611,18 @@ sealed class Proof : Game
                     overflows = _jetAudit.RadarLabelOverflows,
                     priorityMisses = _jetAudit.RadarPriorityLabelMisses,
                     wordsDropped = _jetAudit.RadarWordsDropped,
+                    priorityHidden = _jetAudit.RadarPriorityHidden,
+                    // P1039c — the scope's own budget (pixels per label) and whether a
+                    // non-priority label may keep its full multi-row form at this scope size.
+                    budget = _jetAudit.RadarLabelBudget,
+                    fullFormAllowed = _jetAudit.RadarFullFormAllowed,
+                    plates = _jetAudit.RadarPlates,
                     labels = Labels(_jetAudit),
                 } : null,
+                // P1039c — the compact annunciator row's measured ink box and the word gap it
+                // was drawn with (the `AUTOVLOCK FLAG` defect's evidence).
+                annunciatorRow = Box(_jetAudit!.AnnunciatorRow),
+                annunciatorWordGap = _jetAudit!.AnnunciatorGap,
                 tag = JetHudRenderer.TagText,
             });
         }
@@ -638,12 +651,13 @@ sealed class Proof : Game
                 + $"{jetWatch.Elapsed.TotalMilliseconds / Math.Max(1e-6, modernWatch.Elapsed.TotalMilliseconds):0.00}");
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 8, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 9, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         // P1038b/c — the layout classes must be 0 in every Jet scene; print the offending
         // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
-        int inPlate = 0, cueHits = 0, legible = 0, cross = 0, same = 0;
+        int inPlate = 0, cueHits = 0, legible = 0, cross = 0, same = 0, overGlyph = 0, strokeText = 0, plates = 0;
         int radarPlaced = 0, radarShortened = 0, radarHidden = 0, radarOverflow = 0, radarMisses = 0, radarWords = 0;
+        int radarPriorityHidden = 0;
         foreach (var scene in summaries)
         {
             var layout = (LayoutAudit)scene.GetType().GetProperty("layout")!.GetValue(scene)!;
@@ -656,6 +670,9 @@ sealed class Proof : Game
             legible += layout.LegibleBehindPane;
             cross += layout.TextOverlapCross;
             same += layout.TextOverlapSame;
+            overGlyph += layout.TextOverGlyph;
+            strokeText += layout.StrokeThroughText;
+            plates += layout.RadarPlates;
             object? radar = scene.GetType().GetProperty("radar")!.GetValue(scene);
             if (radar is null) continue;
             var type = radar.GetType();
@@ -665,14 +682,17 @@ sealed class Proof : Game
             radarOverflow += (int)type.GetProperty("overflows")!.GetValue(radar)!;
             radarMisses += (int)type.GetProperty("priorityMisses")!.GetValue(radar)!;
             radarWords += (int)type.GetProperty("wordsDropped")!.GetValue(radar)!;
+            radarPriorityHidden += (int)type.GetProperty("priorityHidden")!.GetValue(radar)!;
         }
         Console.WriteLine($"HUD2_JET_AUDIT stroke-vs-text {strokeHits}, text-outside-plate {outsidePlate}, "
             + $"text-off-screen {offScreen}, icon-too-small {smallIcons}, text-in-plate {inPlate}, "
             + $"cue-vs-readout {cueHits}, legible-behind-pane {legible}, text-overlap-cross {cross}, "
             + $"text-overlap-same {same} over {scenes.Length} scenes");
+        Console.WriteLine($"HUD2_JET_RADAR_STROKES text-over-glyph {overGlyph}, stroke-through-text {strokeText}, "
+            + $"backing plates {plates} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_RADAR_LABELS placed {radarPlaced}, shortened {radarShortened}, "
-            + $"hidden {radarHidden}, never-hidden overflows {radarOverflow}, priority misses {radarMisses}, "
-            + $"words dropped {radarWords} over {scenes.Length} scenes");
+            + $"hidden {radarHidden}, priority hidden {radarPriorityHidden}, never-hidden overflows {radarOverflow}, "
+            + $"priority misses {radarMisses}, words dropped {radarWords} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -2057,14 +2077,22 @@ sealed class Proof : Game
     /// <b>text-outside-plate</b>, <b>text-off-screen</b> and the <b>minimum icon glyph
     /// size</b>.</para>
     /// </summary>
-    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit, IJetCueAudit, IJetElementAudit
+    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit, IJetCueAudit, IJetElementAudit,
+        IJetRadarAudit
     {
         /// <summary>P1039 — the element the runs that follow belong to (the renderer
         /// announces each block once; a run with no announcement carries null).</summary>
         private string? _element;
 
+        /// <summary>P1039c — the radar contact whose marks and runs follow (-1 outside the
+        /// radar or for its captions).</summary>
+        private int _contact = -1;
+
         /// <summary>P1039 — name the block whose runs follow.</summary>
         public void Element(string id) => _element = id;
+
+        /// <summary>P1039c — name the radar contact whose runs follow.</summary>
+        public void Contact(int index) => _contact = index;
 
         /// <summary>A cursor-invisible sub-pixel tolerance: anything inside this is the same
         /// geometric run submitted twice (keyline then ink).</summary>
@@ -2078,6 +2106,14 @@ sealed class Proof : Game
         private readonly List<LayoutGlyph> _glyphs = new();
         private readonly List<LayoutCue> _cues = new();
         private readonly List<LayoutBox> _cueReadouts = new();
+        /// <summary>P1039c — the radar geometry: each contact's glyph/overlay box, the four band
+        /// strokes and the leader strokes of the frame.</summary>
+        private readonly List<LayoutContactGlyph> _contactGlyphs = new();
+        private readonly List<LayoutRing> _rings = new();
+        private readonly List<LayoutStroke> _leaders = new();
+        /// <summary>P1039c — the backing plates drawn under radar readings (they interrupt the
+        /// band stroke, so the audit counts them instead of a band-through-text hit).</summary>
+        private readonly List<LayoutFill> _radarPlates = new();
         private readonly Dictionary<int, Color> _ink = new();
         private int _seq;
 
@@ -2141,6 +2177,22 @@ sealed class Proof : Game
         public void CueReadout(RectangleF box)
             => _cueReadouts.Add(new("LOCK", box.X, box.Y, box.Width, box.Height, _seq++));
 
+        /// <summary>P1039c — the glyph/overlay box of the contact announced last.</summary>
+        public void ContactGlyph(RectangleF box)
+            => _contactGlyphs.Add(new(_contact, box.X, box.Y, box.Width, box.Height, _seq++));
+
+        /// <summary>P1039c — one range-band stroke of the scope.</summary>
+        public void RadarRing(Vector2 centre, float radius, bool round)
+            => _rings.Add(new(centre, radius, round, _seq++));
+
+        /// <summary>P1039c — one leader stroke of a placed label block.</summary>
+        public void RadarLeader(Vector2 from, Vector2 to, float width)
+            => _leaders.Add(new(from, to, width, _seq++, _element));
+
+        /// <summary>P1039c — one backing plate drawn under a radar reading.</summary>
+        public void RadarPlate(RectangleF box)
+            => _radarPlates.Add(new(box.X, box.Y, box.Width, box.Height, _seq++, Color.White));
+
         private void Record(List<LayoutBox> list, string text, float x, float y, float w, float h, int seq)
         {
             for (int i = list.Count - 1; i >= 0; i--)
@@ -2149,11 +2201,11 @@ sealed class Proof : Game
                 if (string.Equals(run.Text, text, StringComparison.Ordinal)
                     && MathF.Abs(run.X - x) <= 2.5f && MathF.Abs(run.Y - y) <= 2.5f)
                 {
-                    list[i] = new LayoutBox(text, x, y, w, h, seq, _element);   // keep the ink run (submitted last)
+                    list[i] = new LayoutBox(text, x, y, w, h, seq, _element, _contact);   // keep the ink run (submitted last)
                     return;
                 }
             }
-            list.Add(new LayoutBox(text, x, y, w, h, seq, _element));
+            list.Add(new LayoutBox(text, x, y, w, h, seq, _element, _contact));
         }
 
         /// <summary>P1038b — record one stroke, keeping the INK width when the painter
@@ -2185,8 +2237,13 @@ sealed class Proof : Game
             _glyphs.Clear();
             _cues.Clear();
             _cueReadouts.Clear();
+            _contactGlyphs.Clear();
+            _rings.Clear();
+            _leaders.Clear();
+            _radarPlates.Clear();
             _ink.Clear();
             _element = null;
+            _contact = -1;
         }
 
         /// <summary>
@@ -2384,6 +2441,55 @@ sealed class Proof : Game
                         + $"x {b.Text}@{b.X:0.#},{b.Y:0.#} {b.W:0.#}x{b.H:0.#}");
                 }
 
+            // ── P1039c: text over ANOTHER contact's glyph (radar) ──────────
+            // Every contact glyph/overlay box the radar reported, against every radar text
+            // run: a reading drawn on a different contact's glyph (or on a caption's row) is
+            // the defect the review saw. A contact's OWN glyph is its own mark (the marker
+            // words M/P/T/SUB/ACC sit beside it by design), so it is excluded by index.
+            var overGlyph = new List<string>();
+            foreach (LayoutBox text in _texts)
+            {
+                if (!string.Equals(text.Element, "radar", StringComparison.Ordinal)) continue;
+                foreach (LayoutContactGlyph glyph in _contactGlyphs)
+                {
+                    if (glyph.Index == text.Contact) continue;
+                    var box = new LayoutBox("#", glyph.X, glyph.Y, glyph.W, glyph.H, glyph.Seq);
+                    if (!Intersects(box, text)) continue;
+                    overGlyph.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} {text.W:0.#}x{text.H:0.#} "
+                        + $"over glyph of contact {glyph.Index}@{glyph.X:0.#},{glyph.Y:0.#} {glyph.W:0.#}x{glyph.H:0.#}");
+                }
+            }
+
+            // ── P1039c: a band or leader stroke through a radar reading ────
+            // The stated rule for defect 1 is the SLOT TEST (no label is placed across a band),
+            // not a backing plate, so any ring or leader stroke crossing a radar run's ink band
+            // is a hit; there is no plate exemption to apply. The ink band is the same
+            // InkTopFraction…InkBottomFraction band the stroke-vs-text rule uses.
+            var strokeText = new List<string>();
+            foreach (LayoutBox text in _texts)
+            {
+                if (!string.Equals(text.Element, "radar", StringComparison.Ordinal)) continue;
+                float inkTop = text.Y + text.H * InkTopFraction + 1f;
+                float inkBottom = text.Y + text.H * InkBottomFraction - 1f;
+                if (inkBottom <= inkTop) continue;
+                foreach (LayoutRing ring in _rings)
+                {
+                    if (!RingHits(ring, text.X, inkTop, text.X + text.W, inkBottom)) continue;
+                    if (RadarPlateCovers(text, ring.Seq)) continue;   // the plate interrupts the band
+                    strokeText.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} x band r{ring.Radius:0.#} "
+                        + $"{(ring.Round ? "circle" : "square")} c{ring.Centre.X:0.#},{ring.Centre.Y:0.#}");
+                }
+                foreach (LayoutStroke leader in _leaders)
+                {
+                    float pad = JetRadarLabels.RingPad;
+                    if (!SegmentHitsBox(leader.A, leader.B, text.X - pad, inkTop - pad,
+                        text.X + text.W + pad, inkBottom + pad)) continue;
+                    if (RadarPlateCovers(text, leader.Seq)) continue;  // never used by the pass, kept honest
+                    strokeText.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} x leader "
+                        + $"{leader.A.X:0.#},{leader.A.Y:0.#}->{leader.B.X:0.#},{leader.B.Y:0.#} w{leader.Width:0.#}");
+                }
+            }
+
             // ── P1038c: cue-vs-own-readout ─────────────────────────────────
             // The cue is drawn BEFORE its caption, so the generic stroke-vs-text rule
             // (background strokes are exempt) cannot see this: the renderer reports each cue
@@ -2433,12 +2539,13 @@ sealed class Proof : Game
             return new LayoutAudit(_texts.Count, _fills.Count, _strokes.Count, textOverlaps.Count,
                 captionOverlaps.Count, boxOverlaps.Count, strokeHits.Count, outsidePlate.Count, offScreen.Count,
                 _glyphs.Count, smallGlyphs.Count, inPlateOverlaps.Count, cueHits.Count, legibleBehindPane.Count,
-                crossOverlaps.Count, sameOverlaps.Count,
+                crossOverlaps.Count, sameOverlaps.Count, overGlyph.Count, strokeText.Count, _radarPlates.Count,
                 captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray(),
                 strokeHits.Take(4).ToArray(), outsidePlate.Take(4).ToArray(),
                 offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray(),
                 inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray(),
-                crossOverlaps.Take(4).ToArray(), sameOverlaps.Take(4).ToArray());
+                crossOverlaps.Take(4).ToArray(), sameOverlaps.Take(4).ToArray(),
+                overGlyph.Take(4).ToArray(), strokeText.Take(4).ToArray());
         }
 
         /// <summary>P1039 — the one stated stroke-vs-text exception: the Jet radar's fixed
@@ -2522,6 +2629,61 @@ sealed class Proof : Game
             float angle = cue.Start + cue.Sweep * t;
             return new(cue.Center.X + MathF.Cos(angle) * cue.Radius,
                 cue.Center.Y + MathF.Sin(angle) * cue.Radius);
+        }
+
+        /// <summary>P1039c — the distinct texts recorded inside <paramref name="box"/> (the
+        /// designator readout's own runs: the fallback block's rows are evidence, not prose).</summary>
+        public string[] TextsInside(RectangleF box)
+        {
+            if (box.Width <= 0f || box.Height <= 0f) return Array.Empty<string>();
+            var outer = new LayoutBox("#", box.X, box.Y, box.Width, box.Height, int.MaxValue);
+            var list = new List<string>();
+            foreach (LayoutBox text in _texts)
+            {
+                if (!Contains(outer, text)) continue;
+                if (!list.Contains(text.Text)) list.Add(text.Text);
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>P1039c — true when a radar backing plate drawn AFTER the stroke and BEFORE
+        /// the run contains it: the plate interrupts the stroke, so the run is not struck through
+        /// (the plate itself is counted instead).</summary>
+        private bool RadarPlateCovers(LayoutBox text, int strokeSeq)
+        {
+            foreach (LayoutFill plate in _radarPlates)
+            {
+                if (plate.Seq <= strokeSeq || plate.Seq >= text.Seq) continue;
+                var box = new LayoutBox("#", plate.X, plate.Y, plate.W, plate.H, plate.Seq);
+                if (Contains(box, text)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>P1039c — does a band stroke pass through the box (x0,y0)–(x1,y1)? A circle</summary>
+        /// is tested exactly (nearest point inside the radius, farthest corner outside it); a
+        /// square band is four segments. The stroke's half width plus half a pixel is added.</summary>
+        private static bool RingHits(LayoutRing ring, float x0, float y0, float x1, float y1)
+        {
+            if (x1 < x0 || y1 < y0 || ring.Radius <= 0f) return false;
+            float pad = JetRadarLabels.RingPad;
+            Vector2 c = ring.Centre;
+            if (ring.Round)
+            {
+                float nx = Math.Clamp(c.X, x0, x1), ny = Math.Clamp(c.Y, y0, y1);
+                float near = MathF.Sqrt((nx - c.X) * (nx - c.X) + (ny - c.Y) * (ny - c.Y));
+                float far = MathF.Sqrt(MathF.Max(
+                    (x0 - c.X) * (x0 - c.X) + (y0 - c.Y) * (y0 - c.Y),
+                    MathF.Max((x1 - c.X) * (x1 - c.X) + (y0 - c.Y) * (y0 - c.Y),
+                        MathF.Max((x0 - c.X) * (x0 - c.X) + (y1 - c.Y) * (y1 - c.Y),
+                            (x1 - c.X) * (x1 - c.X) + (y1 - c.Y) * (y1 - c.Y)))));
+                return near <= ring.Radius + pad && far >= ring.Radius - pad;
+            }
+            float r = ring.Radius;
+            return SegmentHitsBox(new(c.X - r, c.Y - r), new(c.X + r, c.Y - r), x0 - pad, y0 - pad, x1 + pad, y1 + pad)
+                || SegmentHitsBox(new(c.X + r, c.Y - r), new(c.X + r, c.Y + r), x0 - pad, y0 - pad, x1 + pad, y1 + pad)
+                || SegmentHitsBox(new(c.X + r, c.Y + r), new(c.X - r, c.Y + r), x0 - pad, y0 - pad, x1 + pad, y1 + pad)
+                || SegmentHitsBox(new(c.X - r, c.Y + r), new(c.X - r, c.Y - r), x0 - pad, y0 - pad, x1 + pad, y1 + pad);
         }
 
         /// <summary>P1038c — the largest per-channel difference between two colours (0…255).</summary>
@@ -2637,9 +2799,18 @@ sealed class Proof : Game
     }
 
     /// <summary>P1039 — a recorded text run: its ink box, draw order and the ELEMENT that
-    /// drew it (`TextOverlapCross` compares runs from different elements).</summary>
+    /// drew it (`TextOverlapCross` compares runs from different elements). P1039c — the radar
+    /// CONTACT the run belongs to (-1 for a caption or for any run outside the radar), so
+    /// `TextOverGlyph` can exclude a contact's own glyph.</summary>
     private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H, int Seq,
-        string? Element = null);
+        string? Element = null, int Contact = -1);
+
+    /// <summary>P1039c — one radar contact's glyph/overlay box (the obstacle and the
+    /// text-over-glyph reference), with the contact it belongs to.</summary>
+    private readonly record struct LayoutContactGlyph(int Index, float X, float Y, float W, float H, int Seq);
+
+    /// <summary>P1039c — one range-band stroke: a circle or a square outline of one radius.</summary>
+    private readonly record struct LayoutRing(Vector2 Centre, float Radius, bool Round, int Seq);
 
     /// <summary>P1038b — one recorded stroke: its endpoints, ink width (px) and draw order.</summary>
     private readonly record struct LayoutStroke(Vector2 A, Vector2 B, float Width, int Seq,
@@ -2659,9 +2830,10 @@ sealed class Proof : Game
     private sealed record LayoutAudit(int Texts, int Fills, int Strokes, int TextOverlaps, int CaptionOverlaps,
         int BoxOverlaps, int StrokeHits, int TextOutsidePlate, int TextOffScreen, int Icons, int IconTooSmall,
         int TextOverlapInPlate, int CueReadoutHits, int LegibleBehindPane, int TextOverlapCross,
-        int TextOverlapSame,
+        int TextOverlapSame, int TextOverGlyph, int StrokeThroughText, int RadarPlates,
         string[] CaptionOverlapSamples, string[] BoxOverlapSamples, string[] StrokeHitSamples,
         string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples,
         string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples,
-        string[] TextOverlapCrossSamples, string[] TextOverlapSameSamples);
+        string[] TextOverlapCrossSamples, string[] TextOverlapSameSamples, string[] TextOverGlyphSamples,
+        string[] StrokeThroughTextSamples);
 }

@@ -38,6 +38,15 @@ public static class JetRadar
     public const float BottomGap = 6f;
 
     /// <summary>
+    /// P1039c — the STATED minimum gap between the compact scope's right edge and the
+    /// throttle tape's readout plate / IDLE-REV band, in standard-stroke units (× scale).
+    /// P1039b used <see cref="BottomGap"/> (6 units → 4 px at 800×480's 0.667 scale), which the
+    /// review measured as "right against the 80 % plate". The compact right edge now keeps 8
+    /// units (5.33 px at that scale) of untouched sky beside the plate.
+    /// </summary>
+    public const float CompactPlateGap = 8f;
+
+    /// <summary>
     /// P1039b — the compact-window floor, the same 700 px rule the tapes, the ladder and the
     /// stores block use (<see cref="JetStoresPanel.CompactHeight"/>): below it the HUD is the
     /// 800×480 layout.
@@ -94,11 +103,14 @@ public static class JetRadar
         float s = scale > 0f ? scale : 1f;
         float side = Math.Clamp(viewportHeight * SideFraction, MinSide * s, MaxSide * s);
         float right = viewportWidth - RightInset * s;
-        if (rightLimit > 0f) right = MathF.Min(right, rightLimit - BottomGap * s);
+        bool compact = viewportHeight < CompactHeight;
+        // P1039c — the compact scope keeps the stated ≥ CompactPlateGap units from the plate.
+        if (rightLimit > 0f)
+            right = MathF.Min(right, rightLimit - (compact ? CompactPlateGap : BottomGap) * s);
         var (_, minimapY, _, _) = MinimapGeometry.CornerPanel(viewportWidth, viewportHeight);
         float bottom = minimapY - BottomGap * s;
         float leftLimit = 0f;
-        if (viewportHeight < CompactHeight)
+        if (compact)
         {
             side = MathF.Min(side, viewportHeight * CompactSideFraction);
             leftLimit = viewportWidth * CompactLeftFraction;

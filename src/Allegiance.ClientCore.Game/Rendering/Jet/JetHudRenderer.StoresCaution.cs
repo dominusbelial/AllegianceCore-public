@@ -134,7 +134,8 @@ public sealed partial class JetHudRenderer
                 cursor += _painter.Measure(MissileWord, large: false, scale).X + 4f * scale;
                 cursor = TextRun(cursor, y2, scale, CachedNumber(7, compactMissiles, false), _painter.Dim, ref cursor);
             }
-            DrawCompactAnnunciators(cursor + 6f * scale, y2, scale, status);
+            DrawCompactAnnunciators(cursor + 6f * scale, y2, scale, status,
+                JetStoresPanel.LadderColumnLeft(w, scale));
             return;
         }
 
@@ -300,7 +301,7 @@ public sealed partial class JetHudRenderer
         JetStoresPanel.Annunciators set = JetStoresPanel.AnnunciatorsOf(status);
         if (!JetStoresPanel.AnyAnnunciator(set)) return;
         float cursor = x;
-        float gap = 8f * scale;
+        float gap = JetStoresPanel.WordGap * scale;
         if ((set & JetStoresPanel.Annunciators.Eye) != 0)
             cursor = AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Eye, "EYE", _painter.Dim, capHeight) + gap;
         if ((set & JetStoresPanel.Annunciators.Cloak) != 0)
@@ -324,33 +325,65 @@ public sealed partial class JetHudRenderer
             AnnunciatorGlyph(cursor, y, scale, JetStoresPanel.Annunciators.Artifact, "ART", _painter.Primary, capHeight);
     }
 
-    /// <summary>The compact form: only the lit annunciator words, no glyphs (P972 §4.5 —
-    /// the state stays a word so it never vanishes).</summary>
-    private void DrawCompactAnnunciators(float x, float y, float scale, HudOwnStatus status)
+    /// <summary>The most annunciator words the compact row can carry (one per shared flag).</summary>
+    private const int MaxAnnunciatorWords = 6;
+
+    /// <summary>The compact row's words, in the native order, filled by
+    /// <see cref="DrawCompactAnnunciators"/> (preallocated: a steady frame allocates nothing).</summary>
+    private readonly string[] _annunciatorWords = new string[MaxAnnunciatorWords];
+
+    /// <summary>
+    /// The compact form: only the lit annunciator words, no glyphs (P972 §4.5 — the state
+    /// stays a word so it never vanishes). P1039c — the words get the annunciator WORD GAP
+    /// (P1039's 2·scale made two keylined words touch, `AUTOVLOCK FLAG`, at 800×480), reduced
+    /// only as far as the ladder's numeral column requires: the row is measured and the gap is
+    /// the largest that still ends <paramref name="limitX"/> before the column, so the words
+    /// are separated at every density and the row can never reach the ladder.
+    /// </summary>
+    private void DrawCompactAnnunciators(float x, float y, float scale, HudOwnStatus status, float limitX)
     {
         JetStoresPanel.Annunciators set = JetStoresPanel.AnnunciatorsOf(status);
         if (!JetStoresPanel.AnyAnnunciator(set)) return;
-        float cursor = x;
-        // P1039 — 2·scale px between annunciator words (the minimum that still separates
-        // two keylined words) so the compact row ends before the ladder's left numeral
-        // column: the six lit annunciators can no longer touch a rung numeral's ink.
-        float gap = 2f * scale;
-        if ((set & JetStoresPanel.Annunciators.Eye) != 0)
-            cursor = TextRun(cursor, y, scale, "EYE", _painter.Dim, ref cursor) + gap;
+        int count = 0;
+        if ((set & JetStoresPanel.Annunciators.Eye) != 0) _annunciatorWords[count++] = "EYE";
         if ((set & JetStoresPanel.Annunciators.Cloak) != 0)
+            _annunciatorWords[count++] = status.CloakDrained ? "DRAINED" : "CLK";
+        if ((set & JetStoresPanel.Annunciators.Autopilot) != 0) _annunciatorWords[count++] = "AUTO";
+        if ((set & JetStoresPanel.Annunciators.VectorLock) != 0) _annunciatorWords[count++] = "VLOCK";
+        if ((set & JetStoresPanel.Annunciators.Flag) != 0) _annunciatorWords[count++] = "FLAG";
+        if ((set & JetStoresPanel.Annunciators.Artifact) != 0) _annunciatorWords[count++] = "ART";
+        if (count == 0) return;
+        float words = 0f;
+        for (int i = 0; i < count; i++) words += _painter.Measure(_annunciatorWords[i], large: false, scale).X;
+        float margin = 4f * scale;
+        float gap = JetStoresPanel.WordGap * scale;
+        if (count > 1)
         {
-            string word = status.CloakDrained ? "DRAINED" : "CLK";
-            cursor = TextRun(cursor, y, scale, word, status.CloakDrained ? _painter.Hot : _painter.Dim, ref cursor) + gap;
+            float fits = (limitX - margin - x - words) / (count - 1);
+            gap = MathF.Max(3f * scale, MathF.Min(gap, fits));
         }
-        if ((set & JetStoresPanel.Annunciators.Autopilot) != 0)
-            cursor = TextRun(cursor, y, scale, "AUTO", _painter.Dim, ref cursor) + gap;
-        if ((set & JetStoresPanel.Annunciators.VectorLock) != 0)
-            cursor = TextRun(cursor, y, scale, "VLOCK", _painter.Dim, ref cursor) + gap;
-        if ((set & JetStoresPanel.Annunciators.Flag) != 0)
-            cursor = TextRun(cursor, y, scale, "FLAG", _painter.Primary, ref cursor) + gap;
-        if ((set & JetStoresPanel.Annunciators.Artifact) != 0)
-            TextRun(cursor, y, scale, "ART", _painter.Primary, ref cursor);
+        float cursor = x;
+        for (int i = 0; i < count; i++)
+        {
+            Color ink = i switch
+            {
+                0 => _painter.Dim,
+                1 => status.CloakDrained ? _painter.Hot : _painter.Dim,
+                2 or 3 => _painter.Dim,
+                _ => _painter.Primary,
+            };
+            cursor = TextRun(cursor, y, scale, _annunciatorWords[i], ink, ref cursor);
+            if (i < count - 1) cursor += gap;
+        }
+        _annunciatorRow = new RectangleF(x, y, MathF.Max(0f, cursor - x),
+            _painter.Measure("X", large: false, scale).Y);
+        _annunciatorGap = gap;
     }
+
+    /// <summary>P1039c — the gap the compact annunciator row was drawn with this frame.</summary>
+    public float AnnunciatorGap => _annunciatorGap;
+
+    private float _annunciatorGap;
 
     /// <summary>One annunciator: a shape glyph at the word's cap height plus its word.
     /// Returns the cursor after the word.</summary>

@@ -401,6 +401,108 @@ public sealed class JetRadarTests
                     + $" and '{radar[j].Text}'@{radar[j].Box.X:0.#},{radar[j].Box.Y:0.#} {radar[j].Box.Width:0.#}x{radar[j].Box.Height:0.#} overlap");
     }
 
+    // ── P1039c: glyph obstacles, bands, the compact label budget ────────
+    [Fact]
+    public void The_glyph_box_covers_every_overlay_the_contact_carries()
+    {
+        var plain = Contact(0f, 500);
+        var loaded = new HudContact(HudContactKind.Ship, new HudPoint(0f, 0f), true, 1f, null, false, false,
+            Range: 500, RelativeBearingRadians: 0f,
+            NearestEnemy: true, CarriedFlag: true, CarriedArtifact: true, Ripcord: true);
+        RectangleF plainBox = JetRadarLabels.GlyphBox(plain, new Vector2(100f, 100f), 1f);
+        RectangleF loadedBox = JetRadarLabels.GlyphBox(loaded, new Vector2(100f, 100f), 1f);
+        // The plain bracket is 8.5 units each way (4.5 glyph + 4 arm).
+        Assert.Equal(2f * JetRadarLabels.GlyphBracket, plainBox.Width, 3);
+        // The nearest-enemy bracket, the flag pennant and the artifact reach further right; the
+        // ripcord stroke reaches further up.
+        Assert.True(loadedBox.Width > plainBox.Width);
+        Assert.True(loadedBox.Height > plainBox.Height);
+        Assert.Equal(100f, loadedBox.X + loadedBox.Width * 0.5f, 3);
+    }
+
+    [Fact]
+    public void A_band_stroke_is_detected_through_a_cell_and_absent_between_bands()
+    {
+        var square = new JetRadarLabels.Rings(new Vector2(100f, 100f), false, 40f, 80f, 120f, 160f);
+        // The r=40 square's right side runs at x=140 through this cell.
+        Assert.True(square.Hits(new RectangleF(130f, 95f, 20f, 10f), JetRadarLabels.RingPad));
+        // Cell 1 sits inside the r=40 square: its boundary does not cross the room.
+        Assert.False(square.Hits(new RectangleF(105f, 105f, 10f, 6f), JetRadarLabels.RingPad));
+        var round = new JetRadarLabels.Rings(new Vector2(100f, 100f), true, 40f, 80f, 120f, 160f);
+        // A circle of r=40 passes through this cell (nearest point inside, far corner outside).
+        Assert.True(round.Hits(new RectangleF(135f, 95f, 10f, 10f), JetRadarLabels.RingPad));
+        Assert.False(round.Hits(new RectangleF(90f, 90f, 6f, 6f), JetRadarLabels.RingPad));
+    }
+
+    [Fact]
+    public void Another_contacts_glyph_blocks_a_slot_and_the_own_glyph_does_not()
+    {
+        RectangleF inner = new(0f, 0f, 200f, 200f);
+        var empty = Array.Empty<RectangleF>();
+        // A tall box covers every right-slot position of the glyph at (100,100).
+        var glyphs = new[] { new RectangleF(130f, 0f, 70f, 200f) };
+        JetRadarLabels.Placement blocked = JetRadarLabels.Place(new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f, inner, empty, glyphs, -1, JetRadarLabels.Rings.None);
+        Assert.True(blocked.Clear);
+        Assert.NotEqual(JetRadarLabels.Slot.Right, blocked.Slot);
+        // The same box is this contact's OWN glyph: the right slot stays available.
+        JetRadarLabels.Placement own = JetRadarLabels.Place(new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f, inner, empty, glyphs, 0, JetRadarLabels.Rings.None);
+        Assert.True(own.Clear);
+        Assert.Equal(JetRadarLabels.Slot.Right, own.Slot);
+    }
+
+    [Fact]
+    public void A_leader_that_crosses_another_block_is_reported()
+    {
+        var target = new RectangleF(150f, 90f, 40f, 20f);
+        var onTheWay = new[] { new RectangleF(120f, 95f, 10f, 10f) };
+        Assert.True(JetRadarLabels.LeaderCrosses(new Vector2(100f, 100f), JetRadarLabels.GlyphClear,
+            target, 1f, onTheWay, default, -1));
+        Assert.False(JetRadarLabels.LeaderCrosses(new Vector2(100f, 100f), JetRadarLabels.GlyphClear,
+            target, 1f, Array.Empty<RectangleF>(), default, -1));
+    }
+
+    [Fact]
+    public void The_label_budget_and_the_full_form_are_a_rule_of_the_scope_area()
+    {
+        // The 800×480 scope: 144 px → 9 label cells, too small for two four-row blocks.
+        RectangleF compact = JetRadar.Scope(800f, 480f, 2f / 3f, 682.7f, 80f);
+        RectangleF compactInner = JetRadarLabels.Inner(compact, 2f / 3f);
+        Assert.Equal(9, JetRadarLabels.LabelBudget(compactInner, 2f / 3f));
+        Assert.False(JetRadarLabels.FullFormAllowed(compactInner, 2f / 3f));
+        // The 1080p scope: 345 px → 24 label cells, enough for two full blocks.
+        RectangleF full = JetRadar.Scope(1920f, 1080f, 1f, 1700f);
+        RectangleF fullInner = JetRadarLabels.Inner(full, 1f);
+        Assert.Equal(24, JetRadarLabels.LabelBudget(fullInner, 1f));
+        Assert.True(JetRadarLabels.FullFormAllowed(fullInner, 1f));
+        // The rule reads the scope, never the window's name: the same 144 px scope at scale 1
+        // (a high-detail desktop) holds fewer cells than the same area at 2/3 scale.
+        Assert.True(JetRadarLabels.LabelBudget(new RectangleF(0f, 0f, 144f, 144f), 1f)
+            < JetRadarLabels.LabelBudget(new RectangleF(0f, 0f, 144f, 144f), 2f / 3f));
+    }
+
+    [Fact]
+    public void The_compact_annunciator_word_gap_keeps_the_row_before_the_ladder_column()
+    {
+        Assert.Equal(6f, JetStoresPanel.WordGap);
+        // At 800×480 the ladder's left numeral column starts at 356.7 px.
+        Assert.Equal(356.7f, JetStoresPanel.LadderColumnLeft(800f, 2f / 3f), 1);
+    }
+
+    [Fact]
+    public void The_compact_scope_labels_need_no_stroke_through_text_and_no_reading_over_a_glyph()
+    {
+        var recorder = new RadarRecorder();
+        using var jet = Renderer(recorder);
+        jet.Draw(Model(CrowdedContacts(64)), Frame(800, 480));
+        Assert.Equal(9, jet.RadarLabelBudget);
+        Assert.False(jet.RadarFullFormAllowed);
+        Assert.True(jet.RadarPlates > 0);                 // a band-crossed reading gets a plate
+        Assert.Empty(recorder.TextOverGlyph());
+        Assert.Empty(recorder.StrokeThroughText());
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────
     private static bool Intersects(RectangleF a, RectangleF b)
         => a.X < b.X + b.Width - 1f && b.X < a.X + a.Width - 1f
@@ -457,6 +559,96 @@ public sealed class JetRadarTests
     }
 
     private static HudDrawFrame Frame() => new(new Viewport(0, 0, 1920, 1080), null, false);
+
+    private static HudDrawFrame Frame(int width, int height) => new(new Viewport(0, 0, width, height), null, false);
+
+    /// <summary>P1039c — records the radar's own audit channel: each text run with its element
+    /// and contact, each contact's glyph box, the band strokes, the leaders and the plates, so
+    /// the two rules (no reading over another contact's glyph, no band/leader through a reading)
+    /// can be asserted from the renderer's own submissions.</summary>
+    private sealed class RadarRecorder : IJetVectorSurface, IJetElementAudit, IJetRadarAudit
+    {
+        private readonly System.Collections.Generic.List<(string? Element, int Contact, string Text, RectangleF Box)> _texts = new();
+        private readonly System.Collections.Generic.List<(int Contact, RectangleF Box)> _glyphs = new();
+        private readonly System.Collections.Generic.List<(Vector2 Centre, float Radius, bool Round)> _rings = new();
+        private readonly System.Collections.Generic.List<(Vector2 A, Vector2 B)> _leaders = new();
+        private readonly System.Collections.Generic.List<RectangleF> _plates = new();
+        private string? _element;
+        private int _contact = -1;
+
+        public void Begin() { }
+        public void End() { }
+        public void Line(Vector2 a, Vector2 b, float width, Color color) { }
+        public void Fill(Vector2 min, Vector2 size, Color color) { }
+        public Vector2 Measure(string text, bool large, float scale) => new(text.Length * 7f * scale, 14f * scale);
+
+        public void Text(string text, Vector2 position, bool large, float scale, Color color)
+        {
+            Vector2 size = Measure(text, large, scale);
+            var box = new RectangleF(position.X, position.Y, size.X, size.Y);
+            for (int i = 0; i < _texts.Count; i++)
+            {
+                var run = _texts[i];
+                if (!string.Equals(run.Text, text, StringComparison.Ordinal)) continue;
+                if (MathF.Abs(run.Box.X - position.X) > 2.5f || MathF.Abs(run.Box.Y - position.Y) > 2.5f) continue;
+                _texts[i] = (_element, _contact, text, box);   // the ink run (submitted last)
+                return;
+            }
+            _texts.Add((_element, _contact, text, box));
+        }
+
+        public void Element(string id) => _element = id;
+        public void Contact(int index) => _contact = index;
+        public void ContactGlyph(RectangleF box) => _glyphs.Add((_contact, box));
+        public void RadarRing(Vector2 centre, float radius, bool round) => _rings.Add((centre, radius, round));
+        public void RadarLeader(Vector2 from, Vector2 to, float width) => _leaders.Add((from, to));
+        public void RadarPlate(RectangleF box) => _plates.Add(box);
+
+        public System.Collections.Generic.List<string> TextOverGlyph()
+        {
+            var hits = new System.Collections.Generic.List<string>();
+            foreach (var text in _texts)
+            {
+                if (!string.Equals(text.Element, "radar", StringComparison.Ordinal)) continue;
+                foreach (var glyph in _glyphs)
+                {
+                    if (glyph.Contact == text.Contact) continue;   // a contact's own glyph
+                    var box = new RectangleF(glyph.Box.X, glyph.Box.Y, glyph.Box.Width, glyph.Box.Height);
+                    if (Intersects(text.Box, box))
+                        hits.Add($"{text.Text} over contact {glyph.Contact}'s glyph");
+                }
+            }
+            return hits;
+        }
+
+        public System.Collections.Generic.List<string> StrokeThroughText()
+        {
+            var hits = new System.Collections.Generic.List<string>();
+            JetRadarLabels.Rings rings = _rings.Count == 4
+                ? new JetRadarLabels.Rings(_rings[0].Centre, _rings[0].Round,
+                    _rings[0].Radius, _rings[1].Radius, _rings[2].Radius, _rings[3].Radius)
+                : JetRadarLabels.Rings.None;
+            foreach (var text in _texts)
+            {
+                if (!string.Equals(text.Element, "radar", StringComparison.Ordinal)) continue;
+                float top = text.Box.Y + text.Box.Height * 0.18f + 1f;
+                float bottom = text.Box.Y + text.Box.Height * 0.64f - 1f;
+                if (bottom <= top) continue;
+                var ink = new RectangleF(text.Box.X, top, text.Box.Width, bottom - top);
+                bool plated = false;
+                foreach (RectangleF plate in _plates)
+                    if (text.Box.X >= plate.X - 1.5f && text.Box.X + text.Box.Width <= plate.X + plate.Width + 1.5f
+                        && text.Box.Y >= plate.Y - 1.5f && text.Box.Y + text.Box.Height <= plate.Y + plate.Height + 1.5f)
+                        plated = true;
+                if (!plated && rings.Hits(ink, JetRadarLabels.RingPad))
+                    hits.Add($"{text.Text} crossed by a band");
+                foreach (var leader in _leaders)
+                    if (JetRadarLabels.SegmentHitsBox(leader.A, leader.B, ink, JetRadarLabels.RingPad))
+                        hits.Add($"{text.Text} crossed by a leader");
+            }
+            return hits;
+        }
+    }
 
     private static SoundRecorder Recorder() => new();
 

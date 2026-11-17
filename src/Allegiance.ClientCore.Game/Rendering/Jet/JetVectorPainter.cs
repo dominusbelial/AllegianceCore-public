@@ -67,6 +67,34 @@ public interface IJetElementAudit
     void Element(string id);
 }
 
+/// <summary>
+/// P1039c — an optional audit channel for the RADAR's own geometry: the drawing surface may
+/// implement it to receive, per frame, the contact a text run belongs to, the glyph/overlay
+/// box of that contact, every range-band stroke and every leader stroke. The proof measures
+/// `TextOverGlyph` (a reading on another contact's glyph) and the radar `StrokeThroughText`
+/// (a band or leader running through a reading) from these. Production and test surfaces do
+/// not implement the interface, so every call is one type test and allocates nothing.
+/// </summary>
+public interface IJetRadarAudit
+{
+    /// <summary>Name the radar contact whose marks and runs follow (the text-over-glyph
+    /// rule excludes the contact's own marks).</summary>
+    void Contact(int index);
+
+    /// <summary>Record the glyph/overlay box of the CONTACT announced last.</summary>
+    void ContactGlyph(RectangleF box);
+
+    /// <summary>Record one range-band stroke of the scope (a circle or a square outline).</summary>
+    void RadarRing(Vector2 centre, float radius, bool round);
+
+    /// <summary>Record one leader stroke of a placed label block.</summary>
+    void RadarLeader(Vector2 from, Vector2 to, float width);
+
+    /// <summary>Record one backing plate drawn under a radar reading (it interrupts the band
+    /// stroke under the text, which the audit counts as a plate rather than a strikethrough).</summary>
+    void RadarPlate(RectangleF box);
+}
+
 /// <summary>P1035 — the production Jet surface: Game1's shared SpriteBatch, the
 /// 1×1 white pixel and the two classic HUD fonts. Borrows every resource; it owns
 /// nothing and therefore has nothing to dispose.</summary>
@@ -337,6 +365,38 @@ public sealed class JetVectorPainter
     public void CueReadout(RectangleF box)
     {
         if (_surface is IJetCueAudit audit) audit.CueReadout(box);
+    }
+
+    /// <summary>P1039c — name the radar contact whose marks and text runs follow, to the
+    /// optional <see cref="IJetRadarAudit"/> channel. A no-op on the production and test
+    /// surfaces.</summary>
+    public void Contact(int index)
+    {
+        if (_surface is IJetRadarAudit audit) audit.Contact(index);
+    }
+
+    /// <summary>P1039c — report the glyph/overlay box of the current radar contact.</summary>
+    public void ContactGlyph(RectangleF box)
+    {
+        if (_surface is IJetRadarAudit audit) audit.ContactGlyph(box);
+    }
+
+    /// <summary>P1039c — report one range-band stroke of the scope.</summary>
+    public void RadarRing(Vector2 centre, float radius, bool round)
+    {
+        if (_surface is IJetRadarAudit audit) audit.RadarRing(centre, radius, round);
+    }
+
+    /// <summary>P1039c — report one leader stroke of a placed label block.</summary>
+    public void RadarLeader(Vector2 from, Vector2 to, float width)
+    {
+        if (_surface is IJetRadarAudit audit) audit.RadarLeader(from, to, width);
+    }
+
+    /// <summary>P1039c — report one backing plate drawn under a radar reading.</summary>
+    public void RadarPlate(RectangleF box)
+    {
+        if (_surface is IJetRadarAudit audit) audit.RadarPlate(box);
     }
 
     /// <summary>Enough segments that a circle reads as a circle at this radius,

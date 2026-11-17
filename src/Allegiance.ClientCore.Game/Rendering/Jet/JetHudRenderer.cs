@@ -222,6 +222,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private RectangleF _cautionPanel;
     /// <summary>P1039b — the measured top edge of the stores block (the TGT slot's anchor).</summary>
     private float _storesTop;
+    /// <summary>P1039c — the measured ink box of the compact annunciator row (the word-gap
+    /// evidence: it must end clear of the pitch ladder's numeral column).</summary>
+    private RectangleF _annunciatorRow;
     /// <summary>P1039 — the Jet radar scope's reserved rectangle this frame (empty when the
     /// scope is suppressed).</summary>
     private RectangleF _radarScope;
@@ -246,6 +249,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _cautionPanel = default;
         _radarScope = default;
         _storesTop = 0f;
+        _annunciatorRow = default;
     }
 
     /// <summary>P1039 — register one furniture box for this frame.</summary>
@@ -320,6 +324,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
 
     /// <summary>P1039 — the Jet radar scope reserved in the most recent frame.</summary>
     public RectangleF RadarScope => _radarScope;
+
+    /// <summary>P1039c — the measured ink box of the compact annunciator row of the most
+    /// recent frame (default when the full row or no row was drawn).</summary>
+    public RectangleF AnnunciatorRow => _annunciatorRow;
 
     /// <summary>P1039 — the furniture registered in the most recent frame.</summary>
     public ReadOnlySpan<RectangleF> FurnitureBoxes => _furniture.AsSpan(0, _furnitureCount);
@@ -954,23 +962,67 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         bool tagged = !placed.Clear;
         bool splitBars = tagged && compactReadout && hasBars;
         float blockWidth = textWidth;
+        // P1039c — DUPLICATE TARGET DATA. The bottom-centre block (DrawTargetBlock, the native
+        // target pane's rows) already prints the target's name, range/LOC, closure and
+        // hull/shield. When no slot beside the target is clear the designator readout falls to
+        // the TGT slot, and it must not print those same readings a second time: it prints only
+        // what the pane LACKS — always the relationship word (HOSTILE/FRIEND/NEUTRAL, which the
+        // pane never carries), plus any row whose value the pane itself has no data for. Native
+        // shows the target data once (the pane); a clear slot beside the designator keeps the
+        // P1037 readout, the fallback never repeats the pane.
+        bool paneCarries = model.TargetPaneVisible && model.Context.TargetPane is { Present: true };
+        bool complement = tagged && paneCarries;
+        string? gapName = null, gapRange = null, gapClosure = null, gapHull = null, gapShield = null;
+        int complementRows = 1;
+        if (complement)
+        {
+            HudTargetPane pane = model.Context.TargetPane!.Value;
+            if (pane.Name is null) gapName = name;
+            if (pane.Distance is null && pane.SectorName is null) gapRange = range;
+            if (pane.ClosingSpeed is null) gapClosure = closure;
+            if (pane.HullFraction is not { } paneHull || paneHull <= 0f) gapHull = hull;
+            if (pane.ShieldFraction is not { } paneShield || paneShield <= 0f) gapShield = shield;
+            blockWidth = MeasureRuns(scale, " / ", relationshipWord, gapName, null, null);
+            blockWidth = MathF.Max(blockWidth, MeasureRuns(scale, "  ", gapRange,
+                gapRange is null ? null : ClosureWord, gapClosure, null));
+            blockWidth = MathF.Max(blockWidth, MeasureRuns(scale, "  ",
+                gapHull is null ? null : HullWord, gapHull,
+                gapShield is null ? null : ShieldWord, gapShield));
+            complementRows = 1 + (gapRange is not null || gapClosure is not null ? 1 : 0)
+                + (gapHull is not null || gapShield is not null ? 1 : 0);
+            splitBars = false;
+        }
         if (tagged)
         {
-            if (splitBars)
-                blockWidth = MathF.Max(row1, MathF.Max(row2, MathF.Max(
-                    MeasureRuns(scale, "  ", hull is null ? null : HullWord, hull, null, null),
-                    MeasureRuns(scale, "  ", shield is null ? null : ShieldWord, shield, null, null))));
-            float tagHeight = blockHeight + (splitBars ? rowH : 0f) + rowH;   // + the TGT row
+            float tagHeight = complement
+                ? complementRows * rowH + rowH
+                : blockHeight + (splitBars ? rowH : 0f) + rowH;
             placed = JetReadoutPlacement.TargetSlot(w, h, scale, _storesTop, blockWidth, tagHeight);
         }
         float x = placed.X, y = placed.Y;
         _targetPlacement = placed;
-        _targetReadoutBox = new RectangleF(x, y, blockWidth,
-            blockHeight + (splitBars ? rowH : 0f) + (tagged ? rowH : 0f));
+        _targetReadoutBox = new RectangleF(x, y, blockWidth, complement
+            ? complementRows * rowH + rowH
+            : blockHeight + (splitBars ? rowH : 0f) + (tagged ? rowH : 0f));
         if (tagged)
         {
             _painter.Text(TargetBlockWord, new(x, y), large: false, scale, _painter.Dim);
             y += rowH;
+        }
+        if (complement)
+        {
+            DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, gapName, null, null);
+            y += rowH;
+            if (gapRange is not null || gapClosure is not null)
+            {
+                DrawRuns(x, y, scale, _painter.Dim, "  ", gapRange,
+                    gapRange is null ? null : ClosureWord, gapClosure, null);
+                y += rowH;
+            }
+            if (gapHull is not null || gapShield is not null)
+                DrawRuns(x, y, scale, _painter.Dim, "  ", gapHull is null ? null : HullWord, gapHull,
+                    gapShield is null ? null : ShieldWord, gapShield);
+            return;
         }
 
         DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
