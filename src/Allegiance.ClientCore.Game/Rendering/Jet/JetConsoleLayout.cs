@@ -68,6 +68,19 @@ public static class JetConsoleLayout
     /// <summary>Gap between a row's word and its value.</summary>
     public const float WordGap = 5f;
 
+    /// <summary>
+    /// P1040c — the gap between the lifepod block's IDENTITY word and its OXY field in the
+    /// COMPACT one-row form: two word gaps, because the two are separate FIELDS sharing one row
+    /// (the identity and its gauge), not a word and its value. At 800×480 a single unit gap
+    /// scales to 3.3 px and the baked HUD face's tight glyph cells close it up, so `LIFEPOD` and
+    /// `OXY` read as one run (`LIFEPODOXY`, the P1040b compact row); the field gap keeps them
+    /// apart without moving any other row.
+    /// </summary>
+    public const float PodFieldGap = 10f;      // = 2 × WordGap
+
+    /// <summary>The lifepod field gap at this frame's density scale.</summary>
+    public static float PodFieldGapAt(float scale) => PodFieldGap * (scale > 0f ? scale : 1f);
+
     /// <summary>Gap between the console column's right edge and the pitch ladder's numeral
     /// column (the ladder owns the flight-path band).</summary>
     public const float ColumnToLadder = 6f;

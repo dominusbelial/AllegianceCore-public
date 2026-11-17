@@ -1,0 +1,8243 @@
+{
+ "schema": 9,
+ "skin": "jet",
+ "note": "P1040c \u2014 the 16 scenes the report cites (console boxes, audit counts, elements). Full capture: ~/allegiance-evidence/P1040c/jet-final2/jet-capture.json",
+ "scenes": [
+  {
+   "scene": "jet-cmd-1920x1080-dark",
+   "scenario": "jet-cmd",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 36,
+    "Fills": 54,
+    "Strokes": 174,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 84,
+      "y": 226,
+      "w": 686,
+      "h": 688
+     },
+     {
+      "x": 1494.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1581,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     null,
+     {
+      "form": 1,
+      "x": 1548.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 84,
+     "y": 35,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 84,
+     "y": 226,
+     "w": 686,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 825,
+     "y": 948,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 825,
+      "y": 948,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 1041,
+      "y": 956,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 1049,
+       "y": 958,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 1043.8,
+       "y": 977,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 84,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 84,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-cmd-1920x1080-bright",
+   "scenario": "jet-cmd",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 36,
+    "Fills": 54,
+    "Strokes": 174,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 84,
+      "y": 226,
+      "w": 686,
+      "h": 688
+     },
+     {
+      "x": 1494.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1581,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     null,
+     {
+      "form": 1,
+      "x": 1548.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 84,
+     "y": 35,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 84,
+     "y": 226,
+     "w": 686,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 825,
+     "y": 948,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 825,
+      "y": 948,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 1041,
+      "y": 956,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 1049,
+       "y": 958,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 1043.8,
+       "y": 977,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 84,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 84,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-cmd-800x480-dark",
+   "scenario": "jet-cmd",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 34,
+    "Fills": 54,
+    "Strokes": 132,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 56,
+      "y": 150.66667,
+      "w": 217.33331,
+      "h": 163.33333
+     },
+     {
+      "x": 602.6667,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 614.7,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     null,
+     {
+      "form": 2,
+      "x": 662.2,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 56,
+     "y": 23.333336,
+     "w": 236.66667,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 56,
+     "y": 150.66667,
+     "w": 217.33331,
+     "h": 33.333344
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 265,
+     "y": 348,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 265,
+      "y": 348,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 481,
+      "y": 356,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 489,
+       "y": 358,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 483.8,
+       "y": 377,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 56,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 56,
+     "y": 322,
+     "w": 198,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WPN GROUP [1:Plasma] BST ON"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-cmd-800x480-bright",
+   "scenario": "jet-cmd",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 34,
+    "Fills": 54,
+    "Strokes": 132,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 56,
+      "y": 150.66667,
+      "w": 217.33331,
+      "h": 163.33333
+     },
+     {
+      "x": 602.6667,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 614.7,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     null,
+     {
+      "form": 2,
+      "x": 662.2,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 56,
+     "y": 23.333336,
+     "w": 236.66667,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 56,
+     "y": 150.66667,
+     "w": 217.33331,
+     "h": 33.333344
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 265,
+     "y": 348,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 265,
+      "y": 348,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 481,
+      "y": 356,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 489,
+       "y": 358,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 483.8,
+       "y": 377,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 56,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 56,
+     "y": 322,
+     "w": 198,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WPN GROUP [1:Plasma] BST ON"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-commandview-1920x1080-dark",
+   "scenario": "jet-commandview",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 36,
+    "Fills": 54,
+    "Strokes": 174,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 84,
+      "y": 226,
+      "w": 686,
+      "h": 688
+     },
+     {
+      "x": 1494.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1494.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1581,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     null,
+     {
+      "form": 1,
+      "x": 1548.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 84,
+     "y": 35,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 84,
+     "y": 226,
+     "w": 686,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 825,
+     "y": 948,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 825,
+      "y": 948,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 1041,
+      "y": 956,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 1049,
+       "y": 958,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 1043.8,
+       "y": 977,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 84,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 84,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-commandview-800x480-dark",
+   "scenario": "jet-commandview",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": false,
+   "reticleVisible": false,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": false,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": false,
+   "chaseGate": false,
+   "storesVisible": false,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": false
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": false
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": false
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": false
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": false
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": false,
+    "pitch": 0,
+    "roll": 0,
+    "heading": 0,
+    "headingValid": false,
+    "rollValid": false
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 34,
+    "Fills": 54,
+    "Strokes": 132,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 56,
+      "y": 150.66667,
+      "w": 217.33331,
+      "h": 163.33333
+     },
+     {
+      "x": 602.6667,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 602.6667,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 2,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 7,
+    "labels": [
+     {
+      "form": 1,
+      "x": 614.7,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     null,
+     {
+      "form": 2,
+      "x": 662.2,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 56,
+     "y": 23.333336,
+     "w": 236.66667,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 56,
+     "y": 150.66667,
+     "w": 217.33331,
+     "h": 33.333344
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 265,
+     "y": 348,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 265,
+      "y": 348,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 481,
+      "y": 356,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 489,
+       "y": 358,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 483.8,
+       "y": 377,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 56,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 56,
+     "y": 322,
+     "w": 198,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WPN GROUP [1:Plasma] BST ON"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-podoxy-800x480-dark",
+   "scenario": "jet-podoxy",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "OXY",
+     "fraction": 0.63,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 0,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 1,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 74,
+    "Fills": 72,
+    "Strokes": 197,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 356.6667,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 348.6667,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 436.66666,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 370.66666,
+      "y": 360.00003,
+      "w": 58.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 195.33334,
+      "w": 151.99997,
+      "h": 51.999985
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 179.33333,
+    "y": 297.3333,
+    "w": 104.000015,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 88.66668
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 195.33334,
+     "w": 151.99997,
+     "h": 50.000015
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G..."
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 121.33334,
+     "y": 212.00002,
+     "w": 151.99997,
+     "h": 33.333344
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [
+     {
+      "text": "LIFEPOD",
+      "x": 121.3,
+      "y": 212,
+      "w": 51.3,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "OXY",
+      "x": 179.3,
+      "y": 212,
+      "w": 22.7,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "95 s",
+      "x": 244,
+      "y": 212,
+      "w": 29.3,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "RETURN",
+      "x": 121.3,
+      "y": 228.7,
+      "w": 44,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "Shift+Z / G...",
+      "x": 168.7,
+      "y": 228.7,
+      "w": 102.7,
+      "h": 14.7,
+      "inside": true
+     }
+    ],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-podoxy-800x480-bright",
+   "scenario": "jet-podoxy",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "OXY",
+     "fraction": 0.63,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 0,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 1,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 74,
+    "Fills": 72,
+    "Strokes": 197,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 356.6667,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 348.6667,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 436.66666,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 370.66666,
+      "y": 360.00003,
+      "w": 58.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 195.33334,
+      "w": 151.99997,
+      "h": 51.999985
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 179.33333,
+    "y": 297.3333,
+    "w": 104.000015,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 88.66668
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 195.33334,
+     "w": 151.99997,
+     "h": 50.000015
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G..."
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 121.33334,
+     "y": 212.00002,
+     "w": 151.99997,
+     "h": 33.333344
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [
+     {
+      "text": "LIFEPOD",
+      "x": 121.3,
+      "y": 212,
+      "w": 51.3,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "OXY",
+      "x": 179.3,
+      "y": 212,
+      "w": 22.7,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "95 s",
+      "x": 244,
+      "y": 212,
+      "w": 29.3,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "RETURN",
+      "x": 121.3,
+      "y": 228.7,
+      "w": 44,
+      "h": 14.7,
+      "inside": true
+     },
+     {
+      "text": "Shift+Z / G...",
+      "x": 168.7,
+      "y": 228.7,
+      "w": 102.7,
+      "h": 14.7,
+      "inside": true
+     }
+    ],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-training-1920x1080-dark",
+   "scenario": "jet-training",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 85,
+    "Fills": 81,
+    "Strokes": 265,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 620,
+      "y": 7,
+      "w": 680,
+      "h": 86
+     },
+     {
+      "x": 867,
+      "y": 49,
+      "w": 186,
+      "h": 55.4
+     },
+     {
+      "x": 877,
+      "y": 769.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 769.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 609.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 609.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 883,
+      "y": 529.00006,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 1015,
+      "y": 529.00006,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 449.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 449.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 369.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 369.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 289.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 289.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 209.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 209.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 916,
+      "y": 880,
+      "w": 88,
+      "h": 22
+     },
+     {
+      "x": 68,
+      "y": 194,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 36,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 86,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1818,
+      "y": 194,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 1848,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 1744,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1090,
+      "y": 540,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 960,
+      "y": 670,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 96,
+      "y": 689,
+      "w": 236,
+      "h": 225
+     },
+     {
+      "x": 182,
+      "y": 415,
+      "w": 588,
+      "h": 274
+     },
+     {
+      "x": 1342.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1429,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     {
+      "form": 1,
+      "x": 1440,
+      "y": 683.6,
+      "w": 55,
+      "h": 23
+     },
+     {
+      "form": 1,
+      "x": 1396.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 811.5,
+     "y": 976,
+     "w": 297,
+     "h": 22
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 855,
+     "y": 686,
+     "w": 385,
+     "h": 48
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-training-1920x1080-bright",
+   "scenario": "jet-training",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 85,
+    "Fills": 81,
+    "Strokes": 265,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 620,
+      "y": 7,
+      "w": 680,
+      "h": 86
+     },
+     {
+      "x": 867,
+      "y": 49,
+      "w": 186,
+      "h": 55.4
+     },
+     {
+      "x": 877,
+      "y": 769.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 769.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 609.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 609.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 883,
+      "y": 529.00006,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 1015,
+      "y": 529.00006,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 449.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 449.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 369.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 369.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 289.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 289.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 877,
+      "y": 209.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1010,
+      "y": 209.00006,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 916,
+      "y": 880,
+      "w": 88,
+      "h": 22
+     },
+     {
+      "x": 68,
+      "y": 194,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 36,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 86,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1818,
+      "y": 194,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 1848,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 1744,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1090,
+      "y": 540,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 960,
+      "y": 670,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 96,
+      "y": 689,
+      "w": 236,
+      "h": 225
+     },
+     {
+      "x": 182,
+      "y": 415,
+      "w": 588,
+      "h": 274
+     },
+     {
+      "x": 1342.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1429,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     {
+      "form": 1,
+      "x": 1440,
+      "y": 683.6,
+      "w": 55,
+      "h": 23
+     },
+     {
+      "form": 1,
+      "x": 1396.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 811.5,
+     "y": 976,
+     "w": 297,
+     "h": 22
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 855,
+     "y": 686,
+     "w": 385,
+     "h": 48
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-training-800x480-dark",
+   "scenario": "jet-training",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 71,
+    "Fills": 65,
+    "Strokes": 192,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 356.6667,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 348.6667,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 436.66666,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 370.66666,
+      "y": 360.00003,
+      "w": 58.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 228.66667,
+      "w": 151.99997,
+      "h": 18.666656
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 176,
+    "y": 297.3333,
+    "w": 104,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 301,
+     "y": 374.66666,
+     "w": 198,
+     "h": 14.666667
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 295,
+     "y": 393.33334,
+     "w": 256.6667,
+     "h": 33.333313
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-training-800x480-bright",
+   "scenario": "jet-training",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 6.8301892e-06,
+    "roll": 4.8296724e-06,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 71,
+    "Fills": 65,
+    "Strokes": 192,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 356.6667,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 286.00003,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 348.6667,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 436.66666,
+      "y": 232.6667,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 179.33337,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 356.6667,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 421.3333,
+      "y": 126.00004,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 370.66666,
+      "y": 360.00003,
+      "w": 58.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 228.66667,
+      "w": 151.99997,
+      "h": 18.666656
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 176,
+    "y": 297.3333,
+    "w": 104,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 301,
+     "y": 374.66666,
+     "w": 198,
+     "h": 14.666667
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 295,
+     "y": 393.33334,
+     "w": 256.6667,
+     "h": 33.333313
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-rollcue-1920x1080-dark",
+   "scenario": "jet-rollcue",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 4.000009,
+    "roll": -28.000002,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 84,
+    "Fills": 80,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 620,
+      "y": 7,
+      "w": 680,
+      "h": 86
+     },
+     {
+      "x": 867,
+      "y": 49,
+      "w": 186,
+      "h": 55.4
+     },
+     {
+      "x": 749.3037,
+      "y": 769.1618,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 882.3037,
+      "y": 769.1618,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 786.86145,
+      "y": 698.526,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 919.86145,
+      "y": 698.526,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 824.4191,
+      "y": 627.8902,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 957.4191,
+      "y": 627.8902,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 867.97687,
+      "y": 557.2544,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 999.97687,
+      "y": 557.2544,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 899.5346,
+      "y": 486.6186,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1032.5347,
+      "y": 486.6186,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 937.09235,
+      "y": 415.9828,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1070.0923,
+      "y": 415.9828,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 974.65,
+      "y": 345.347,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1107.65,
+      "y": 345.347,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1012.20776,
+      "y": 274.71115,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1145.2078,
+      "y": 274.71115,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 910.5,
+      "y": 880,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 68,
+      "y": 194,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 36,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 86,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1818,
+      "y": 194,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 1848,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 1744,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1090,
+      "y": 540,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 960,
+      "y": 670,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 96,
+      "y": 689,
+      "w": 236,
+      "h": 225
+     },
+     {
+      "x": 182,
+      "y": 415,
+      "w": 588,
+      "h": 274
+     },
+     {
+      "x": 1342.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1429,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     {
+      "form": 1,
+      "x": 1440,
+      "y": 683.6,
+      "w": 55,
+      "h": 23
+     },
+     {
+      "form": 1,
+      "x": 1396.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-rollcue-800x480-dark",
+   "scenario": "jet-rollcue",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 4.000009,
+    "roll": -28.000002,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 68,
+    "Fills": 64,
+    "Strokes": 189,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 321.6128,
+      "y": 298.59344,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 386.27942,
+      "y": 298.59344,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 338.65128,
+      "y": 251.50291,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 426.65125,
+      "y": 251.50291,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 371.68976,
+      "y": 204.4124,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 436.35638,
+      "y": 204.4124,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 396.72824,
+      "y": 157.32185,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 461.39487,
+      "y": 157.32185,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 367,
+      "y": 360.00003,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 228.66667,
+      "w": 151.99997,
+      "h": 18.666656
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 176,
+    "y": 297.3333,
+    "w": 104,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-rollcue-1920x1080-bright",
+   "scenario": "jet-rollcue",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 4.000009,
+    "roll": -28.000002,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 1,
+   "strokePx": 1.5,
+   "capHeight": 22,
+   "layout": {
+    "Texts": 84,
+    "Fills": 80,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "furniture": [
+     {
+      "x": 620,
+      "y": 7,
+      "w": 680,
+      "h": 86
+     },
+     {
+      "x": 867,
+      "y": 49,
+      "w": 186,
+      "h": 55.4
+     },
+     {
+      "x": 749.3037,
+      "y": 769.1618,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 882.3037,
+      "y": 769.1618,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 786.86145,
+      "y": 698.526,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 919.86145,
+      "y": 698.526,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 824.4191,
+      "y": 627.8902,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 957.4191,
+      "y": 627.8902,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 867.97687,
+      "y": 557.2544,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 999.97687,
+      "y": 557.2544,
+      "w": 22,
+      "h": 22
+     },
+     {
+      "x": 899.5346,
+      "y": 486.6186,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1032.5347,
+      "y": 486.6186,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 937.09235,
+      "y": 415.9828,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1070.0923,
+      "y": 415.9828,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 974.65,
+      "y": 345.347,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1107.65,
+      "y": 345.347,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1012.20776,
+      "y": 274.71115,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 1145.2078,
+      "y": 274.71115,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 910.5,
+      "y": 880,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 68,
+      "y": 194,
+      "w": 99,
+      "h": 22
+     },
+     {
+      "x": 36,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 86,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1818,
+      "y": 194,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 1848,
+      "y": 241,
+      "w": 40,
+      "h": 623
+     },
+     {
+      "x": 1744,
+      "y": 512.3,
+      "w": 90,
+      "h": 55.4
+     },
+     {
+      "x": 1090,
+      "y": 540,
+      "w": 33,
+      "h": 22
+     },
+     {
+      "x": 960,
+      "y": 670,
+      "w": 34,
+      "h": 22
+     },
+     {
+      "x": 96,
+      "y": 689,
+      "w": 236,
+      "h": 225
+     },
+     {
+      "x": 182,
+      "y": 415,
+      "w": 588,
+      "h": 274
+     },
+     {
+      "x": 1342.4,
+      "y": 474.4,
+      "w": 345.59998,
+      "h": 345.6
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 3,
+    "priorityHidden": 0,
+    "budget": 24,
+    "fullFormAllowed": true,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 1429,
+      "y": 563.4,
+      "w": 66,
+      "h": 28.6
+     },
+     {
+      "form": 1,
+      "x": 1440,
+      "y": 683.6,
+      "w": 55,
+      "h": 23
+     },
+     {
+      "form": 1,
+      "x": 1396.6,
+      "y": 478.6,
+      "w": 99,
+      "h": 46
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  },
+  {
+   "scene": "jet-rollcue-800x480-bright",
+   "scenario": "jet-rollcue",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "coverage": [
+    "Accepted and current order turn arrows",
+    "Accepted order text",
+    "Aim hit-probability predictor",
+    "Ammunition reserve",
+    "Autopilot status",
+    "Ballistic lead marker",
+    "Boundary and crowd warnings",
+    "Carried artifact",
+    "Carried flag",
+    "Chase weapon aim without target",
+    "Chat composition and recipient",
+    "Chat history",
+    "Cloak active",
+    "Cloak strength and drained state",
+    "Cockpit centre reticle",
+    "Command recipient verb and wing controls",
+    "Command view ship summary",
+    "Critical tip text lines",
+    "Damage flash timer",
+    "Death banner",
+    "Detection eye",
+    "Eject pod identity panel",
+    "Energy reserve",
+    "Equipment afterburner endurance",
+    "Equipment afterburner top speed",
+    "Equipment burst rate",
+    "Equipment cloak endurance",
+    "Equipment empty slot affordances",
+    "Equipment mounting progress",
+    "Equipment part identity and key",
+    "Equipment quantity and empty warning",
+    "Equipment selected and active state",
+    "Equipment shield recharge seconds",
+    "Equipment shield strength",
+    "Equipment shot damage",
+    "Equipment weapon range",
+    "Flight equipment inventory pane",
+    "Fuel reserve",
+    "Hull integrity",
+    "Incoming missile warning",
+    "Inventory cargo slots",
+    "Inventory own ship name",
+    "Inventory turret gunner identity",
+    "Kill bonus",
+    "Launcher arming progress",
+    "Lifepod oxygen endurance",
+    "Lives remaining",
+    "Missile lock flower",
+    "Mission countdown",
+    "Mission kills",
+    "Queued order text",
+    "Ripcord countdown",
+    "Roll tutorial cue",
+    "Sector location",
+    "Selected target bracket",
+    "Shield charge",
+    "Signature percentage",
+    "Speed",
+    "Target hull",
+    "Target in weapon range",
+    "Target kill bonus",
+    "Target name",
+    "Target ore",
+    "Target range or sector",
+    "Target shield",
+    "Target side identity",
+    "Target speed",
+    "Target time to intercept",
+    "Target type description",
+    "Thrust setting",
+    "Tip text lines",
+    "Training HUD callouts",
+    "Turret carrier identity",
+    "Vector lock status",
+    "Velocity direction marker",
+    "Vote banner"
+   ],
+   "visible": true,
+   "flightVisible": true,
+   "instrumentsVisible": true,
+   "reticleVisible": true,
+   "telemetry": true,
+   "speed": 260,
+   "throttle": 0.6,
+   "throttlePercent": 80,
+   "velocityMarkerVisible": true,
+   "leadGate": false,
+   "aimGate": false,
+   "orderGate": true,
+   "chaseGate": false,
+   "storesVisible": true,
+   "gauges": [
+    {
+     "kind": "Thrust",
+     "label": "THRUST",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Fuel",
+     "label": "FUEL",
+     "fraction": 0.9,
+     "visible": true
+    },
+    {
+     "kind": "Energy",
+     "label": "ENERGY",
+     "fraction": 1,
+     "visible": true
+    },
+    {
+     "kind": "Ammo",
+     "label": "AMMO",
+     "fraction": 0.8,
+     "visible": true
+    },
+    {
+     "kind": "Hull",
+     "label": "ARMOR",
+     "fraction": 0.82,
+     "visible": true
+    },
+    {
+     "kind": "Shield",
+     "label": "SHIELD",
+     "fraction": 0.7,
+     "visible": true
+    }
+   ],
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   },
+   "inventoryVisible": false,
+   "inventoryRows": 9,
+   "inventorySlide": 0,
+   "flashing": false,
+   "targetPaneVisible": false,
+   "offScreenBearing": false,
+   "attitude": {
+    "available": true,
+    "pitch": 4.000009,
+    "roll": -28.000002,
+    "heading": 45,
+    "headingValid": true,
+    "rollValid": true
+   },
+   "scale": 0.6666667,
+   "strokePx": 1,
+   "capHeight": 14.666667,
+   "layout": {
+    "Texts": 68,
+    "Fills": 64,
+    "Strokes": 189,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": [],
+    "CalloutCrossed": 0,
+    "CalloutCrossedSamples": []
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetReadoutTexts": [],
+    "lockReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "lockSlot": {
+     "Slot": 3,
+     "Clear": true
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "radarScope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "furniture": [
+     {
+      "x": 173.33333,
+      "y": 7,
+      "w": 453.33334,
+      "h": 57.333336
+     },
+     {
+      "x": 338,
+      "y": 35,
+      "w": 124,
+      "h": 36.933334
+     },
+     {
+      "x": 321.6128,
+      "y": 298.59344,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 386.27942,
+      "y": 298.59344,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 338.65128,
+      "y": 251.50291,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 426.65125,
+      "y": 251.50291,
+      "w": 14.666667,
+      "h": 14.666667
+     },
+     {
+      "x": 371.68976,
+      "y": 204.4124,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 436.35638,
+      "y": 204.4124,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 396.72824,
+      "y": 157.32185,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 461.39487,
+      "y": 157.32185,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 367,
+      "y": 360.00003,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 45.333336,
+      "y": 81.333336,
+      "w": 66,
+      "h": 14.666667
+     },
+     {
+      "x": 24,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 57.333336,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 731.99994,
+      "y": 81.333336,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 752,
+      "y": 112.666664,
+      "w": 26.666668,
+      "h": 271.33334
+     },
+     {
+      "x": 682.6666,
+      "y": 221.53333,
+      "w": 60.000004,
+      "h": 36.933334
+     },
+     {
+      "x": 486.66666,
+      "y": 240,
+      "w": 22,
+      "h": 14.666667
+     },
+     {
+      "x": 400,
+      "y": 326.66666,
+      "w": 22.666668,
+      "h": 14.666667
+     },
+     {
+      "x": 64,
+      "y": 247.33333,
+      "w": 157.33334,
+      "h": 66.66667
+     },
+     {
+      "x": 121.33334,
+      "y": 228.66667,
+      "w": 151.99997,
+      "h": 18.666656
+     },
+     {
+      "x": 533.3333,
+      "y": 174,
+      "w": 144,
+      "h": 144
+     }
+    ]
+   },
+   "radar": {
+    "scope": {
+     "x": 533.3333,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4,
+    "priorityHidden": 0,
+    "budget": 9,
+    "fullFormAllowed": false,
+    "plates": 8,
+    "labels": [
+     {
+      "form": 1,
+      "x": 545.3,
+      "y": 191.7,
+      "w": 44,
+      "h": 19.1
+     },
+     {
+      "form": 2,
+      "x": 567.4,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     {
+      "form": 2,
+      "x": 592.8,
+      "y": 271.8,
+      "w": 22,
+      "h": 15.3
+     },
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "annunciatorRow": {
+    "x": 176,
+    "y": 297.3333,
+    "w": 104,
+    "h": 14.666667
+   },
+   "annunciatorWordGap": 4,
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": true,
+    "callout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "podRows": [],
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "flightPartsTexts": [
+     "WEAPONS: GROUP  BOOST: ON  [1:Plasma]"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "tag": "JET / GREEN - WIP"
+  }
+ ]
+}

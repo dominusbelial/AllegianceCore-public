@@ -58,6 +58,13 @@ public sealed partial class JetHudRenderer
     private const string ElementTraining = "training";
     private const string ElementHint = "hint";
 
+    /// <summary>P1040c — the wing combo cell's backing opacity. The native wing button's art is
+    /// painted AFTER the verb bar (Game1.Commanding.cs:355-382), so its backing must interrupt
+    /// the verb bar's top edge and the <c>MINE|BLD</c> divider that pass beneath it; 0.97 is the
+    /// near-opaque step the layout audit accepts as a plate (tint alpha ≥ 240/255, the same
+    /// threshold the F4 pane's backing uses), while the world stays faintly visible.</summary>
+    private const float WingCellPlateOpacity = 0.97f;
+
     /// <summary>The measured chat pane of the most recent frame (proof/tests).</summary>
     public RectangleF ChatPane => _chatPane;
     /// <summary>The console column's measured box of the most recent frame.</summary>
@@ -90,6 +97,10 @@ public sealed partial class JetHudRenderer
     public RectangleF CargoBox => _cargoBox;
     /// <summary>P1040b — the flight-parts line's measured ink box of the most recent frame.</summary>
     public RectangleF FlightPartsBox => _flightPartsBox;
+    /// <summary>P1040c — the training callout's measured text block of the most recent frame
+    /// (both lines of the shared table, default when no callout is drawn). The pitch ladder
+    /// reads it to withdraw its own furniture that frame.</summary>
+    public RectangleF TrainingCalloutBox => _trainingBox;
 
     private RectangleF _chatPane;
     private RectangleF _consoleColumn;
@@ -104,6 +115,7 @@ public sealed partial class JetHudRenderer
     private RectangleF _tipBlock;
     private RectangleF _cargoBox;
     private RectangleF _flightPartsBox;
+    private RectangleF _trainingBox;
 
     /// <summary>P1040b — the obstacles a band label (the controls hint) must stay clear of
     /// this frame: the registered furniture plus the measured console boxes. One reused list,
@@ -367,33 +379,74 @@ public sealed partial class JetHudRenderer
         float h = _viewportHeight;
         float left = ConsoleLeftEdge(scale);
         float textHeight = _painter.Measure("X", large: false, scale).Y;
-        float commandLeft = CommandBandLeft(model, scale);
         _cargoBox = default;
         _flightPartsBox = default;
         _painter.Element(ElementCargo);
+        // P1040c — in the command view the CMD panel owns the bottom-centre band (P1040b's
+        // rule, unchanged): both rows stop at its left edge, and the row whose full line cannot
+        // fit there takes its stated compact form (BottomText / JetBottomLines).
+        float commandLeft = CommandBandLeft(model, scale);
         if (model.Context.CargoLine is { Length: > 0 } cargo)
-            _cargoBox = BottomText(cargo, left, JetConsoleLayout.CargoTop(h), textHeight, scale,
-                commandLeft, _painter.Dim);
+            _cargoBox = BottomText(cargo, flightParts: false, left, JetConsoleLayout.CargoTop(h), textHeight,
+                scale, commandLeft, _painter.Dim);
         if (model.Context.FlightPartsLine is { Length: > 0 } parts)
-            _flightPartsBox = BottomText(parts, left, JetConsoleLayout.FlightPartsTop(h), textHeight, scale,
-                commandLeft, _painter.Dim);
+            _flightPartsBox = BottomText(parts, flightParts: true, left, JetConsoleLayout.FlightPartsTop(h), textHeight,
+                scale, commandLeft, _painter.Dim);
 
         DrawTips(model, scale, draw: true);
     }
 
     /// <summary>One bottom-band run: fitted to the measured band, drawn at the Jet scale, and
-    /// returned as its ink box (the hint's obstacle set reads it too).</summary>
-    private RectangleF BottomText(string text, float left, float top, float textHeight, float scale,
-        float commandLeft, Color ink)
+    /// returned as its ink box (the hint's obstacle set reads it too).
+    /// <para><b>P1040c — the bounded-band compact form.</b> A row whose band is bounded (the
+    /// command view's CMD panel column) first takes its whole shared line; if that cannot fit it
+    /// takes its stated compact form (<see cref="JetBottomLines"/>), which keeps the readings the
+    /// brief names — the weapon group, the selected weapon and the boost state for the flight
+    /// parts, the hold occupancy and the item for the cargo — and only then the ellipsis.</para>
+    /// </summary>
+    private RectangleF BottomText(string text, bool flightParts, float left, float top, float textHeight,
+        float scale, float commandLeft, Color ink)
     {
         float right = JetConsoleLayout.BandRight(Furniture, left, top, textHeight, _viewportWidth, scale);
         if (commandLeft < float.MaxValue) right = MathF.Min(right, commandLeft);
         float width = MathF.Max(0f, right - left);
         if (width < 8f * scale) return default;
-        string fitted = _chatFit.Fit(_painter, text, scale, false, width);
-        _painter.Text(fitted, new(left, top), large: false, scale, ink);
-        return new RectangleF(left, top, _painter.Measure(fitted, large: false, scale).X, textHeight);
+        string safe = HudFormat.Printable(text);
+        string shown;
+        if (_painter.Measure(safe, large: false, scale).X <= width)
+        {
+            shown = safe;
+        }
+        else
+        {
+            // The stated compact form first; if even it cannot fit, the same readings without
+            // the row's own label (`WPN`), and only then the ASCII ellipsis.
+            string compact = Compact(text, flightParts, withLabel: true);
+            string narrow = Compact(text, flightParts, withLabel: false);
+            shown = _painter.Measure(compact, large: false, scale).X <= width
+                ? compact
+                : _chatFit.Fit(_painter, narrow, scale, false, width);
+        }
+        _painter.Text(shown, new(left, top), large: false, scale, ink);
+        return new RectangleF(left, top, _painter.Measure(shown, large: false, scale).X, textHeight);
     }
+
+    /// <summary>P1040c — a bottom row's compact composition, cached by (line, kind) so a steady
+    /// frame composes nothing and allocates nothing.</summary>
+    private string Compact(string line, bool flightParts, bool withLabel)
+    {
+        var key = new CompactKey(line, flightParts, withLabel);
+        if (_compactCache.TryGetValue(key, out string? cached)) return cached;
+        string compact = flightParts
+            ? JetBottomLines.FlightPartsCompact(line, withLabel)
+            : JetBottomLines.CargoCompact(line, withDetail: withLabel);
+        if (_compactCache.Count >= 16) _compactCache.Clear();
+        _compactCache[key] = compact;
+        return compact;
+    }
+
+    private readonly record struct CompactKey(string Line, bool FlightParts, bool WithLabel);
+    private readonly Dictionary<CompactKey, string> _compactCache = new(16);
 
     /// <summary>In the command view the CMD panel owns the bottom-centre band, so the bottom
     /// rows stop at its left edge; elsewhere there is no such bound.</summary>
@@ -647,7 +700,7 @@ public sealed partial class JetHudRenderer
         if (compact)
         {
             // One row: identity, OXY, the endurance bar and the numeric endurance.
-            cursor += _painter.Measure(PodWord, large: false, scale).X + JetConsoleLayout.WordGap * scale;
+            cursor += _painter.Measure(PodWord, large: false, scale).X + JetConsoleLayout.PodFieldGapAt(scale);
             _painter.Text("OXY", new(cursor, y), large: false, scale, _painter.Primary);
             cursor += _painter.Measure("OXY", large: false, scale).X + JetConsoleLayout.WordGap * scale;
             float endWidth = endurance.Length > 0 ? _painter.Measure(endurance, large: false, scale).X : 0f;
@@ -880,22 +933,33 @@ public sealed partial class JetHudRenderer
         int wing = model.Context.CommandWing;
 
         // Pass 1 — every cell frame (all strokes precede all runs, so no frame can later
-        // cross a glyph's ink band).
+        // cross a glyph's ink band), in the NATIVE paint order: the recipient bar, then the
+        // verb bar, then the wing combo LAST — the wing combo's art covers the verb bar's top
+        // 12 px band and its MINE|BLD divider in the native composition
+        // (Game1.Commanding.cs:355-382 draws RecipientsBar, VerbsBar, then WingCombo).
         for (int c = 0; c < JetCommandConsole.RecipientCount; c++)
         {
             RectangleF cell = JetCommandConsole.RecipientCell(c);
             Color ink = c == selectedRecipient ? _painter.Hot : _painter.Dim;
             FrameCell(new(left + cell.X, top + cell.Y), cell.Width, cell.Height, ink);
         }
-        {
-            RectangleF cell = JetCommandConsole.WingCell;
-            FrameCell(new(left + cell.X, top + cell.Y), cell.Width, cell.Height, _painter.Primary);
-        }
         for (int c = 0; c < JetCommandConsole.VerbCount; c++)
         {
             RectangleF cell = JetCommandConsole.VerbCell(c);
             Color ink = c + 1 == selectedVerb ? _painter.Hot : _painter.Dim;
             FrameCell(new(left + cell.X, top + cell.Y), cell.Width, cell.Height, ink);
+        }
+        {
+            // P1040c — the wing cell's own backing plate, drawn ON TOP of the verb bar's
+            // strokes: the native combo's art does the same (it is painted after `VerbsBB`),
+            // and a 0.97 plate is the near-opaque step that really interrupts them. Without it
+            // the verb bar's top edge and the `MINE|BLD` divider ran through `DELTA` and read as
+            // a strikethrough (the P1040b `DEL`/`TA`). The cell stays the native `WingCombo`
+            // rectangle, so draw and hit test cannot disagree.
+            RectangleF cell = JetCommandConsole.WingCell;
+            _painter.FillPlate(new(left + cell.X, top + cell.Y, cell.Width, cell.Height),
+                WingCellPlateOpacity);
+            FrameCell(new(left + cell.X, top + cell.Y), cell.Width, cell.Height, _painter.Primary);
         }
 
         // Pass 2 — the cell words, each fitted to its own cell (the native art is unscaled
@@ -1038,12 +1102,40 @@ public sealed partial class JetHudRenderer
     /// (indicator.cpp:461-701) drawn with thin vector strokes, and the same visibility gate
     /// (<see cref="HudModel.FlightVisible"/> + an overlay id). The training control flow is
     /// not touched — this only reads <see cref="HudContext.TrainingOverlayId"/>.
+    /// <para><b>P1040c — Jet yields to the callout.</b> The shared anchor may not move, so while
+    /// a callout is up the ladder's rungs, numerals and the <c>PITCH</c> caption that would cross
+    /// the callout's measured text block are not drawn that frame
+    /// (<see cref="DrawPitchLadder"/>). The block is measured here by the same arithmetic the
+    /// draw uses (<see cref="TryTrainingCallout"/>) and published as
+    /// <see cref="TrainingCalloutBox"/> for the proof.</para>
     /// </summary>
     private void DrawTrainingCallout(HudModel model, float w, float h, float scale)
     {
-        if (!model.FlightVisible || model.Context.TrainingOverlayId is not > 0) return;
-        if (HudTrainingCallout.For(model.Context.TrainingOverlayId) is not { } c) return;
+        if (!TryTrainingCallout(model, w, h, scale, out TrainingCalloutGeometry g, out HudTrainingCallout.Callout c))
+            return;
         _painter.Element(ElementTraining);
+        Color ink = _painter.Hot;
+        _painter.Line(g.A, g.B, _painter.Stroke, ink);        // indicator.cpp:721 SetLineWidth(2.0f)
+        _painter.Line(g.B, g.PointC, _painter.Stroke, ink);
+        Vector2 size = _painter.Measure(c.Description, large: false, scale);
+        _painter.Text(c.Description, g.TextAnchor, large: false, scale, ink);
+        if (c.Description2 is { } second)
+            _painter.Text(second, new(g.TextAnchor.X, g.TextAnchor.Y - size.Y - 4f), large: false, scale, ink);
+        float dot = 6f;
+        _painter.Surface.Fill(new(g.A.X - dot * 0.5f, g.A.Y - dot * 0.5f), new(dot, dot), ink);
+    }
+
+    /// <summary>P1040c — the callout's shared geometry, resolved without drawing: the leader's
+    /// two segments, the text anchor and the measured box of BOTH description rows. Used by the
+    /// draw and by the ladder's yield test, so the two cannot disagree.</summary>
+    private bool TryTrainingCallout(HudModel model, float w, float h, float scale,
+        out TrainingCalloutGeometry geometry, out HudTrainingCallout.Callout callout)
+    {
+        geometry = default;
+        callout = default;
+        if (!model.FlightVisible || model.Context.TrainingOverlayId is not > 0) return false;
+        if (HudTrainingCallout.For(model.Context.TrainingOverlayId) is not { } c) return false;
+        callout = c;
         // The shared table is already in port screen space relative to the centre and the
         // shared renderer uses it unscaled (HudRenderer.DrawTrainingCallout), so Jet keeps
         // the identical anchors and scales only the glyphs.
@@ -1052,17 +1144,28 @@ public sealed partial class JetHudRenderer
         var b = new Vector2(a.X + c.SecondX, a.Y + c.SecondY);
         Vector2 size = _painter.Measure(c.Description, large: false, scale);
         var pointC = new Vector2(b.X + (c.SecondX >= 0 ? size.X : -size.X), b.Y);
-        Color ink = _painter.Hot;
-        _painter.Line(a, b, _painter.Stroke, ink);        // indicator.cpp:721 SetLineWidth(2.0f)
-        _painter.Line(b, pointC, _painter.Stroke, ink);
         float textX = c.SecondX >= 0 ? b.X : pointC.X;
         float textY = c.SecondY >= 0 ? b.Y + 2f : b.Y - size.Y - 2f;
-        _painter.Text(c.Description, new(textX, textY), large: false, scale, ink);
+        var anchor = new Vector2(textX, textY);
+        float left = textX, right = textX + size.X, top = textY, bottom = textY + size.Y;
         if (c.Description2 is { } second)
-            _painter.Text(second, new(textX, textY - size.Y - 4f), large: false, scale, ink);
-        float dot = 6f;
-        _painter.Surface.Fill(new(a.X - dot * 0.5f, a.Y - dot * 0.5f), new(dot, dot), ink);
+        {
+            Vector2 secondSize = _painter.Measure(second, large: false, scale);
+            float secondY = textY - size.Y - 4f;
+            left = MathF.Min(left, textX);
+            right = MathF.Max(right, textX + secondSize.X);
+            top = MathF.Min(top, secondY);
+            bottom = MathF.Max(bottom, secondY + secondSize.Y);
+        }
+        geometry = new TrainingCalloutGeometry(a, b, pointC, anchor,
+            new RectangleF(left, top, right - left, bottom - top));
+        return true;
     }
+
+    /// <summary>One resolved callout: the leader endpoints, the text anchor and the measured
+    /// text block (a value record, so a steady frame allocates nothing).</summary>
+    private readonly record struct TrainingCalloutGeometry(
+        Vector2 A, Vector2 B, Vector2 PointC, Vector2 TextAnchor, RectangleF Box);
 
     /// <summary>
     /// The ladder roll pointer (P972 §5.1 "Roll tutorial cue"): a bank index above the
