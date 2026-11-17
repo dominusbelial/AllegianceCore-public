@@ -1017,10 +1017,19 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
             return;
         }
         Assert.Contains(JetHudRenderer.TagText, surface.Seen);
-        // The caution panel exists exactly when the shared model resolves a caution.
+        // The caution panel exists exactly when the shared model resolves a caution that the
+        // panel still OWNS: P1040 moved the vote to its banner and the pod's OXY endurance to
+        // the LIFEPOD panel, so those two no longer raise the panel.
         var buffer = new JetCaution[JetCautionModel.MaxCautions];
-        bool anyCaution = JetCautionModel.Build(model, buffer) > 0;
-        Assert.Equal(anyCaution, surface.Seen.Contains("MASTER CAUTION"));
+        int built = JetCautionModel.Build(model, buffer);
+        int shown = 0;
+        for (int i = 0; i < built; i++)
+        {
+            if (buffer[i].Kind == JetCautionKind.Vote) continue;
+            if (buffer[i].Kind == JetCautionKind.PodOxygen && model.PodVisible) continue;
+            shown++;
+        }
+        Assert.Equal(shown > 0, surface.Seen.Contains("MASTER CAUTION"));
         // The stores exist exactly under the instrument gate with telemetry.
         bool stores = model.InstrumentsVisible && model.Telemetry is not null;
         Assert.Equal(stores, surface.Seen.Contains("STORES"));

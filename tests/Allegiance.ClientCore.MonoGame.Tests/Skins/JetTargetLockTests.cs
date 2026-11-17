@@ -636,11 +636,13 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
-        Assert.Equal(1, resources.Chat);
-        Assert.Equal(1, resources.Cargo);
-        Assert.Equal(1, resources.Parts);
-        Assert.Equal(1, resources.Command);
-        Assert.True(resources.CommandWasClassicComposition);
+        // P1040 — chat/cargo/flight-parts and the command composition are the skin's own;
+        // the host supplies only the command-camera chrome.
+        Assert.Equal(0, resources.Chat);
+        Assert.Equal(0, resources.Cargo);
+        Assert.Equal(0, resources.Parts);
+        Assert.Equal(0, resources.Command);
+        Assert.Equal(1, resources.Chrome);
         Assert.False(resources.TagsWereModern);
 
         if (state == "hidden")
@@ -1029,7 +1031,7 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
     /// such surface, so it must stay 0 (P1037 lock-tone rule).</summary>
     private sealed class Counting
     {
-        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts;
+        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts, Chrome;
         public bool TagsWereModern, CommandWasClassicComposition;
         public HudSkinResources Resources { get; }
 
@@ -1042,7 +1044,10 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
                 (_, classic) => { Command++; CommandWasClassicComposition = classic; },
                 _ => Chat++,
                 _ => Cargo++,
-                _ => Parts++);
+                _ => Parts++)
+            {
+                CommandChrome = _ => Chrome++
+            };
         }
     }
 }

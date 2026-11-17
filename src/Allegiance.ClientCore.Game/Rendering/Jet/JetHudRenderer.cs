@@ -71,6 +71,14 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         "Equipment afterburner endurance", "Equipment cloak endurance",
         "Inventory turret gunner identity", "Inventory cargo slots", "Inventory own ship name",
         "Equipment empty slot affordances",
+        // P1040 — the console, chat/command and lifecycle family (P972 §5.5 rows 1-18,
+        // §5.3 training callouts, §5.6 command-view summary). Jet draws these itself now;
+        // the P1038 caution-panel ids above stay because the panel still draws them.
+        "Chat history", "Chat composition and recipient",
+        "Command recipient verb and wing controls",
+        "Sector location", "Turret carrier identity", "Accepted order text", "Queued order text",
+        "Tip text lines", "Mission countdown", "Eject pod identity panel",
+        "Command view ship summary", "Training HUD callouts",
     ];
     private static readonly HashSet<string> CoverageSet = new(CoverageIds, StringComparer.Ordinal);
 
@@ -192,6 +200,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private RectangleF _headingPlate;
     /// <summary>P1038 — the two tape caption boxes drawn this frame, for the same rule.</summary>
     private RectangleF _speedCaptionBox;
+    /// <summary>P1040 — the speed readout plate measured this frame (the console column's
+    /// left bound).</summary>
+    private RectangleF _speedPlate;
     private RectangleF _throttleCaptionBox;
 
     /// <summary>
@@ -349,6 +360,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _viewportHeight = frame.Viewport.Height > 0 ? frame.Viewport.Height : _viewportHeight;
         _headingPlate = default;
         _speedCaptionBox = default;
+        _speedPlate = default;
         _throttleCaptionBox = default;
         _throttleBandLeft = 0f;
         // P1039 — the per-frame furniture/readout registry the placement rules read.
@@ -402,6 +414,19 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 DrawStores(model, w, h, scale);
                 DrawCaution(model, w, h, scale);
 
+                // P1040 — the console text family owns the left column below the chat pane
+                // and above the stores block. Its band is resolved HERE (stores top known,
+                // designator readout not yet placed) so it is furniture when a world-anchored
+                // readout is placed: a target readout can never land on the sector/orders
+                // rows, and the chat pane's box is the same value DrawConsole re-reads.
+                _chatPane = ChatPaneRect(model, w, scale);
+                float columnLeft = ConsoleLeftEdge(scale);
+                float columnRight = JetConsoleLayout.ColumnRight(w, scale);
+                float columnTop = _chatPane.Y + _chatPane.Height + JetConsoleLayout.ChatToColumn * scale;
+                float columnBottom = _storesTop > 0f ? _storesTop : h - 166f;
+                if (columnRight > columnLeft && columnBottom > columnTop)
+                    AddFurniture(new RectangleF(columnLeft, columnTop, columnRight - columnLeft, columnBottom - columnTop));
+
                 // P1039 — the radar scope (P972 §4.4 RWR) is drawn after the fixed flight
                 // furniture and before the world-anchored target/lock symbology: the scope's
                 // rectangle is furniture for every readout placed later, and the marker
@@ -423,6 +448,21 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 // exempts anything it hides).
                 DrawInventory(model, w, h, scale);
 
+                // P1040 — the console text family (P972 §5.5 rows 1-5, 15, 17, 18) rides
+                // the HUD pass: the chat pane was resolved with the stores block (its box and
+                // the column band are furniture from there on), then the vote banner at the
+                // native offset, the training callouts and the ladder's roll pointer. The
+                // sector/turret/order/mission/lifepod column itself is drawn last so its rows
+                // sit over the reserved band they measured.
+                DrawTrainingCallout(model, w, h, scale);
+                // The F4 inventory pane is the modal overlay and owns the band the roll
+                // pointer sits in, so the pointer yields to it (like the WIP tag).
+                if (!model.Context.InventoryVisible && model.Context.InventorySlide <= 0f)
+                    DrawRollPointer(w, h, scale);
+                DrawConsoleColumn(model, w, h, scale);
+                DrawVote(model, w, scale);
+                DrawControlHint(model, w, scale);
+
                 DrawTag(model, w, h, scale);
             }
             finally
@@ -434,17 +474,22 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _resources.PodDeath(model);
     }
 
-    /// <summary>The classic external command-summary line (Classic composition).</summary>
-    public void DrawCommand(HudModel model) => _resources.Command(model, true);
-
-    /// <summary>The Classic console composition (chat, cargo, flight parts). Modern
-    /// composes those in its own HUD pass; Jet defers to the Classic passes.</summary>
-    public void DrawConsole(HudModel model)
+    /// <summary>P1040 — the Jet command composition: the native command-camera chrome
+    /// (NORTH marker / drag rectangle, supplied by the host through
+    /// <see cref="HudSkinResources.CommandChrome"/>) plus the skin's own vector <c>CMD</c>
+    /// console and the command-view ship summary.</summary>
+    public void DrawCommand(HudModel model)
     {
-        _resources.Chat(model);
-        _resources.Cargo(model);
-        _resources.FlightParts(model);
+        _resources.CommandChrome?.Invoke(model);
+        DrawCommandConsole(model);
     }
+
+    /// <summary>P1040 — the Jet console composition. Before this story the skin forwarded
+    /// chat/cargo/flight-parts to the Classic passes; it now draws its own chat pane (history,
+    /// leader bold, scroll/channels, configured height, five compose states) and the two
+    /// shared bottom-left lines in Jet chrome, so no Classic art is drawn over the Jet
+    /// vector panes.</summary>
+    public void DrawConsole(HudModel model) => DrawConsoleJet(model);
 
     /// <summary>The shared external radar renderer is Game1's, not ours; forward the
     /// one-time icon attachment exactly like the Classic adapter does.</summary>
@@ -771,7 +816,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         // Boxed numeric at the boresight row, right of the tape.
         int rounded = (int)MathF.Round(speed);
         if (rounded != _speedShown) { _speedShown = rounded; _speedText = rounded.ToString(CultureInfo.InvariantCulture); }
-        DrawReadout(_speedText, tapeX + 10f * scale, cy, scale, ReadoutAlign.LeftEdge);
+        // P1040 — the plate's measured box is furniture: the console column starts right of
+        // it so no console row can strike through the speed readout.
+        _speedPlate = DrawReadout(_speedText, tapeX + 10f * scale, cy, scale, ReadoutAlign.LeftEdge);
+        AddFurniture(_speedPlate);
     }
 
     /// <summary>

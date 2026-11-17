@@ -31,7 +31,13 @@ public static class HudModelAdapter
         bool showJoystickIndicator = true,
         int trainingOverlayId = 0,
         string? controlHint = null,
-        Allegiance.ClientCore.State.MissileTrackState? missileTrack = null)
+        Allegiance.ClientCore.State.MissileTrackState? missileTrack = null,
+        float commandPaneSlide = 0f,
+        int commandWing = 0,
+        int commandRecipientColumn = 0,
+        int commandVerb = 0,
+        int? missionClockSeconds = null,
+        bool missionCountdown = false)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -67,7 +73,15 @@ public static class HudModelAdapter
             TargetHudVisible = targetHudVisible,
             ChatHistoryVisible = chatHistoryVisible,
             TargetPaneSlide = targetPaneSlide,
-            SelectionBracket = selectionBracket
+            SelectionBracket = selectionBracket,
+            // P1040 — Jet console/lifecycle presentation values (Classic/Modern never read
+            // them; each is the shared tracker/world reading the port already computes).
+            CommandPaneSlide = commandPaneSlide,
+            CommandWing = commandWing,
+            CommandRecipientColumn = commandRecipientColumn,
+            CommandVerb = commandVerb,
+            MissionClockSeconds = missionClockSeconds,
+            MissionCountdown = missionCountdown
         }, buffers);
 
     private static HudPoint Point(Vector2 v) => new(v.X, v.Y);

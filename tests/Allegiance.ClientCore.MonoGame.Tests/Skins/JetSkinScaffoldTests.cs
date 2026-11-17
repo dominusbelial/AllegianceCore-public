@@ -329,17 +329,17 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         jet.Draw(model, frame);
         jet.DrawCommand(model);
         jet.DrawConsole(model);
-        // The shared passes are the Classic composition, every state.
-        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
-        // is no longer composed for the Jet skin, so the resource stays untouched.
+        // The shared passes: radar stays Jet's own (P1039), tags and pod/death are the
+        // shared host passes, and P1040 moved chat/cargo/flight-parts and the command
+        // composition into the skin — the host now supplies only the command-camera chrome.
         Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
-        Assert.Equal(1, resources.Chat);
-        Assert.Equal(1, resources.Cargo);
-        Assert.Equal(1, resources.Parts);
-        Assert.Equal(1, resources.Command);
-        Assert.True(resources.CommandWasClassicComposition);
+        Assert.Equal(0, resources.Chat);
+        Assert.Equal(0, resources.Cargo);
+        Assert.Equal(0, resources.Parts);
+        Assert.Equal(0, resources.Command);
+        Assert.Equal(1, resources.Chrome);
         Assert.False(resources.TagsWereModern);
         // Nothing is drawn while the HUD is hidden; the WIP tag otherwise.
         if (state == "hidden")
@@ -392,6 +392,11 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
             "Target speed", "Target time to intercept", "Target type description",
             "Thrust setting", "Vector lock status", "Velocity direction marker", "Vote banner",
             "Ripcord countdown",
+            // P1040 — the console/chat/command/lifecycle/training family.
+            "Accepted order text", "Chat composition and recipient", "Chat history",
+            "Command recipient verb and wing controls", "Command view ship summary",
+            "Eject pod identity panel", "Mission countdown", "Queued order text",
+            "Sector location", "Tip text lines", "Training HUD callouts", "Turret carrier identity",
         }.OrderBy(id => id, StringComparer.Ordinal), jet.Coverage!.OrderBy(id => id, StringComparer.Ordinal));
     }
 
@@ -399,7 +404,7 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
     public void Jet_coverage_matches_the_elements_the_scaffold_draws()
     {
         using var jet = Jet(new CountingJetSurface());
-        Assert.Equal(64, jet.Coverage!.Count);
+        Assert.Equal(76, jet.Coverage!.Count);
         Assert.Contains("Cockpit centre reticle", jet.Coverage);
         Assert.Contains("Speed", jet.Coverage);
         Assert.Contains("Thrust setting", jet.Coverage);
@@ -423,18 +428,24 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void Jet_console_pass_is_the_classic_chat_cargo_parts_composition()
+    public void Jet_console_pass_draws_its_own_chat_and_command_composition()
     {
         var surface = new CountingJetSurface();
         var resources = new CountingResources();
         using var jet = Jet(surface, resources.Resources);
-        var model = HudModelAdapter.Create(FlightFrame(), CameraMode.Cockpit);
+        var model = HudModelAdapter.Create(FlightFrame(), CameraMode.Cockpit,
+            chat: new HudChat(new[] { "[TEAM] Pilot: defend the base" }, 0, "returning", true, 1, "[TEAM] "),
+            console: new HudConsoleText { SectorName = "Alystra" });
+        // P1040 — the skin owns chat/cargo/flight-parts and the command composition: the host
+        // supplies neither the Classic chat pass nor the command bar/summary any more.
         jet.DrawConsole(model);
-        Assert.Equal(new[] { "chat", "cargo", "parts" }, resources.Order);
+        Assert.Empty(resources.Order);
+        Assert.True(surface.Texts > 0);
+        Assert.Contains("[TEAM] Pilot: defend the base", surface.Seen);
         resources.Order.Clear();
         jet.DrawCommand(model);
-        Assert.Equal(new[] { "command" }, resources.Order);
-        Assert.True(resources.CommandWasClassicComposition);
+        Assert.Equal(new[] { "chrome" }, resources.Order);   // camera chrome only
+        Assert.False(resources.CommandWasClassicComposition);
         resources.Order.Clear();
         jet.Draw(model, new(new(0, 0, 800, 480), null, false));
         // P1039 — the shared Classic radar pass is gone from the Jet composition: Jet draws
@@ -607,10 +618,12 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
     }
 
     /// <summary>The shared-pass counters the Jet renderer must drive exactly like
-    /// the Classic adapter (HudSkinResources is an immutable record of callbacks).</summary>
+    /// the Classic adapter (HudSkinResources is an immutable record of callbacks).
+    /// P1040 — Jet draws its own chat/cargo/parts/command composition, so only the
+    /// command-camera CHROME (NORTH + drag rectangle) is still driven from the host.</summary>
     private sealed class CountingResources
     {
-        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts;
+        public int Radar, Tags, PodDeath, Command, Chat, Cargo, Parts, Chrome;
         public bool TagsWereModern, CommandWasClassicComposition;
         public readonly List<string> Order = new();
         public HudSkinResources Resources { get; }
@@ -624,7 +637,10 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
                 (_, classic) => { Command++; CommandWasClassicComposition = classic; Order.Add("command"); },
                 _ => { Chat++; Order.Add("chat"); },
                 _ => { Cargo++; Order.Add("cargo"); },
-                _ => { Parts++; Order.Add("parts"); });
+                _ => { Parts++; Order.Add("parts"); })
+            {
+                CommandChrome = _ => { Chrome++; Order.Add("chrome"); }
+            };
         }
     }
 }

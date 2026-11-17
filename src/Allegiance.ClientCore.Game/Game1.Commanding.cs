@@ -445,28 +445,7 @@ public sealed partial class Game1
         _spriteBatch.Begin();
         try
         {
-            // HUD-10 — the native command bar is a separate CommandPane image,
-            // visible only under ofInFlightCommand (dialog.mdl:5416).
-            if (CommandCameraActive && (!TrainingActive || _trainingCommandPane)) DrawCommandBar();
-            if (_cameraMode == CameraMode.Command)
-            {
-                if (_camSmoothInit && ProjectToScreen(new Vector3(0, 3 * CommandGridRenderer.Radius / 4, 0),
-                    _camDisplay.RelativeView(), _camDisplay.Projection(GraphicsDevice.Viewport.AspectRatio, 10, 80000), _camDisplay.Eye, out var north))
-                    _spriteBatch.DrawString(_hudSmall, "NORTH", north, Color.White);
-                var mouse = ReadProofMouse();
-                if (_ptrLeftDown)
-                {
-                    int x = (int)MathF.Min(_ptrDragStart.X, mouse.X), y0 = (int)MathF.Min(_ptrDragStart.Y, mouse.Y);
-                    int w = (int)MathF.Abs(_ptrDragStart.X - mouse.X), h = (int)MathF.Abs(_ptrDragStart.Y - mouse.Y);
-                    _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0, w, 1), Color.White);
-                    _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0 + h, w, 1), Color.White);
-                    _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0, 1, h), Color.White);
-                    _spriteBatch.Draw(_whitePixel, new Rectangle(x + w, y0, 1, h), Color.White);
-                }
-            }
-            // HUD-11 — the native chat pane always ends 126 px below the top
-            // (CommPane SideTop(-160,-126), dialog.mdl:5394); start the port's
-            // command-view summary below it instead of overprinting the chat.
+            DrawCommandChromeBody(commandBar: true);
             float y = Rendering.ChatPaneLayout.BottomFromTop + 6;
             foreach (var line in lines)
             {
@@ -477,6 +456,45 @@ public sealed partial class Game1
             }
         }
         finally { _spriteBatch.End(); }
+    }
+
+    /// <summary>
+    /// P1040 — the command-camera chrome alone (native NORTH marker + the drag rectangle),
+    /// for a skin that draws its own command console. Same drawing as the Classic path; only
+    /// the bar art and the port's summary lines are left out because the skin owns them.
+    /// </summary>
+    internal void DrawCommandChrome(Rendering.HudModel model)
+    {
+        if (!model.Visible) return;
+        _spriteBatch.Begin();
+        try { DrawCommandChromeBody(commandBar: false); }
+        finally { _spriteBatch.End(); }
+    }
+
+    /// <summary>The chrome body, inside the caller's SpriteBatch session.
+    /// <paramref name="commandBar"/> is false only for a skin that draws its own command
+    /// console (Jet): the native bar art would otherwise double-draw under the vector panel.</summary>
+    private void DrawCommandChromeBody(bool commandBar)
+    {
+        // HUD-10 — the native command bar is a separate CommandPane image,
+        // visible only under ofInFlightCommand (dialog.mdl:5416).
+        if (commandBar && CommandCameraActive && (!TrainingActive || _trainingCommandPane)) DrawCommandBar();
+        if (_cameraMode == CameraMode.Command)
+        {
+            if (_camSmoothInit && ProjectToScreen(new Vector3(0, 3 * CommandGridRenderer.Radius / 4, 0),
+                _camDisplay.RelativeView(), _camDisplay.Projection(GraphicsDevice.Viewport.AspectRatio, 10, 80000), _camDisplay.Eye, out var north))
+                _spriteBatch.DrawString(_hudSmall, "NORTH", north, Color.White);
+            var mouse = ReadProofMouse();
+            if (_ptrLeftDown)
+            {
+                int x = (int)MathF.Min(_ptrDragStart.X, mouse.X), y0 = (int)MathF.Min(_ptrDragStart.Y, mouse.Y);
+                int w = (int)MathF.Abs(_ptrDragStart.X - mouse.X), h = (int)MathF.Abs(_ptrDragStart.Y - mouse.Y);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0, w, 1), Color.White);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0 + h, w, 1), Color.White);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(x, y0, 1, h), Color.White);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(x + w, y0, 1, h), Color.White);
+            }
+        }
     }
 
 }
