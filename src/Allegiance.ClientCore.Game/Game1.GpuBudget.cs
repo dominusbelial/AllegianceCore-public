@@ -29,6 +29,8 @@ public sealed partial class Game1
     private readonly HudSettings _hudSettings = HudSettings.Load(HudSettings.DefaultPath,
         File.Exists(IntroPreferences.FilePath) || File.Exists(UpscalingSettings.DefaultPath) || File.Exists(KeyBindingStore.ResolvePath()));
     private HudSkinSwitcher? _hudSkins;
+    /// <summary>P1041 — the Jet palette registry (green + amber, both preloaded).</summary>
+    private JetPaletteSwitcher? _jetPalettes;
     private IHudSkinRenderer ActiveHud => _hudSkins!.Active.Renderer;
     private bool _hudSkinKeysRead;
     private KeyboardState _hudSkinKeys;
@@ -51,10 +53,22 @@ public sealed partial class Game1
         // P1035 — Jet is installed (preloaded) but gated behind hud.jetSkin: the
         // switcher skips it in the cycle and refuses Request("jet") while the flag
         // is off. Its shared passes are the Classic composition (see the renderer).
-        IHudSkinRenderer? jet = HudSkinResolver.Catalog.TryGet(HudSkinIds.Jet) is { } jetDefinition
-            ? new Rendering.Jet.JetHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
-                resources, jetDefinition, _displayScale, _radarRenderer.SetRadarIcons)
-            : null;
+        // P1041 — BOTH palette variants are preloaded here (green + amber), so a
+        // variant switch is a reference swap at the frame boundary, never a load,
+        // parse or allocation during Draw (P972 §2.5).
+        IHudSkinRenderer? jet = null;
+        if (HudSkinResolver.Catalog.TryGet(HudSkinIds.Jet) is { } jetDefinition)
+        {
+            var amberDefinition = HudSkinResolver.Catalog.TryGetVariant(HudSkinIds.Jet, JetPaletteIds.Amber)
+                ?? jetDefinition;
+            var green = new Rendering.Jet.JetHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
+                resources, jetDefinition, _displayScale, _radarRenderer.SetRadarIcons);
+            var amber = new Rendering.Jet.JetHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
+                resources, amberDefinition, _displayScale, _radarRenderer.SetRadarIcons);
+            _jetPalettes = new JetPaletteSwitcher(_hudSettings,
+                new ResolvedJetPalette(jetDefinition, green), new ResolvedJetPalette(amberDefinition, amber));
+            jet = new JetPaletteRenderer(_jetPalettes);
+        }
         _hudSkins = new(_hudSettings, classic, modern, jet, jetEnabled: JetSkinEnabled);
         _hudSkins.Active.Renderer.SetRadarIcons(_radarIconTextures);
     }
@@ -85,11 +99,26 @@ public sealed partial class Game1
 
     private void CommitHudSkinChange()
     {
-        if (_hudSkins?.ApplyPending() != true) return;
+        // P1041 — a palette request is published at the same boundary as a skin
+        // request; either change saves and announces exactly once.
+        bool skinChanged = _hudSkins?.ApplyPending() == true;
+        bool paletteChanged = _jetPalettes?.ApplyPending() == true;
+        if (!skinChanged && !paletteChanged) return;
         SaveHudSettingsQuietly(); // activation succeeded; now persist and announce
-        _hudSkinNotice = "SKIN: " + _hudSkins.Active.Definition.Name;
+        _hudSkinNotice = HudSkinNotice.Format(_hudSkins!.Active.Definition.Name, ActiveJetPalette());
         _hudSkinNoticeUntil = _nowSeconds + 2;
     }
+
+    /// <summary>P1041 — the palette shown in the toast/options row, or null when a
+    /// skin without variants is active (then the toast is the plain skin name).</summary>
+    private string? ActiveJetPalette()
+        => _hudSkins is { } skins && skins.Active.Renderer.Id == HudSkinIds.Jet ? _jetPalettes?.Active.Id : null;
+
+    /// <summary>P1041 — the Options screen's variant row is present only while Jet
+    /// is active and the gate is on; with <c>hud.jetSkin</c> off it is HIDDEN (not
+    /// a disabled row) and the stored palette is kept.</summary>
+    private bool JetPaletteRowVisible()
+        => JetPaletteRow.Visible(_hudSkins?.Active.Renderer.Id, JetSkinEnabled());
 
     /// <summary>P1035 — the Ctrl+F6 HUD-skin row (graphics row 6). One function so
     /// the options test can assert the active skin's name — including Jet — is what
@@ -111,8 +140,21 @@ public sealed partial class Game1
     /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
     /// declutter rows, 19 → 20 with the P836 HUD level row, 20 → 21 with native's
     /// Debris cycle, 21 → 22 with P897 transport, 22 → 24 with P948's persisted
-    /// mouse options). Up/Down wrap on it.</summary>
+    /// mouse options). Up/Down wrap on it. P1041 — this is the BASE count: the Jet
+    /// palette row exists only while Jet is active, so the live count is 25 with it
+    /// and 24 without (<see cref="PanelRowCount"/>); the constant stays 24 so the
+    /// source-inspection tests keep pinning the flag-off list.</summary>
     private const int GraphicsRowCount = 24;
+    /// <summary>P1041 — the variant row's panel position: directly under the HUD
+    /// style row (6), "next to" the existing skin control (P972 §2.5).</summary>
+    private const int GraphicsRowPalette = 7;
+    /// <summary>P1041 — the panel's live row count (the variant row appears only
+    /// while Jet is the active skin with the gate on).</summary>
+    private int PanelRowCount => JetPaletteRowVisible() ? GraphicsRowCount + 1 : GraphicsRowCount;
+    /// <summary>P1041 — map a semantic row (the pre-P1041 index) to its panel row:
+    /// the variant row inserted at 7 shifts every later row down by one.</summary>
+    private int GraphicsRowFor(int semantic) =>
+        JetPaletteRowVisible() && semantic >= GraphicsRowPalette ? semantic + 1 : semantic;
     /// <summary>P948 — the panel rows for the persisted mouse options (native
     /// FlipY and MouseSensitivity); the P948 real-window proof selects them.</summary>
     private const int GraphicsRowInvertMouseY = 22;
@@ -211,13 +253,28 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % GraphicsRowCount;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + GraphicsRowCount - 1) % GraphicsRowCount;
+        // P1041 — the panel's row count changes when the Jet variant row appears
+        // or disappears (skin/gate changed at the frame boundary); keep the
+        // cursor inside it.
+        _graphicsRow = Math.Clamp(_graphicsRow, 0, PanelRowCount - 1);
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % PanelRowCount;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + PanelRowCount - 1) % PanelRowCount;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
-        if (changed)
+        bool paletteRow = JetPaletteRowVisible();
+        int semanticRow = paletteRow && _graphicsRow > GraphicsRowPalette ? _graphicsRow - 1 : _graphicsRow;
+        if (changed && paletteRow && _graphicsRow == GraphicsRowPalette)
         {
-            switch (_graphicsRow)
+            // P1041 — the variant selector, next to the HUD style row and with the
+            // same Left/Right behaviour the skin row uses. The request is queued
+            // and published at the update/draw boundary (CommitHudSkinChange),
+            // which saves and shows `SKIN: Jet / amber`.
+            if (_jetPalettes is not null) _hudSettings.JetPalette = JetPaletteIds.Next(_jetPalettes.Active.Id);
+            changed = false;
+        }
+        else if (changed)
+        {
+            switch (semanticRow)
             {
                 case 9: ApplyEffectsDetail((Allegiance.ClientCore.State.EffectsDetail)(((int)_upscaling.Effects + direction + 3) % 3)); break;
                 case 6: _hudSkins!.Cycle(direction); changed = false; break; // save after activation
@@ -284,10 +341,12 @@ public sealed partial class Game1
             changed |= sharpness != _upscaling.Sharpness;
             _upscaling.Sharpness = sharpness;
         }
-        var hudSlider = new Rectangle(360, 78 + 7 * 46 + 30, 260, 8);
+        // P1041 — the HUD-size slider follows the size row when the Jet variant
+        // row shifts it down one slot.
+        var hudSlider = HudSizeSliderRect();
         if (_graphicsFirstRow == 0 && mouse.LeftButton == ButtonState.Pressed && hudSlider.Contains(mouse.Position))
         {
-            _graphicsRow = 7; changed = true;
+            _graphicsRow = GraphicsRowFor(7); changed = true;
             _hudSettings.Size = .75f + .75f * Math.Clamp((mouse.X - hudSlider.X) / (float)hudSlider.Width, 0, 1);
         }
         if (changed)
@@ -300,6 +359,12 @@ public sealed partial class Game1
         _graphicsPrevious = ks;
         return true;
     }
+    /// <summary>P1041 proof — the panel row list is logged once per open (only under
+    /// the proof env), so the "Options unchanged" check compares TEXT.</summary>
+    private bool _panelRowsLogged;
+    /// <summary>P1041 — the HUD-size slider's panel rectangle (the row of the
+    /// "HUD size" line, shifted by the Jet variant row when it is present).</summary>
+    private Rectangle HudSizeSliderRect() => new(360, 78 + GraphicsRowFor(7) * 46 + 30, 260, 8);
     private void DrawGpuBudgetOverlay()
     {
         // P989 — an evidence capture (ALLEGIANCE_BENCHMARK_FRAME, or the wall-clock
@@ -311,7 +376,7 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
         {
-            string[] rows = {
+            var rows = new List<string>(PanelRowCount) {
                 $"Upscaling: {_upscaling.Upscaling}",
                 $"Preset: {_upscaling.Preset} ({UpscalingSettings.Scale(_upscaling.Preset):P0})",
                 $"RCAS sharpness: {_upscaling.Sharpness:P0}",
@@ -319,6 +384,13 @@ public sealed partial class Game1
                 $"Target frame time: {_upscaling.TargetFrameMs:F1} ms",
                 $"HD textures: {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)",
                 HudStyleRowLabel(_hudSkins!.Active.Definition.Name),
+            };
+            // P1041 — the Jet variant selector sits directly under the skin row and
+            // exists only while Jet is active with hud.jetSkin on (hidden, not
+            // disabled, on Classic/Modern or with the gate off; the stored palette
+            // is kept either way).
+            if (JetPaletteRowVisible()) rows.Add(JetPaletteRow.Label(_jetPalettes?.Active.Id));
+            rows.AddRange(new[] {
                 $"HUD size: {_hudSettings.Size:P0}",
                 $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
                 $"Effects quality: {_upscaling.Effects}",
@@ -341,21 +413,30 @@ public sealed partial class Game1
                 // P948 — persisted mouse options (player.json): the invert-Y toggle
                 // and the sensitivity row native's Game Options carry.
                 $"Invert mouse Y: {(_mouseFlight.InvertPitch ? "On" : "Off")}",
-                $"Mouse sensitivity: {Flight.MouseOptions.Percent(_mouseFlight.MouseSensitivity)}" };
-            int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 64);
+                $"Mouse sensitivity: {Flight.MouseOptions.Percent(_mouseFlight.MouseSensitivity)}" });
+            // P1041 proof — log the exact row list once per open so the "options screen
+            // unchanged with hud.jetSkin off" check compares TEXT, not a translucent
+            // panel's live-scene bleed. Never printed outside the proof env.
+            if (Environment.GetEnvironmentVariable("ALLEGIANCE_P1041_PROOF") == "1" && !_panelRowsLogged)
+            {
+                _panelRowsLogged = true;
+                Console.WriteLine("[hud.panel] " + string.Join(" | ", rows));
+            }
+            int panelHeight = Math.Min(GraphicsPanelHeight(rows.Count), GraphicsDevice.Viewport.Height - 64);
             _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD / Mouse (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             int visibleRows = Math.Max(1, (panelHeight - 105) / 46);
-            int firstRow = Math.Clamp(_graphicsRow - visibleRows + 1, 0, Math.Max(0, rows.Length - visibleRows));
+            int firstRow = Math.Clamp(_graphicsRow - visibleRows + 1, 0, Math.Max(0, rows.Count - visibleRows));
             _graphicsFirstRow = firstRow;
-            for (int i = firstRow; i < Math.Min(rows.Length, firstRow + visibleRows); i++)
+            for (int i = firstRow; i < Math.Min(rows.Count, firstRow + visibleRows); i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + (i - firstRow) * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             if (firstRow == 0)
             {
                 _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
                 _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
-                _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
-                _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
+                Rectangle hudSlider = HudSizeSliderRect();
+                _spriteBatch.Draw(_whitePixel, hudSlider, Color.Gray);
+                _spriteBatch.Draw(_whitePixel, new Rectangle(hudSlider.X, hudSlider.Y, (int)(hudSlider.Width * (_hudSettings.Size - .75f) / .75f), hudSlider.Height), Color.Cyan);
             }
             _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 32 + panelHeight - 30), Color.White);
         }
@@ -374,6 +455,8 @@ public sealed partial class Game1
         // autoshot flush), so the mouse-option proof latches its shot and flushes
         // it here, once the panel is really on the backbuffer.
         FlushP948ProofShot();
+        // P1041 — the Jet palette proof's panel frames (drawn after this point).
+        FlushP1041ProofShot();
         if (_benchExitAfterDraw && _benchResult is not null && Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_SCREENSHOT") is { Length: > 0 } screenshot)
         {
             var parameters = GraphicsDevice.PresentationParameters;

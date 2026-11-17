@@ -1,0 +1,19 @@
+{
+  "Schema": "hud-skin-1",
+  "Id": "jet",
+  "Name": "Jet amber",
+  "Version": "1.0.0",
+  "Variant": "amber",
+  "Defaults": {
+    "SelectionBracket": true,
+    "RadarDeclutter": true,
+    "Level": "Tactical"
+  },
+  "Palette": {
+    "Primary": "#FFD280",
+    "Dim": "#B98A45",
+    "Hot": "#FFF0C2",
+    "Plate": "#120F08",
+    "Keyline": "#0B0908"
+  }
+}

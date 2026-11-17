@@ -32,9 +32,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering.Jet;
 /// </summary>
 public sealed partial class JetHudRenderer : IHudSkinRenderer
 {
-    /// <summary>The WIP tag. HUD fonts are ASCII (<see cref="HudFormat.Printable"/>),
-    /// so the P972 em dash is drawn as a hyphen.</summary>
+    /// <summary>The green variant's WIP tag (P1035's shipped text). HUD fonts are
+    /// ASCII (<see cref="HudFormat.Printable"/>), so the P972 em dash is a hyphen.
+    /// P1041 — each palette names itself; <see cref="TagLabel"/> is the active one.</summary>
     public const string TagText = "JET / GREEN - WIP";
+    /// <summary>P1041 — the amber variant's tag (same 17 characters as the green one).</summary>
+    public const string TagTextAmber = "JET / AMBER - WIP";
 
     /// <summary>The <see cref="HudElement"/> ids Jet itself draws: velocity indicator
     /// (flight-path marker), roll (the ladder's bank reference), speed, thrust setting, the
@@ -154,6 +157,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private readonly Action<RadarIconTextures?>? _radarIcons;
     private readonly float _displayScale;
     private readonly string _definitionName;
+    /// <summary>P1041 — the palette variant this renderer was built for
+    /// (<see cref="JetPaletteIds"/>); drives the WIP tag's own name.</summary>
+    private readonly string _palette;
 
     private JetAttitudeState _attitude;
 
@@ -287,6 +293,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _definitionName = definition.Name;
         _radarIcons = radarIcons;
         _displayScale = displayScale > 0f ? displayScale : 1f;
+        _palette = JetPaletteIds.Normalize(definition.Variant);
         HudSkinPalette? palette = definition.Palette;
         _painter = new JetVectorPainter(surface,
             Parse(palette?.Primary, GreenPrimary), Parse(palette?.Dim, GreenDim), Parse(palette?.Hot, GreenHot),
@@ -308,6 +315,14 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
 
     /// <summary>The resolved skin name, for the options row/proof output.</summary>
     public string DefinitionName => _definitionName;
+
+    /// <summary>P1041 — the palette variant this renderer draws
+    /// (<see cref="JetPaletteIds.Green"/> / <see cref="JetPaletteIds.Amber"/>).</summary>
+    public string Palette => _palette;
+
+    /// <summary>P1041 — the WIP tag for this palette (P972 §9 3E item 5: the tag
+    /// names the variant until P1043).</summary>
+    public string TagLabel => _palette == JetPaletteIds.Amber ? TagTextAmber : TagText;
 
     /// <summary>The painter, exposed for the vector-primitive tests.</summary>
     public JetVectorPainter Painter => _painter;
@@ -1856,8 +1871,8 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     {
         if (model.Context.InventoryVisible || model.Context.InventorySlide > 0f) return;
         _painter.Element("tag");
-        Vector2 ink = _painter.Measure(TagText, large: false, scale);
-        _painter.Text(TagText, new(w * 0.5f, h - 12f * scale - ink.Y * 0.5f), large: false, scale, _painter.Dim, centered: true);
+        Vector2 ink = _painter.Measure(TagLabel, large: false, scale);
+        _painter.Text(TagLabel, new(w * 0.5f, h - 12f * scale - ink.Y * 0.5f), large: false, scale, _painter.Dim, centered: true);
     }
 
     /// <summary>Cached speed-tape tick label: each visible label owns a stable ring

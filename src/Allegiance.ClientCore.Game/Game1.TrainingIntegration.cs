@@ -7,7 +7,9 @@ namespace Allegiance.ClientCore.MonoGame;
 
 public sealed partial class Game1
 {
-    private sealed record TrainingPreferences(string Skin, string Keymap, Func<string, bool>? Filter,
+    // P1041 — the palette variant is part of the same pre-lesson snapshot: a
+    // lesson that starts amber must restore amber on exit (P972 §9 3E).
+    private sealed record TrainingPreferences(string Skin, string JetPalette, string Keymap, Func<string, bool>? Filter,
         CameraMode Camera, RadarMode Radar, ConsolePaneState Panes, TimeSpan FrameCap);
     private TrainingPreferences? _trainingPreferences;
     private bool _trainingQuitConfirm;
@@ -24,7 +26,7 @@ public sealed partial class Game1
         // Update. Settle that queued selection before taking the restore point.
         CommitHudSkinChange();
         var map = KeyBindingStore.Instance.Map;
-        _trainingPreferences = new(_hudSettings.Skin, map.ToJson(), map.ActionFilter,
+        _trainingPreferences = new(_hudSettings.Skin, _hudSettings.JetPalette, map.ToJson(), map.ActionFilter,
             _cameraMode, _radarMode, _consolePanes, MaxElapsedTime);
         // Native shipping Time::Now retains the complete elapsed interval
         // (zlib/ztime.h:75-77). The framework's 500 ms cap otherwise discards
@@ -57,6 +59,10 @@ public sealed partial class Game1
         if (_trainingPreferences is { } saved)
         {
             MaxElapsedTime = saved.FrameCap;
+            // P1041 — restore the palette BEFORE the boundary commit, so one
+            // CommitHudSkinChange publishes the skin and its variant together
+            // (both are preloaded; the swap is a reference read).
+            _hudSettings.JetPalette = saved.JetPalette;
             if (_hudSkins is not null)
             {
                 _hudSkins.Request(saved.Skin);

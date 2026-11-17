@@ -33,6 +33,30 @@ public sealed class HudSettings
     internal Action<string>? RequestSkinSelection { get; set; }
     internal void ActivateSkin(string id) => _skin = id;
 
+    /// <summary>P1041 — the Jet skin's colour variant (<c>green</c>/<c>amber</c>),
+    /// persisted SEPARATELY from the skin id (P972 §2.4) so the F-key skin cycle
+    /// never changes it. Unknown or missing values resolve to
+    /// <see cref="JetPaletteIds.Green"/>. While <c>hud.jetSkin</c> is off the value
+    /// is kept untouched (the selector is hidden, not a disabled row).</summary>
+    private string _jetPalette = JetPaletteIds.Green;
+    public string JetPalette
+    {
+        get => _jetPalette;
+        set
+        {
+            if (_jetPalette == value) return;
+            // Bound to the palette registry: use the same update/draw boundary as
+            // a skin switch (the request is applied by JetPaletteSwitcher, then
+            // saved by Game1's commit), never mid-pass.
+            if (RequestJetPaletteSelection is { } request) request(value);
+            else _jetPalette = value;
+        }
+    }
+
+    [JsonIgnore]
+    internal Action<string>? RequestJetPaletteSelection { get; set; }
+    internal void ActivateJetPalette(string id) => _jetPalette = JetPaletteIds.Normalize(id);
+
     /// <summary>Legacy adapter: maps <see cref="Skin"/> to the two existing
     /// renderer instances. Unknown skin ids resolve to Modern.</summary>
     [JsonIgnore]
@@ -149,6 +173,10 @@ public sealed class HudSettings
         catalog ??= HudSkinResolver.Catalog;
         if (!Enum.IsDefined(Transport)) Transport = Discovery.ClientTransportSetting.Auto;
         Skin = ResolveSkin(Skin, catalog, out _);
+        // P1041 — normalize the persisted palette without going through the
+        // boundary hook (Normalize also runs at Load/Save, before a registry binds).
+        JetPaletteIds.LogFallback(_jetPalette);
+        _jetPalette = JetPaletteIds.Normalize(_jetPalette);
         // P833 — widen the user Size multiplier (0.5–2.0) so the pilot can
         // compensate for very high/low density displays; the base HUD scale is
         // now density-derived (see ModernHudScale) rather than window-height.

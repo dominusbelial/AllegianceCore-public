@@ -8,6 +8,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering.Skins;
 public sealed class HudSkinCatalog
 {
     private readonly Dictionary<string, HudSkinDefinition> _byId = new();
+    // P1041 — palette variants (jet.amber) share their skin's id and live here,
+    // keyed "id/variant", so they never appear in Installed or the F-key cycle.
+    private readonly Dictionary<string, HudSkinDefinition> _variants = new(StringComparer.Ordinal);
     private bool _unknownDiagnostic;
 
     public HudSkinCatalog() => LoadBuiltIns();
@@ -16,6 +19,14 @@ public sealed class HudSkinCatalog
 
     public HudSkinDefinition? TryGet(string id) =>
         _byId.TryGetValue(HudSkinIds.Normalize(id), out var def) ? def : null;
+
+    /// <summary>P1041 — the palette variant of <paramref name="id"/> named
+    /// <paramref name="variant"/>, or null when the build ships none. A variant is
+    /// not an installed skin: it is only reachable through the skin it colours.</summary>
+    public HudSkinDefinition? TryGetVariant(string id, string variant) =>
+        _variants.TryGetValue(VariantKey(HudSkinIds.Normalize(id), HudSkinIds.Normalize(variant)), out var def) ? def : null;
+
+    private static string VariantKey(string id, string variant) => id + "/" + variant;
 
     /// <summary>Returns the installed skin for <paramref name="id"/>, or the
     /// built-in Modern fallback with a one-time diagnostic for unknown ids.</summary>
@@ -39,7 +50,8 @@ public sealed class HudSkinCatalog
         try
         {
             var def = HudSkinLoader.Load(json);
-            _byId[def.Id] = def;
+            if (def.Variant is not null) _variants[VariantKey(def.Id, def.Variant)] = def;
+            else _byId[def.Id] = def;
             return true;
         }
         catch (HudSkinLoadException ex)
@@ -56,6 +68,8 @@ public sealed class HudSkinCatalog
         {
             using var stream = assembly.GetManifestResourceStream(name)!;
             var def = HudSkinLoader.Load(stream);
+            // P1041 — jet.amber is a palette VARIANT of jet, not a skin of its own.
+            if (def.Variant is not null) { _variants[VariantKey(def.Id, def.Variant)] = def; continue; }
             _byId[def.Id] = def;
         }
 

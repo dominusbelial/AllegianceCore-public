@@ -41,6 +41,16 @@ public static class HudSkinLoader
             throw new HudSkinLoadException("Missing version.");
         if (def.Id != HudSkinIds.Normalize(def.Id))
             throw new HudSkinLoadException($"Id '{def.Id}' is not normalized (must be lowercase, no surrounding whitespace).");
+        if (def.Variant is not null)
+        {
+            // P1041 — a palette variant shares its skin's id and must be a
+            // normalized token that actually swaps a palette; anything else is a
+            // malformed definition, rejected in full (P972 §2.3).
+            if (def.Variant != HudSkinIds.Normalize(def.Variant))
+                throw new HudSkinLoadException($"Variant '{def.Variant}' is not normalized.");
+            if (def.Palette is null)
+                throw new HudSkinLoadException("A palette variant must carry a palette block.");
+        }
         if (def.Defaults is null)
             throw new HudSkinLoadException("Missing defaults.");
         if (!Enum.IsDefined(def.Defaults.Level))

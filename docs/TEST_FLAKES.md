@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1041 gate observations — 2026-11-17 UTC
+
+The P1041 gate ran one Fast sweep on the final tree (`tiers-20261117T170044.710662Z`): **15,161 cases in 548.7 s,
+3 failed / 7 not executed**, infrastructure checks PASS, 5 timing-only executions over the calibrated 11.532 s limit
+(all passed). The change is Jet presentation plus the palette plumbing (`Rendering/Jet/`, `Rendering/Skins/`,
+the Options panel rows and the training preference snapshot): `git diff -- src/Allegiance.Core src/Allegiance.Server`
+is empty, so no Core, server, sim, clock, mining, throttle or broadcast path is touched. All three failures pass
+**3/3 alone** on the changed tree:
+
+| Exact case | Failure in the sweep | Three repetitions alone | Diagnosis |
+|---|---|---|---|
+| `Skins.JetConsoleTests.The_console_composition_allocates_zero_bytes_per_frame` | 32 B over the 20,000-frame window (expected 0), 0.76 s | **pass / pass / pass** (0.75 s each) | Allocation-measurement-under-load family (the same ledgered family as the rows above/below); the only composition change is the palette tag string selection, which allocates nothing (the new amber allocation test is 0 B 3/3 alone). |
+| `Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire` | live missile over the wire, 3.3 s | **pass / pass / pass** (1 s each) | Ledgered live-missile family; no wire/sim path changed by this task. |
+| `Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | `5.0000000000000009` against the inclusive 5 s upper bound | **pass / pass / pass** (rows 5/7/10 in one filter; one row of one run failed the same one-ULP value) | Already-ledgered one-ULP floating upper-bound family (many rows above); timer/bomb code unchanged. |
+
+A standalone `--filter FullyQualifiedName~Skins` sweep (422 cases) also failed
+`Skins.JetRadarTests.The_radar_draws_every_contact_kind_and_overlay_and_allocates_nothing` once (allocation count
+under the parallel sweep); it passes **3/3 alone** (75-76 ms) — the same allocation-measurement-under-load family.
+The five calibrated-limit offenders are timing-only and already ledgered for their families
+(`P796VariedLoadoutTests...civ: 35`, `P814GunnerTests.P814b...`, `SC2NaniteSupportTests...civ: 25`,
+`P750NativeAsteroidTypesTests...rock_models` (15.6 s), `P999CivStrategyTests...civ: 5`).
+
+The training gate (`tools/run-training-tests.sh --no-build --repeat 3`, artwork) result is in the P1041 report
+§9.2; raw logs in `~/allegiance-evidence/P1041/`.
+
 ## P1040c gate observations — 2026-11-17 UTC
 
 The P1040c gate ran one Fast sweep on the final tree (`tiers-20261117T135903.252301Z`): **15,137 cases in
