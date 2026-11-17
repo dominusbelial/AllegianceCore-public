@@ -110,21 +110,63 @@ public static class JetInventoryPresentation
 
     public static bool Compact(float viewportHeight) => viewportHeight < CompactHeight;
 
+    /// <summary>
+    /// P1039 — the lowest pane scale the fit-to-available-height rule may use. The pane
+    /// never drops a row to escape the master-caution panel (caution is the higher-priority
+    /// element and the pane is the detailed table); it shrinks its measured row pitch
+    /// instead, and 0.72 keeps the table font legible at the 800×480 floor.
+    /// </summary>
+    public const float MinPaneScale = 0.72f;
+
     /// <summary>The pane scale: the native inventory scale, shared with
     /// <see cref="InventoryPaneLayout"/> so the anchor clamp and the slide match.</summary>
     public static float Scale(float viewportHeight) => InventoryPaneLayout.Scale(viewportHeight);
 
-    public static float Width(float viewportWidth, float viewportHeight)
+    /// <summary>
+    /// P1039 — the panes scale when the master-caution panel's bottom
+    /// (<paramref name="topLimit"/>) leaves less than the native height available: the
+    /// pane keeps every row and every column and shrinks its scale (down to
+    /// <see cref="MinPaneScale"/>) so its top sits below the caution + gutter. The
+    /// F4 PANE-VS-CAUTION RULE: the caution panel is the higher-priority element, so the
+    /// pane moves/shrinks and the caution never does.
+    /// </summary>
+    public static float FitScale(int rowCount, float viewportHeight, float topLimit)
     {
-        float scale = Scale(viewportHeight);
+        float native = Scale(viewportHeight);
+        if (topLimit <= 0f) return native;
+        float available = InventoryPaneLayout.BottomY(0f, viewportHeight) - topLimit;
+        float units = TitleRow + CapHeight + HeaderRow + RowHeight * rowCount;
+        if (units <= 0f || available <= 0f) return MinPaneScale;
+        return Math.Clamp(available / units, MinPaneScale, native);
+    }
+
+    public static float Height(int rowCount, float viewportHeight)
+        => HeightAt(rowCount, Scale(viewportHeight));
+
+    /// <summary>P1039 — the pane height at an explicit (fitted) scale.</summary>
+    public static float HeightAt(int rowCount, float paneScale)
+        => (TitleRow + CapHeight + HeaderRow + RowHeight * rowCount) * paneScale;
+
+    public static float Width(float viewportWidth, float viewportHeight)
+        => WidthAt(viewportWidth, viewportHeight, Scale(viewportHeight));
+
+    /// <summary>P1039 — the pane width at an explicit (fitted) scale.</summary>
+    public static float WidthAt(float viewportWidth, float viewportHeight, float paneScale)
+    {
         float available = MathF.Max(0f, InventoryPaneLayout.RightX(viewportWidth, viewportHeight));
-        return MathF.Min(ContentWidth * scale, available);
+        return MathF.Min(ContentWidth * paneScale, available);
     }
 
     /// <summary>Screen x of the pane's left edge (right edge is the native
     /// <c>SideBottomRight(-36,…)</c> anchor).</summary>
     public static float Left(float viewportWidth, float viewportHeight)
-        => InventoryPaneLayout.RightX(viewportWidth, viewportHeight) - Width(viewportWidth, viewportHeight);
+        => LeftAt(viewportWidth, viewportHeight, Scale(viewportHeight));
+
+    /// <summary>P1039 — the pane's left edge at an explicit (fitted) scale.</summary>
+    public static float LeftAt(float viewportWidth, float viewportHeight, float paneScale)
+        => InventoryPaneLayout.RightX(viewportWidth, viewportHeight)
+           - WidthAt(viewportWidth, viewportHeight, paneScale);
+
 
     /// <summary>Screen y of the pane's bottom edge: the native clamp above the mini-map
     /// (<see cref="InventoryPaneLayout.BottomY"/>) plus the shared slide offset.</summary>
@@ -137,11 +179,25 @@ public static class JetInventoryPresentation
     public static float TitleTop(int rowCount, float viewportWidth, float viewportHeight, float slide)
         => Top(rowCount, viewportWidth, viewportHeight, slide);
 
-    public static float Height(int rowCount, float viewportHeight)
-        => (TitleRow + CapHeight + HeaderRow + RowHeight * rowCount) * Scale(viewportHeight);
-
     public static float Top(int rowCount, float viewportWidth, float viewportHeight, float slide)
         => Bottom(viewportWidth, viewportHeight, slide) - Height(rowCount, viewportHeight);
+
+    /// <summary>P1039 — the pane's top at an explicit (fitted) scale.</summary>
+    public static float TopAt(int rowCount, float viewportWidth, float viewportHeight, float slide, float paneScale)
+        => Bottom(viewportWidth, viewportHeight, slide) - HeightAt(rowCount, paneScale);
+
+    /// <summary>P1039 — the title row's top at an explicit (fitted) scale.</summary>
+    public static float TitleTopAt(int rowCount, float viewportWidth, float viewportHeight, float slide, float paneScale)
+        => TopAt(rowCount, viewportWidth, viewportHeight, slide, paneScale);
+
+    /// <summary>P1039 — the caption band's top at an explicit (fitted) scale.</summary>
+    public static float HeaderTopAt(int rowCount, float viewportWidth, float viewportHeight, float slide, float paneScale)
+        => TopAt(rowCount, viewportWidth, viewportHeight, slide, paneScale) + TitleRow * paneScale;
+
+    /// <summary>P1039 — row <paramref name="index"/>'s top at an explicit (fitted) scale.</summary>
+    public static float RowTopAt(int rowCount, float viewportWidth, float viewportHeight, float slide, int index, float paneScale)
+        => TopAt(rowCount, viewportWidth, viewportHeight, slide, paneScale)
+           + (TitleRow + HeaderRow + RowHeight * index) * paneScale;
 
     /// <summary>P1038c — the top edge of the column-caption band, directly under the hull
     /// title's own row (title row → caption band → data rows).</summary>

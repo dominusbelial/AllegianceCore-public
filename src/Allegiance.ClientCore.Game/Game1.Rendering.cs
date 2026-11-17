@@ -4294,6 +4294,8 @@ public sealed partial class Game1
             // (chase/external cameras sit away from the own ship).
             float CameraRange(Vector3 worldPos) => (worldPos - cameraEye).Length();
 
+
+
             // HUD-16 — the native radar icon surface for each contact
             // (pmodel->GetIcon(), radarimage.cpp:591-593), resolved from the
             // core's per-type iconName through the once-built cache, exactly
@@ -4310,6 +4312,20 @@ public sealed partial class Game1
                 if (ownEnt.Latest is not { } ownUp) return;
                 ownSimPos = ownUp.Position;
             }
+
+            // P1039 — the presentation-only OWN-RELATIVE BEARING for the Jet RWR
+            // (P972 §4.4, slice 3C). The own forward is the source ship's attitude the HUD
+            // already reads for the attitude ladder, and the plane is the native sector
+            // plane (+Z, WinTrek.cpp:3099, HudFlightReference.SectorUp), so the value is
+            // ROLL-INVARIANT by construction (the ship's own right/up axes are never read).
+            // It derives from the same poses the native projection above uses — no wire
+            // field, no inclusion rule, no targeting/command change. A null bearing (no
+            // pose, or a contact on the plane normal) makes the renderer fall back to the
+            // ordinary projected scope instead of inventing a direction.
+            var ownForward = PoseConverter.ToXna(ownEnt.Latest!.Orientation.GetForward());
+            var ownAnchorXna = PoseConverter.ToXna(ownSimPos);
+            float? Bearing(Vector3 worldPos) => RadarBearing.Relative(
+                ownForward, HudFlightReference.SectorUp, worldPos - ownAnchorXna);
 
             // HUD-5 — native nearest-enemy bracket: FindTarget(pshipSource,
             // c_ttShip | c_ttEnemy | c_ttNearest) over the current sector
@@ -4371,7 +4387,7 @@ public sealed partial class Game1
                         ScreenRadius: ownBracket.ScreenRadius,
                         DistanceToEdge: ownBracket.DistanceToEdge,
                         IconStem: iconNames?.Ship(ownEnt.HullId),
-                        CameraDistance: CameraRange(ownXna)));
+                        CameraDistance: CameraRange(ownXna), RelativeBearingRadians: 0f));
                 }
             }
 
@@ -4467,7 +4483,7 @@ public sealed partial class Game1
                     ScreenRadius: shipBracket.ScreenRadius,
                     DistanceToEdge: shipBracket.DistanceToEdge,
                     IconStem: iconNames?.Ship(ship.HullId),
-                    CameraDistance: CameraRange(shipXna)));
+                    CameraDistance: CameraRange(shipXna), RelativeBearingRadians: Bearing(shipXna)));
                 // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
                 // ships (an off-screen ship's edge-clamped bracket already
                 // carries its side colour), always in the contact's real side
@@ -4519,7 +4535,7 @@ public sealed partial class Game1
                     ScreenRadius: stationBracket.ScreenRadius,
                     DistanceToEdge: stationBracket.DistanceToEdge,
                     IconStem: iconNames?.Station(st.StationTypeId),
-                    CameraDistance: CameraRange(stationXna)));
+                    CameraDistance: CameraRange(stationXna), RelativeBearingRadians: Bearing(stationXna)));
             }
 
             // Warps in my sector.
@@ -4552,7 +4568,7 @@ public sealed partial class Game1
                     // Native warp icon = the map's warpDef.iconName, which the
                     // wire's DataWarpIGC carries (warpIGC.cpp:34).
                     IconStem: iconNames?.Warp(wp.IconName),
-                    CameraDistance: CameraRange(warpXna)));
+                    CameraDistance: CameraRange(warpXna), RelativeBearingRadians: Bearing(warpXna)));
             }
 
             // Missiles — outside All only missiles aimed at the player's own side
@@ -4604,7 +4620,7 @@ public sealed partial class Game1
                     // Native missile icon = dataMissileType->iconName
                     // (missileigc.cpp:50,60), keyed by the wire's type id.
                     IconStem: iconNames?.Missile(ms.TypeId),
-                    CameraDistance: CameraRange(missileXna)));
+                    CameraDistance: CameraRange(missileXna), RelativeBearingRadians: Bearing(missileXna)));
             }
 
             // Probes in my sector.
@@ -4656,7 +4672,7 @@ public sealed partial class Game1
                     ScreenRadius: probeBracket.ScreenRadius,
                     DistanceToEdge: probeBracket.DistanceToEdge,
                     IconStem: iconNames?.Probe(pb.ProbetypeId),
-                    CameraDistance: CameraRange(probeXna)));
+                    CameraDistance: CameraRange(probeXna), RelativeBearingRadians: Bearing(probeXna)));
             }
 
             // Mines in my sector.
@@ -4700,7 +4716,7 @@ public sealed partial class Game1
                     ScreenRadius: mineBracket.ScreenRadius,
                     DistanceToEdge: mineBracket.DistanceToEdge,
                     IconStem: iconNames?.Mine(mine.MinetypeId),
-                    CameraDistance: CameraRange(mineXna)));
+                    CameraDistance: CameraRange(mineXna), RelativeBearingRadians: Bearing(mineXna)));
             }
 
             // HUD-4b — resolve the own loadout/hull once per frame so every
@@ -4813,7 +4829,7 @@ public sealed partial class Game1
                     // Native treasure icon = the treasure model's own icon, with
                     // the useful-tech override to icontechbmp (radarimage.cpp:719,890).
                     IconStem: iconNames?.Treasure(te.Code, te.PayloadId, isTech),
-                    CameraDistance: CameraRange(treasureXna)));
+                    CameraDistance: CameraRange(treasureXna), RelativeBearingRadians: Bearing(treasureXna)));
             }
 
             // Asteroids — native ordinary-rock LOD (radarimage.cpp:903-930) plus
@@ -4864,7 +4880,7 @@ public sealed partial class Game1
                     // Native asteroid icon = AsteroidDef.iconName, carried by the
                     // wire's DataAsteroidIGC.IconName (asteroidigc.cpp:35).
                     IconStem: iconNames?.Asteroid(ast.IconName),
-                    CameraDistance: CameraRange(asteroidXna)));
+                    CameraDistance: CameraRange(asteroidXna), RelativeBearingRadians: Bearing(asteroidXna)));
             }
 
             // HUD-5b — opt-in evidence line for the frame (see _radarProofEnabled).

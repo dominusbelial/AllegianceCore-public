@@ -154,7 +154,21 @@ public readonly record struct HudContact(
     /// does not compare it, because a flying contact changes it every frame.
     /// Null on headless fixtures, where the declutter falls back to
     /// <see cref="Range"/>.</summary>
-    float? CameraDistance = null);
+    float? CameraDistance = null,
+    /// <summary>
+    /// P1039 — the contact's bearing relative to the OWN ship, in radians, −π … +π (0 = dead
+    /// ahead, positive = to the ship's LEFT — the same sense as the Jet heading tape, whose
+    /// heading increases toward +Y, <see cref="JetFlightGeometry.Attitude"/>). Derived in
+    /// the snapshot builder from the SAME world pose the native projection uses
+    /// (<see cref="RadarBearing.Relative"/>): the own forward and the sector plane normal, so
+    /// the value is invariant under the own ship's roll and grants no 360° knowledge beyond a
+    /// contact that is already in the allowed set. PRESENTATION ONLY: no wire field, no
+    /// contact-inclusion rule, no targeting or command change. Null when the pose is
+    /// unavailable or the contact sits on the plane normal (no horizontal direction exists) —
+    /// the renderer then falls back to the ordinary projected scope rather than inventing a
+    /// direction.
+    /// </summary>
+    float? RelativeBearingRadians = null);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,

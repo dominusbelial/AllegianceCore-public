@@ -277,14 +277,16 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
 
         jet.Draw(model, DrawFrame());
         Assert.Equal(9, surface.count(LockCaption));
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
 
         Assert.True(switcher.Request(HudSkinIds.Classic));
         Assert.True(switcher.ApplyPending());
         Assert.Same(switcher.Active.Renderer, switcher.Active.Renderer);
         jet.Draw(model, DrawFrame());
         Assert.Equal(18, surface.count(LockCaption));   // one cue per frame, no replay
-        Assert.Equal(2, resources.Radar);              // no extra pass per switch
+        Assert.Equal(0, resources.Radar);              // no shared radar pass, ever (P1039)
         Assert.Equal(2, surface.Frames);               // no second batch session per frame
         // The renderer has no audio/feedback dependency at all: the lock tone lives
         // in SoundManager behind the world's IsFullLock gate, not in a skin.
@@ -629,7 +631,9 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         jet.DrawCommand(model);
         jet.DrawConsole(model);
 
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
         Assert.Equal(1, resources.Chat);

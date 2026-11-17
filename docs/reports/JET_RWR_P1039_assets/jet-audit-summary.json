@@ -1,0 +1,4714 @@
+{
+ "schema": 7,
+ "skin": "jet",
+ "scenes": [
+  {
+   "scene": "jet-level",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-level",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-level",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-level",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-pitched",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 79,
+    "Fills": 41,
+    "Strokes": 260,
+    "TextOverlaps": 11,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1318.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-pitched",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 62,
+    "Fills": 25,
+    "Strokes": 182,
+    "TextOverlaps": 8,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 509.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-vertical",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 70,
+    "Fills": 41,
+    "Strokes": 242,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-vertical",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 56,
+    "Fills": 25,
+    "Strokes": 171,
+    "TextOverlaps": 8,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-reverse",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 76,
+    "Fills": 41,
+    "Strokes": 258,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-reverse",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 59,
+    "Fills": 25,
+    "Strokes": 180,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-reverse",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 59,
+    "Fills": 25,
+    "Strokes": 180,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-target",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1294.9117,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-target",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1294.9117,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-target",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-target",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 0,
+    "Clear": false
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locked",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 109,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 11,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 1
+   },
+   "targetReadout": {
+    "x": 446.02087,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1168.9117,
+    "y": 98.43266,
+    "w": 90,
+    "h": 24
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": [
+    "ladder:+30@877,289 33x22 x target:Enemy fighter with a long pilot name@556,283.3 396x22"
+   ]
+  },
+  {
+   "scene": "jet-locked",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 109,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 11,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 1
+   },
+   "targetReadout": {
+    "x": 446.02087,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1168.9117,
+    "y": 98.43266,
+    "w": 90,
+    "h": 24
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": [
+    "ladder:+30@877,289 33x22 x target:Enemy fighter with a long pilot name@556,283.3 396x22"
+   ]
+  },
+  {
+   "scene": "jet-locked",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 33,
+    "Strokes": 250,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 550.8083,
+    "y": 322.18118,
+    "w": 60,
+    "h": 16
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locked",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 86,
+    "Fills": 33,
+    "Strokes": 250,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 550.8083,
+    "y": 322.18118,
+    "w": 60,
+    "h": 16
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lockfull",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 108,
+    "Fills": 49,
+    "Strokes": 302,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1168.9117,
+    "y": 89.63266,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1107.9117,
+    "y": 147.63266,
+    "w": 45,
+    "h": 22
+   },
+   "targetSlot": {
+    "Slot": 3,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lockfull",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 108,
+    "Fills": 49,
+    "Strokes": 302,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1168.9117,
+    "y": 89.63266,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1107.9117,
+    "y": 147.63266,
+    "w": 45,
+    "h": 22
+   },
+   "targetSlot": {
+    "Slot": 3,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lockfull",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 85,
+    "Fills": 33,
+    "Strokes": 226,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 530.475,
+    "y": 330.7145,
+    "w": 30,
+    "h": 14.666667
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lockfull",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 85,
+    "Fills": 33,
+    "Strokes": 226,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 530.475,
+    "y": 330.7145,
+    "w": 30,
+    "h": 14.666667
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-offscreen",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 95,
+    "Fills": 45,
+    "Strokes": 267,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-offscreen",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 95,
+    "Fills": 45,
+    "Strokes": 267,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-offscreen",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 75,
+    "Fills": 29,
+    "Strokes": 191,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-offscreen",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 75,
+    "Fills": 29,
+    "Strokes": 191,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lead",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 83,
+    "Fills": 41,
+    "Strokes": 283,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lead",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 83,
+    "Fills": 41,
+    "Strokes": 283,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lead",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 68,
+    "Fills": 25,
+    "Strokes": 207,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-lead",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 68,
+    "Fills": 25,
+    "Strokes": 207,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-leadout",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 305,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-leadout",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 305,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-leadout",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 213,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-leadout",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 213,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-orders",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 11,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1294.9117,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-orders",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 11,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1294.9117,
+    "y": 283.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-orders",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-orders",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-friendly",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 290,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1555.9117,
+    "y": 283.32355,
+    "w": 253,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-friendly",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 290,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1555.9117,
+    "y": 283.32355,
+    "w": 253,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-friendly",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 214,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-friendly",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 214,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores-low",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 85,
+    "Fills": 41,
+    "Strokes": 276,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 7,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores-low",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 68,
+    "Fills": 24,
+    "Strokes": 194,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores-critical",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 87,
+    "Fills": 45,
+    "Strokes": 272,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-stores-critical",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 69,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-pod",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 42,
+    "Strokes": 266,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-pod",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 69,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-flags",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 41,
+    "Strokes": 281,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 7,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-flags",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 70,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-caution",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 44,
+    "Strokes": 274,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-caution",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 86,
+    "Fills": 44,
+    "Strokes": 274,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-caution",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 68,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-caution",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 68,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-ghost",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 43,
+    "Strokes": 276,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-ghost",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 68,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 133,
+    "Fills": 59,
+    "Strokes": 123,
+    "TextOverlaps": 2,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 133,
+    "Fills": 59,
+    "Strokes": 123,
+    "TextOverlaps": 2,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 120,
+    "Fills": 43,
+    "Strokes": 105,
+    "TextOverlaps": 17,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 120,
+    "Fills": 43,
+    "Strokes": 105,
+    "TextOverlaps": 17,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4-empty",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 99,
+    "Fills": 42,
+    "Strokes": 160,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-f4-empty",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 26,
+    "Strokes": 126,
+    "TextOverlaps": 6,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 2,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locksmall",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 109,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 1224.28,
+    "y": 386.22354,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1168.9117,
+    "y": 243.9552,
+    "w": 90,
+    "h": 24
+   },
+   "targetSlot": {
+    "Slot": 0,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locksmall",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 33,
+    "Strokes": 250,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 193.17328,
+    "y": 119.525,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 366.50662,
+    "y": 75.65667,
+    "w": 60,
+    "h": 16
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locklarge",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 108,
+    "Fills": 49,
+    "Strokes": 302,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 427.27972,
+    "y": 259.32355,
+    "w": 506,
+    "h": 80
+   },
+   "lockReadout": {
+    "x": 1168.9117,
+    "y": 113.69151,
+    "w": 45,
+    "h": 22
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": false
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-locklarge",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 85,
+    "Fills": 33,
+    "Strokes": 226,
+    "TextOverlaps": 7,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 2.6666667,
+    "y": 2.6666667,
+    "w": 146.66667,
+    "h": 53.333332
+   },
+   "lockReadout": {
+    "x": 530.475,
+    "y": 330.7145,
+    "w": 30,
+    "h": 14.666667
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 41,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 41,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 79,
+    "Fills": 29,
+    "Strokes": 248,
+    "TextOverlaps": 60,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 79,
+    "Fills": 29,
+    "Strokes": 248,
+    "TextOverlaps": 60,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-round",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 597,
+    "TextOverlaps": 41,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-round",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 597,
+    "TextOverlaps": 41,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-round",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 79,
+    "Fills": 29,
+    "Strokes": 482,
+    "TextOverlaps": 60,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-round",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 79,
+    "Fills": 29,
+    "Strokes": 482,
+    "TextOverlaps": 60,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-dense",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 181,
+    "Fills": 105,
+    "Strokes": 636,
+    "TextOverlaps": 924,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-dense",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 181,
+    "Fills": 105,
+    "Strokes": 636,
+    "TextOverlaps": 924,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-dense",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 168,
+    "Fills": 89,
+    "Strokes": 586,
+    "TextOverlaps": 1427,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-dense",
+   "size": "3840x2160",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 179,
+    "Fills": 105,
+    "Strokes": 632,
+    "TextOverlaps": 877,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 3248,
+    "y": 1540,
+    "w": 360,
+    "h": 360
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-dense-round",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 181,
+    "Fills": 105,
+    "Strokes": 935,
+    "TextOverlaps": 924,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-kinds",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 95,
+    "Fills": 53,
+    "Strokes": 317,
+    "TextOverlaps": 47,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-kinds",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 37,
+    "Strokes": 267,
+    "TextOverlaps": 86,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-nobearing",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 19,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-nobearing",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 79,
+    "Fills": 29,
+    "Strokes": 248,
+    "TextOverlaps": 31,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 525.06665,
+    "y": 164.40001,
+    "w": 153.59998,
+    "h": 153.59999
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-All",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 93,
+    "Fills": 49,
+    "Strokes": 298,
+    "TextOverlaps": 45,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-Default",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 92,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 41,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-Target",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 45,
+    "Strokes": 263,
+    "TextOverlaps": 10,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "jet-radar-Minimal",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 75,
+    "Fills": 41,
+    "Strokes": 168,
+    "TextOverlaps": 2,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 1342.4,
+    "y": 474.4,
+    "w": 345.59998,
+    "h": 345.6
+   },
+   "samples": []
+  },
+  {
+   "scene": "radar-overlays",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 95,
+    "Fills": 63,
+    "Strokes": 161,
+    "TextOverlaps": 12,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 1168,
+    "y": 342.41675,
+    "w": 101,
+    "h": 24
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "lifepod",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 43,
+    "Strokes": 91,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "docked",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 0,
+    "Fills": 0,
+    "Strokes": 0,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  },
+  {
+   "scene": "command",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 37,
+    "Fills": 28,
+    "Strokes": 21,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0
+   },
+   "targetReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "lockReadout": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "targetSlot": {
+    "Slot": 1,
+    "Clear": true
+   },
+   "lockSlot": {
+    "Slot": 3,
+    "Clear": true
+   },
+   "radarScope": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0
+   },
+   "samples": []
+  }
+ ]
+}

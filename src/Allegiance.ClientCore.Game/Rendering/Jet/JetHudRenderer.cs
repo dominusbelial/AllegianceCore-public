@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.State;
@@ -179,6 +180,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private string _lockPercentText = "";
     private string _sectorShown = "";
     private string _sectorText = "";
+    // P1039 — the compact designator name (truncated at a stated width), cached by source.
+    private string _compactNameShown = "";
+    private string _compactNameText = "";
 
     /// <summary>P1038 — the heading readout plate drawn this frame (default when the tape
     /// is hidden). The target readout uses it so a locked designator's text can never land
@@ -188,9 +192,66 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private RectangleF _speedCaptionBox;
     private RectangleF _throttleCaptionBox;
 
+    /// <summary>
+    /// P1039 — the fixed HUD FURNITURE a readout may never be placed over: every ladder
+    /// numeral, the <c>PITCH nn</c> caption, the heading plate, both tape captions and
+    /// label columns, the <c>ACC</c>/<c>CUR</c> order words, the stores block, the
+    /// master-caution panel, the target data block, the F4 inventory pane and the radar
+    /// scope. Each block registers its own box as it draws; the readout placement
+    /// (<see cref="JetReadoutPlacement"/>) then picks the first clear slot. Static storage,
+    /// no per-frame allocation.
+    /// </summary>
+    private const int MaxFurniture = 96;
+    private readonly RectangleF[] _furniture = new RectangleF[MaxFurniture];
+    private int _furnitureCount;
+
+    /// <summary>P1039 — the designator readout block placed this frame (default when the
+    /// designator is hidden). The lock caption avoids it: the two readouts never share a
+    /// pixel.</summary>
+    private RectangleF _targetReadoutBox;
+    /// <summary>P1039 — the slot the designator readout took (0…3 = right/left/below/above).</summary>
+    private JetReadoutPlacement.Placement _targetPlacement;
+    /// <summary>P1039 — the slot the lock caption took.</summary>
+    private JetReadoutPlacement.Placement _lockPlacement;
+    /// <summary>P1039 — the lock caption block placed this frame.</summary>
+    private RectangleF _lockReadoutBox;
+    /// <summary>P1039 — the master-caution panel drawn this frame, for the F4 pane's top
+    /// limit and the readout placement.</summary>
+    private RectangleF _cautionPanel;
+    /// <summary>P1039 — the Jet radar scope's reserved rectangle this frame (empty when the
+    /// scope is suppressed).</summary>
+    private RectangleF _radarScope;
+    /// <summary>P1039 — the left edge of the throttle tape's readout/IDLE-REV band this
+    /// frame (0 when the tape is hidden): the radar scope ends before it.</summary>
+    private float _throttleBandLeft;
+
+    /// <summary>P1039 — the left edge of the throttle tape's own band (the leftmost of its
+    /// numeric plate and its IDLE/REV words), so the radar scope can never reach it.</summary>
+    public float ThrottleBandLeft => _throttleBandLeft;
+
     private int _viewportWidth = 1920;
     private int _viewportHeight = 1080;
     private bool _disposed;
+
+    /// <summary>P1039 — reset the per-frame furniture/readout registry.</summary>
+    private void ClearFurniture()
+    {
+        _furnitureCount = 0;
+        _targetReadoutBox = default;
+        _lockReadoutBox = default;
+        _cautionPanel = default;
+        _radarScope = default;
+    }
+
+    /// <summary>P1039 — register one furniture box for this frame.</summary>
+    private void AddFurniture(RectangleF box)
+    {
+        if (box.Width <= 0f || box.Height <= 0f) return;
+        if (_furnitureCount < MaxFurniture) _furniture[_furnitureCount++] = box;
+    }
+
+    private ReadOnlySpan<RectangleF> Furniture => _furniture.AsSpan(0, _furnitureCount);
+
 
     /// <summary>Test/alternate-surface form: any <see cref="IJetVectorSurface"/>.</summary>
     public JetHudRenderer(IJetVectorSurface surface, HudSettings settings, HudSkinResources resources,
@@ -234,14 +295,39 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     /// <summary>The attitude resolved for the most recent frame (tests/proofs).</summary>
     public JetAttitude Attitude => _attitude.Current;
 
+    /// <summary>P1039 — the designator readout block placed in the most recent frame
+    /// (tests and the proof pin the placement priority against it).</summary>
+    public RectangleF TargetReadoutBox => _targetReadoutBox;
+
+    /// <summary>P1039 — the lock caption block placed in the most recent frame.</summary>
+    public RectangleF LockReadoutBox => _lockReadoutBox;
+
+    /// <summary>P1039 — the designator readout's placement (slot + clear flag).</summary>
+    public JetReadoutPlacement.SlotInfo TargetReadoutSlot
+        => new((int)_targetPlacement.Slot, _targetPlacement.Clear);
+
+    /// <summary>P1039 — the lock caption's placement (slot + clear flag).</summary>
+    public JetReadoutPlacement.SlotInfo LockReadoutSlot
+        => new((int)_lockPlacement.Slot, _lockPlacement.Clear);
+
+    /// <summary>P1039 — the master-caution panel drawn in the most recent frame.</summary>
+    public RectangleF CautionPanel => _cautionPanel;
+
+    /// <summary>P1039 — the Jet radar scope reserved in the most recent frame.</summary>
+    public RectangleF RadarScope => _radarScope;
+
+    /// <summary>P1039 — the furniture registered in the most recent frame.</summary>
+    public ReadOnlySpan<RectangleF> FurnitureBoxes => _furniture.AsSpan(0, _furnitureCount);
+
     /// <summary>Clear the held heading/roll (proof fixtures start every scene from no
     /// held value; a live client never calls this — the hold is the point).</summary>
     public void ResetFlightState() => _attitude = default;
 
     public void Draw(HudModel model, in HudDrawFrame frame)
     {
-        // Classic-composition shared passes (see the class remarks).
-        _resources.Radar(model);
+        // P1039 — the Jet radar scope replaces the shared Classic radar pass (P972 §4.4,
+        // §5.4): the same contact snapshot and the same four LOD modes, drawn as Jet's own
+        // square/circular instrument inside the HUD pass below. Ship side tags stay shared.
         _resources.ShipTags(model, false);
 
         float scale = ModernHudScale.Core(_displayScale, _settings.Size, frame.Viewport.Height);
@@ -251,6 +337,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _headingPlate = default;
         _speedCaptionBox = default;
         _throttleCaptionBox = default;
+        _throttleBandLeft = 0f;
+        // P1039 — the per-frame furniture/readout registry the placement rules read.
+        ClearFurniture();
 
         if (model.Visible)
         {
@@ -293,21 +382,35 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 DrawLeadAndAim(model, scale);
                 DrawChaseAim(model, scale);
 
+                // P1038 — the stores block and the master-caution panel (P972 §4.3, §4.4)
+                // are drawn BEFORE the target/lock readouts so their boxes are registered
+                // as furniture when a readout is placed (P1039: a readout may never be put
+                // over the caution panel or the stores block). Each keeps its own gate.
+                DrawStores(model, w, h, scale);
+                DrawCaution(model, w, h, scale);
+
+                // P1039 — the radar scope (P972 §4.4 RWR) is drawn after the fixed flight
+                // furniture and before the world-anchored target/lock symbology: the scope's
+                // rectangle is furniture for every readout placed later, and the marker
+                // strokes that follow it are the stated world-anchored exception.
+                DrawRadar(model, w, h, scale);
+
                 // P1037 — the selected target (P972 §4.3): projected designator +
                 // off-screen edge chevron + lock, then the native target pane as a
                 // Jet data block (present even when the target is out of view).
+                // The bottom target pane is drawn first: its rows are furniture for the
+                // designator readout placed right after it.
+                DrawTargetBlock(model, w, h, scale);
                 DrawTargetDesignator(model, w, h, scale);
                 DrawOffScreenTarget(model, w, h, scale);
                 DrawLock(model, w, h, scale);
-                DrawTargetBlock(model, w, h, scale);
 
-                // P1038 — the stores block, the master-caution panel and the Jet F4
-                // inventory pane (P972 §4.3, §4.4), each behind its own shared gate.
-                DrawStores(model, w, h, scale);
-                DrawCaution(model, w, h, scale);
+                // P1038 — the Jet F4 inventory pane is the modal OVERLAY: drawn last, it
+                // owns its band (the readout placement is below its rows and the audit
+                // exempts anything it hides).
                 DrawInventory(model, w, h, scale);
 
-                DrawTag(w, h, scale);
+                DrawTag(model, w, h, scale);
             }
             finally
             {
@@ -423,6 +526,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float cosA = MathF.Cos(angle), sinA = MathF.Sin(angle);
         Vector2 center = new(w * 0.5f, h * 0.5f);
         float stroke = _painter.Stroke;
+        _painter.Element("ladder");
 
         int limit = (int)JetFlightGeometry.LadderLimitDegrees;
         int step = fineRungs ? (int)JetFlightGeometry.LadderFineStepDegrees
@@ -466,10 +570,14 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
             // Labels stay horizontal even when the ladder rolls.
             string label = RungLabels[(rungPitch + limit) / (int)JetFlightGeometry.LadderStepDegrees];
             Vector2 size = _painter.Measure(label, large: false, scale);
-            _painter.Text(label, new(at.X - width - size.X - 4f * scale, at.Y - size.Y * 0.5f),
-                large: false, scale, ink);
-            _painter.Text(label, new(at.X + width + 4f * scale, at.Y - size.Y * 0.5f),
-                large: false, scale, ink);
+            float leftX = at.X - width - size.X - 4f * scale;
+            float rightX = at.X + width + 4f * scale;
+            float labelY = at.Y - size.Y * 0.5f;
+            _painter.Text(label, new(leftX, labelY), large: false, scale, ink);
+            _painter.Text(label, new(rightX, labelY), large: false, scale, ink);
+            // P1039 — every numeral is fixed furniture (a readout may not be placed over it).
+            AddFurniture(new RectangleF(leftX, labelY, size.X, size.Y));
+            AddFurniture(new RectangleF(rightX, labelY, size.X, size.Y));
         }
 
         // Off-scale chevrons: the ladder has run past its last usable rung.
@@ -488,8 +596,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
             _pitchText = PitchCaption + " " + FormatSigned(roundedPitch);
         }
         Vector2 pitchSize = _painter.Measure(_pitchText, large: false, scale);
-        _painter.Text(_pitchText, new(center.X - pitchSize.X * 0.5f,
-                center.Y + span * pxPerDegree + 20f * scale), large: false, scale, _painter.Dim);
+        float pitchX = center.X - pitchSize.X * 0.5f;
+        float pitchY = center.Y + span * pxPerDegree + 20f * scale;
+        _painter.Text(_pitchText, new(pitchX, pitchY), large: false, scale, _painter.Dim);
+        AddFurniture(new RectangleF(pitchX, pitchY, pitchSize.X, pitchSize.Y));
     }
 
     /// <summary>One off-scale chevron: two strokes forming a "V" along the ladder's
@@ -533,6 +643,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         bool haveHeading = _attitude.Current.Available && _attitude.Current.HeadingValid;
         float halfSpanPx = MathF.Max(0f, MathF.Min(cx - 70f * scale, 340f * scale));
         Color caret = haveHeading ? _painter.Primary : _painter.Dim;
+        _painter.Element("hdg");
+        // P1039 — the whole heading band (labels, rail, caret, plate) is furniture.
+        AddFurniture(new RectangleF(cx - halfSpanPx, labelTop, halfSpanPx * 2f,
+            MathF.Max(labelH, boxTop + labelH * 2f - labelTop)));
 
         if (haveHeading)
         {
@@ -584,6 +698,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
 
         // Boxed numeric below the caret, top-anchored so the gap is guaranteed.
         _headingPlate = DrawReadout(_headingText, cx, boxTop, scale, ReadoutAlign.Center, topAnchored: true);
+        AddFurniture(_headingPlate);
     }
 
     /// <summary>
@@ -607,6 +722,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float tapeBottom = cy + halfSpan;
 
         _speedCaptionBox = DrawCaption(SpeedCaption, new(tapeX - 8f * scale, cy - halfSpan), scale);
+        _painter.Element("spd");
+        // P1039 — the caption and the tick-label column are fixed furniture.
+        AddFurniture(_speedCaptionBox);
+        AddFurniture(new RectangleF(tapeX - 40f * scale, tapeTop, 40f * scale, MathF.Max(0f, tapeBottom - tapeTop)));
 
         float visible = halfSpan / perMps;
         int from = (int)MathF.Max(0f, MathF.Floor((speed - visible) / JetFlightGeometry.SpeedTickStep))
@@ -668,6 +787,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         int percent = JetFlightGeometry.ThrottlePercent(throttle);
 
         _throttleCaptionBox = DrawCaption(ThrottleCaption, new(tapeX + 8f * scale, cy - halfSpan), scale, rightAligned: true);
+        _painter.Element("thr");
+        AddFurniture(_throttleCaptionBox);
+        AddFurniture(new RectangleF(tapeX + 4f * scale, tapeTop, 40f * scale, MathF.Max(0f, tapeBottom - tapeTop)));
 
         // The boxed readout owns the left margin at the boresight row; IDLE/REV
         // are right-aligned clear of it so the plate can never cover a word
@@ -734,7 +856,17 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 large: false, scale, _painter.Dim);
         }
 
-        DrawReadout(_throttleText, tapeX - 10f * scale, cy, scale, ReadoutAlign.RightEdge);
+        RectangleF throttlePlate = DrawReadout(_throttleText, tapeX - 10f * scale, cy, scale, ReadoutAlign.RightEdge);
+        // P1039 — the radar scope ends left of this whole band (plate + IDLE/REV words).
+        float bandLeft = throttlePlate.X;
+        if (!compact)
+        {
+            float idleW = _painter.Measure(IdleLabel, large: false, scale).X;
+            float revW = _painter.Measure(ReverseLabel, large: false, scale).X;
+            bandLeft = MathF.Min(bandLeft, wordRight - MathF.Max(idleW, revW));
+        }
+        _throttleBandLeft = bandLeft;
+        AddFurniture(throttlePlate);
     }
 
     // ── Target, lock, lead and order steering (P1037) ────────────────────
@@ -751,6 +883,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private void DrawTargetDesignator(HudModel model, float w, float h, float scale)
     {
         if (!model.FlightVisible || !model.Context.SelectionBracket || model.Context.Target is not { } target) return;
+        _painter.Element("target");
         float cx = target.Center.X, cy = target.Center.Y;
         if (cx < 0f || cy < 0f || cx > w || cy > h) return;
 
@@ -773,10 +906,15 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _painter.Line(new(cx - dot, cy), new(cx + dot, cy), _painter.Stroke, ink);
         _painter.Line(new(cx, cy - dot), new(cx, cy + dot), _painter.Stroke, ink);
 
-        // Readout beside the bracket, flipping to the left when the right side would
-        // run off the viewport.
+        // Readout beside the bracket. P1039 — the block is PLACED by the priority order
+        // (right → left → below → above, clamped in the viewport gutter, clear of the fixed
+        // furniture and of the lock caption), never nudged by a pixel offset. At 800×480 the
+        // name is truncated to the stated compact width with an ASCII ellipsis.
         string relationshipWord = JetTargetGeometry.RelationshipWord(relationship);
         string? name = target.Name;
+        bool compactReadout = JetStoresPanel.Compact(h);
+        if (compactReadout && name is not null)
+            name = FitCompactName(name, JetTargetGeometry.CompactNameWidth * scale, scale);
         string? range = target.Distance is { } distance ? RangeText(distance) : null;
         string? closure = target.ClosingSpeed is { } closing ? ClosureText(closing) : null;
         string? hull = target.HullFraction is { } hullFraction && hullFraction > 0f
@@ -792,50 +930,17 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float textWidth = MathF.Max(row1, MathF.Max(row2, row3));
         int blockRows = 1 + (range is not null || closure is not null ? 1 : 0)
             + (hull is not null || shield is not null ? 1 : 0);
-        float blockHeight = rowH * blockRows;
-        // Keep the readout clear of the edge tapes: the right side must stop before
-        // the throttle tape, the left side must start after the speed tape. With a lock
-        // shown the readout also clears the lock CUE's axis extent, so no text can cross a
-        // cue arc (P1038c: compact corner arcs, not the old ring).
-        float rightLimit = w - 100f * scale;
-        float leftLimit = 92f * scale;
+        bool hasBars = hull is not null || shield is not null;
+        float barBlock = 2f * (3f * scale) + 2f * scale;
+        float blockHeight = rowH * blockRows + (hasBars ? barBlock : 0f);
+        // The block clears the designator half-span AND the lock cue's axis extent.
         float clear = MathF.Max(half, cueExtent);
-        bool rightSide = cx + clear + 8f * scale + textWidth <= rightLimit;
-        bool leftSide = cx - clear - 8f * scale - textWidth >= leftLimit;
-        float gutter = 4f * scale;
-        float x, y;
-        if (rightSide || leftSide)
-        {
-            x = rightSide
-                ? cx + clear + 8f * scale
-                : cx - clear - 8f * scale - textWidth;
-            y = box.Y;
-        }
-        else if (cy + clear + 6f * scale + blockHeight <= h - gutter)
-        {
-            // P1038b — neither side is free (a large cue at 800×480): put the block
-            // UNDER the cue's bottom vertex instead of letting it run off the screen.
-            x = cx - textWidth * 0.5f;
-            y = cy + clear + 6f * scale;
-        }
-        else
-        {
-            x = cx + clear + 8f * scale;
-            y = box.Y;
-        }
-        // P1038b — the block can never be pushed off the viewport; clamp it inside the edge
-        // gutter instead of letting the name run past the screen.
-        x = Math.Clamp(x, gutter, MathF.Max(gutter, w - gutter - textWidth));
-        y = MathF.Max(y, gutter);
-        // P1038 — a readout that would land on the HDG box or a tape caption (the 800×480
-        // cases) drops below it instead of covering it.
-        y = BelowIfCrossed(y, x, textWidth, blockHeight, _headingPlate, scale);
-        y = BelowIfCrossed(y, x, textWidth, blockHeight, _speedCaptionBox, scale);
-        y = BelowIfCrossed(y, x, textWidth, blockHeight, _throttleCaptionBox, scale);
-        // P1038c — and it is clamped above the bottom gutter too: a block pushed down by a
-        // plate can never have its last line leave the screen (the 800×480 defect 5). The
-        // on-screen rule wins over the drop-below-furniture rule when both cannot hold.
-        y = Math.Clamp(y, gutter, MathF.Max(gutter, h - gutter - blockHeight));
+        JetReadoutPlacement.Placement placed = JetReadoutPlacement.Place(
+            JetReadoutPlacement.DesignatorOrder, cx, cy, box.Y, clear, textWidth, blockHeight,
+            scale, w, h, Furniture, default);
+        float x = placed.X, y = placed.Y;
+        _targetPlacement = placed;
+        _targetReadoutBox = new RectangleF(x, y, textWidth, blockHeight);
 
         DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
         y += rowH;
@@ -844,13 +949,37 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
             DrawRuns(x, y, scale, _painter.Dim, "  ", range, range is null ? null : ClosureWord, closure, null);
             y += rowH;
         }
-        if (hull is not null || shield is not null)
+        if (hasBars)
         {
             DrawRuns(x, y, scale, _painter.Dim, "  ", hull is null ? null : HullWord, hull,
                 shield is null ? null : ShieldWord, shield);
             y += rowH;
             DrawTargetBars(x, y, scale, target.HullFraction, target.ShieldFraction);
         }
+    }
+
+    /// <summary>
+    /// P1039 — the compact designator name: truncated with an ASCII ellipsis at the stated
+    /// width (<see cref="JetTargetGeometry.CompactNameWidth"/> native px × scale) so the
+    /// 800×480 readout block fits a slot clear of the ladder numerals. The HUD fonts bake
+    /// ASCII 32…126, so <c>...</c> stands in for the typographic ellipsis exactly as the
+    /// native radar clips its labels. Cached by the source name: a steady frame formats
+    /// nothing.
+    /// </summary>
+    private string FitCompactName(string name, float maxWidth, float scale)
+    {
+        if (string.Equals(name, _compactNameShown, StringComparison.Ordinal)) return _compactNameText;
+        _compactNameShown = name;
+        string text = name;
+        if (_painter.Measure(name, large: false, scale).X > maxWidth)
+        {
+            int length = name.Length;
+            while (length > 0 && _painter.Measure(name[..length] + " ...", large: false, scale).X > maxWidth)
+                length--;
+            text = length > 0 ? name[..length] + " ..." : "";
+        }
+        _compactNameText = text;
+        return text;
     }
 
     /// <summary>The designator's four corner strokes: solid + inward ticks for a
@@ -929,8 +1058,11 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         if (model.Context.Lock is not { } lockState) return 0f;
         if (lockState.State == MissileLockFeedback.LockState.None) return 0f;
         if (MathF.Abs(lockState.Center.X - cx) > 1.5f || MathF.Abs(lockState.Center.Y - cy) > 1.5f) return 0f;
+        // P1039 — the readout clears the cue's OUTER RADIUS in every slot, not only its axis
+        // extent: a slot that slides can otherwise sit inside a corner arc's diagonal (where
+        // the 60° axis gap does not apply).
         float distance = JetTargetGeometry.LockCueCornerDistance(designatorHalf, lockState.Fraction, scale);
-        return JetTargetGeometry.LockCueExtent(distance) + _painter.Stroke;
+        return distance + _painter.Stroke;
     }
 
     /// <summary>
@@ -946,6 +1078,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         if (!model.IndicatorsVisible || model.Context.Target is not null) return;
         if (model.Context.TargetBearing is not { } bearing) return;
         if (model.Context.TargetPane is not { Present: true }) return;
+        _painter.Element("target");
         Vector2 at = JetTargetGeometry.EdgeChevronAnchor(bearing, w, h, scale);
         var direction = new Vector2(bearing.X, bearing.Y);
         if (direction.LengthSquared() < 1e-6f) direction = new(0f, -1f);
@@ -981,6 +1114,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         if (lockState.State == MissileLockFeedback.LockState.None) return;
         var center = new Vector2(lockState.Center.X, lockState.Center.Y);
         if (center.X < 0f || center.Y < 0f || center.X > w || center.Y > h) return;
+        _painter.Element("lock");
 
         float toEdge = MathF.Min(MathF.Min(center.X, center.Y), MathF.Min(w - center.X, h - center.Y));
         // Native radiusBracket = 1.05·radiusObject clipped to the edge (radarimage.cpp:302-319):
@@ -1010,26 +1144,35 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
             }
         }
 
-        // Text clear of the cue: above its topmost ink (axis extent + one stroke), or below
-        // it when the top would leave the viewport (a target near the top edge).
-        float extent = JetTargetGeometry.LockCueExtent(distance) + _painter.Stroke;
-        float gutter = 4f * scale;
+        // Text clear of the cue: P1039 places the caption by the priority order
+        // (above → below → right → left), clamped in the viewport, avoiding the cue's own
+        // ink AND the designator readout block already committed this frame, so `LOCK nn%`
+        // can never land on the `HOSTILE …` line again.
+        // P1039 — the caption clears the cue's OUTER RADIUS in every slot (not only its
+        // axis extent): a caption that slides to a side would otherwise sit inside a corner
+        // arc's diagonal, which is where the 60° axis gap does not apply.
+        float extent = distance + _painter.Stroke;
         if (full)
         {
             Vector2 size = _painter.Measure(LockCaption, large: false, scale);
-            float x = Math.Clamp(center.X - size.X * 0.5f, gutter, MathF.Max(gutter, w - gutter - size.X));
-            float y = LockCaptionY(center.Y, extent, size.Y, h, scale);
-            _painter.CueReadout(new RectangleF(x, y, size.X, size.Y));
-            _painter.Text(LockCaption, new(x, y), large: false, scale, _painter.Hot);
+            JetReadoutPlacement.Placement placed = JetReadoutPlacement.Place(
+                JetReadoutPlacement.CaptionOrder, center.X, center.Y, center.Y - extent,
+                extent, size.X, size.Y, scale, w, h, Furniture, _targetReadoutBox);
+            _lockReadoutBox = new RectangleF(placed.X, placed.Y, size.X, size.Y);
+            _painter.CueReadout(_lockReadoutBox);
+            _painter.Text(LockCaption, new(placed.X, placed.Y), large: false, scale, _painter.Hot);
             return;
         }
         string percent = LockText(lockState.Fraction);
         float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
         float width = MeasureRuns(scale, " ", LockCaption, percent, null, null);
-        float captionX = Math.Clamp(center.X - width * 0.5f, gutter, MathF.Max(gutter, w - gutter - width));
-        float captionY = LockCaptionY(center.Y, extent, rowH, h, scale);
-        _painter.CueReadout(new RectangleF(captionX, captionY, width, rowH));
-        DrawRuns(captionX, captionY, scale, _painter.Dim, " ", LockCaption, percent, null, null);
+        JetReadoutPlacement.Placement caption = JetReadoutPlacement.Place(
+            JetReadoutPlacement.CaptionOrder, center.X, center.Y, center.Y - extent,
+            extent, width, rowH, scale, w, h, Furniture, _targetReadoutBox);
+        _lockPlacement = caption;
+        _lockReadoutBox = new RectangleF(caption.X, caption.Y, width, rowH);
+        _painter.CueReadout(_lockReadoutBox);
+        DrawRuns(caption.X, caption.Y, scale, _painter.Dim, " ", LockCaption, percent, null, null);
     }
 
     /// <summary>P1038b/c — the lock caption's y: above the cue's top ink (its axis extent
@@ -1057,6 +1200,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private void DrawLeadAndAim(HudModel model, float scale)
     {
         if (model.Context.Lead is not { } lead) return;
+        _painter.Element("lead");
         // In range the marker is hot (the ramp floored at half, P972 §4.2: "in-range
         // shown by shape/hot colour"); out of range it stays on the dim half of the
         // ramp (native's dimmed leadout surface).
@@ -1122,6 +1266,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private void DrawOrderArrows(HudModel model, float w, float h, float scale)
     {
         if (!model.OrderArrowsVisible || model.Context.OrderArrows is not { } arrows) return;
+        _painter.Element("order");
         var center = new Vector2(w * 0.5f, h * 0.5f);
         if (arrows.SameTarget && arrows.AcceptedDirection is { } same)
         {
@@ -1181,7 +1326,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private void DrawOrderLabel(Vector2 anchor, Vector2 direction, float scale, string text, Color ink)
     {
         Vector2 at = anchor + direction * 22f * scale;
+        Vector2 size = _painter.Measure(text, large: false, scale);
         _painter.Text(text, new(at.X, at.Y), large: false, scale, ink);
+        // P1039 — the ACC/CUR word is fixed furniture (a readout may not cover it).
+        AddFurniture(new RectangleF(at.X, at.Y, size.X, size.Y));
     }
 
     /// <summary>
@@ -1194,6 +1342,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private void DrawTargetBlock(HudModel model, float w, float h, float scale)
     {
         if (!model.TargetPaneVisible || model.Context.TargetPane is not { } pane || !pane.Present) return;
+        _painter.Element("target-pane");
         bool compact = h < CompactHeight;
         float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
         float barH = 3f * scale;
@@ -1227,6 +1376,8 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         // centred current-pitch numeral (it still reads as the bottom target pane).
         float x = w * 0.5f + 70f * scale;
         float y = h - 34f * scale - height;
+        // P1039 — the block's own rows are furniture (no readout may be placed over them).
+        AddFurniture(new RectangleF(x, y, MathF.Max(140f * scale, 0f), height));
 
         if (pane.Name is { } name)
         {
@@ -1477,9 +1628,15 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         }
     }
 
-    /// <summary>The WIP announcement, bottom-centre.</summary>
-    private void DrawTag(float w, float h, float scale)
+    /// <summary>
+    /// The WIP announcement, bottom-centre. P1039 — suppressed while the F4 inventory pane
+    /// is present: that overlay owns the bottom band and its sliding rows pass through the
+    /// tag's line, so the skin marker yields to the table (the marker is not a HUD reading).
+    /// </summary>
+    private void DrawTag(HudModel model, float w, float h, float scale)
     {
+        if (model.Context.InventoryVisible || model.Context.InventorySlide > 0f) return;
+        _painter.Element("tag");
         Vector2 ink = _painter.Measure(TagText, large: false, scale);
         _painter.Text(TagText, new(w * 0.5f, h - 12f * scale - ink.Y * 0.5f), large: false, scale, _painter.Dim, centered: true);
     }

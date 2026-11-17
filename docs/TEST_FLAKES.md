@@ -9640,3 +9640,15 @@ used the painter's automatic arc tessellation (up to 70 chords per 30° arc), an
 (`CueArcSegments`, ≤ 0.24 px sagitta at the largest cue radius: 48–96 segment submissions per frame, close to the
 old ring's 32), and the test runs **0.67–0.70 s, 3/3 alone** (it is no longer an offender in the final sweep). Raw
 log: `~/allegiance-evidence/P1038C/fast-tier2.log` + `~/allegiance-evidence/P1038C/fast-tier2-summary.json`.
+
+### P1039 — Jet radar gate (fast tier, one run: 15,050 tests, 748 s)
+
+| Test | Failure in the run | Alone | Diagnosis |
+|---|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | `B never saw A's death (IsDead never latched on B) after 2500 ticks`, 6 s | **pass / pass / pass** alone; the whole class (2 tests) **3/3 runs green**, and one interleaved run of the pair failed once in nine | The same existing asynchronous remote death-receipt family ledgered above; no P1039 file is in its path (HUD renderer, proof tool, skin tests only). |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5/7) | deadline assertion under the sweep | **pass / pass / pass** (3/3) | Timing family, existing (live-tier timer test under load). |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | roster time accumulation | **pass / pass / pass** | Existing wire-timing family. |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | launcher/ammo broadcast | **pass / pass / pass** | Existing live-fire family. |
+
+Raw log: `~/allegiance-evidence/P1039/fast.log`; the 3×/3× confirmations are in
+`~/allegiance-evidence/P1039/flakes3x.log`.

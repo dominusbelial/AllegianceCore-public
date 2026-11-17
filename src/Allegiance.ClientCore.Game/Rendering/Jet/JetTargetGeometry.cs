@@ -35,6 +35,17 @@ public static class JetTargetGeometry
     /// (<c>LockBracketStyle.BaseHalfSize</c>). Scaled by the HUD density.</summary>
     public const float DefaultHalf = 34f;
 
+    /// <summary>
+    /// P1039 — the compact (800×480) designator readout's stated name width, in native px
+    /// units (× the HUD scale). A long pilot name is truncated with an ASCII ellipsis at
+    /// this width so the block fits a placement slot clear of the ladder numerals, <c>CUR</c>
+    /// and <c>PITCH</c> at the 800×480 floor (a 72 px name keeps the block's widest row
+    /// below the ladder's centre-right numeral column). The fields kept in full are the relationship word, the range,
+    /// closure, hull and shield; only the name is shortened, and the compact form keeps all
+    /// three rows (no field is dropped).
+    /// </summary>
+    public const float CompactNameWidth = 72f;
+
     /// <summary>Native <c>c_flBorderSide</c> / radarimage.cpp:308-319 — the gutter
     /// added when clipping a bracket to the screen edge.</summary>
     public const float EdgeGutter = 10f;
