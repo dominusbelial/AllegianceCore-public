@@ -6,11 +6,13 @@ at the end).
 
 ## P1039c gate observations — 2026-11-17 UTC
 
-The Fast sweep is **FAIL**: **15,093 tests, 549.3 s**, four failures, 7 not executed,
-9/9 infrastructure checks pass. Six executions over the
-calibrated 10 s limit (all passed). HUD-only change (Jet skin renderer, proof tool, skin
-tests): no Core, server, sim, clock, countdown, warp, reconnect or gun-damage path is
-touched by P1039c.
+The P1039c gate ran two Fast sweeps. The **final-tree** sweep (after the last source edit,
+`fast-tier-final.log`) ran **15,093 tests in 551.3 s: 6 failed / 7 not executed**, 9/9
+infrastructure checks pass, 3 executions over the calibrated 11.536 s limit (all passed). The
+earlier pre-final-edit sweep (`fast-tier.log`) ran the same 15,093 cases in 549.3 s with 4
+failures. HUD-only change (Jet skin renderer, proof tool, skin tests): no Core, server, sim,
+clock, countdown, warp, reconnect or gun-damage path is touched by P1039c — `git diff
+HEAD^..HEAD -- src/Allegiance.Core src/Allegiance.Server` is empty.
 
 | Exact case | Failure in the sweep | Three repetitions alone | Diagnosis |
 |---|---|---|---|
@@ -19,8 +21,20 @@ touched by P1039c.
 | `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | Sweep missed the expected single-round damage observation | **pass / pass / pass** | Ledgered gun/development live family (row above). No gun or development rule changed. |
 | `P813cReconnectGraceTests.Seated_connection_cannot_take_or_retire_a_parked_seat` | Seat take/retire receipt under the sweep | **pass / pass / pass** | Existing reconnect-grace receipt race (its sibling `Voluntary_logoff_is_immediate_and_reports_quit` is ledgered below); load-only, no reconnect path changed. |
 
-Raw log: `~/allegiance-evidence/P1039C/fast-tier.log`; the alone confirmations are in
-`~/allegiance-evidence/P1039C/flakes3x-core.log` and `.../flakes3x-clientcore.log`.
+The **final-tree** sweep's six failures, every one an already-ledgered family:
+
+| Exact case | Failure in the sweep | Isolated runs |
+|---|---|---|
+| `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | 6,072 B allocated over 10,000 frames | **pass / pass / pass** (12 ms) |
+| `CommandedDroneBuildKeyLiveTests.Live_client_commands_builder_drone_to_build_creating_real_station` | construction did not register, 4 s | **pass / pass / pass** (~2 s) |
+| `P855TrapHackTests.Out_of_range_wing_id_emits_one_traphack_event_and_flood_is_rate_limited` | out-of-range wing-id traphack receipt, 938 ms | **pass / pass / pass** (~0.4 s) |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | value outside `[4,8]` | **pass / pass / pass** (~0.54 s) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | one delay row above its inclusive upper bound | **pass / pass / fail, then 4 pass** (6 pass / 1 fail over 7) — ledgered one-ULP 5/7/10 s bound |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | `Assert.Equal` on the queued ASTEROID_MINED count | **4 pass / 4 fail over 8** on an idle host (load 0.3–1.2) — ledgered intermittent mining-receipt family |
+
+Raw logs: final-tree `~/allegiance-evidence/P1039C/fast-tier-final.log`, pre-final-edit
+`.../fast-tier.log`; the alone confirmations are in `.../flakes3x-final.log` (final-tree cases),
+`.../flakes3x-core.log` and `.../flakes3x-clientcore.log` (first sweep).
 
 ## P1047 gate observations — 2026-11-16–17 UTC
 

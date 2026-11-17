@@ -303,13 +303,13 @@ nothing).
 
 | Gate | Command | Result |
 |---|---|---|
-| Zero-delta | `--capture` before the first edit (`~/allegiance-evidence/P1039C/baseline`) → `--compare` on the final tree (`.../compare-final3.log`) | **1,848 combinations, 0 pixel diff(s), 0 semantic diff(s)**, 84 animation-only (masked wall-clock badge), 0 corrupt |
-| Solution build | `dotnet build AllegianceCore.slnx -c Release --disable-build-servers -nodeReuse:false -p:UseSharedCompilation=false` | **Build succeeded, 0 Warning(s), 0 Error(s)** (`~/allegiance-evidence/P1039C/build-release.log`) |
-| Tools build | `tools/build-tools.sh` | **all tool projects built, 0 errors** (`~/allegiance-evidence/P1039C/build-tools.log`) |
-| New/affected tests 3× alone | `--filter "FullyQualifiedName~JetRadarTests\|JetTargetLockTests\|JetStoresCautionTests"` ×3 | **182/182 each run** (`Passed 182, Failed 0, Skipped 0`; `~/allegiance-evidence/P1039C/tests3x.log`) |
-| Skins namespace | `--filter FullyQualifiedName~Skins` | **355/355** (was 347; +8) |
-| Jet capture + audit | `hud2-proof --jet` (`~/allegiance-evidence/P1039C/jet-final4.log`, schema 9) | `HUD2_JET_CAPTURE_PASS 96 scenes`; every class 0 (§7) |
-| Fast tier | `tools/run-tests.sh --tier fast` | **15,093 tests, 549.3 s, 4 failed / 7 not executed**, 9/9 infrastructure checks, 6 executions over the calibrated 11.539 s limit (all passed). The four failures are already-ledgered load families, each **pass/pass/pass alone** except the P660 clock-observation case (pass/pass/fail — the same 14.85–14.90 boundary the ledger records; no clock code is touched): `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump`, `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange`, `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat`, `P813cReconnectGraceTests.Seated_connection_cannot_take_or_retire_a_parked_seat`. Ledgered in `docs/TEST_FLAKES.md` (§ P1039c); no HUD file is on any of those paths. |
+| Zero-delta | `--capture` before the first edit (`~/allegiance-evidence/P1039C/baseline`) → `--compare` on the **final** Release binaries (`.../compare-final4.log`; the 07:43 run `compare-final3.log` agrees) | **1,848 combinations, 0 pixel diff(s), 0 semantic diff(s)**, 83 animation-only (masked wall-clock badge; 84 in the 07:43 run — the animated `!` badge), 0 corrupt |
+| Solution build | `dotnet build AllegianceCore.slnx -c Release --disable-build-servers -nodeReuse:false -p:UseSharedCompilation=false` (on the **final** tree) | **Build succeeded, 0 Warning(s), 0 Error(s)** (`~/allegiance-evidence/P1039C/build-release-final.log`) |
+| Tools build | `tools/build-tools.sh` (on the **final** tree) | **all 141 tool projects built, 0 errors** (`~/allegiance-evidence/P1039C/build-tools-final.log`) |
+| New/affected tests 3× alone | `--filter "FullyQualifiedName~JetRadarTests\|JetTargetLockTests\|JetStoresCautionTests"` ×3 (on the **final** binaries) | **182/182 each run** (`Passed 182, Failed 0, Skipped 0` ×3; `~/allegiance-evidence/P1039C/tests3x-final.log`) |
+| Skins namespace | `--filter FullyQualifiedName~Skins` | **355/355** (was 347; +8); four consecutive green runs after the final build (`skins-run-1..3.log`, `skins-final.log`) |
+| Jet capture + audit | `hud2-proof --jet` on the **final** binaries (`~/allegiance-evidence/P1039C/jet-final5.log`, schema 9; `jet-final4.log` identical) | `HUD2_JET_CAPTURE_PASS 96 scenes`; every class 0 (§7): over-glyph 0, stroke-through-text 0, plates 812, placed 426 / shortened 179 / hidden 219 |
+| Fast tier | `tools/run-tests.sh --tier fast` on the **final** tree (`fast-tier-final.log`) | **15,093 tests, 551.3 s, 6 failed / 7 not executed**, 9/9 infrastructure checks, 3 executions over the calibrated 11.536 s limit (all passed). All six failures are already-ledgered families, and `git diff HEAD^..HEAD -- src/Allegiance.Core src/Allegiance.Server` is empty; 3× alone (`flakes3x-final.log`): `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` (6,072 B / 10k frames in the sweep; pass/pass/pass), `CommandedDroneBuildKeyLiveTests.Live_client_commands_builder_drone_to_build_creating_real_station` (pass/pass/pass), `P855TrapHackTests.Out_of_range_wing_id_emits_one_traphack_event_and_flood_is_rate_limited` (pass/pass/pass), `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` (pass/pass/pass), `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (6 pass / 1 fail over 7 isolated runs — the ledgered one-ULP 5/7/10 s upper bound), `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` (4 pass / 4 fail over 8 isolated runs on an idle host — the ledgered intermittent mining-receipt family). Ledgered in `docs/TEST_FLAKES.md` (§ P1039c). |
 | AOT publish | not run — no `src/Allegiance.Server` or `src/Allegiance.Core` change | n/a |
 | Training gate | not run — no training-affecting file changed (HUD renderer + proof tool + tests only) | n/a |
 
@@ -338,7 +338,7 @@ All crops are **2× nearest-neighbour** so the pixel font is inspectable; the as
 
 **Honesty note on reading the images.** At these pixel-font densities the vision model's prose is
 unreliable: it called the square scope a circle twice, invented edge coordinates, and reported
-"labels on the ring lines" for frames where the audit measures 0 strokes through any text and 810
+"labels on the ring lines" for frames where the audit measures 0 strokes through any text and 812
 plates interrupting the bands. Every placement statement above is tied to the measured boxes in
 `jet-audit-summary.json` (label boxes, glyph boxes, plate boxes, annunciator row) and to the audit
 counts; the images were opened and their coarse content — the block count and separation, the plates,
@@ -360,7 +360,12 @@ vision's reading of a *placement* contradicted a measured rectangle, the rectang
   glyphs and bands for every candidate plus the plates, and it is reported rather than hidden.
 * The `!` badge's animation-only diffs in the Classic/Modern matrix are fixture-owned (83, inside the
   recorded mask, every entry `outside: 0`).
-* `docs/TEST_FLAKES.md` gained a P1039c section: the four fast-tier failures and their 3×-alone results (the P813c seat case is a new row in that family).
+* `docs/TEST_FLAKES.md` gained a P1039c section: the four failures of the pre-final-edit sweep, the six of the
+  final-tree sweep, and their 3×-alone results (the P813c seat case is a new row in that family).
+* The final-tree sweep repeats `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` even
+  in isolated runs (4 pass / 4 fail over 8, host load 0.3–1.2): it is the ledgered intermittent
+  mining-receipt family, the test builds its own server sim, and no `src/Allegiance.Core` or
+  `src/Allegiance.Server` file differs in this task (`git diff HEAD^..HEAD` is HUD/tools/tests only).
 * New media (19 PNGs + 1 JSON, 0.76 MiB) needs Domingo's review before any push.
 * The brief file `P1039C_BRIEF.md` stays untracked (excluded through the shared git dir's
   `.git/info/exclude`); `.scratch/p1039c/` was deleted.
