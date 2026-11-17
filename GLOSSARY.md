@@ -1241,6 +1241,28 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetConsoleTests.cs`; report:
   `docs/reports/JET_CONSOLE_P1040.md`.
 
+- **Jet amber palette variant (P1041, skin story 7/9)** — P972 slice 3E: the amber alternative swaps the
+  **entire** five-role palette (P972 §4.1), not just alerts. `Rendering/Skins/jet.amber.skin.json` is a
+  **palette variant** of the Jet skin: the same `"Id": "jet"` plus a `"Variant": "amber"` token, so
+  `HudSkinCatalog` keeps it in `TryGetVariant("jet","amber")` and OUT of `Installed` — the F-key skin cycle
+  can never select it as a fourth skin (P972 §2.4). The persisted choice is
+  **`HudSettings.JetPalette`** (`"green"`/`"amber"`, unknown/blank → green with one diagnostic), separate
+  from `Skin`; the Ctrl+F6 panel gains `Jet palette: amber|green` directly under the `HUD style:` row only
+  while the gated Jet skin is active (hidden, not disabled, with `hud.jetSkin` off; the stored value is
+  kept). `Rendering/Skins/JetPaletteSwitcher.cs` owns the two **preloaded** Jet renderers (green + amber,
+  both built at `LoadContent`) and publishes the active one at the same update/draw boundary as a skin
+  switch — one reference read, `CommitHudSkinChange` saves and shows `SKIN: Jet / amber` — so the switch
+  cannot hitch or reset HUD level, radar LOD, chat, target, part, panes, training state or sound loops.
+  `JetPaletteRenderer` is the stable `IHudSkinRenderer` in the skin switcher's Jet slot. The WIP tag names
+  the variant (`JET / GREEN - WIP` / `JET / AMBER - WIP`, `JetHudRenderer.TagLabel`). The training
+  pre-lesson snapshot carries the palette (`Game1.TrainingIntegration.cs`), and the palette is restored with
+  the skin on lesson exit. Every Jet scene draws both palettes in `tools/hud2-proof --jet` with **0
+  green-vs-amber geometry diffs** and **0 off-palette colours** (both palettes, 141 scenes); the only
+  non-palette colour is the native side-identity colour of the console/tips
+  (`WinTrek/consoledata.cpp:99-107`, `Artwork/dialog.mdl:26,4722`). Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetAmberPaletteTests.cs`; report:
+  `docs/reports/JET_AMBER_P1041.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

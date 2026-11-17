@@ -12,13 +12,21 @@ namespace Allegiance.ClientCore.MonoGame.Rendering.Skins;
 /// <param name="Palette">P1035 — optional semantic palette; null for skins that
 /// keep their colours in code (Classic/Modern), so their definitions stay
 /// byte-identical.</param>
+/// <param name="Variant">P1041 — the optional palette-variant token
+/// (<see cref="JetPaletteIds.Green"/> / <see cref="JetPaletteIds.Amber"/>). A
+/// definition that carries one is a colour variant of the skin with the same
+/// <paramref name="Id"/>: the catalog keeps it OUT of the installed-skin list, so
+/// the F-key skin cycle can never select it as a fourth skin (P972 §2.4: the
+/// variant is separate persisted state, not a skin id). It must carry a full
+/// palette block. Null for an ordinary skin definition.</param>
 public sealed record HudSkinDefinition(
     string Schema,
     string Id,
     string Name,
     string Version,
     HudSkinPresentationDefaults Defaults,
-    HudSkinPalette? Palette = null);
+    HudSkinPalette? Palette = null,
+    string? Variant = null);
 
 /// <summary>Presentation defaults that a skin recommends and a player option may
 /// override. These values are intentionally independent of the legacy

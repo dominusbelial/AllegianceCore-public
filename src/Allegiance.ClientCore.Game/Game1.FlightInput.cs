@@ -399,6 +399,9 @@ public sealed partial class Game1
         // modal panel makes UpdateGraphicsSettings swallow the flight update.
         if (Environment.GetEnvironmentVariable("ALLEGIANCE_P948_PROOF") == "1")
             RunP948Proof(gameTime.ElapsedGameTime.TotalSeconds);
+        // P1041 — real-window proof of the Jet palette row on the same panel.
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_P1041_PROOF") == "1")
+            RunP1041Proof(gameTime.ElapsedGameTime.TotalSeconds);
         // P948 — age the transient sensitivity readout in every state, so it also
         // expires when the value was changed on the intro Options screen.
         UpdateMouseOptionNotice((float)gameTime.ElapsedGameTime.TotalSeconds);

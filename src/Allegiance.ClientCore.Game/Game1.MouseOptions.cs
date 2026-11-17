@@ -162,7 +162,7 @@ public sealed partial class Game1
             _p948ProofStarted = true;
             _p948ProofElapsed = 0;
             _graphicsSettingsVisible = true;
-            _graphicsRow = GraphicsRowInvertMouseY;
+            _graphicsRow = GraphicsRowFor(GraphicsRowInvertMouseY);
             _graphicsFirstRow = 0;
             Shot("options_inverty");
             Console.WriteLine($"[p948-proof] settings panel open row {_graphicsRow} "
@@ -179,7 +179,7 @@ public sealed partial class Game1
                 {
                     // Left/Right on the invert row: prove the panel toggle flips and
                     // saves the same live value the flight key drives.
-                    _graphicsRow = GraphicsRowInvertMouseY;
+                    _graphicsRow = GraphicsRowFor(GraphicsRowInvertMouseY);
                     UpdateGraphicsSettings(new KeyboardState(Keys.Right));
                     _graphicsPrevious = new KeyboardState(Keys.Right);
                     Shot("options_inverty_on");
@@ -191,7 +191,7 @@ public sealed partial class Game1
             case 2:
                 if (_p948ProofElapsed > 2.0)
                 {
-                    _graphicsRow = GraphicsRowMouseSensitivity;
+                    _graphicsRow = GraphicsRowFor(GraphicsRowMouseSensitivity);
                     Shot("options_sensitivity");
                     Console.WriteLine($"[p948-proof] sensitivity row {_graphicsRow}: "
                         + $"{MouseOptions.Percent(_mouseFlight.MouseSensitivity)}");

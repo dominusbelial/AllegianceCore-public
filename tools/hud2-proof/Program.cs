@@ -193,6 +193,13 @@ sealed class Proof : Game
     private HudSettings? _jetSettings;
     private RecordingSurface? _jetAuditSurface;
     private HudSkinDefinition? _jetDefinition;
+    // P1041 — the amber variant: its own preloaded renderer bound to the real batch
+    // (PNG evidence) and a second recorder (geometry/palette audits). Both draw the
+    // SAME models; only the palette differs.
+    private JetHudRenderer? _jetAmber;
+    private JetHudRenderer? _jetAmberAudit;
+    private RecordingSurface? _jetAmberSurface;
+    private HudSkinDefinition? _amberDefinition;
 
     private static readonly (string Name, Color Color)[] Backdrops =
     [
@@ -268,6 +275,17 @@ sealed class Proof : Game
             _jetAuditSurface = new RecordingSurface(_jet.Painter.Surface);
             _jetAudit = new JetHudRenderer(_jetAuditSurface,
                 _jetSettings, resources, _jetDefinition);
+            // P1041 — the amber variant of the same skin (jet.amber.skin.json). It
+            // shares every renderer/layout id; only the palette block differs.
+            _amberDefinition = HudSkinResolver.Catalog.TryGetVariant(HudSkinIds.Jet, JetPaletteIds.Amber);
+            if (_amberDefinition is not null)
+            {
+                _jetAmber = new JetHudRenderer(_batch, _white, _small, _big,
+                    _jetSettings, resources, _amberDefinition, radarIcons: null);
+                _jetAmberSurface = new RecordingSurface(_jetAmber.Painter.Surface);
+                _jetAmberAudit = new JetHudRenderer(_jetAmberSurface,
+                    _jetSettings, resources, _amberDefinition);
+            }
         }
         Console.WriteLine(hasArtwork
             ? "HUD2_ARTWORK present (native gauge/status/indicator art loaded)"
@@ -539,6 +557,19 @@ sealed class Proof : Game
         }
         var summaries = new List<object>(scenes.Length);
         int missingTotal = 0, hintBlocked = 0, cellLeaks = 0;
+        // P1041 — the amber counts: off-palette colours per variant, green-vs-amber
+        // geometry differences, and the amber run's own audit classes.
+        HudSkinPalette greenPalette = _jetDefinition.Palette!;
+        HudSkinPalette? amberPalette = _amberDefinition?.Palette;
+        int greenOff = 0, amberOff = 0, geometryTotal = 0;
+        int amberStroke = 0, amberOutside = 0, amberOffScreen = 0, amberSmall = 0, amberInPlate = 0;
+        int amberCue = 0, amberLegible = 0, amberCross = 0, amberSame = 0, amberOverGlyph = 0;
+        int amberStrokeText = 0, amberCallout = 0, amberPlates = 0;
+        var paletteScenes = new List<string>();
+        var geometryScenes = new List<string>();
+        // P1041 — the distinct offending colours (a leftover's hex is the evidence).
+        var greenOffenders = new SortedSet<string>(StringComparer.Ordinal);
+        var amberOffenders = new SortedSet<string>(StringComparer.Ordinal);
         var missingScenes = new List<string>();
         foreach (var (scenario, width, height, backdropName) in scenes)
         {
@@ -592,6 +623,87 @@ sealed class Proof : Game
             string stem = $"jet-{scenario.Replace("jet-", "")}-{width}x{height}-{backdropName}";
             using (var file = File.Create(Path.Combine(root, stem + ".png")))
                 target.SaveAsPng(file, width, height);
+            // ── P1041 — the amber variant of the SAME scene ─────────────────────
+            // The amber renderer draws the same model through its own recorder: the
+            // PNG comes from its own real-batch pass, the palette/geometry audits from
+            // the recorder (which forwards every primitive to that batch).
+            LayoutAudit amberAudit = audit;
+            int greenOffPalette = 0, amberOffPalette = 0, geometryDiffs = 0;
+            string tagGreen = "", tagAmber = "";
+            if (_jetAmber is not null && _jetAmberSurface is not null && _jetAmberAudit is not null)
+            {
+                GraphicsDevice.SetRenderTarget(target);
+                GraphicsDevice.Clear(backdrop);
+                try
+                {
+                    var amberFrame = new HudDrawFrame(GraphicsDevice.Viewport, null, false);
+                    _jetAmber.ResetFlightState();
+                    _jetAmber.Draw(model, amberFrame);
+                    _jetAmber.DrawCommand(model);
+                    _jetAmber.DrawConsole(model);
+                }
+                finally
+                {
+                    GraphicsDevice.SetRenderTarget(null);
+                }
+                GraphicsDevice.SetRenderTarget(target);
+                GraphicsDevice.Clear(backdrop);
+                try
+                {
+                    _jetAmberSurface.Reset();
+                    _jetAmberAudit.ResetFlightState();
+                    var amberFrame = new HudDrawFrame(GraphicsDevice.Viewport, null, false);
+                    _jetAmberAudit.Draw(model, amberFrame);
+                    _jetAmberAudit.DrawCommand(model);
+                    _jetAmberAudit.DrawConsole(model);
+                    amberAudit = _jetAmberSurface.Audit(width, height, scale, backdrop);
+                }
+                finally
+                {
+                    GraphicsDevice.SetRenderTarget(null);
+                }
+                // The scene's only intentional fixed colour: the native side-identity
+                // colour the shared console model carries (consoledata.cpp:99-107,
+                // dialog.mdl:26,4722), used for tips and its own brightness steps.
+                Color? side = model.Context.Console?.SideColor is { } sc
+                    ? new Color(sc.R, sc.G, sc.B, sc.A) : null;
+                greenOffPalette = _jetAuditSurface!.SubmittedColours.Count(c => !PaletteAllows(greenPalette, c, side));
+                amberOffPalette = _jetAmberSurface.SubmittedColours.Count(c => !PaletteAllows(amberPalette!, c, side));
+                greenOff += greenOffPalette;
+                amberOff += amberOffPalette;
+                // Geometry: identical measured boxes, strokes, plates and element boxes;
+                // only the palette's own WIP tag (item 5's label) is excluded.
+                string[] greenGeometry = _jetAuditSurface.GeometrySignature(excludeTag: true);
+                string[] amberGeometry = _jetAmberSurface.GeometrySignature(excludeTag: true);
+                geometryDiffs = GeometryDiff(greenGeometry, amberGeometry);
+                geometryTotal += geometryDiffs;
+                tagGreen = _jetAuditSurface.TagRun();
+                tagAmber = _jetAmberSurface.TagRun();
+                amberStroke += amberAudit.StrokeHits;
+                amberOutside += amberAudit.TextOutsidePlate;
+                amberOffScreen += amberAudit.TextOffScreen;
+                amberSmall += amberAudit.IconTooSmall;
+                amberInPlate += amberAudit.TextOverlapInPlate;
+                amberCue += amberAudit.CueReadoutHits;
+                amberLegible += amberAudit.LegibleBehindPane;
+                amberCross += amberAudit.TextOverlapCross;
+                amberSame += amberAudit.TextOverlapSame;
+                amberOverGlyph += amberAudit.TextOverGlyph;
+                amberStrokeText += amberAudit.StrokeThroughText;
+                amberCallout += amberAudit.CalloutCrossed;
+                amberPlates += amberAudit.RadarPlates;
+                foreach (Color c in _jetAuditSurface.SubmittedColours)
+                    if (!PaletteAllows(greenPalette, c, side)) greenOffenders.Add($"{c.R:X2}{c.G:X2}{c.B:X2}");
+                foreach (Color c in _jetAmberSurface.SubmittedColours)
+                    if (!PaletteAllows(amberPalette!, c, side)) amberOffenders.Add($"{c.R:X2}{c.G:X2}{c.B:X2}");
+                if (greenOffPalette > 0 || amberOffPalette > 0)
+                    paletteScenes.Add($"{stem}:green={greenOffPalette},amber={amberOffPalette}");
+                if (geometryDiffs > 0) geometryScenes.Add($"{stem}:{geometryDiffs}");
+            }
+            // The amber recorder just drew into `target`: save the amber evidence frame.
+            if (_jetAmber is not null)
+                using (var file = File.Create(Path.Combine(root, stem + "-amber.png")))
+                    target.SaveAsPng(file, width, height);
             var attitude = _jet.Attitude;
             // P1040b — the `ElementMissing` class: the elements this scene's model makes
             // eligible (its gate true, after the panel's own stated line limit) against the
@@ -742,7 +854,22 @@ sealed class Proof : Game
                     commandSlide = model.Context.CommandPaneSlide,
                     commandView = model.Context.CommandView,
                 },
-                tag = JetHudRenderer.TagText,
+                tag = _jet.TagLabel,
+                // P1041 — the amber variant's own evidence for this scene: its PNG,
+                // its audit, its off-palette count, the number of geometry differences
+                // from green (tag text excluded: the item-5 label) and the two tag runs.
+                palette = new
+                {
+                    green = _jet.Palette,
+                    amber = _jetAmber?.Palette,
+                    png = $"{stem}-amber.png",
+                    greenOffPalette,
+                    amberOffPalette,
+                    geometryDiffs,
+                    tagGreen,
+                    tagAmber,
+                    layout = amberAudit,
+                },
             });
         }
         // P1039 — the Jet radar's draw cost against the Modern radar on the SAME dense scene
@@ -770,7 +897,8 @@ sealed class Proof : Game
                 + $"{jetWatch.Elapsed.TotalMilliseconds / Math.Max(1e-6, modernWatch.Elapsed.TotalMilliseconds):0.00}");
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 9, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 10, skin = _jetDefinition.Id,
+                palette = _jetDefinition.Palette, amberPalette = _amberDefinition?.Palette, scenes = summaries }, PrettyJson));
         // P1038b/c — the layout classes must be 0 in every Jet scene; print the offending
         // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
@@ -825,8 +953,95 @@ sealed class Proof : Game
         // P1040c — Jet furniture drawn across a shared training callout's ink (must be 0).
         Console.WriteLine($"HUD2_JET_CALLOUT callout-crossed {calloutCrossed} over {scenes.Length} scenes"
             + (calloutScenes.Count > 0 ? " [" + string.Join(", ", calloutScenes) + "]" : ""));
+        // P1041 — the variant evidence: no colour outside each palette (plus the scene's
+        // native side-identity colour), identical geometry green vs amber, and the amber
+        // run's own layout classes all 0.
+        Console.WriteLine($"HUD2_JET_PALETTES green off-palette {greenOff}, amber off-palette {amberOff} over {scenes.Length} scenes"
+            + (greenOffenders.Count > 0 ? " green offenders [" + string.Join(",", greenOffenders) + "]" : "")
+            + (amberOffenders.Count > 0 ? " amber offenders [" + string.Join(",", amberOffenders) + "]" : ""));
+        Console.WriteLine($"HUD2_JET_GEOMETRY green-vs-amber diffs {geometryTotal} over {scenes.Length} scenes"
+            + " (the WIP tag's own text/box excluded: item 5's label)"
+            + (geometryScenes.Count > 0 ? " [" + string.Join(", ", geometryScenes) + "]" : ""));
+        Console.WriteLine($"HUD2_JET_AMBER_AUDIT stroke-vs-text {amberStroke}, text-outside-plate {amberOutside}, "
+            + $"text-off-screen {amberOffScreen}, icon-too-small {amberSmall}, text-in-plate {amberInPlate}, "
+            + $"cue-vs-readout {amberCue}, legible-behind-pane {amberLegible}, text-overlap-cross {amberCross}, "
+            + $"text-overlap-same {amberSame}, text-over-glyph {amberOverGlyph}, stroke-through-text {amberStrokeText}, "
+            + $"radar plates {amberPlates}, callout-crossed {amberCallout} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
-        return missingTotal == 0 && hintBlocked == 0 && cellLeaks == 0 && calloutCrossed == 0 ? 0 : 1;
+        bool amberClean = _jetAmber is null
+            || (amberOff == 0 && geometryTotal == 0 && amberStroke == 0 && amberOutside == 0 && amberOffScreen == 0
+                && amberSmall == 0 && amberInPlate == 0 && amberCue == 0 && amberLegible == 0 && amberCross == 0
+                && amberSame == 0 && amberOverGlyph == 0 && amberStrokeText == 0 && amberCallout == 0);
+        return missingTotal == 0 && hintBlocked == 0 && cellLeaks == 0 && calloutCrossed == 0
+            && greenOff == 0 && amberClean ? 0 : 1;
+    }
+
+    /// <summary>
+    /// P1041 — the palette audit's allowed set (P972 §4.1). A submitted colour is on
+    /// the palette when it is a role's exact colour, a documented alpha shade of a
+    /// role (the renderer's own brightness steps: unlit bar 0.35/0.3, ring 0.55,
+    /// leader 0.8/label 0.75, plate backing 0.82/0.85/0.97, tip rows 0.75/0.9 over
+    /// the side colour), a point on the Dim→Hot ballistic-lead ramp, or the scene's
+    /// native side-identity colour (consoledata.cpp:99-107, dialog.mdl:26,4722) with
+    /// its two text brightness steps. Anything else is an off-palette leftover.
+    /// </summary>
+    private static bool PaletteAllows(HudSkinPalette palette, Color c, Color? side)
+    {
+        foreach (string hex in new[] { palette.Primary, palette.Dim, palette.Hot, palette.Plate, palette.Keyline })
+        {
+            if (!HudSkinColor.TryParseHex(hex, out var role)) continue;
+            if (Near(c, role.R, role.G, role.B)) return true;
+            if (ShadeOf(c, role)) return true;
+        }
+        if (HudSkinColor.TryParseHex(palette.Dim, out var dim) && HudSkinColor.TryParseHex(palette.Hot, out var hot))
+            for (int i = 0; i <= 255; i++)
+            {
+                float t = i / 255f;
+                if (Near(c, (int)(dim.R + (hot.R - dim.R) * t), (int)(dim.G + (hot.G - dim.G) * t),
+                    (int)(dim.B + (hot.B - dim.B) * t))) return true;
+            }
+        if (side is { } s)
+        {
+            if (Near(c, s.R, s.G, s.B)) return true;
+            if (ShadeOf(c, new HudSkinColor(s.R, s.G, s.B))) return true;
+        }
+        return false;
+    }
+
+    /// <summary>A brightness step of a palette role: <c>Color * f</c> with one factor in
+    /// [0.24, 1.02] (the renderer's plate backings 0.62/0.72/0.82/0.85/0.97, the radar
+    /// ring/leader/label steps, the unlit bar 0.3/0.35, the tip rows 0.675/0.75/0.9 and
+    /// the continuous radar range-fade factor 0.25…1).</summary>
+    private static bool ShadeOf(Color c, HudSkinColor role)
+    {
+        int max = Math.Max(role.R, Math.Max(role.G, role.B));
+        if (max == 0) return c.R == 0 && c.G == 0 && c.B == 0;
+        float f = 0f;
+        bool any = false;
+        int count = 0;
+        if (role.R == max) { f += c.R / (float)role.R; count++; any = true; }
+        if (role.G == max) { f += c.G / (float)role.G; count++; any = true; }
+        if (role.B == max) { f += c.B / (float)role.B; count++; any = true; }
+        if (!any) return false;
+        f /= count;
+        if (f < 0.24f || f > 1.02f) return false;
+        return Math.Abs(c.R - role.R * f) <= 2 && Math.Abs(c.G - role.G * f) <= 2
+            && Math.Abs(c.B - role.B * f) <= 2;
+    }
+
+    /// <summary>Colour equality with one byte of slack for the renderer's own truncation.</summary>
+    private static bool Near(Color c, int r, int g, int b) =>
+        Math.Abs(c.R - r) <= 1 && Math.Abs(c.G - g) <= 1 && Math.Abs(c.B - b) <= 1;
+
+    /// <summary>P1041 — the number of differing lines between two geometry signatures
+    /// (a length change counts the surplus lines).</summary>
+    private static int GeometryDiff(string[] green, string[] amber)
+    {
+        int diffs = Math.Abs(green.Length - amber.Length);
+        int shared = Math.Min(green.Length, amber.Length);
+        for (int i = 0; i < shared; i++)
+            if (!string.Equals(green[i], amber[i], StringComparison.Ordinal)) diffs++;
+        return diffs;
     }
 
     /// <summary>
@@ -2443,6 +2658,10 @@ sealed class Proof : Game
         /// band stroke, so the audit counts them instead of a band-through-text hit).</summary>
         private readonly List<LayoutFill> _radarPlates = new();
         private readonly Dictionary<int, Color> _ink = new();
+        /// <summary>P1041 — every colour the frame submitted (line, fill, text),
+        /// so the palette audit can prove no colour outside the variant palette
+        /// (plus the stated fixed set) is used.</summary>
+        private readonly List<Color> _submitted = new();
         private int _seq;
 
         public RecordingSurface(IJetVectorSurface inner) => _inner = inner;
@@ -2454,12 +2673,14 @@ sealed class Proof : Game
         public void Line(Vector2 a, Vector2 b, float width, Color color)
         {
             RecordStroke(a, b, width, _seq++);
+            _submitted.Add(color);
             _inner.Line(a, b, width, color);
         }
 
         public void Fill(Vector2 min, Vector2 size, Color color)
         {
             int seq = _seq++;
+            _submitted.Add(color);
             float w = MathF.Max(0f, size.X), h = MathF.Max(0f, size.Y);
             _fills.Add(new("#", min.X, min.Y, w, h, seq));
             // P1038b — a fill thin in BOTH axes is a bar/mark (a segmented store bar, a
@@ -2489,6 +2710,7 @@ sealed class Proof : Game
             int seq = _seq++;
             Record(_texts, text, position.X, position.Y, size.X, size.Y, seq);
             _ink[seq] = color;
+            _submitted.Add(color);
             _inner.Text(text, position, large, scale, color);
         }
 
@@ -2570,9 +2792,52 @@ sealed class Proof : Game
             _leaders.Clear();
             _radarPlates.Clear();
             _ink.Clear();
+            _submitted.Clear();
             _element = null;
             _contact = -1;
             _drawn.Clear();
+        }
+
+        /// <summary>P1041 — every colour submitted this frame.</summary>
+        public IReadOnlyList<Color> SubmittedColours => _submitted;
+
+        /// <summary>
+        /// P1041 — the frame's geometry as ordered, colour-free lines: every text run and
+        /// its measured box, every stroke and width, every fill/plate rectangle, every
+        /// icon glyph, lock cue and cue readout, radar contact glyph, band ring, leader and
+        /// radar plate. Two palettes drawing the same model must produce identical lines;
+        /// only the palette's own WIP tag text (item 5's label) may differ and is excluded
+        /// when <paramref name="excludeTag"/> is set.
+        /// </summary>
+        public string[] GeometrySignature(bool excludeTag)
+        {
+            static string F(float v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            var lines = new List<string>(_texts.Count + _strokes.Count + _fills.Count + 96);
+            foreach (LayoutBox t in _texts)
+            {
+                if (excludeTag && (t.Text == JetHudRenderer.TagText || t.Text == JetHudRenderer.TagTextAmber)) continue;
+                lines.Add($"T|{t.Text}|{F(t.X)},{F(t.Y)},{F(t.W)},{F(t.H)}");
+            }
+            foreach (LayoutStroke s in _strokes)
+                lines.Add($"S|{F(s.A.X)},{F(s.A.Y)},{F(s.B.X)},{F(s.B.Y)},{F(s.Width)}");
+            foreach (LayoutBox f in _fills) lines.Add($"F|{F(f.X)},{F(f.Y)},{F(f.W)},{F(f.H)}");
+            foreach (LayoutGlyph g in _glyphs) lines.Add($"G|{g.Id}|{F(g.X)},{F(g.Y)},{F(g.W)},{F(g.H)},{F(g.MinimumHeight)}");
+            foreach (LayoutCue c in _cues) lines.Add($"C|{F(c.Center.X)},{F(c.Center.Y)},{F(c.Radius)},{F(c.Start)},{F(c.Sweep)}");
+            foreach (LayoutBox r in _cueReadouts) lines.Add($"Q|{F(r.X)},{F(r.Y)},{F(r.W)},{F(r.H)}");
+            foreach (LayoutContactGlyph g in _contactGlyphs) lines.Add($"K|{g.Index}|{F(g.X)},{F(g.Y)},{F(g.W)},{F(g.H)}");
+            foreach (LayoutRing n in _rings) lines.Add($"N|{F(n.Centre.X)},{F(n.Centre.Y)},{F(n.Radius)},{n.Round}");
+            foreach (LayoutStroke l in _leaders) lines.Add($"L|{F(l.A.X)},{F(l.A.Y)},{F(l.B.X)},{F(l.B.Y)},{F(l.Width)}");
+            foreach (LayoutFill p in _radarPlates) lines.Add($"P|{F(p.X)},{F(p.Y)},{F(p.W)},{F(p.H)}");
+            return lines.ToArray();
+        }
+
+        /// <summary>The one tag run's measured box (item 5's label, reported separately).</summary>
+        public string TagRun()
+        {
+            foreach (LayoutBox t in _texts)
+                if (t.Text == JetHudRenderer.TagText || t.Text == JetHudRenderer.TagTextAmber)
+                    return $"{t.Text}|{t.X:0.###},{t.Y:0.###},{t.W:0.###},{t.H:0.###}";
+            return "";
         }
 
         /// <summary>

@@ -808,8 +808,8 @@ public sealed partial class JetHudRenderer
         AddObstacle(_flightPartsBox);
         AddObstacle(_composeBox);
         AddObstacle(_commandPanel);
-        float tagWidth = _painter.Measure(TagText, large: false, scale).X;
-        float tagHeight = _painter.Measure(TagText, large: false, scale).Y;
+        float tagWidth = _painter.Measure(TagLabel, large: false, scale).X;
+        float tagHeight = _painter.Measure(TagLabel, large: false, scale).Y;
         AddObstacle(new RectangleF(w * 0.5f - tagWidth * 0.5f, h - 12f * scale - tagHeight * 0.5f,
             tagWidth, tagHeight));
 
