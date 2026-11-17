@@ -50,6 +50,7 @@ public sealed class DualTransport : IServerTransport, ISendPoolDiagnostics, IUdp
     /// <summary>P1022 — the peer's source address on whichever half owns it
     /// (the credential-guessing address key), or <c>null</c> when unknown.</summary>
     public IPAddress? PeerAddress(ConnectionId id) => Route(id).PeerAddress(Inner(id));
+    public string PeerProtocolName(ConnectionId id) => Route(id).PeerProtocolName(Inner(id));
     public void SetPeerHuman(ConnectionId id, bool human) => Route(id).SetPeerHuman(Inner(id), human);
     public bool IsPeerClosed(ConnectionId id) => Route(id).IsPeerClosed(Inner(id));
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown) => Route(id).ClosePeer(Inner(id), reason);

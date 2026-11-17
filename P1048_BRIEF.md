@@ -1,4 +1,4 @@
-# P1048 — Browser slice 3: game-server WebSocket transport + browser join (P1045 "WSS endpoint beside game server")
+# P1048 — Browser slice 3a: game-server WebSocket transport (P1045 "WSS endpoint beside game server") — attempt 3
 
 Report name: `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`.
 
@@ -11,8 +11,15 @@ Browsers cannot open the game's TCP/UDP transports. P1045 chose a **WebSocket (`
 implementing `IServerTransport`, carrying unchanged FedPackets, over a bridge/gateway (which it says must never be
 published). Today the browser preview stops at the menu with "not available in the browser".
 
-**Write the report FIRST** (skeleton + a status line per item) and keep it current. Priority order is the item order:
-items 1–5 are the must-have; 6–7 are the playable slice.
+**Scope of this story: items 1–5 only.** Items 6–7 (client transport, browser join) moved to P1048b — do not start them.
+
+**Attempts 1 and 2 ended after 4 and 21 minutes with a progress report and most of the work undone. That is not an
+acceptable outcome.** Your worktree already contains attempt 2's work (`IUdpListenerInfo`, `IServerTransport` source
+lookup, honest client protocol labels) and its report — build on them, do not redo them. **Do not end your turn until
+items 1–5 are implemented, tested and reported, or the 8-hour cap is reached.** A status report is not a stopping point;
+running the fast tier is the LAST step, after the implementation, not a checkpoint. Run targeted tests while you work.
+If one approach is blocked, take the next one and record why; only a genuine behaviour decision for Domingo (stated in
+the report as a question) may stop the work.
 
 ## Items
 1. **Generalize the server transport seams before adding a third listener** (P1045: "Generalize these seams before
@@ -50,11 +57,11 @@ items 1–5 are the must-have; 6–7 are the playable slice.
    warnings, the listener starts and passes a WS join test from the published binary). If embedding Kestrel fails AOT,
    stop and report the measured reason and the alternative instead of shipping a JIT-only path. `docker compose config`
    if compose/env changes (document the new keys in `.env.example`/docs; no secrets).
-6. **Client transport:** a client `ITransport` over WebSocket — desktop (`ClientWebSocket`, used by tests and a headless
+6. **(P1048b — not this story) Client transport:** a client `ITransport` over WebSocket — desktop (`ClientWebSocket`, used by tests and a headless
    join proof) and browser (JS `WebSocket` interop in the KNI build). Extend `TransportFactory` to accept a validated
    `wss://`/`ws://`(loopback only) endpoint URI. A headless test: a WS client logs on with a ticket, picks a side,
    launches and exchanges ship input/updates with a local server — same messages as a TCP client (compare).
-7. **Browser join slice (stretch):** in the browser preview, a server advertising a web route can be joined over `ws`
+7. **(P1048b — not this story) Browser join slice:** in the browser preview, a server advertising a web route can be joined over `ws`
    on loopback: login → list → join → side select → launch. Flight rendering parity is NOT required (P1047 says it is
    not claimed); reaching the in-game state with the server confirming the player, and any rendering the build already
    supports, is enough. Keep unsupported paths explicit ("not available in the browser"), never half-enabled. Record
@@ -64,9 +71,8 @@ items 1–5 are the must-have; 6–7 are the playable slice.
 ## Gate
 Build 0/0 + `tools/build-tools.sh`; new tests 3× alone; one `tools/run-tests.sh --tier fast` (non-task failures 3× alone
 + `docs/TEST_FLAKES.md`); the existing server/transport/identity/credential suites green; **TCP/UDP behaviour unchanged**
-(state the suites and counts that prove it); AOT publish proof (item 5); browser build still builds and the P1047 browser
-proof still passes (`node tools/p1047-browser-proof.cjs` setup per its report, loopback only). A short loopback latency
-note: WS vs TCP round-trip and per-message overhead on the same machine (measured, not estimated). Report Native
+(state the suites and counts that prove it); AOT publish proof (item 5); the browser projects still build. A short loopback latency note: WS vs TCP
+round-trip and per-message overhead on the same machine, measured with a minimal in-test WS client (not estimated). Report Native
 intent / Modern approach footer.
 
 ## Not in scope

@@ -17,6 +17,7 @@ Status: **incomplete**. Only part of the transport seam audit is implemented; th
 | Former concrete lookup | Current state |
 |---|---|
 | Credential source TCP/UDP/Dual switch | `IServerTransport.PeerAddress`; delegation in `src/Allegiance.Core/Transport/DualTransport.cs:52` and use in `src/Allegiance.Server/Server.CredentialLimits.cs:79`. |
+| Per-peer protocol | `IServerTransport.PeerProtocolName` defaults to the listener's protocol; `DualTransport` delegates to the owning listener. The mixed TCP/UDP test checks both labels. |
 | Privilege loopback | Already uses `IServerTransport.IsPeerLoopback` in `src/Allegiance.Server/Server.Privileges.cs:12`. A future WS implementation must always return false. |
 | TCP send pool | Optional `ISendPoolDiagnostics`, used in `src/Allegiance.Server/Server.Egress.cs:57`. |
 | UDP receive scheduling | Optional `IUdpReceiveDiagnostics`, used in `src/Allegiance.Server/Server.SchedulingMetrics.cs:16`. |
@@ -39,6 +40,7 @@ No WebSocket limits are implemented. All requested WebSocket admission, handshak
 | Glossary link check | Passed, 945 paths. |
 | Full solution build | Passed, 0 warnings / 0 errors, using the workspace NuGet HTTP cache. |
 | Mixed TCP/UDP listener test, including UDP advertisement interface | Passed 1/1 on each of three isolated runs. |
+| Mixed TCP/UDP listener test with per-peer protocol assertion | Passed 1/1 on each of three isolated runs in attempt 3. |
 | Selected TCP/UDP connection and inbound limit tests | Passed 31/31 once; this is not the full required regression set. |
 | Build tools | Passed: all 142 projects. |
 | Fast tier | Failed: 15,151 passed, 3 failed, 7 skipped; eight cases exceeded the calibrated 11.545 s limit. See `TestResults/tiers-20261117T192005.353904Z/summary.json` (local, generated). All ten distinct failures/timing offenders were rerun three times individually: nine passed 3/3; the mining broadcast case passed twice and failed once. Details: `docs/TEST_FLAKES.md`. |
@@ -51,7 +53,7 @@ Not measured. No WebSocket implementation exists to publish or benchmark. No AOT
 
 ## Unfinished work
 
-Complete item 1, then implement and test items 2–6 in order and the browser stretch item if feasible. In particular, do not add a third listener before collision-free peer routing and provenance are established. Validate all brief gates, including real Native AOT publish and a published-binary join, and measure loopback latency. No commit, push or deployment was made. The brief had pre-existing working-tree modifications and was left untouched; it must be excluded from any later change set.
+Complete item 1, then implement and test items 2–5. Items 6–7 belong to P1048b and are out of scope. In particular, do not add a third listener before collision-free peer routing and provenance are established. Validate all brief gates, including real Native AOT publish and a published-binary join, and measure loopback latency. No commit, push or deployment was made. The brief had pre-existing working-tree modifications and was left untouched; it must be excluded from any later change set.
 
 ## Native intent / Modern approach
 

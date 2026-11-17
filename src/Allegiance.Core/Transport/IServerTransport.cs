@@ -8,6 +8,8 @@ public interface IServerTransport : ITransport
     void Host(ushort port, IPAddress? bindAddress);
     /// <summary>Transport-observed source address, or null if unavailable. Never use untrusted client metadata.</summary>
     IPAddress? PeerAddress(ConnectionId id);
+    /// <summary>Protocol of the listener owning this peer, for diagnostics.</summary>
+    string PeerProtocolName(ConnectionId id) => ProtocolName;
     bool IsPeerLoopback(ConnectionId id);
     void SetPeerHuman(ConnectionId id, bool human);
     bool IsPeerClosed(ConnectionId id);

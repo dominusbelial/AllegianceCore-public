@@ -331,6 +331,7 @@ public sealed class P895UdpTransportTests
             {
                 Assert.True(server.IsPeerLoopback(join.Id));
                 Assert.Equal(IPAddress.Loopback, server.PeerAddress(join.Id));
+                Assert.Equal(join.Name.ToLowerInvariant(), server.PeerProtocolName(join.Id));
             });
             Assert.Equal("tcp", tc.ProtocolName);
             Assert.Equal("udp", uc.ProtocolName);
