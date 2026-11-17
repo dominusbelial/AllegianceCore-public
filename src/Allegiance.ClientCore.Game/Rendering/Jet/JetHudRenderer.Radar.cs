@@ -41,6 +41,53 @@ public sealed partial class JetHudRenderer
 
     private string _radarCaptionText = RadarCaption + "Default";
 
+    // ── P1039b — the placement pass's preallocated state (0 B/frame) ────
+
+    /// <summary>Contacts the label/word planner handles (the glyph pass always walks the
+    /// model's whole list; a 200v200 snapshot can carry ~400 contacts, and every one past
+    /// this plan cap keeps its glyph, overlays and cluster word-free exactly like a hidden
+    /// label).</summary>
+    private const int MaxRadarPlan = 512;
+
+    /// <summary>Word kinds one contact can carry: the class letter, SUB, the threat "!", the
+    /// ripcord countdown and the command verb.</summary>
+    private const int RadarWordKinds = 5;
+
+    /// <summary>Obstacle rects the planner accumulates: the five reserved captions plus one
+    /// label and five words per planned contact.</summary>
+    private const int MaxRadarBlocks = 6 + MaxRadarPlan * (1 + RadarWordKinds);
+
+    private readonly Vector2[] _radarPoints = new Vector2[MaxRadarPlan];
+    private readonly int[] _radarOrder = new int[MaxRadarPlan];
+    private readonly byte[] _radarLabelForm = new byte[MaxRadarPlan];      // 0 = hidden
+    private readonly bool[] _radarLabelLeader = new bool[MaxRadarPlan];
+    private readonly RectangleF[] _radarLabelBox = new RectangleF[MaxRadarPlan];
+    private readonly byte[] _radarWordMask = new byte[MaxRadarPlan];       // bit k = word k drawn
+    /// <summary>The planned top-left anchor of every marker word (kind-major per contact), so the
+    /// draw pass uses the position the planner measured and reserved.</summary>
+    private readonly Vector2[] _radarWordAt = new Vector2[MaxRadarPlan * RadarWordKinds];
+    /// <summary>The row set the planner chose for this contact's block: bit 0 name, 1 range,
+    /// 2 <c>EYE</c>, 3 the hull/shield bars, 4 the ore fill. The draw pass reads it instead of
+    /// re-deriving the rows, so a row the planner dropped can never be drawn back.</summary>
+    private readonly byte[] _radarLabelRows = new byte[MaxRadarPlan];
+    private readonly RectangleF[] _radarBlocks = new RectangleF[MaxRadarBlocks];
+    private readonly Vector2[] _ringCaptionAt = new Vector2[JetRadar.RingCount];
+    private readonly int[] _ringCaptionValue = new int[JetRadar.RingCount];
+    private int _ringCaptionCount;
+    private Vector2 _modeCaptionAt;
+    private bool _modeCaptionReserved;
+    private int _radarBlockCount;
+    private int _radarPlannedCount;
+
+    /// <summary>P1039b — per-frame label counts (the proof records them per scene).</summary>
+    public int RadarLabelsPlaced { get; private set; }
+    public int RadarLabelsShortened { get; private set; }
+    public int RadarLabelsHidden { get; private set; }
+    /// <summary>Never-hidden labels that had to take a covered slot (must be 0).</summary>
+    public int RadarLabelOverflows { get; private set; }
+    /// <summary>Cluster/marker words dropped because no free place was left (the glyph stays).</summary>
+    public int RadarWordsDropped { get; private set; }
+
     /// <summary>
     /// Draw the radar scope of this frame. Gated exactly like the rest of Jet's flight
     /// furniture (<see cref="HudModel.FlightVisible"/>); suppressed while the F4 inventory
@@ -52,7 +99,11 @@ public sealed partial class JetHudRenderer
         if (!model.FlightVisible) return;
         if (model.Context.InventoryVisible || model.Context.InventorySlide > 0f) return;
 
-        RectangleF scope = JetRadar.Scope(w, h, scale, _throttleBandLeft);
+        // P1039b — the compact scope keeps the bottom-right corner band: clear of the
+        // flight-path column (left cap), the throttle tape/plate (right limit, measured
+        // above), the sector mini-map (bottom) and the master-caution panel (top limit).
+        float cautionBottom = _cautionPanel.Height > 0f ? _cautionPanel.Y + _cautionPanel.Height : 0f;
+        RectangleF scope = JetRadar.Scope(w, h, scale, _throttleBandLeft, cautionBottom);
         if (scope.Width < 40f || scope.Height < 40f) return;
         bool round = _settings.RoundRadar;
         _radarScope = scope;
@@ -94,10 +145,17 @@ public sealed partial class JetHudRenderer
                 _painter.Hairline, frameInk);
         }
 
-        // ── range bands ────────────────────────────────────────────────────
+        // ── range bands + the reserved ring captions ───────────────────────
+        // P1039b — every caption sits on ONE fixed spoke (the vertical axis, right of it,
+        // above the ring it names); its rect is RESERVED before any contact label is placed,
+        // so a label can never be drawn over a band reading, and a caption that would touch a
+        // caption already on the spoke is skipped rather than stacked (at 800×480 the four
+        // rings are closer together than one text line).
         float scopeRange = JetRadar.ScopeRange(model.Context.Contacts);
         var contacts = model.Context.Contacts;
-        Vector2 size = _painter.Measure("00000", large: false, scale);
+        _radarBlockCount = 0;
+        _ringCaptionCount = 0;
+        _modeCaptionReserved = false;
         for (int ring = 1; ring <= JetRadar.RingCount; ring++)
         {
             float radius = JetRadar.RingRadius(scope, ring, round);
@@ -106,55 +164,73 @@ public sealed partial class JetHudRenderer
                 _painter.Circle(centre, radius, _painter.Hairline, _painter.Dim * 0.55f);
             else
                 RingSquare(centre, radius, _painter.Hairline, _painter.Dim * 0.55f);
-            // The band's value on the vertical axis, above the ring (no invented unit).
-            string text = RadarLabelModel.RangeText(JetRadar.RingRange(ring, scopeRange));
+            // The band's value on the fixed vertical spoke, above the ring (no invented unit).
+            int value = JetRadar.RingRange(ring, scopeRange);
+            string text = RadarLabelModel.RangeText(value);
             Vector2 ink = _painter.Measure(text, large: false, scale);
             float labelY = centre.Y - radius - ink.Y - 1f * scale;
-            if (labelY > scope.Y)
-                _painter.Text(text, new(centre.X + 3f * scale, labelY), large: false, scale,
-                    _painter.Dim * 0.75f);
+            if (labelY <= scope.Y) continue;                 // no room on this spoke
+            var rect = new RectangleF(centre.X + 3f * scale, labelY, ink.X, ink.Y);
+            if (JetRadarLabels.Covered(rect, RadarBlocks) > 0f) continue;   // the spoke is taken
+            ReserveRadarBlock(rect);
+            _ringCaptionAt[_ringCaptionCount] = new(rect.X, rect.Y);
+            _ringCaptionValue[_ringCaptionCount] = value;
+            _ringCaptionCount++;
         }
 
         // ── the mode label (same four modes, same words as native) ──────────
         if (!_radarCaptionText.EndsWith(RadarLod.Label(model.Context.RadarMode), StringComparison.Ordinal))
             _radarCaptionText = RadarCaption + RadarLod.Label(model.Context.RadarMode);
-        // The mode word sits in the scope's bottom-right corner: the boresight-centred flight
-        // symbology (the ballistic lead, the order words) never reaches that corner, so the
-        // fixed caption cannot be drawn over a world-anchored word.
+        // The mode word sits in the scope's bottom-right corner: it is reserved like the ring
+        // captions, so no contact label or cluster word may be placed over it.
         Vector2 captionInk = _painter.Measure(_radarCaptionText, large: false, scale);
-        _painter.Text(_radarCaptionText,
-            new(scope.X + scope.Width - 4f * scale - captionInk.X, scope.Y + scope.Height - 3f * scale - captionInk.Y),
-            large: false, scale, _painter.Dim);
+        _modeCaptionAt = new(scope.X + scope.Width - 4f * scale - captionInk.X,
+            scope.Y + scope.Height - 3f * scale - captionInk.Y);
+        ReserveRadarBlock(new RectangleF(_modeCaptionAt.X, _modeCaptionAt.Y, captionInk.X, captionInk.Y));
+        _modeCaptionReserved = true;
 
-        // ── contacts ───────────────────────────────────────────────────────
+        // ── the placement pass: plan every word and every label before drawing ──
+        // Strokes always precede text in this pass order (frame → bands → glyphs → leaders →
+        // captions → words → labels), so no stroke can ever read as a strikethrough.
         bool commandCamera = model.Context.CommandView;
         RadarMode mode = model.Context.RadarMode;
-        // P1039 — two passes. Pass A draws every icon, overlay and overlay WORD; pass B draws
-        // every label block. A stroke drawn after a text would read as a strikethrough across
-        // it (the audit's stroke-vs-text rule), so no contact glyph may be submitted after a
-        // label has started — the whole glyph field is laid down first.
+        PlanRadar(model, scope, scopeRange, scale, commandCamera, mode);
+
+        // ── pass A: every glyph, overlay and overlay stroke ─────────────────
         for (int i = 0; i < contacts.Count; i++)
         {
             HudContact contact = contacts[i];
-            Vector2 at = JetRadar.ContactPoint(scope, contact, _viewportWidth, _viewportHeight, scopeRange);
+            Vector2 at = i < _radarPlannedCount ? _radarPoints[i]
+                : JetRadar.ContactPoint(scope, contact, _viewportWidth, _viewportHeight, scopeRange);
             DrawRadarGlyph(contact, at, scope, scale, commandCamera, mode);
         }
-        // Pass A2: the glyph LETTERS (M/P/T/!/SUB/RIP nn/ACC/QUE) after every stroke, so no
-        // contact's overlay line can be submitted over another contact's word.
-        for (int i = 0; i < contacts.Count; i++)
+        // ── pass B: the leader strokes of diagonally placed labels ──────────
+        for (int i = 0; i < _radarPlannedCount; i++)
+        {
+            if (_radarLabelForm[i] == 0 || !_radarLabelLeader[i]) continue;
+            var (from, to) = JetRadarLabels.Leader(_radarPoints[i],
+                JetRadarLabels.GlyphClear * scale, _radarLabelBox[i], scale);
+            if ((to - from).LengthSquared() < 1f) continue;
+            _painter.Line(from, to, _painter.Hairline, _painter.Dim * 0.8f);
+        }
+        // ── pass C: the reserved band captions (text, after every stroke) ───
+        for (int i = 0; i < _ringCaptionCount; i++)
+            _painter.Text(RadarLabelModel.RangeText(_ringCaptionValue[i]), _ringCaptionAt[i],
+                large: false, scale, _painter.Dim * 0.75f);
+        if (_modeCaptionReserved)
+            _painter.Text(_radarCaptionText, _modeCaptionAt, large: false, scale, _painter.Dim);
+        // ── pass D: the cluster/marker LETTERS (M/P/T/!/SUB/RIP nn/ACC/QUE) ─
+        for (int i = 0; i < _radarPlannedCount; i++)
         {
             HudContact contact = contacts[i];
-            Vector2 at = JetRadar.ContactPoint(scope, contact, _viewportWidth, _viewportHeight, scopeRange);
-            DrawRadarGlyphWords(contact, at, scope, scale);
+            DrawRadarGlyphWords(i, contact, _radarPoints[i], scope, scale, commandCamera);
         }
-        for (int i = 0; i < contacts.Count; i++)
+        // ── pass E: the placed label blocks (never over a caption or another label) ──
+        for (int i = 0; i < _radarPlannedCount; i++)
         {
             HudContact contact = contacts[i];
-            Vector2 at = JetRadar.ContactPoint(scope, contact, _viewportWidth, _viewportHeight, scopeRange);
-            DrawRadarLabel(contact, at, scope, scale, commandCamera, mode);
+            DrawRadarLabel(i, contact, _radarPoints[i], scale, commandCamera, mode);
         }
-        _ = size;
-        _ = captionInk;
     }
 
     /// <summary>A square range ring (the square scope's band; the round scope draws circles).</summary>
@@ -274,76 +350,141 @@ public sealed partial class JetHudRenderer
 
     /// <summary>
     /// The LETTERS of one contact's markers — the class glyph (M/P/T), the subject square's
-    /// word, the threat flash's "!", the ripcord countdown and the command verb. Drawn after
-    /// every stroke of the frame so an overlay line can never run across another marker's
-    /// word (the audit's stroke-vs-text rule), and before the label blocks for the same
-    /// reason.
+    /// word, the threat flash's "!", the ripcord countdown and the command verb. P1039b places
+    /// each of them in the planning pass (<see cref="PlanRadar"/>): a word that would leave the
+    /// scope or land on a reserved caption / another word / a label is dropped (the glyph and
+    /// its overlays stay), so no two reads of this element can ever stack. Every stroke of the
+    /// frame (glyphs, leaders) is submitted before this pass, so no overlay line can run across
+    /// a word.
     /// </summary>
-    private void DrawRadarGlyphWords(in HudContact contact, Vector2 at, RectangleF scope, float scale)
+    private void DrawRadarGlyphWords(int index, in HudContact contact, Vector2 at, RectangleF scope,
+        float scale, bool commandCamera)
     {
-        if (at.X < scope.X || at.Y < scope.Y || at.X > scope.X + scope.Width || at.Y > scope.Y + scope.Height)
-            return;
-        float unit = 4.5f * scale;
-        float bracket = unit + 4f * scale;
-        float rowH = _painter.Measure("X", large: false, scale).Y;
-        Color ink = contact.Threat || contact.ThreatFlash ? _painter.Hot : _painter.Primary;
-        switch (contact.Kind)
+        byte mask = _radarWordMask[index];
+        if (mask == 0) return;
+        for (int kind = 0; kind < RadarWordKinds; kind++)
         {
-            case HudContactKind.Missile:
-                _painter.Text(MissileGlyph, new(at.X + unit + 2f * scale, at.Y - unit * 0.6f),
-                    large: false, scale, ink);
-                break;
-            case HudContactKind.Probe:
-                _painter.Text(ProbeGlyph, new(at.X + unit + 2f * scale, at.Y - unit * 0.6f),
-                    large: false, scale, ink);
-                break;
-            case HudContactKind.Treasure:
-                _painter.Text(TreasureGlyph, new(at.X + unit + 2f * scale, at.Y - unit * 0.6f),
-                    large: false, scale, ink);
-                break;
-        }
-        if (contact.Subject)
-        {
-            _painter.Text(SubjectWord, new(at.X + bracket + 2f * scale, at.Y - bracket),
-                large: false, scale, _painter.Dim);
-        }
-        if (contact.ThreatFlash)
-        {
-            _painter.Text(ThreatGlyph, new(at.X - 2f * scale, at.Y - bracket - 12f * scale),
-                large: false, scale, _painter.Hot);
-        }
-        if (contact.Ripcord && contact.RipcordSeconds is > 0)
-        {
-            float len = bracket + 5f * scale;
-            // Cached by the countdown value so a steady frame formats nothing.
-            int seconds = contact.RipcordSeconds.Value;
-            if (seconds != _ripShown)
+            if ((mask & (1 << kind)) == 0) continue;
+            if (!RadarWordText(kind, contact, out string? text)) continue;
+            Vector2 pos = _radarWordAt[index * RadarWordKinds + kind];
+            Color ink = kind switch
             {
-                _ripShown = seconds;
-                _ripText = RipWord + seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            }
-            _painter.Text(_ripText, new(at.X + 2f * scale, at.Y - len - 10f * scale),
-                large: false, scale, _painter.Dim);
-        }
-        if (contact.CommandId is not null)
-        {
-            string verb = contact.CommandAccepted ? AcceptedLabel : QueuedLabel;
-            float verbY = MathF.Max(scope.Y + 1f * scale, at.Y - bracket - rowH);
-            _painter.Text(verb, new(at.X - bracket, verbY),
-                large: false, scale, contact.CommandAccepted ? _painter.Primary : _painter.Dim);
+                2 => _painter.Hot,
+                4 => contact.CommandAccepted ? _painter.Primary : _painter.Dim,
+                1 => _painter.Dim,
+                _ => contact.Threat || contact.ThreatFlash ? _painter.Hot : _painter.Primary,
+            };
+            _painter.Text(text!, pos, large: false, scale, ink);
         }
     }
 
     /// <summary>
-    /// One contact's label block: the native per-kind LOD tier
-    /// (<see cref="RadarLabelModel.Resolve"/>) drawn monochrome, faded by the shared
-    /// level-driven range fade, and CLIPPED to the scope's inner rectangle. A row that does
-    /// not fit is dropped rather than spilling over the tapes or the scope frame (native
-    /// clips its radar labels at the image edge the same way).
+    /// The text of one marker word. <paramref name="kind"/>: 0 = class letter, 1 = <c>SUB</c>,
+    /// 2 = <c>!</c>, 3 = <c>RIP n</c>, 4 = the command verb. False when this contact does not
+    /// carry that word.
     /// </summary>
-    private void DrawRadarLabel(in HudContact contact, Vector2 at, RectangleF scope,
-        float scale, bool commandCamera, RadarMode mode)
+    private bool RadarWordText(int kind, in HudContact contact, out string? text)
     {
+        text = null;
+        switch (kind)
+        {
+            case 0:
+                text = contact.Kind switch
+                {
+                    HudContactKind.Missile => MissileGlyph,
+                    HudContactKind.Probe => ProbeGlyph,
+                    HudContactKind.Treasure => TreasureGlyph,
+                    _ => null,
+                };
+                return text is not null;
+            case 1:
+                if (!contact.Subject) return false;
+                text = SubjectWord;
+                return true;
+            case 2:
+                if (!contact.ThreatFlash) return false;
+                text = ThreatGlyph;
+                return true;
+            case 3:
+                if (!contact.Ripcord || contact.RipcordSeconds is not > 0) return false;
+                text = RipText(contact.RipcordSeconds.Value);
+                return true;
+            default:
+                if (contact.CommandId is null) return false;
+                text = contact.CommandAccepted ? AcceptedLabel : QueuedLabel;
+                return true;
+        }
+    }
+
+    /// <summary>Word placements one priority word may try (P1039b): its own side, the other
+    /// side, below the glyph and above it — the same "slots around the glyph" idea the label
+    /// pass uses, so the pilot's own <c>ACC</c>/<c>QUE</c> verb and the subject word cannot be
+    /// pushed off a band caption or another reading.</summary>
+    private const int RadarWordVariants = 4;
+
+    /// <summary>
+    /// The top-left anchor of one marker word in <paramref name="variant"/> (0 = the word's own
+    /// position, 1 = the mirrored side, 2 = below the glyph, 3 = above it).
+    /// <paramref name="width"/> is the measured text width (needed for mirrored slots).
+    /// </summary>
+    private Vector2 RadarWordPos(int kind, Vector2 at, RectangleF scope, float scale, int variant,
+        float width)
+    {
+        float unit = 4.5f * scale;
+        float bracket = unit + 4f * scale;
+        float rowH = _painter.Measure("X", large: false, scale).Y;
+        float top = MathF.Max(scope.Y + 1f * scale, at.Y - bracket - rowH);
+        switch (kind)
+        {
+            case 0:
+                return new(at.X + unit + 2f * scale, at.Y - unit * 0.6f);
+            case 1:   // SUB: right of the bracket, mirrored left, below, above
+                return variant switch
+                {
+                    1 => new(at.X - bracket - width, at.Y - bracket),
+                    2 => new(at.X - width * 0.5f, at.Y + bracket),
+                    3 => new(at.X - width * 0.5f, top - rowH),
+                    _ => new(at.X + bracket + 2f * scale, at.Y - bracket),
+                };
+            case 2:
+                return new(at.X - 2f * scale, at.Y - bracket - 12f * scale);
+            case 3:
+                return new(at.X + 2f * scale, at.Y - (bracket + 5f * scale) - 10f * scale);
+            default:  // the command verb: left of the bracket, mirrored right, below, above
+                return variant switch
+                {
+                    1 => new(at.X + 2f * scale, top),
+                    2 => new(at.X - width * 0.5f, at.Y + bracket),
+                    3 => new(at.X - width * 0.5f, top - rowH),
+                    _ => new(at.X - bracket, top),
+                };
+        }
+    }
+
+    /// <summary>The <c>RIP n</c> word of a contact, cached by the countdown value so a steady
+    /// frame formats nothing.</summary>
+    private string RipText(int seconds)
+    {
+        if (seconds != _ripShown)
+        {
+            _ripShown = seconds;
+            _ripText = RipWord + seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        return _ripText;
+    }
+
+    /// <summary>
+    /// One contact's label block, drawn at the rectangle the placement pass chose
+    /// (<see cref="PlanRadar"/>): the native per-kind LOD tier
+    /// (<see cref="RadarLabelModel.Resolve"/>) in the form that fitted — the full block, the
+    /// range line alone, or the name alone — faded by the shared level-driven range fade. A
+    /// dropped label draws nothing here; its glyph, overlays and <c>ACC</c>/<c>QUE</c> word stay.
+    /// </summary>
+    private void DrawRadarLabel(int index, in HudContact contact, Vector2 at, float scale,
+        bool commandCamera, RadarMode mode)
+    {
+        byte form = _radarLabelForm[index];
+        if (form == 0) return;                       // hidden: no slot was free (the glyph stays)
         RadarLabel? label = RadarLabelModel.Resolve(contact, mode, commandCamera);
         if (label is not { } payload) return;
 
@@ -355,46 +496,324 @@ public sealed partial class JetHudRenderer
             * Math.Clamp(alpha, 0.25f, 1f);
 
         float rowH = _painter.Measure("X", large: false, scale).Y + 1f * scale;
-        float innerLeft = scope.X + 2f * scale;
-        float innerRight = scope.X + scope.Width - 2f * scale;
-        float innerTop = scope.Y + 2f * scale;
-        float innerBottom = scope.Y + scope.Height - 2f * scale;
-        float maxWidth = MathF.Max(0f, innerRight - innerLeft);
+        float barW = 26f * scale, barH = 1.8f * scale;
+        RectangleF box = _radarLabelBox[index];
+        float x = box.X, y = box.Y;
+
+        // The rows are the PLANNER's (it may have dropped the name because it is wider than
+        // the scope); the draw pass never re-derives them, so a dropped row cannot come back.
+        byte rows = _radarLabelRows[index];
+        string? name = (rows & RadarRowName) != 0 ? payload.Name : null;
+        // The metre line comes from the label model's own cache (one string per metre value,
+        // never one per contact per frame).
+        string? range = null;
+        if (contact.Range is > 0)
+        {
+            // The full block keeps the `nnnn m` line; the shortened form is native's own bare
+            // `_itoa` digits (radarimage.cpp:1209-1218), which is what fits a crowded scope.
+            if ((rows & RadarRowRangeBare) != 0) range = RadarLabelModel.RangeText(contact.Range.Value);
+            else if ((rows & RadarRowRange) != 0) range = RadarLabelModel.RangeLineText(contact.Range.Value);
+        }
+        string? eye = (rows & RadarRowEye) != 0 ? "EYE" : null;
+
+        if (name is not null) { _painter.Text(name, new(x, y), large: false, scale, ink); y += rowH; }
+        if (range is not null) { _painter.Text(range, new(x, y), large: false, scale, ink); y += rowH; }
+        if ((rows & RadarRowBars) != 0)
+        {
+            if (payload.Hull is { } hull) { RadarBar(x, y, barW, barH, hull, ink, scale); y += barH + 2f * scale; }
+            if (payload.Shield is { } shield) { RadarBar(x, y, barW, barH, shield, ink, scale); y += barH + 2f * scale; }
+        }
+        if ((rows & RadarRowFill) != 0 && payload.Fill is { } fill)
+        {
+            RadarBar(x, y, barW, barH, fill, ink, scale);
+            y += barH + 3f * scale;
+        }
+        if (eye is not null) _painter.Text(eye, new(x, y), large: false, scale, ink);
+    }
+
+    // ── P1039b: the placement pass ──────────────────────────────────────
+
+    private const byte RadarLabelFormFull = 1;
+    private const byte RadarLabelFormRangeOnly = 2;
+    private const byte RadarLabelFormNameOnly = 3;
+
+    // The row set of a planned block (the draw pass reads these bits, never the payload again).
+    private const byte RadarRowName = 1;
+    private const byte RadarRowRange = 2;
+    private const byte RadarRowEye = 4;
+    private const byte RadarRowBars = 8;
+    private const byte RadarRowFill = 16;
+    /// <summary>The shortened range row: native's bare digits, no <c> m</c> suffix.</summary>
+    private const byte RadarRowRangeBare = 32;
+
+    /// <summary>The obstacle rects the planner has reserved this frame.</summary>
+    private ReadOnlySpan<RectangleF> RadarBlocks => _radarBlocks.AsSpan(0, _radarBlockCount);
+
+    private void ReserveRadarBlock(RectangleF box)
+    {
+        if (_radarBlockCount < _radarBlocks.Length) _radarBlocks[_radarBlockCount++] = box;
+    }
+
+    /// <summary>
+    /// P1039b — plan every marker word and every native-eligible label of this frame BEFORE any
+    /// of them is drawn, in the stated priority order: selected target, order subject,
+    /// threat/missile, own command verb, then by nearest range (ties keep the model's order).
+    /// The reserved caption rects are already in the obstacle list; a word or label takes the
+    /// first slot that fits the scope's inner rectangle and touches nothing already reserved,
+    /// then the next, and a non-priority label that finds no room is HIDDEN while its glyph
+    /// stays. Allocation-free: preallocated arrays, index loops, cached strings.
+    /// </summary>
+    private void PlanRadar(HudModel model, RectangleF scope, float scopeRange, float scale,
+        bool commandCamera, RadarMode mode)
+    {
+        var contacts = model.Context.Contacts;
+        int count = Math.Min(contacts.Count, MaxRadarPlan);
+        _radarPlannedCount = count;
+        RadarLabelsPlaced = 0;
+        RadarLabelsShortened = 0;
+        RadarLabelsHidden = 0;
+        RadarLabelOverflows = 0;
+        RadarWordsDropped = 0;
+        RadarPriorityLabelMisses = 0;
+        RectangleF inner = JetRadarLabels.Inner(scope, scale);
+        float clear = JetRadarLabels.GlyphClear * scale;
+
+        for (int i = 0; i < count; i++)
+        {
+            _radarLabelForm[i] = 0;
+            _radarLabelRows[i] = 0;
+            _radarWordMask[i] = 0;
+            _radarPoints[i] = JetRadar.ContactPoint(scope, contacts[i], _viewportWidth, _viewportHeight, scopeRange);
+            _radarOrder[i] = i;
+        }
+        // Stable insertion sort by (rank, range): the queue the brief states.
+        for (int i = 1; i < count; i++)
+        {
+            int item = _radarOrder[i];
+            HudContact current = contacts[item];
+            int j = i - 1;
+            while (j >= 0)
+            {
+                HudContact other = contacts[_radarOrder[j]];
+                if (!JetRadarLabels.Before(current, other)) break;
+                _radarOrder[j + 1] = _radarOrder[j];
+                j--;
+            }
+            _radarOrder[j + 1] = item;
+        }
+        // Words that belong to a NEVER-HIDDEN contact are placed first (the verb is a priority
+        // reading), then the label blocks, then the other marker words: a label always wins a
+        // contested cell over a droppable class letter.
+        for (int pass = 0; pass < count; pass++)
+        {
+            int index = _radarOrder[pass];
+            PlanRadarWords(index, contacts[index], scope, inner, scale, RadarWordPhasePriorityVerb);
+        }
+        for (int pass = 0; pass < count; pass++)
+        {
+            int index = _radarOrder[pass];
+            PlanRadarLabel(index, contacts[index], inner, clear, scale, commandCamera, mode);
+        }
+        for (int pass = 0; pass < count; pass++)
+        {
+            int index = _radarOrder[pass];
+            PlanRadarWords(index, contacts[index], scope, inner, scale, RadarWordPhaseRest);
+        }
+        // The brief's assertion, measured rather than assumed: no priority contact that native
+        // labels may be left without a block.
+        for (int i = 0; i < count; i++)
+        {
+            HudContact contact = contacts[i];
+            if (!JetRadarLabels.NeverHidden(contact)) continue;
+            if (RadarLabelModel.Resolve(contact, mode, commandCamera) is null) continue;
+            if (_radarLabelForm[i] == 0) RadarPriorityLabelMisses++;
+        }
+    }
+
+    /// <summary>Never-hidden labels the planner could not place (the audit asserts this is 0).</summary>
+    public int RadarPriorityLabelMisses { get; private set; }
+
+    /// <summary>P1039b — the planned label rectangles of this frame (the proof records them as
+    /// evidence that each block sits where the placement pass put it).</summary>
+    public ReadOnlySpan<RectangleF> RadarLabelBoxes => _radarLabelBox.AsSpan(0, _radarPlannedCount);
+
+    /// <summary>The planned form of each label (<c>0</c> = hidden).</summary>
+    public ReadOnlySpan<byte> RadarLabelForms => _radarLabelForm.AsSpan(0, _radarPlannedCount);
+
+    private const byte RadarWordPhasePriorityVerb = 0;
+    private const byte RadarWordPhaseRest = 1;
+
+    /// <summary>
+    /// Place this contact's marker words in <paramref name="phase"/>: phase 0 puts the command
+    /// verb of a never-hidden contact down first (the brief's priority), phase 1 places every
+    /// other word (the class letter, <c>SUB</c>, <c>!</c>, <c>RIP n</c> and the verb of a
+    /// non-priority contact). A word that does not fit the scope's inner rect or touches a
+    /// reserved block is DROPPED — its glyph and overlays stay and the label pass is untouched.
+    /// </summary>
+    private void PlanRadarWords(int index, in HudContact contact, RectangleF scope, RectangleF inner,
+        float scale, byte phase)
+    {
+        byte mask = _radarWordMask[index];
+        bool priorityVerb = JetRadarLabels.NeverHidden(contact);
+        Vector2 at = _radarPoints[index];
+        for (int kind = 0; kind < RadarWordKinds; kind++)
+        {
+            if (phase == RadarWordPhasePriorityVerb && (kind != 4 || !priorityVerb)) continue;
+            if (phase == RadarWordPhaseRest && kind == 4 && priorityVerb) continue;
+            if (!RadarWordText(kind, contact, out string? text)) continue;
+            Vector2 size = _painter.Measure(text!, large: false, scale);
+            // The verb and the subject word are readings, not decorations: they try the four
+            // placements around the glyph before being dropped. A class letter, the "!" and
+            // the ripcord countdown keep their one native-side position (droppable markers).
+            int variants = kind is 1 or 4 ? RadarWordVariants : 1;
+            bool placed = false;
+            for (int variant = 0; variant < variants; variant++)
+            {
+                Vector2 pos = RadarWordPos(kind, at, scope, scale, variant, size.X);
+                var box = new RectangleF(pos.X, pos.Y, size.X, size.Y);
+                if (!JetRadarLabels.Fits(inner, box) || JetRadarLabels.Overlaps(box, RadarBlocks))
+                    continue;
+                _radarWordAt[index * RadarWordKinds + kind] = pos;
+                mask |= (byte)(1 << kind);
+                ReserveRadarBlock(box);
+                placed = true;
+                break;
+            }
+            if (!placed) RadarWordsDropped++;
+        }
+        _radarWordMask[index] = mask;
+    }
+
+    private void PlanRadarLabel(int index, in HudContact contact, RectangleF inner, float clear,
+        float scale, bool commandCamera, RadarMode mode)
+    {
+        RadarLabel? label = RadarLabelModel.Resolve(contact, mode, commandCamera);
+        if (label is not { } payload) return;        // native draws no label for this contact
+
+        Vector2 at = _radarPoints[index];
+        float rowH = _painter.Measure("X", large: false, scale).Y + 1f * scale;
         float barW = 26f * scale, barH = 1.8f * scale;
         bool hasBars = payload.Hull is not null || payload.Shield is not null;
         bool hasFill = payload.Fill is not null;
 
         string? name = payload.Name;
-        if (name is not null && _painter.Measure(name, large: false, scale).X > maxWidth) name = null;
-        // The metre line comes from the label model's own cache (one string per metre value,
-        // never one per contact per frame).
+        if (name is not null && _painter.Measure(name, large: false, scale).X > inner.Width) name = null;
         string? range = contact.Range is > 0 ? RadarLabelModel.RangeLineText(contact.Range.Value) : null;
-        if (range is not null && _painter.Measure(range, large: false, scale).X > maxWidth) range = null;
+        if (range is not null && _painter.Measure(range, large: false, scale).X > inner.Width) range = null;
+        // P1039b — the SHORT form is native's own bare `_itoa` digits (radarimage.cpp:1209-1218),
+        // not the `nnnn m` line: narrower, so a crowded compact scope can still hold every
+        // priority reading.
+        int? rangeValue = range is not null ? contact.Range : null;
         string? eye = payload.Eye ? "EYE" : null;
 
-        float width = 0f;
-        if (name is not null) width = MathF.Max(width, _painter.Measure(name, large: false, scale).X);
-        if (range is not null) width = MathF.Max(width, _painter.Measure(range, large: false, scale).X);
-        if (eye is not null) width = MathF.Max(width, _painter.Measure(eye, large: false, scale).X);
+        float width = 0f, rangeWidth = 0f, nameWidth = 0f;
+        if (name is not null) nameWidth = _painter.Measure(name, large: false, scale).X;
+        if (rangeValue is int metres) rangeWidth = _painter.Measure(RadarLabelModel.RangeText(metres), large: false, scale).X;
+        float eyeWidth = eye is null ? 0f : _painter.Measure(eye, large: false, scale).X;
+        width = MathF.Max(nameWidth, MathF.Max(
+            range is null ? 0f : _painter.Measure(range, large: false, scale).X, eyeWidth));
         if (hasBars || hasFill) width = MathF.Max(width, barW);
         if (width <= 0f) return;
-
         int rows = (name is null ? 0 : 1) + (range is null ? 0 : 1) + (eye is null ? 0 : 1);
         float barsHeight = (hasBars ? barH * 2f + 2f * scale : 0f) + (hasFill ? barH + 2f * scale : 0f);
-        float blockHeight = rows * rowH + barsHeight;
-        if (blockHeight > innerBottom - innerTop) return;   // does not fit the instrument
+        float fullHeight = rows * rowH + barsHeight;
+        byte fullRows = 0;
+        if (name is not null) fullRows |= RadarRowName;
+        if (range is not null) fullRows |= RadarRowRange;
+        if (eye is not null) fullRows |= RadarRowEye;
+        if (hasBars) fullRows |= RadarRowBars;
+        if (hasFill) fullRows |= RadarRowFill;
+        byte rangeRows = RadarRowRangeBare;
+        byte nameRows = RadarRowName;
 
-        float x = at.X + 4.5f * scale + 3f * scale;
-        if (x + width > innerRight) x = at.X - 4.5f * scale - 3f * scale - width;
-        x = Math.Clamp(x, innerLeft, MathF.Max(innerLeft, innerRight - width));
-        float y = Math.Clamp(at.Y - rowH, innerTop, MathF.Max(innerTop, innerBottom - blockHeight));
+        // Fallback ladder: full block → range line alone → name alone. A form that is covered
+        // (not clear) is remembered only as the least-obstruction fallback for a priority label.
+        bool haveCovered = false;
+        JetRadarLabels.Placement covered = default;
+        byte coveredForm = 0;
+        byte coveredRows = 0;
+        if (fullHeight <= inner.Height)
+        {
+            var full = JetRadarLabels.Place(at, clear, width, fullHeight, scale, inner, RadarBlocks);
+            if (full.Clear) { CommitRadarLabel(index, RadarLabelFormFull, full, fullRows); RadarLabelsPlaced++; return; }
+            covered = full; coveredForm = RadarLabelFormFull; coveredRows = fullRows; haveCovered = true;
+        }
+        if (rangeValue is not null)
+        {
+            var shortForm = JetRadarLabels.Place(at, clear, rangeWidth, rowH, scale, inner, RadarBlocks);
+            if (shortForm.Clear)
+            {
+                CommitRadarLabel(index, RadarLabelFormRangeOnly, shortForm, rangeRows);
+                RadarLabelsPlaced++; RadarLabelsShortened++;
+                return;
+            }
+            covered = shortForm; coveredForm = RadarLabelFormRangeOnly; coveredRows = rangeRows; haveCovered = true;
+        }
+        if (name is not null)
+        {
+            var nameForm = JetRadarLabels.Place(at, clear, nameWidth, rowH, scale, inner, RadarBlocks);
+            if (nameForm.Clear)
+            {
+                CommitRadarLabel(index, RadarLabelFormNameOnly, nameForm, nameRows);
+                RadarLabelsPlaced++; RadarLabelsShortened++;
+                return;
+            }
+            covered = nameForm; coveredForm = RadarLabelFormNameOnly; coveredRows = nameRows; haveCovered = true;
+        }
 
-        if (name is not null) { _painter.Text(name, new(x, y), large: false, scale, ink); y += rowH; }
-        if (range is not null) { _painter.Text(range, new(x, y), large: false, scale, ink); y += rowH; }
-        if (payload.Hull is { } hull) { RadarBar(x, y, barW, barH, hull, ink, scale); y += barH + 2f * scale; }
-        if (payload.Shield is { } shield) { RadarBar(x, y, barW, barH, shield, ink, scale); y += barH + 2f * scale; }
-        if (payload.Fill is { } fill) { RadarBar(x, y, barW, barH, fill, ink, scale); y += barH + 3f * scale; }
-        if (eye is not null) _painter.Text(eye, new(x, y), large: false, scale, ink);
+        if (!JetRadarLabels.NeverHidden(contact))
+        {
+            RadarLabelsHidden++;                     // the glyph, its overlays and words stay
+            return;
+        }
+        // Never hidden, and every slot around the glyph is taken: the label takes the first
+        // free cell of a scope-wide scan with a leader stroke back to its glyph (so a priority
+        // reading is placed rather than stacked on another block).
+        float scanWidth = rangeValue is not null ? rangeWidth : nameWidth;
+        byte scanRows = rangeValue is not null ? RadarRowRangeBare : RadarRowName;
+        byte scanForm = rangeValue is not null ? RadarLabelFormRangeOnly : RadarLabelFormNameOnly;
+        if (scanWidth > 0f)
+        {
+            var cell = JetRadarLabels.Scan(inner, scanWidth, rowH, RadarBlocks);
+            if (cell.Clear)
+            {
+                CommitRadarLabel(index, scanForm, cell, scanRows);
+                RadarLabelsPlaced++;
+                RadarLabelsShortened++;
+                return;
+            }
+        }
+        // The scope is genuinely full: keep the shortest form even over another block (reported
+        // as an overflow so the audit can assert it is 0 in every scene).
+        if (haveCovered)
+        {
+            CommitRadarLabel(index, coveredForm, covered, coveredRows);
+            RadarLabelsPlaced++;
+            if (coveredForm != RadarLabelFormFull) RadarLabelsShortened++;
+            RadarLabelOverflows++;
+            return;
+        }
+        // Nothing fitted at all (an extremely small scope): clamp the shortest available form
+        // into the inner rectangle so a priority contact still carries its reading.
+        float fallbackWidth = rangeValue is not null ? rangeWidth : nameWidth;
+        byte fallbackForm = rangeValue is not null ? RadarLabelFormRangeOnly : RadarLabelFormNameOnly;
+        byte fallbackRows = rangeValue is not null ? rangeRows : nameRows;
+        if (fallbackWidth <= 0f) { RadarLabelsHidden++; return; }
+        var fallbackBox = new RectangleF(inner.X, inner.Y, fallbackWidth, rowH);
+        CommitRadarLabel(index, fallbackForm,
+            new JetRadarLabels.Placement(fallbackBox, JetRadarLabels.Slot.Right, false, false), fallbackRows);
+        RadarLabelsPlaced++;
+        RadarLabelsShortened++;
+        RadarLabelOverflows++;
+    }
+
+    private void CommitRadarLabel(int index, byte form, in JetRadarLabels.Placement placement, byte rows)
+    {
+        _radarLabelForm[index] = form;
+        _radarLabelRows[index] = rows;
+        _radarLabelLeader[index] = placement.Leader;
+        _radarLabelBox[index] = placement.Box;
+        ReserveRadarBlock(placement.Box);
     }
 
     /// <summary>The <c>"nnnn m"</c> range line of a label, cached by the label model's own

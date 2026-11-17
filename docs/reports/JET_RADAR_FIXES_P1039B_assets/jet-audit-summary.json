@@ -1,0 +1,5808 @@
+{
+ "schema": 8,
+ "skin": "jet",
+ "scenes": [
+  {
+   "scene": "jet-level-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-level-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-level-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-level-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-pitched-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 77,
+    "Fills": 41,
+    "Strokes": 260,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 1318.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-pitched-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 59,
+    "Fills": 25,
+    "Strokes": 182,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 528,
+     "y": 183.33337,
+     "w": 134.66663,
+     "h": 134.66663
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-vertical-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 68,
+    "Fills": 41,
+    "Strokes": 242,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-vertical-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 53,
+    "Fills": 25,
+    "Strokes": 171,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-reverse-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 74,
+    "Fills": 41,
+    "Strokes": 258,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-reverse-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 56,
+    "Fills": 25,
+    "Strokes": 180,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-reverse-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 56,
+    "Fills": 25,
+    "Strokes": 180,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": false
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-target-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1294.9117,
+     "y": 283.32355,
+     "w": 506,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-target-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1294.9117,
+     "y": 283.32355,
+     "w": 506,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-target-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-target-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-locked-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 108,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 338,
+     "y": 579,
+     "w": 506,
+     "h": 104
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-locked-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 108,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 338,
+     "y": 579,
+     "w": 506,
+     "h": 104
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-locked-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 244,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-locked-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 84,
+    "Fills": 33,
+    "Strokes": 244,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-lockfull-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 302,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 338,
+     "y": 579,
+     "w": 506,
+     "h": 104
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-lockfull-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 302,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 338,
+     "y": 579,
+     "w": 506,
+     "h": 104
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-lockfull-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 220,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 550.8083,
+     "y": 349.38116,
+     "w": 146.66667,
+     "h": 53.333332
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-lockfull-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 220,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 550.8083,
+     "y": 349.38116,
+     "w": 146.66667,
+     "h": 53.333332
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-offscreen-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 93,
+    "Fills": 45,
+    "Strokes": 267,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-offscreen-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 93,
+    "Fills": 45,
+    "Strokes": 267,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-offscreen-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 29,
+    "Strokes": 191,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-offscreen-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 72,
+    "Fills": 29,
+    "Strokes": 191,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-lead-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 81,
+    "Fills": 41,
+    "Strokes": 283,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-lead-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 81,
+    "Fills": 41,
+    "Strokes": 283,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-lead-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 65,
+    "Fills": 25,
+    "Strokes": 207,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-lead-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 65,
+    "Fills": 25,
+    "Strokes": 207,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-leadout-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 305,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-leadout-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 305,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-leadout-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 213,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-leadout-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 213,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-orders-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1294.9117,
+     "y": 283.32355,
+     "w": 506,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-orders-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 278,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1294.9117,
+     "y": 283.32355,
+     "w": 506,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-orders-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-orders-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 202,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-friendly-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 290,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1555.9117,
+     "y": 283.32355,
+     "w": 253,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-friendly-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 105,
+    "Fills": 49,
+    "Strokes": 290,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1555.9117,
+     "y": 283.32355,
+     "w": 253,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-friendly-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 214,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-friendly-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 214,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 225.33334,
+     "y": 158,
+     "w": 117.333336,
+     "h": 85.33333
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-stores-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-stores-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 80,
+    "Fills": 41,
+    "Strokes": 264,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-stores-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-stores-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 64,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-stores-low-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 83,
+    "Fills": 41,
+    "Strokes": 276,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 7,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 56,
+     "w": 218.25,
+     "h": 136
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-stores-low-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 65,
+    "Fills": 24,
+    "Strokes": 194,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 673.3333,
+     "y": 22.666664,
+     "w": 110.66667,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-stores-critical-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 85,
+    "Fills": 45,
+    "Strokes": 272,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1730,
+     "y": 31,
+     "w": 166,
+     "h": 161
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-stores-critical-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 66,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 673.3333,
+     "y": 22.666664,
+     "w": 110.66667,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-pod-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 42,
+    "Strokes": 266,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 106,
+     "w": 218.25,
+     "h": 86
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-pod-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 66,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 22.666664,
+     "w": 145.5,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-flags-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 41,
+    "Strokes": 281,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 7,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-flags-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 67,
+    "Fills": 25,
+    "Strokes": 188,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-caution-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 44,
+    "Strokes": 274,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1709.75,
+     "y": 31,
+     "w": 186.25,
+     "h": 161
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-caution-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 84,
+    "Fills": 44,
+    "Strokes": 274,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1709.75,
+     "y": 31,
+     "w": 186.25,
+     "h": 161
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-caution-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 65,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 659.8333,
+     "y": 22.666664,
+     "w": 124.16667,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-caution-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 65,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 659.8333,
+     "y": 22.666664,
+     "w": 124.16667,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-ghost-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 84,
+    "Fills": 43,
+    "Strokes": 276,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1666.75,
+     "y": 31,
+     "w": 229.25,
+     "h": 161
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-ghost-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 65,
+    "Fills": 26,
+    "Strokes": 190,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 631.1667,
+     "y": 22.666664,
+     "w": 152.83333,
+     "h": 57.333336
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-f4-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 133,
+    "Fills": 59,
+    "Strokes": 123,
+    "TextOverlaps": 2,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   }
+  },
+  {
+   "scene": "jet-f4-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 133,
+    "Fills": 59,
+    "Strokes": 123,
+    "TextOverlaps": 2,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   }
+  },
+  {
+   "scene": "jet-f4-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 120,
+    "Fills": 43,
+    "Strokes": 105,
+    "TextOverlaps": 17,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   }
+  },
+  {
+   "scene": "jet-f4-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 120,
+    "Fills": 43,
+    "Strokes": 105,
+    "TextOverlaps": 17,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   }
+  },
+  {
+   "scene": "jet-f4-empty-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 99,
+    "Fills": 42,
+    "Strokes": 160,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   }
+  },
+  {
+   "scene": "jet-f4-empty-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 86,
+    "Fills": 26,
+    "Strokes": 126,
+    "TextOverlaps": 6,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   }
+  },
+  {
+   "scene": "jet-locksmall-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 326,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 1224.28,
+     "y": 386.22354,
+     "w": 506,
+     "h": 80
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-locksmall-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 83,
+    "Fills": 33,
+    "Strokes": 250,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 599.11,
+     "y": 119.525,
+     "w": 146.66667,
+     "h": 53.333332
+    },
+    "targetSlot": {
+     "Slot": 0,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-locklarge-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 107,
+    "Fills": 49,
+    "Strokes": 296,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 338,
+     "y": 579,
+     "w": 506,
+     "h": 104
+    },
+    "targetSlot": {
+     "Slot": 1,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 2
+   }
+  },
+  {
+   "scene": "jet-locklarge-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 82,
+    "Fills": 33,
+    "Strokes": 220,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 550.8083,
+     "y": 349.38116,
+     "w": 146.66667,
+     "h": 53.333332
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 3,
+    "shortened": 1,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 25,
+    "Strokes": 248,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 8,
+    "shortened": 2,
+    "hidden": 1,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 72,
+    "Fills": 25,
+    "Strokes": 248,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 8,
+    "shortened": 2,
+    "hidden": 1,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-round-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 597,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-round-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 597,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-round-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 25,
+    "Strokes": 476,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 8,
+    "shortened": 2,
+    "hidden": 1,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-round-800x480-bright",
+   "size": "800x480",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 72,
+    "Fills": 25,
+    "Strokes": 476,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 8,
+    "shortened": 2,
+    "hidden": 1,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-dense-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 116,
+    "Fills": 45,
+    "Strokes": 650,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 36,
+    "shortened": 16,
+    "hidden": 27,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 22
+   }
+  },
+  {
+   "scene": "jet-radar-dense-1920x1080-bright",
+   "size": "1920x1080",
+   "backdrop": "bright",
+   "audit": {
+    "Texts": 116,
+    "Fills": 45,
+    "Strokes": 650,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 36,
+    "shortened": 16,
+    "hidden": 27,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 22
+   }
+  },
+  {
+   "scene": "jet-radar-dense-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 78,
+    "Fills": 25,
+    "Strokes": 594,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 15,
+    "shortened": 9,
+    "hidden": 48,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 25
+   }
+  },
+  {
+   "scene": "jet-radar-dense-3840x2160-dark",
+   "size": "3840x2160",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 121,
+    "Fills": 41,
+    "Strokes": 650,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 3248,
+     "y": 1540,
+     "w": 360,
+     "h": 360
+    },
+    "cautionPanel": {
+     "x": 3597.75,
+     "y": 347,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 42,
+    "shortened": 25,
+    "hidden": 21,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 21
+   }
+  },
+  {
+   "scene": "jet-radar-dense-round-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 116,
+    "Fills": 45,
+    "Strokes": 949,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 36,
+    "shortened": 16,
+    "hidden": 27,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 22
+   }
+  },
+  {
+   "scene": "jet-radar-kinds-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 90,
+    "Fills": 53,
+    "Strokes": 319,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 11,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-kinds-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 21,
+    "Strokes": 268,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 4000,
+    "bands": [
+     1000,
+     2000,
+     3000,
+     4000
+    ],
+    "placed": 9,
+    "shortened": 5,
+    "hidden": 2,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 6
+   }
+  },
+  {
+   "scene": "jet-radar-nobearing-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-nobearing-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 70,
+    "Fills": 25,
+    "Strokes": 249,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 1,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 534.6666,
+     "y": 174,
+     "w": 144,
+     "h": 144
+    },
+    "cautionPanel": {
+     "x": 638.5,
+     "y": 39.333332,
+     "w": 145.5,
+     "h": 40.666668
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 2,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 7
+   }
+  },
+  {
+   "scene": "jet-radar-All-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 88,
+    "Fills": 49,
+    "Strokes": 298,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 5
+   }
+  },
+  {
+   "scene": "jet-radar-Default-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 88,
+    "Fills": 45,
+    "Strokes": 298,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 3200,
+    "bands": [
+     800,
+     1600,
+     2400,
+     3200
+    ],
+    "placed": 9,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 4
+   }
+  },
+  {
+   "scene": "jet-radar-Target-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 81,
+    "Fills": 45,
+    "Strokes": 263,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1600,
+    "bands": [
+     400,
+     800,
+     1200,
+     1600
+    ],
+    "placed": 4,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 1
+   }
+  },
+  {
+   "scene": "jet-radar-Minimal-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 75,
+    "Fills": 41,
+    "Strokes": 168,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 1342.4,
+     "y": 474.4,
+     "w": 345.59998,
+     "h": 345.6
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 131,
+     "w": 218.25,
+     "h": 61
+    }
+   },
+   "radar": {
+    "scopeRange": 1000,
+    "bands": [
+     250,
+     500,
+     750,
+     1000
+    ],
+    "placed": 1,
+    "shortened": 0,
+    "hidden": 0,
+    "overflows": 0,
+    "priorityMisses": 0,
+    "wordsDropped": 0
+   }
+  },
+  {
+   "scene": "jet-radar-overlays-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 95,
+    "Fills": 63,
+    "Strokes": 161,
+    "TextOverlaps": 12,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 8,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 81,
+     "w": 218.25,
+     "h": 111
+    }
+   }
+  },
+  {
+   "scene": "jet-lifepod-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 72,
+    "Fills": 43,
+    "Strokes": 91,
+    "TextOverlaps": 1,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 667.8333,
+     "y": 22.666664,
+     "w": 116.16667,
+     "h": 57.333336
+    }
+   }
+  },
+  {
+   "scene": "jet-docked-800x480-dark",
+   "size": "800x480",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 0,
+    "Fills": 0,
+    "Strokes": 0,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    }
+   }
+  },
+  {
+   "scene": "jet-command-1920x1080-dark",
+   "size": "1920x1080",
+   "backdrop": "dark",
+   "audit": {
+    "Texts": 37,
+    "Fills": 28,
+    "Strokes": 21,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 4,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0
+   },
+   "placement": {
+    "targetReadout": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "targetSlot": {
+     "Slot": 2,
+     "Clear": true
+    },
+    "radarScope": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "cautionPanel": {
+     "x": 1677.75,
+     "y": 81,
+     "w": 218.25,
+     "h": 111
+    }
+   }
+  }
+ ]
+}

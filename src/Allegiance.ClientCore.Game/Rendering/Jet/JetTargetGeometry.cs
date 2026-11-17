@@ -161,6 +161,30 @@ public static class JetTargetGeometry
     public static float LockCornerAngle(int corner)
         => MathF.PI * 0.25f + corner * MathF.PI * 0.5f;
 
+    /// <summary>
+    /// P1039b — does a cue arc's ink enter <paramref name="rect"/> (expanded by
+    /// <paramref name="pad"/>)? The arc is sampled at 12 points; used to clip a world-anchored
+    /// cue dash where it would overwrite the fixed radar scope, the same way native clips
+    /// <c>radiusBracket</c> at the screen edge (<c>radarimage.cpp:308-319</c>) instead of
+    /// drawing it off the pane.
+    /// </summary>
+    public static bool ArcEntersRect(Vector2 center, float radius, float start, float sweep,
+        RectangleF rect, float pad)
+    {
+        if (rect.Width <= 0f || rect.Height <= 0f) return false;
+        const int samples = 12;
+        float x0 = rect.X - pad, x1 = rect.X + rect.Width + pad;
+        float y0 = rect.Y - pad, y1 = rect.Y + rect.Height + pad;
+        for (int i = 0; i <= samples; i++)
+        {
+            float angle = start + sweep * (i / (float)samples);
+            float x = center.X + MathF.Cos(angle) * radius;
+            float y = center.Y + MathF.Sin(angle) * radius;
+            if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return true;
+        }
+        return false;
+    }
+
     // ── lock ─────────────────────────────────────────────────────────────
     /// <summary>The presentation flash clock of the partial lock: one dash phase per
     /// this many seconds. Driven by the shared feedback time

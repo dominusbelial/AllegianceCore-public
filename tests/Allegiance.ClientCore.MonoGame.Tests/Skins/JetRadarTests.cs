@@ -102,8 +102,18 @@ public sealed class JetRadarTests
             Contact(bearing: 0f, range: 240), Contact(bearing: 0f, range: 2519),
         });
         Assert.True(range >= 2519f);
-        Assert.Equal(5000f, range);       // 2519 rounds up to 5×10^3
+        // P1039b — the BAND is rounded (2519 / 4 = 630 → 800 m), not the whole scale: the outer
+        // ring is 3200 m, 1.27× the farthest contact, so the contacts spread over all four bands
+        // instead of crowding the inner 55 % under a 5000 m ring.
+        Assert.Equal(3200f, range);
+        Assert.True(range <= 2519f * 1.6f);
+        Assert.Equal(800, JetRadar.RingRange(1, range));
+        Assert.Equal(1600, JetRadar.RingRange(2, range));
+        Assert.Equal(2400, JetRadar.RingRange(3, range));
+        Assert.Equal(3200, JetRadar.RingRange(4, range));
         Assert.Equal(1000f, JetRadar.ScopeRange(Array.Empty<HudContact>())); // the floor
+        Assert.Equal(1000f, JetRadar.ScaleFor(1000f));
+        Assert.Equal(5000f, JetRadar.RoundRange(4300f));                    // the 1/2/5 series stays
         Assert.Equal(1f, JetRadar.RangeFraction(9000, 1000f));              // pinned to the rim
     }
 
@@ -259,7 +269,193 @@ public sealed class JetRadarTests
         Assert.Equal(JetInventoryPresentation.Scale(1080f), JetInventoryPresentation.FitScale(rows, 1080f, 0f), 3);
     }
 
+    // ── P1039b: the radar label placement pass ──────────────────────────
+    [Fact]
+    public void The_radar_label_slot_order_is_right_left_above_below_then_diagonals()
+    {
+        Assert.Equal(8, JetRadarLabels.SlotOrder.Length);
+        Assert.Equal(JetRadarLabels.Slot.Right, JetRadarLabels.SlotOrder[0]);
+        Assert.Equal(JetRadarLabels.Slot.Left, JetRadarLabels.SlotOrder[1]);
+        Assert.Equal(JetRadarLabels.Slot.Above, JetRadarLabels.SlotOrder[2]);
+        Assert.Equal(JetRadarLabels.Slot.Below, JetRadarLabels.SlotOrder[3]);
+        Assert.Equal(JetRadarLabels.Slot.UpRight, JetRadarLabels.SlotOrder[4]);
+        Assert.Equal(JetRadarLabels.Slot.DownLeft, JetRadarLabels.SlotOrder[7]);
+        // The first slot sits right of the glyph's clear extent, one gap away.
+        RectangleF right = JetRadarLabels.SlotRect(JetRadarLabels.Slot.Right, new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f);
+        Assert.Equal(100f + JetRadarLabels.GlyphClear + JetRadarLabels.SlotGap, right.X, 3);
+        Assert.Equal(90f, right.Y, 3);       // vertically centred on the glyph
+        Assert.True(JetRadarLabels.IsDiagonal(JetRadarLabels.Slot.UpLeft));
+        Assert.False(JetRadarLabels.IsDiagonal(JetRadarLabels.Slot.Below));
+    }
+
+    [Fact]
+    public void The_label_queue_is_target_then_subject_then_threat_then_verb_then_nearest()
+    {
+        HudContact target = Contact(0f, 2000) with { Selected = true };
+        HudContact subject = Contact(0f, 500) with { Subject = true };
+        HudContact threat = Contact(0f, 900) with { Threat = true };
+        HudContact missile = Contact(0f, 400) with { Kind = HudContactKind.Missile };
+        HudContact verb = Contact(0f, 100) with { CommandId = 2, CommandAccepted = true };
+        HudContact near = Contact(0f, 300);
+        HudContact far = Contact(0f, 3000);
+        Assert.Equal(JetRadarLabels.Rank.Target, JetRadarLabels.Priority(target));
+        Assert.Equal(JetRadarLabels.Rank.Subject, JetRadarLabels.Priority(subject));
+        Assert.Equal(JetRadarLabels.Rank.Threat, JetRadarLabels.Priority(threat));
+        Assert.Equal(JetRadarLabels.Rank.Threat, JetRadarLabels.Priority(missile));
+        Assert.Equal(JetRadarLabels.Rank.Command, JetRadarLabels.Priority(verb));
+        Assert.Equal(JetRadarLabels.Rank.Other, JetRadarLabels.Priority(near));
+        // Rank beats range, then nearest wins, then the model order (stable).
+        Assert.True(JetRadarLabels.Before(target, subject));
+        Assert.True(JetRadarLabels.Before(subject, threat));
+        Assert.True(JetRadarLabels.Before(threat, verb));
+        Assert.True(JetRadarLabels.Before(verb, near));
+        Assert.True(JetRadarLabels.Before(near, far));
+        // The never-hidden ranks are exactly target / subject / threat / verb.
+        Assert.True(JetRadarLabels.NeverHidden(verb));
+        Assert.False(JetRadarLabels.NeverHidden(near));
+    }
+
+    [Fact]
+    public void A_placement_takes_the_first_free_slot_and_reports_the_covered_fallback()
+    {
+        RectangleF inner = new(0f, 0f, 200f, 200f);
+        var empty = Array.Empty<RectangleF>();
+        JetRadarLabels.Placement free = JetRadarLabels.Place(new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f, inner, empty);
+        Assert.True(free.Clear);
+        Assert.Equal(JetRadarLabels.Slot.Right, free.Slot);
+        // A label already sitting in the right slot pushes the block to the next slot (left).
+        var blocks = new[] { free.Box };
+        JetRadarLabels.Placement second = JetRadarLabels.Place(new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f, inner, blocks);
+        Assert.True(second.Clear);
+        Assert.NotEqual(free.Box, second.Box);
+        Assert.Equal(0f, JetRadarLabels.Covered(second.Box, blocks));
+        // A scope packed with blocks returns the least-covered candidate with Clear = false.
+        var packed = new RectangleF[64];
+        for (int i = 0; i < packed.Length; i++)
+            packed[i] = new RectangleF((i % 8) * 25f, (i / 8) * 25f, 30f, 30f);
+        JetRadarLabels.Placement none = JetRadarLabels.Place(new Vector2(100f, 100f),
+            JetRadarLabels.GlyphClear, 40f, 20f, 1f, inner, packed);
+        Assert.False(none.Clear);
+    }
+
+    [Fact]
+    public void The_clamp_never_makes_a_slot_clear_and_the_TGT_slot_is_fixed()
+    {
+        // Furniture covering the whole viewport: nothing beside the anchor can be clear.
+        var all = new[] { new RectangleF(0f, 0f, 800f, 480f) };
+        JetReadoutPlacement.Placement blocked = JetReadoutPlacement.Place(
+            JetReadoutPlacement.DesignatorOrder, 545f, 111f, -10f, 185f, 147f, 53f, 0.667f,
+            800f, 480f, all, default);
+        Assert.False(blocked.Clear);
+        // The TGT slot is fixed: zone left edge, bottom on the stores' measured top edge.
+        float storesTop = JetStoresPanel.HeaderTop(480f, true, 16f);
+        JetReadoutPlacement.Placement tgt = JetReadoutPlacement.TargetSlot(800f, 480f, 0.667f,
+            storesTop, 117f, 85f);
+        RectangleF zone = JetReadoutPlacement.TargetZone(800f, 480f, 0.667f, storesTop);
+        Assert.True(tgt.Clear);
+        Assert.Equal(zone.X, tgt.X, 3);
+        Assert.Equal(zone.Height - 85f, tgt.Y, 3);
+        // ... and it is clear of the stores column and of the boresight column.
+        Assert.True(tgt.X >= JetStoresPanel.Left(0.667f) + JetStoresPanel.BlockWidth * 0.667f);
+        Assert.True(tgt.X + 117f <= zone.X + zone.Width + 0.5f);
+    }
+
+    [Fact]
+    public void The_compact_scope_keeps_the_corner_zone()
+    {
+        RectangleF scope = JetRadar.Scope(800f, 480f, 0.667f, 682.7f, 80f);
+        Assert.Equal(144f, scope.Width, 1);
+        // Left edge right of the flight-path column, right edge left of the throttle band,
+        // bottom above the mini-map, top below the caution panel.
+        Assert.True(scope.X >= 800f * JetRadar.CompactLeftFraction - 0.5f);
+        Assert.True(scope.X + scope.Width <= 682.7f);
+        var (_, minimapY, _, _) = MinimapGeometry.CornerPanel(800f, 480f);
+        Assert.True(scope.Y + scope.Height <= minimapY);
+        Assert.True(scope.Y >= 80f);
+        // At 1080p the scope is unchanged by the compact rule.
+        RectangleF full = JetRadar.Scope(1920f, 1080f, 1f, 1700f);
+        Assert.Equal(345.6f, full.Width, 1);
+    }
+
+    [Fact]
+    public void A_crowded_scope_never_hides_a_priority_label_and_never_stacks_two_reads()
+    {
+        var boxes = new BoxRecorder();
+        using var jet = Renderer(boxes);
+        HudContact[] contacts = CrowdedContacts(64);
+        jet.Draw(Model(contacts), Frame());
+        // Every native-eligible priority label is on screen.
+        Assert.Equal(0, jet.RadarPriorityLabelMisses);
+        Assert.Equal(0, jet.RadarLabelOverflows);
+        Assert.True(jet.RadarLabelsPlaced > 0);
+        Assert.True(jet.RadarLabelsHidden > 0);      // the dense scene is expected to hide some
+        // No two text runs this element drew intersect (the audit's TextOverlapSame rule).
+        var radar = boxes.Boxes.Where(b => b.Element == "radar").ToArray();
+        for (int i = 0; i < radar.Length; i++)
+            for (int j = i + 1; j < radar.Length; j++)
+                Assert.False(Intersects(radar[i].Box, radar[j].Box),
+                    $"'{radar[i].Text}'@{radar[i].Box.X:0.#},{radar[i].Box.Y:0.#} {radar[i].Box.Width:0.#}x{radar[i].Box.Height:0.#}"
+                    + $" and '{radar[j].Text}'@{radar[j].Box.X:0.#},{radar[j].Box.Y:0.#} {radar[j].Box.Width:0.#}x{radar[j].Box.Height:0.#} overlap");
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────
+    private static bool Intersects(RectangleF a, RectangleF b)
+        => a.X < b.X + b.Width - 1f && b.X < a.X + a.Width - 1f
+        && a.Y < b.Y + b.Height - 1f && b.Y < a.Y + a.Height - 1f;
+
+    private static HudContact[] CrowdedContacts(int count)
+    {
+        var list = new HudContact[count];
+        for (int i = 0; i < count; i++)
+        {
+            var kind = (HudContactKind)(i % 9);
+            float bearing = (i * 2.399963f) % (2f * MathF.PI) - MathF.PI;
+            list[i] = new HudContact(kind, new HudPoint(960f, 540f), true, 1f, null, i == 0, false,
+                Threat: i == 4, Subject: i == 6,
+                Name: i % 3 == 0 ? "Contact " + i : null,
+                Range: 240 + (i * 53) % 3400,
+                CommandId: i is 1 or 2 ? 2 : null, CommandAccepted: i == 1,
+                IsEnemy: i % 4 == 0, RelativeBearingRadians: bearing);
+        }
+        return list;
+    }
+
+    /// <summary>Records every text run with its box and the element that drew it, so the
+    /// no-two-reads-intersect rule can be asserted on the renderer's own submissions.</summary>
+    private sealed class BoxRecorder : IJetVectorSurface, IJetElementAudit
+    {
+        public readonly System.Collections.Generic.List<(string? Element, string Text, RectangleF Box)> Boxes = new();
+        private string? _element;
+        public void Begin() { }
+        public void End() { }
+        public void Line(Vector2 a, Vector2 b, float width, Color color) { }
+        public void Fill(Vector2 min, Vector2 size, Color color) { }
+        public void Text(string text, Vector2 position, bool large, float scale, Color color)
+        {
+            Vector2 size = Measure(text, large, scale);
+            // The painter submits the same run eight times at ±1 px for its keyline and then the
+            // ink; a run within the keyline's own ±1 px spread (2.5 px, so a far diagonal copy
+            // still merges) replaces the recorded one, leaving the ink run a pilot sees.
+            for (int i = 0; i < Boxes.Count; i++)
+            {
+                (string? element, string recorded, RectangleF box) = Boxes[i];
+                if (!string.Equals(recorded, text, StringComparison.Ordinal)) continue;
+                if (MathF.Abs(box.X - position.X) <= 2.5f && MathF.Abs(box.Y - position.Y) <= 2.5f)
+                {
+                    Boxes[i] = (element, text, new RectangleF(position.X, position.Y, size.X, size.Y));
+                    return;
+                }
+            }
+            Boxes.Add((_element, text, new RectangleF(position.X, position.Y, size.X, size.Y)));
+        }
+        public Vector2 Measure(string text, bool large, float scale)
+            => new(text.Length * (large ? 9f : 7f) * scale, (large ? 18f : 14f) * scale);
+        public void Element(string id) => _element = id;
+    }
+
     private static HudDrawFrame Frame() => new(new Viewport(0, 0, 1920, 1080), null, false);
 
     private static SoundRecorder Recorder() => new();

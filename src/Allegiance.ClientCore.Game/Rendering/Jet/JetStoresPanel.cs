@@ -23,6 +23,11 @@ public static class JetStoresPanel
     /// the speed tape's tick labels (which end at ≈76 px at 1080p).</summary>
     public const float LeftColumn = 96f;
 
+    /// <summary>P1039b — the block's authored width in standard-stroke units (× scale): the
+    /// furniture rect the block registers, and the left bound of the readout placement's TGT
+    /// fallback zone.</summary>
+    public const float BlockWidth = 236f;
+
     /// <summary>Fixed distance (px, NOT scaled) from the viewport bottom to the block's
     /// bottom edge: below the speed readout plate (centred on the boresight row) and above
     /// the two shared bottom-left text lines, which are drawn at fixed offsets (h−158 and
