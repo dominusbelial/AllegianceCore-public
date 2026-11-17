@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 using Microsoft.Xna.Framework;
@@ -42,9 +43,11 @@ public sealed partial class Game1
         && !_mainMenuVisible && !_helpVisible && !_keyBindVisible
         && !_graphicsSettingsVisible && !_creditsVisible && !_playerPingsVisible;
 
-    private Rendering.HangarScreenRenderer HangarScreenRendererRef =>
-        _hangarScreenRenderer ??= new Rendering.HangarScreenRenderer(
-            _spriteBatch, _whitePixel, _hudSmall, _nativeFonts, GraphicsDevice, _assets);
+    /// <summary>P1042 — the shared native hangar artwork, preloaded at LoadContent so a
+    /// skin switch never decodes art during Draw (P972 §2.5). Both screen adapters draw
+    /// the same content; only the chrome above it differs.</summary>
+    private Rendering.HangarScreenRenderer BuildHangarScreenRenderer() =>
+        new(_spriteBatch, _whitePixel, _hudSmall, _nativeFonts, GraphicsDevice, _assets);
 
     private void LaunchFromHangar(ShipEntity ship)
     {
@@ -278,19 +281,25 @@ public sealed partial class Game1
         // WinTrek.cpp:6706-6718); the loadout view (vmLoadout) has its own screen.
         if (!_nativeHangarScreen) return;
         var vp = GraphicsDevice.Viewport;
-        // P945 — native hangar art (hangar.mdl) scaled uniformly into the
-        // viewport; the same HangarScreen rectangles drive the pointer hit test
-        // in UpdateHangarControls. Missing artwork falls back to the pre-P945
-        // text row, never to a blank screen.
-        var renderer = HangarScreenRendererRef;
-        if (renderer.CanDrawNative)
+        // P1042 — the screen-chrome boundary: Classic/Modern draw the untouched native
+        // screen; Jet draws the same artwork unchanged and layers vector chrome over
+        // the same HangarScreen rectangles the pointer hit test uses. Missing artwork
+        // keeps the pre-P945 text-row fallback, never a blank screen.
+        if (ActiveScreen.HangarArtAvailable)
         {
-            renderer.Draw(vp, _hangarHover, _hangarLaunchAnimation, LoadoutBoardState()?.State,
-                HangarDevelopments);
+            ActiveScreen.DrawHangar(new HangarScreenFrame(vp, _hangarHover, _hangarLaunchAnimation,
+                LoadoutBoardState()?.State, HangarDevelopments, HangarScreenInks));
             return;
         }
         DrawHangarControlsTextFallback(vp);
     }
+
+    /// <summary>P1042 — the hangar frame's semantic inks. Classic/Modern's hangar
+    /// drawing keeps the native hover colour and artwork untouched (these values are
+    /// the native <c>hugeFont</c> grey and the port's warning ink); Jet maps its palette
+    /// instead, so the values are documentation for the classic adapter.</summary>
+    private static readonly ScreenInks HangarScreenInks =
+        new(HangarScreen.HoverTextColor, Color.White, HangarScreen.HoverTextColor, Color.Orange);
 
     /// <summary>The pre-P945 presentation, kept as the missing-artwork fallback:
     /// one row of text cells at the bottom of the viewport plus the hover/quit

@@ -1263,6 +1263,23 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetAmberPaletteTests.cs`; report:
   `docs/reports/JET_AMBER_P1041.md`.
 
+- **Screen-chrome skin boundary (P1042, skin story 8/9 part 1)** — P972 slice 1F: the HUD skin system now
+  also owns the SCREENS. `Rendering/Skins/IScreenSkinRenderer.cs` is the contract (intro menu, docked hangar,
+  loadout/shop) over read-only frames in `Rendering/Skins/ScreenFrames.cs`; a frame carries the resolved
+  geometry hit testing already uses (`IntroLayout` rows, `HangarScreen.Rect`, `LoadoutV2Layout` leaves) and no
+  cursor/command, so chrome can never buy/launch/sort/join/navigate or change focus (P972 §6.1: one geometry
+  source, no separate draw/click rectangles). `ScreenHitGeometry` is that source and
+  `ClassicScreenSkinRenderer` is a pure adapter over the untouched Classic/Modern drawing
+  (`Rendering/Screens/IntroScreenPainter.cs`, `HangarScreenRenderer`, `DockedScreenRenderer`,
+  `LoadoutV2Renderer`); `ScreenSkinRegistry` preloads all adapters and publishes one at the same
+  update/draw-boundary call as the HUD skin and palette (`Game1.CommitHudSkinChange`), gated exactly like Jet
+  (`hud.jetSkin` off → Modern, nothing visible). **`Rendering/Jet/JetScreenSkinRenderer.cs`** draws the Jet
+  chrome (thin-vector frames, plates, keylined text) over the SAME rectangles, both palette variants, with the
+  native hangar art/launch animation and the slideshow pictures untouched. Proof: `tools/p1042-screen-proof/`
+  (`--out`, `--audit` incl. the new **hit-vs-draw** class, `--compare`, `--alloc`); tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/P1042ScreenBoundaryTests.cs`; report:
+  `docs/reports/JET_SCREENS_P1042.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

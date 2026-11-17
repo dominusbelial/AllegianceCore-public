@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
@@ -121,7 +122,22 @@ public partial class Game1
             }
             _loadoutV2Marker = hardpoints.Project(slots[selectedSlot], camera, preview);
         }
-        _loadoutV2Renderer.Draw(_loadoutV2Frame, _loadoutV2Layout, _hudSettings.Style,
-            hover, _loadoutV2Marker);
+        // P1042 — the loadout chrome is drawn by the active screen skin. Classic/Modern
+        // forward the untouched P1014 drawing; Jet re-inks the same presentation through
+        // its palette and frames the same layout rectangles (draw == hit).
+        ActiveScreen.DrawLoadout(new LoadoutScreenFrame(GraphicsDevice.Viewport,
+            NoShopRows, null, null, 0f, 0f, false, null, false,
+            _loadoutV2Frame, _loadoutV2Layout, _hudSettings.Style, hover, _loadoutV2Marker,
+            LoadoutScreenInks));
     }
+
+    /// <summary>P1042 — the loadout frame's semantic inks for the legacy docked shop (the
+    /// V2 composition carries its own per-row inks). Classic/Modern pass the values their
+    /// renderer already holds; Jet maps its palette.</summary>
+    private static readonly ScreenInks LoadoutScreenInks =
+        new(new Color(1.00f, 0.85f, 0.45f), new Color(0.95f, 0.97f, 0.98f),
+            new Color(0.45f, 0.48f, 0.52f), new Color(1.00f, 0.45f, 0.42f));
+
+    /// <summary>No legacy rows in a V2 frame (a shared empty array: no per-frame alloc).</summary>
+    private static readonly ShopLayout.Row[] NoShopRows = [];
 }

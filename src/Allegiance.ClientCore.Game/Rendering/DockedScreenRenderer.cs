@@ -6,6 +6,15 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
+/// P1042 — a screen skin's re-ink of the native-layout docked shop. Colours only: rows,
+/// geometry and transactions are unchanged, and Classic/Modern pass null (the existing
+/// constants).
+/// </summary>
+public readonly record struct DockedScreenPalette(Color PanelBg, Color PanelBorder,
+    Color TitleColor, Color SectionColor, Color InfoColor, Color ItemColor,
+    Color HighlightColor, Color MutedColor, Color HintColor, Color FitColor, Color NoFitColor);
+
+/// <summary>
 /// P268 — draws the docked/hangar loadout screen: a dark fullscreen backdrop
 /// with a translucent panel listing the current ship, the buyable shop list and
 /// the pending loadout, laid out by <see cref="ShopLayout"/>.
@@ -42,6 +51,13 @@ public sealed class DockedScreenRenderer
     private static readonly Color HintColor = new(0.62f, 0.66f, 0.70f);
     private static readonly Color FitColor = new(0.42f, 1.00f, 0.55f);
     private static readonly Color NoFitColor = new(1.00f, 0.45f, 0.42f);
+
+    /// <summary>P1042 — the Classic/Modern panel inks (unchanged values).</summary>
+    public static readonly DockedScreenPalette NativePalette = new(PanelBg, PanelBorder, TitleColor,
+        SectionColor, InfoColor, ItemColor, HighlightColor, MutedColor, HintColor, FitColor, NoFitColor);
+
+    /// <summary>The active skin's re-ink; the native palette unless a caller passes one.</summary>
+    private DockedScreenPalette _palette = NativePalette;
 
     private const float Padding = 22f;
     private const float LineGap = 2f;
@@ -99,8 +115,10 @@ public sealed class DockedScreenRenderer
     public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
         IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null,
         float backdropAlpha = 0.985f, float footerHeight = 0f, bool splitDetailPanels = false,
-        Texture2D? creditBox = null, bool nativeMoneyPanel = false)
+        Texture2D? creditBox = null, bool nativeMoneyPanel = false,
+        DockedScreenPalette? palette = null)
     {
+        _palette = palette ?? NativePalette;
         float w = viewport.Width;
         float h = viewport.Height;
 
@@ -173,9 +191,9 @@ public sealed class DockedScreenRenderer
             // default (Backdrop).
             var backdrop = new Color(0.010f, 0.014f, 0.019f, Math.Clamp(backdropAlpha, 0f, 1f));
             FillRect(0, 0, w, h, backdrop);
-            FillRect(panelX, panelY, panelW, panelH, PanelBg);
-            OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
-            FillRect(panelX, panelY, panelW, 3f, PanelBorder);   // top accent edge
+            FillRect(panelX, panelY, panelW, panelH, _palette.PanelBg);
+            OutlineRect(panelX, panelY, panelW, panelH, _palette.PanelBorder);
+            FillRect(panelX, panelY, panelW, 3f, _palette.PanelBorder);   // top accent edge
 
             float y = panelY + Padding;
             for (int i = 0; i < rows.Count; i++)
@@ -206,8 +224,8 @@ public sealed class DockedScreenRenderer
                         MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight), Color.White);
                 else
                 {
-                    FillRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, PanelBg);
-                    OutlineRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, PanelBorder);
+                    FillRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, _palette.PanelBg);
+                    OutlineRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, _palette.PanelBorder);
                 }
                 string value = MoneyCreditsLayout.Value(credit);
                 var asz = _small.MeasureString(value);
@@ -224,8 +242,8 @@ public sealed class DockedScreenRenderer
                 string val = HudFormat.FormatMoney(m);
                 var vsz = _small.MeasureString(val);
                 float mx = 26f, my = h - footerHeight - vsz.Y - 18f;
-                Draw("MONEY", new Vector2(mx, my - _small.MeasureString("MONEY").Y - 2f), MutedColor);
-                Draw(val, new Vector2(mx, my), InfoColor);
+                Draw("MONEY", new Vector2(mx, my - _small.MeasureString("MONEY").Y - 2f), _palette.MutedColor);
+                Draw(val, new Vector2(mx, my), _palette.InfoColor);
             }
         }
         finally
@@ -259,9 +277,9 @@ public sealed class DockedScreenRenderer
         if (dx + dw > w * 0.985f) dx = MathF.Max(panelX, w * 0.985f - dw);
         float dy = MathF.Max(12f, (h - dh) / 2f);
 
-        FillRect(dx, dy, dw, dh, PanelBg);
-        OutlineRect(dx, dy, dw, dh, PanelBorder);
-        FillRect(dx, dy, dw, 3f, PanelBorder);
+        FillRect(dx, dy, dw, dh, _palette.PanelBg);
+        OutlineRect(dx, dy, dw, dh, _palette.PanelBorder);
+        FillRect(dx, dy, dw, 3f, _palette.PanelBorder);
 
         float y = dy + Padding;
         foreach (var r in rows)
@@ -273,16 +291,16 @@ public sealed class DockedScreenRenderer
         }
     }
 
-    private static Color ColorFor(ShopLayout.Row r) => r.Kind switch
+    private Color ColorFor(ShopLayout.Row r) => r.Kind switch
     {
-        ShopLayout.Kind.Title => TitleColor,
-        ShopLayout.Kind.Hint => HintColor,
-        ShopLayout.Kind.Section => SectionColor,
-        ShopLayout.Kind.Item => r.Greyed ? MutedColor : r.Highlight ? HighlightColor : ItemColor,
-        ShopLayout.Kind.Muted => MutedColor,
-        ShopLayout.Kind.HighlightFit => FitColor,
-        ShopLayout.Kind.HighlightNoFit => NoFitColor,
-        _ => InfoColor,
+        ShopLayout.Kind.Title => _palette.TitleColor,
+        ShopLayout.Kind.Hint => _palette.HintColor,
+        ShopLayout.Kind.Section => _palette.SectionColor,
+        ShopLayout.Kind.Item => r.Greyed ? _palette.MutedColor : r.Highlight ? _palette.HighlightColor : _palette.ItemColor,
+        ShopLayout.Kind.Muted => _palette.MutedColor,
+        ShopLayout.Kind.HighlightFit => _palette.FitColor,
+        ShopLayout.Kind.HighlightNoFit => _palette.NoFitColor,
+        _ => _palette.InfoColor,
     };
 
     private void Draw(string text, Vector2 pos, Color color, float scale = 1f) =>
