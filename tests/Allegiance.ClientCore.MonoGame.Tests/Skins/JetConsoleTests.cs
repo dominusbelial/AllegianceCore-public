@@ -336,6 +336,117 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void The_lifepod_block_is_drawn_at_800x480_with_a_long_log_and_every_column_row()
+    {
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        // The P1040b defect 1 scene: a 9-line chat log (with the marker row) AND every console
+        // row the model carries, at the small frame. P1040 drew `SECTOR` alone — the lifepod
+        // block, its oxygen endurance and the return binding were shown nowhere.
+        string[] log = Enumerable.Range(0, 9)
+            .Select(i => $"[TEAM] Pilot {(char)('A' + i)}: line {i} of the log").ToArray();
+        HudModel model = HudModelAdapter.Create(PodFrame(), CameraMode.Cockpit,
+            flightReference: Reference(0f, 0f, 45f),
+            chat: Chat(log, offset: 3, filter: "TEAM", paneLines: 9),
+            console: new HudConsoleText
+            {
+                SectorName = "Alystra", CarrierName = "Pilot Alpha", BoardState = 2,
+                AcceptedOrder = "defend Garrison", QueuedOrder = "attack Enemy fighter",
+            },
+            missionClockSeconds: 125, missionCountdown: false,
+            podReturnInstruction: "Shift+Z / G AUTOPILOT TO BASE");
+        jet.Draw(model, Frame(800, 480));
+        jet.DrawConsole(model);
+
+        Assert.True(jet.LifepodDrawable);
+        Assert.True(jet.LifepodBox.Height > 0f, "the lifepod block was not drawn");
+        Assert.Contains("LIFEPOD", surface.Seen);
+        Assert.Contains("OXY", surface.Seen);
+        Assert.Contains("95 s", surface.Seen);
+        Assert.Contains("RETURN", surface.Seen);
+        // Both readings live inside the block, above the stores block's top edge.
+        foreach (string word in new[] { "LIFEPOD", "OXY", "95 s" })
+        {
+            TextRun run = surface.RunsOf(word).First(r =>
+                r.Y >= jet.LifepodBox.Y - 0.5f && r.Y <= jet.LifepodBox.Y + jet.LifepodBox.Height);
+            Assert.InRange(run.Y, jet.LifepodBox.Y - 0.5f, jet.LifepodBox.Y + jet.LifepodBox.Height);
+        }
+        Assert.True(jet.LifepodBox.Y + jet.LifepodBox.Height
+            <= 480f - JetStoresPanel.BottomInset + 0.5f);
+        // The chat log yields the rows the block needs (it stays a scrolling window), and the
+        // pod's own oxygen reading is printed once — the caution stack no longer repeats it.
+        Assert.True(jet.ChatPane.Height < 8f + (12f + JetConsoleLayout.RowGap) * 9f);
+        Assert.DoesNotContain(surface.Seen, t => t.StartsWith("POD OXY", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_compact_lifepod_form_keeps_two_rows_and_the_standard_form_three()
+    {
+        // P1040b — the stated compact contraction at 800x480: `LIFEPOD OXY ▮ nn s` on one row
+        // and `RETURN ...` on the next; the standard frame keeps the native three rows.
+        var compact = new Recorder();
+        using var compactJet = Jet(compact);
+        compactJet.Draw(PodModel(), Frame(800, 480));
+        compactJet.DrawConsole(PodModel());
+        float pitch = MathF.Max(14f, 12f + JetConsoleLayout.RowGap) * ScaleFor(480);
+        Assert.Equal(2f * pitch, compactJet.LifepodBox.Height, 2);
+        Assert.Contains("LIFEPOD", compact.Seen);
+        Assert.Contains("OXY", compact.Seen);
+        Assert.Contains("95 s", compact.Seen);
+        Assert.Contains("RETURN", compact.Seen);
+
+        var standard = new Recorder();
+        using var standardJet = Jet(standard);
+        standardJet.Draw(PodModel(), Frame(1920, 1080));
+        standardJet.DrawConsole(PodModel());
+        Assert.Equal(3f * (12f + JetConsoleLayout.RowGap), standardJet.LifepodBox.Height, 2);
+    }
+
+    [Fact]
+    public void A_lifepod_that_cannot_be_drawn_leaves_POD_OXY_in_the_caution_stack()
+    {
+        // P1040b — the caution stack drops `POD OXY` only when the block was actually drawn.
+        // At a frame whose column band cannot hold the block the panel is not drawn, so the
+        // endurance stays in the caution stack: one display per reading, never zero.
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = HudModelAdapter.Create(PodFrame(), CameraMode.Cockpit,
+            flightReference: Reference(0f, 0f, 45f),
+            chat: Chat(new[] { "[TEAM] A: b" }, paneLines: 7),
+            console: new HudConsoleText { SectorName = "Alystra" },
+            podReturnInstruction: "Shift+Z / G AUTOPILOT TO BASE");
+        jet.Draw(model, Frame(640, 240));
+        Assert.False(jet.LifepodDrawable);
+        Assert.Equal(0f, jet.LifepodBox.Height);
+        Assert.DoesNotContain("LIFEPOD", surface.Seen);
+        Assert.Contains(surface.Seen, t => t.StartsWith("POD OXY", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_vote_banner_is_drawn_whenever_the_model_carries_a_ballot()
+    {
+        // P1040b — the same "one display per reading, never zero" rule: the caution stack drops
+        // its Vote line unconditionally, so the banner must be committed at both resolutions
+        // and with a full caution stack around it.
+        const string vote = "Vote: Mutiny against the commander? (Y/N)";
+        foreach ((int w, int h) in new[] { (800, 480), (1920, 1080) })
+        {
+            var surface = new Recorder();
+            using var jet = Jet(surface);
+            HudModel model = Model(Chat(new[] { "[TEAM] A: b" }, paneLines: 7),
+                console: new HudConsoleText
+                {
+                    SectorName = "Alystra", VoteText = vote,
+                    CriticalTips = new[] { new HudNotice("Reloading ammo...", true, 1) },
+                });
+            jet.Draw(model, Frame(w, h));
+            Assert.True(jet.VoteBox.Height > 0f, $"no vote banner at {w}x{h}");
+            Assert.Contains(surface.Seen, t => t.StartsWith("Vote", StringComparison.Ordinal));
+            Assert.DoesNotContain(surface.Seen, t => t.StartsWith("VOTE", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
     public void The_lifepod_panel_prints_the_shared_oxygen_fraction_and_endurance_once()
     {
         var surface = new Recorder();
@@ -364,6 +475,102 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
         jet.DrawConsole(model);
         foreach (string tip in tips) Assert.Contains(tip, surface.Seen);
     }
+
+    [Fact]
+    public void The_bottom_lines_use_the_jet_scale_and_keep_their_reading()
+    {
+        // P1040b defect 3: at 800x480 the two shared lines were drawn at the raw 1.0 scale
+        // (larger than the whole Jet HUD) and cut to `WEAPONS: G...` / `CARGO 1/5 ...`.
+        const string parts = "WEAPONS: GROUP  BOOST: ON  [1:Plasma]";
+        const string cargo = "CARGO 1/5  Ammo pack x3";
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = HudModelAdapter.Create(Frame(260f, .6f, 1920, 1080), CameraMode.Cockpit,
+            flightReference: Reference(0f, 0f, 45f),
+            chat: Chat(new[] { "[TEAM] A: b" }),
+            console: new HudConsoleText { SectorName = "Alystra" });
+        // The fixture needs the two lines: the model adapter carries them through `Context`.
+        HudModel withLines = WithBottomLines(model, cargo, parts);
+        jet.Draw(withLines, Frame(800, 480));
+        jet.DrawConsole(withLines);
+        Assert.Contains(parts, surface.Seen);
+        Assert.Contains(cargo, surface.Seen);
+        // The Jet scale, not 1.0: the run's measured height is the density-scaled line height.
+        float scale = ScaleFor(480);
+        TextRun run = surface.RunsOf(cargo)[0];
+        Assert.Equal(12f * scale, run.Height, 2);
+        // Both rows end inside the viewport gutter, below the stores block.
+        Assert.True(run.X + run.Width <= 800f - JetReadoutPlacement.Gutter * scale + 0.5f);
+        Assert.True(jet.CargoBox.Height > 0f && jet.FlightPartsBox.Height > 0f);
+    }
+
+    [Fact]
+    public void A_tip_too_long_for_the_band_wraps_onto_a_second_row()
+    {
+        // P1040b — a tip gets the bottom band (not the console column's width) and a tip that
+        // still does not fit wraps instead of being cut to `Welcome to the se...`.
+        string longTip = "Payday: five hundred credits deposited"
+            + string.Concat(Enumerable.Repeat(" and one hundred more", 16))
+            + " unless the sector is secure";
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = Model(Chat(new[] { "[TEAM] A: b" }),
+            console: new HudConsoleText { SectorName = "Alystra", OrdinaryTips = new[] { longTip } });
+        jet.Draw(model, Frame(800, 480));
+        jet.DrawConsole(model);
+        // The tip is split at a word boundary: the whole string is never drawn as one cut line,
+        // the first row starts with the tip's own first word and is a true prefix of it, and the
+        // stack is two rows tall (the second row carries the rest).
+        float textHeight = 12f * ScaleFor(480);
+        Assert.DoesNotContain(longTip, surface.Seen);
+        string head = surface.Seen.First(t => t.StartsWith("Payday:", StringComparison.Ordinal));
+        Assert.True(head.Length < longTip.Length, "the tip was not split");
+        Assert.StartsWith(head, longTip, StringComparison.Ordinal);
+        Assert.True(jet.TipBlock.Height > textHeight + JetConsoleLayout.TipPitch * 0.5f);
+    }
+
+    [Fact]
+    public void Every_drawn_command_cell_word_stays_inside_its_cell()
+    {
+        // P1040b defect 4: the wing name `DELTA` spilled out of its 54x42 combo cell over the
+        // panel border. Every cell word is fitted in BOTH axes and the cell is still the native
+        // rectangle the production hit test resolves.
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        HudModel model = CommandModel(1f, wing: 8, recipient: 3, verb: 4);
+        jet.Draw(model, Frame(800, 480));
+        jet.DrawCommand(model);
+        RectangleF panel = jet.CommandPanel;
+        Assert.True(panel.Width > 0f);
+        for (int c = 0; c < JetCommandConsole.RecipientCount; c++)
+            AssertInside(surface, panel, JetCommandConsole.RecipientCell(c), JetCommandConsole.RecipientWord(c));
+        AssertInside(surface, panel, JetCommandConsole.WingCell, "WING");
+        AssertInside(surface, panel, JetCommandConsole.WingCell, "DELTA");
+        for (int c = 0; c < JetCommandConsole.VerbCount; c++)
+            AssertInside(surface, panel, JetCommandConsole.VerbCell(c), JetCommandConsole.VerbWord(c));
+    }
+
+    private static void AssertInside(Recorder surface, RectangleF panel, RectangleF cell, string word)
+    {
+        var box = new RectangleF(panel.X + cell.X, panel.Y + cell.Y, cell.Width, cell.Height);
+        TextRun? run = surface.RunsOf(word).FirstOrDefault(r =>
+            r.X >= box.X - 2f && r.X <= box.X + box.Width && r.Y >= box.Y - 2f && r.Y <= box.Y + box.Height);
+        Assert.True(run is not null, $"{word} was not drawn in its cell");
+        TextRun text = run!.Value;
+        Assert.True(text.X >= box.X - 1.5f && text.X + text.Width <= box.X + box.Width + 1.5f,
+            $"{word} leaves its cell horizontally ({text.X:0.#}..{text.X + text.Width:0.#} vs {box.X:0.#}..{box.X + box.Width:0.#})");
+        Assert.True(text.Y >= box.Y - 1.5f && text.Y + text.Height <= box.Y + box.Height + 1.5f,
+            $"{word} leaves its cell vertically ({text.Y:0.#}..{text.Y + text.Height:0.#} vs {box.Y:0.#}..{box.Y + box.Height:0.#})");
+    }
+
+    /// <summary>P1040b — the same model with the two shared bottom lines set (the fixture's
+    /// `HudContext` carries them verbatim).</summary>
+    private static HudModel WithBottomLines(HudModel model, string cargo, string parts)
+        => HudModelAdapter.Create(Frame(260f, .6f, 1920, 1080), CameraMode.Cockpit,
+            flightReference: Reference(0f, 0f, 45f),
+            chat: model.Context.Chat,
+            console: model.Context.Console,
+            cargoLine: cargo, flightPartsLine: parts);
 
     [Fact]
     public void The_vote_banner_is_centred_at_the_native_offset_and_fitted_to_the_free_span()
@@ -422,17 +629,51 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void The_controls_hint_is_drawn_at_the_shared_anchor()
+    public void The_controls_hint_keeps_a_slot_clear_of_the_ladder_the_chat_pane_and_every_element()
     {
-        var surface = new Recorder();
-        using var jet = Jet(surface);
         const string hint = "Shift+F1 opens the controls";
-        HudModel model = HudModelAdapter.Create(Frame(260f, .6f, 1920, 1080), CameraMode.Cockpit,
-            flightReference: Reference(0f, 0f, 45f), controlHint: hint);
-        jet.Draw(model, Frame(1920, 1080));
-        Assert.Contains(hint, surface.Seen);
-        TextRun run = surface.RunsOf(hint)[0];
-        Assert.Equal(ChatPaneLayout.BottomFromTop + 6f, run.Y, 3);
+        // P1040b — the hint is a band label placed in the first CLEAR slot (below the tip
+        // stack, above the chat pane's marker row, under the radar scope). P1040 kept the
+        // shared unscaled anchor, which at 800x480 landed across the ladder's +20 rung and the
+        // chat pane's right edge; the rule now measures every obstacle first.
+        foreach ((int w, int h) in new[] { (800, 480), (1920, 1080) })
+        {
+            var surface = new Recorder();
+            using var jet = Jet(surface);
+            HudModel model = HudModelAdapter.Create(Frame(260f, .6f, 1920, 1080), CameraMode.Cockpit,
+                flightReference: Reference(0f, 0f, 45f),
+                chat: Chat(new[] { "[TEAM] Pilot Alpha: defend the base" }),
+                console: new HudConsoleText
+                {
+                    SectorName = "Alystra",
+                    OrdinaryTips = new[] { "Welcome to the sector" },
+                },
+                controlHint: hint);
+            jet.Draw(model, Frame(w, h));
+            Assert.Contains(hint, surface.Seen);
+            TextRun run = surface.RunsOf(hint)[0];
+            Assert.True(jet.HintClear, $"{w}x{h}: the hint found no clear slot");
+            Assert.InRange(jet.HintSlotIndex, 0, 2);
+            // Clear of the chat pane, of every registered furniture box (the ladder numerals,
+            // the tapes, the heading plate, the stores block, the radar scope) and on screen.
+            RectangleF box = jet.HintBox;
+            Assert.False(Overlaps(box, jet.ChatPane), $"hint over the chat pane at {w}x{h}");
+            foreach (RectangleF furniture in jet.FurnitureBoxes)
+                Assert.False(Overlaps(box, furniture), $"hint over furniture {furniture} at {w}x{h}");
+            Assert.True(box.X >= 0f && box.X + box.Width <= w + 0.5f);
+            Assert.True(box.Y >= 0f && box.Y + box.Height <= h + 0.5f);
+            // The drawn run is the box the renderer reported.
+            Assert.Equal(box.X, run.X, 2);
+            Assert.Equal(box.Y, run.Y, 2);
+        }
+    }
+
+    /// <summary>Do two boxes share more than a half pixel in each axis?</summary>
+    private static bool Overlaps(RectangleF a, RectangleF b)
+    {
+        float w = MathF.Min(a.X + a.Width, b.X + b.Width) - MathF.Max(a.X, b.X);
+        float h = MathF.Min(a.Y + a.Height, b.Y + b.Height) - MathF.Max(a.Y, b.Y);
+        return w > 0.5f && h > 0.5f;
     }
 
     [Fact]
@@ -567,12 +808,15 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
             commandPaneSlide: progress, commandWing: wing, commandRecipientColumn: recipient, commandVerb: verb,
             commandLines: lines ?? new[] { "COMMAND SHIP: Scout" });
 
+    /// <summary>The shared telemetry of an adrift lifepod (the model marks it `PodVisible`).</summary>
+    private static HudFrame PodFrame() => Frame(60f, 0f, 1920, 1080) with
+    {
+        IsAdriftLifepod = true, OxygenSecondsRemaining = 95, FuelFraction = .63f,
+        AmmoFraction = 0f, EnergyFraction = 0f,
+    };
+
     private static HudModel PodModel()
-        => HudModelAdapter.Create(Frame(60f, 0f, 1920, 1080) with
-        {
-            IsAdriftLifepod = true, OxygenSecondsRemaining = 95, FuelFraction = .63f,
-            AmmoFraction = 0f, EnergyFraction = 0f,
-        }, CameraMode.Cockpit, flightReference: Reference(0f, 0f, 45f),
+        => HudModelAdapter.Create(PodFrame(), CameraMode.Cockpit, flightReference: Reference(0f, 0f, 45f),
             chat: Chat(new[] { "[TEAM] A: b" }),
             console: new HudConsoleText { SectorName = "Alystra" },
             podReturnInstruction: "Shift+Z / G AUTOPILOT TO BASE");

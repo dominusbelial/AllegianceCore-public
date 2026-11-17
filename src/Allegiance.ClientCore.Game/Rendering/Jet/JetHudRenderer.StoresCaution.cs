@@ -456,12 +456,16 @@ public sealed partial class JetHudRenderer
         // P1040 — one display per reading: the LIFEPOD panel owns the pod's OXY endurance
         // and the centred VOTE banner owns the ballot text, so those two lines leave the
         // caution stack before it is measured (no empty row band is left behind).
+        // P1040b — `POD OXY` yields only when the lifepod block was ACTUALLY DRAWN this frame
+        // (the planned block the column reserved), never on the gate alone: at 800×480 P1040
+        // dropped the line because the model was in a pod while the panel itself did not fit,
+        // so the endurance was shown nowhere.
         int kept = 0;
         for (int i = 0; i < count; i++)
         {
             JetCaution candidate = _cautionBuffer[i];
             if (candidate.Kind == JetCautionKind.Vote) continue;
-            if (candidate.Kind == JetCautionKind.PodOxygen && model.PodVisible) continue;
+            if (candidate.Kind == JetCautionKind.PodOxygen && _lifepodDrawable) continue;
             _cautionBuffer[kept++] = candidate;
         }
         count = kept;
@@ -524,6 +528,8 @@ public sealed partial class JetHudRenderer
         _painter.Text(CautionHeader, new(panel.X + pad, panel.Y + pad), large: false, textScale, _painter.Primary);
 
         float y = panel.Y + pad + headerSize.Y + 2f * scale;
+        // P1040b — the panel's ink was committed: the master-caution element is on screen.
+        _painter.Drawn("caution");
         for (int i = 0; i < count; i++)
         {
             JetCaution caution = _cautionBuffer[i];
@@ -531,6 +537,10 @@ public sealed partial class JetHudRenderer
             DrawCautionGlyph(new(panel.X + pad, y), textScale, caution.Hot,
                 JetStoresPanel.CapHeight(textHeight));
             DrawCautionText(caution, i, new(panel.X + pad + iconWidth, y), textScale);
+            // P1040b — the survival-critical rows report themselves as drawn (the
+            // `ElementMissing` audit compares this with the model's gates).
+            if (caution.Kind == JetCautionKind.Ghost) _painter.Drawn("death");
+            else if (caution.Kind == JetCautionKind.MissileTrack) _painter.Drawn("missile");
             y += pitch;
         }
     }

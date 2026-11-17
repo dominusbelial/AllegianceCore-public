@@ -65,6 +65,13 @@ public interface IJetElementAudit
 {
     /// <summary>Name the element whose runs follow until the next call.</summary>
     void Element(string id);
+
+    /// <summary>P1040b — report that the element <paramref name="id"/>'s ink was COMMITTED
+    /// this frame (the drawn result, not the gate it was built behind). The proof compares
+    /// the set of reported ids with the elements its scene model makes eligible, so a
+    /// survival-critical element that the model says must be on screen and that the renderer
+    /// did not draw is a counted `ElementMissing` failure. A no-op on production surfaces.</summary>
+    void Drawn(string id);
 }
 
 /// <summary>
@@ -359,6 +366,14 @@ public sealed class JetVectorPainter
     public void Element(string id)
     {
         if (_surface is IJetElementAudit audit) audit.Element(id);
+    }
+
+    /// <summary>P1040b — report that an element's ink was committed this frame, to the
+    /// optional <see cref="IJetElementAudit"/> channel (`ElementMissing`). A no-op on the
+    /// production and test surfaces.</summary>
+    public void Drawn(string id)
+    {
+        if (_surface is IJetElementAudit audit) audit.Drawn(id);
     }
 
     /// <summary>P1038c — report the lock readout block to the optional cue-audit channel.</summary>

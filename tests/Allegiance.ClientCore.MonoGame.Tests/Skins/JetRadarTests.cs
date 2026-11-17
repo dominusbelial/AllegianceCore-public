@@ -556,6 +556,7 @@ public sealed class JetRadarTests
         public Vector2 Measure(string text, bool large, float scale)
             => new(text.Length * (large ? 9f : 7f) * scale, (large ? 18f : 14f) * scale);
         public void Element(string id) => _element = id;
+        public void Drawn(string id) { }
     }
 
     private static HudDrawFrame Frame() => new(new Viewport(0, 0, 1920, 1080), null, false);
@@ -598,6 +599,7 @@ public sealed class JetRadarTests
         }
 
         public void Element(string id) => _element = id;
+        public void Drawn(string id) { }
         public void Contact(int index) => _contact = index;
         public void ContactGlyph(RectangleF box) => _glyphs.Add((_contact, box));
         public void RadarRing(Vector2 centre, float radius, bool round) => _rings.Add((centre, radius, round));

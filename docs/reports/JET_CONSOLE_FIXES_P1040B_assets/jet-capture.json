@@ -1,0 +1,2465 @@
+{
+ "schema": 9,
+ "skin": "jet",
+ "note": "P1040b console-fix evidence (trimmed: the scene, layout counts, console boxes/rows, CMD cells and the eligible/drawn element sets of the 16 asset frames); the full 139-scene capture is in ~/allegiance-evidence/P1040b/jet-run7/jet-capture.json",
+ "scenes": [
+  {
+   "scene": "jet-podoxy-800x480-dark",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 74,
+    "Fills": 72,
+    "Strokes": 197,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 88.66668
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 195.33334,
+     "w": 151.99997,
+     "h": 50.000015
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G..."
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 121.33334,
+     "y": 212.00002,
+     "w": 151.99997,
+     "h": 33.333344
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 1,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-podoxy-800x480-bright",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 74,
+    "Fills": 72,
+    "Strokes": 197,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 88.66668
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 195.33334,
+     "w": 151.99997,
+     "h": 50.000015
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G..."
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 121.33334,
+     "y": 212.00002,
+     "w": 151.99997,
+     "h": 33.333344
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 1,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-podoxy-1920x1080-dark",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "scale": 1,
+   "layout": {
+    "Texts": 90,
+    "Fills": 88,
+    "Strokes": 273,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 125
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G AUTOPILOT TO BASE"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 182,
+     "y": 465,
+     "w": 588,
+     "h": 75
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 1,
+    "limit": 5,
+    "compact": false,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-podoxy-1920x1080-bright",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "scale": 1,
+   "layout": {
+    "Texts": 90,
+    "Fills": 88,
+    "Strokes": 273,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "lifepod"
+    ],
+    "drawn": [
+     "lifepod"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 125
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05",
+     "LIFEPOD",
+     "OXY",
+     "95 s",
+     "RETURN",
+     "Shift+Z / G AUTOPILOT TO BASE"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 182,
+     "y": 465,
+     "w": 588,
+     "h": 75
+    },
+    "lifepodDrawable": true,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 1,
+    "limit": 5,
+    "compact": false,
+    "lines": [
+     {
+      "kind": "PodOxygen",
+      "priority": 0,
+      "hot": true,
+      "seconds": 95
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-training-800x480-dark",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 71,
+    "Fills": 65,
+    "Strokes": 192,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 301,
+     "y": 374.66666,
+     "w": 198,
+     "h": 14.666667
+    },
+    "hintClear": true,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-training-800x480-bright",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 71,
+    "Fills": 65,
+    "Strokes": 192,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 301,
+     "y": 374.66666,
+     "w": 198,
+     "h": 14.666667
+    },
+    "hintClear": true,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-training-1920x1080-dark",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "scale": 1,
+   "layout": {
+    "Texts": 87,
+    "Fills": 81,
+    "Strokes": 268,
+    "TextOverlaps": 3,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 811.5,
+     "y": 976,
+     "w": 297,
+     "h": 22
+    },
+    "hintClear": true,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-training-1920x1080-bright",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "scale": 1,
+   "layout": {
+    "Texts": 87,
+    "Fills": 81,
+    "Strokes": 268,
+    "TextOverlaps": 3,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 3,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": 0,
+    "hint": {
+     "x": 811.5,
+     "y": 976,
+     "w": 297,
+     "h": 22
+    },
+    "hintClear": true,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-tips-800x480-dark",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 75,
+    "Fills": 71,
+    "Strokes": 193,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "caution",
+     "vote"
+    ],
+    "drawn": [
+     "caution",
+     "vote"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 420.66666,
+     "y": 108.666664,
+     "w": 300.6667,
+     "h": 14.666667
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 121.33334,
+     "y": 372,
+     "w": 352,
+     "h": 52.666656
+    },
+    "tipRows": [
+     "Welcome to the sector",
+     "Alystra: 3 miners on duty",
+     "Payday: $500 deposited into your account balance"
+    ],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 3,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "Vote",
+      "priority": 2,
+      "hot": false
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-tips-800x480-bright",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 75,
+    "Fills": 71,
+    "Strokes": 193,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 2,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "caution",
+     "vote"
+    ],
+    "drawn": [
+     "caution",
+     "vote"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 121.33334,
+     "y": 101.333336,
+     "w": 231.33331,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 121.33334,
+     "y": 228.66667,
+     "w": 151.99997,
+     "h": 16.666672
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra"
+    ],
+    "vote": {
+     "x": 420.66666,
+     "y": 108.666664,
+     "w": 300.6667,
+     "h": 14.666667
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 121.33334,
+     "y": 372,
+     "w": 352,
+     "h": 52.666656
+    },
+    "tipRows": [
+     "Welcome to the sector",
+     "Alystra: 3 miners on duty",
+     "Payday: $500 deposited into your account balance"
+    ],
+    "cargo": {
+     "x": 121.33334,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 121.33334,
+     "y": 322,
+     "w": 271.33334,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 3,
+    "limit": 2,
+    "compact": true,
+    "lines": [
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "Vote",
+      "priority": 2,
+      "hot": false
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-tips-1920x1080-dark",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "scale": 1,
+   "layout": {
+    "Texts": 91,
+    "Fills": 87,
+    "Strokes": 269,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "caution",
+     "vote"
+    ],
+    "drawn": [
+     "caution",
+     "vote"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 734.5,
+     "y": 169,
+     "w": 451,
+     "h": 22
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 182,
+     "y": 972,
+     "w": 588,
+     "h": 72
+    },
+    "tipRows": [
+     "Welcome to the sector",
+     "Alystra: 3 miners on duty",
+     "Payday: $500 deposited into your account balance"
+    ],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 3,
+    "limit": 5,
+    "compact": false,
+    "lines": [
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "Vote",
+      "priority": 2,
+      "hot": false
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-tips-1920x1080-bright",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "scale": 1,
+   "layout": {
+    "Texts": 91,
+    "Fills": 87,
+    "Strokes": 269,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 5,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 8,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [
+     "caution",
+     "vote"
+    ],
+    "drawn": [
+     "caution",
+     "vote"
+    ],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 182,
+     "y": 224,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 182,
+     "y": 415,
+     "w": 588,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T+ 02:05"
+    ],
+    "vote": {
+     "x": 734.5,
+     "y": 169,
+     "w": 451,
+     "h": 22
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 182,
+     "y": 972,
+     "w": 588,
+     "h": 72
+    },
+    "tipRows": [
+     "Welcome to the sector",
+     "Alystra: 3 miners on duty",
+     "Payday: $500 deposited into your account balance"
+    ],
+    "cargo": {
+     "x": 182,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 182,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 125,
+    "missionCountdown": false,
+    "commandSlide": 0,
+    "commandView": false
+   },
+   "caution": {
+    "count": 3,
+    "limit": 5,
+    "compact": false,
+    "lines": [
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "CriticalTip",
+      "priority": 2,
+      "hot": true
+     },
+     {
+      "kind": "Vote",
+      "priority": 2,
+      "hot": false
+     }
+    ]
+   }
+  },
+  {
+   "scene": "jet-cmd-800x480-dark",
+   "width": 800,
+   "height": 480,
+   "backdrop": "dark",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 34,
+    "Fills": 49,
+    "Strokes": 132,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 56,
+     "y": 23.333336,
+     "w": 236.66667,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 56,
+     "y": 150.66667,
+     "w": 217.33331,
+     "h": 33.333344
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 265,
+     "y": 348,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 265,
+      "y": 348,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 481,
+      "y": 356,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 489,
+       "y": 358,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 483.8,
+       "y": 377,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 56,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 56,
+     "y": 322,
+     "w": 198,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-cmd-800x480-bright",
+   "width": 800,
+   "height": 480,
+   "backdrop": "bright",
+   "scale": 0.6666667,
+   "layout": {
+    "Texts": 34,
+    "Fills": 49,
+    "Strokes": 132,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 56,
+     "y": 23.333336,
+     "w": 236.66667,
+     "h": 122.00001
+    },
+    "consoleColumn": {
+     "x": 56,
+     "y": 150.66667,
+     "w": 217.33331,
+     "h": 33.333344
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 265,
+     "y": 348,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 265,
+      "y": 348,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 481,
+      "y": 356,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 489,
+       "y": 358,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 483.8,
+       "y": 377,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 56,
+     "y": 348,
+     "w": 168.66667,
+     "h": 14.666667
+    },
+    "flightParts": {
+     "x": 56,
+     "y": 322,
+     "w": 198,
+     "h": 14.666667
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "caution": {
+    "count": 0,
+    "limit": 2,
+    "compact": true,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-cmd-1920x1080-dark",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "dark",
+   "scale": 1,
+   "layout": {
+    "Texts": 36,
+    "Fills": 49,
+    "Strokes": 174,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 84,
+     "y": 35,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 84,
+     "y": 226,
+     "w": 686,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 825,
+     "y": 948,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 825,
+      "y": 948,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 1041,
+      "y": 956,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 1049,
+       "y": 958,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 1043.8,
+       "y": 977,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 84,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 84,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   }
+  },
+  {
+   "scene": "jet-cmd-1920x1080-bright",
+   "width": 1920,
+   "height": 1080,
+   "backdrop": "bright",
+   "scale": 1,
+   "layout": {
+    "Texts": 36,
+    "Fills": 49,
+    "Strokes": 174,
+    "TextOverlaps": 0,
+    "CaptionOverlaps": 0,
+    "BoxOverlaps": 0,
+    "StrokeHits": 0,
+    "TextOutsidePlate": 0,
+    "TextOffScreen": 0,
+    "Icons": 0,
+    "IconTooSmall": 0,
+    "TextOverlapInPlate": 0,
+    "CueReadoutHits": 0,
+    "LegibleBehindPane": 0,
+    "TextOverlapCross": 0,
+    "TextOverlapSame": 0,
+    "TextOverGlyph": 0,
+    "StrokeThroughText": 0,
+    "RadarPlates": 7,
+    "CaptionOverlapSamples": [],
+    "BoxOverlapSamples": [],
+    "StrokeHitSamples": [],
+    "TextOutsidePlateSamples": [],
+    "TextOffScreenSamples": [],
+    "IconTooSmallSamples": [],
+    "TextOverlapInPlateSamples": [],
+    "CueReadoutHitSamples": [],
+    "LegibleBehindPaneSamples": [],
+    "TextOverlapCrossSamples": [],
+    "TextOverlapSameSamples": [],
+    "TextOverGlyphSamples": [],
+    "StrokeThroughTextSamples": []
+   },
+   "elements": {
+    "eligible": [],
+    "drawn": [],
+    "missing": []
+   },
+   "console": {
+    "chatPane": {
+     "x": 84,
+     "y": 35,
+     "w": 355,
+     "h": 183
+    },
+    "consoleColumn": {
+     "x": 84,
+     "y": 226,
+     "w": 686,
+     "h": 50
+    },
+    "columnRows": [
+     "SECTOR",
+     "Alystra",
+     "MISSION T- 02:23"
+    ],
+    "vote": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "compose": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "commandPanel": {
+     "x": 825,
+     "y": 948,
+     "w": 274,
+     "h": 92
+    },
+    "lifepod": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "lifepodDrawable": false,
+    "hintSlot": -1,
+    "commandCells": {
+     "panel": {
+      "x": 825,
+      "y": 948,
+      "w": 274,
+      "h": 92
+     },
+     "wingCell": {
+      "x": 1041,
+      "y": 956,
+      "w": 54,
+      "h": 42
+     },
+     "wingRuns": [
+      {
+       "text": "WING",
+       "x": 1049,
+       "y": 958,
+       "w": 38,
+       "h": 19,
+       "inside": true
+      },
+      {
+       "text": "DELTA",
+       "x": 1043.8,
+       "y": 977,
+       "w": 48.4,
+       "h": 19,
+       "inside": true
+      }
+     ],
+     "leaks": 0,
+     "leakDetail": []
+    },
+    "hint": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "hintClear": false,
+    "tips": {
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0
+    },
+    "tipRows": [],
+    "cargo": {
+     "x": 84,
+     "y": 948,
+     "w": 253,
+     "h": 22
+    },
+    "flightParts": {
+     "x": 84,
+     "y": 922,
+     "w": 407,
+     "h": 22
+    },
+    "cargoTexts": [
+     "CARGO 1/5  Ammo pack x3"
+    ],
+    "chatLines": 2,
+    "chatOffset": 0,
+    "composeState": "NotComposing",
+    "composeProgress": 0,
+    "paneLines": 7,
+    "missionClock": 143,
+    "missionCountdown": true,
+    "commandSlide": 1,
+    "commandView": true
+   },
+   "caution": {
+    "count": 0,
+    "limit": 5,
+    "compact": false,
+    "lines": []
+   }
+  }
+ ]
+}
