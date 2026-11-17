@@ -87,6 +87,11 @@ public sealed partial class JetHudRenderer
         // header is omitted so the taller measured rows stay clear of the speed readout
         // plate above them (P1038b: the measured pitch raised the header into it).
         float headerTop = JetStoresPanel.HeaderTop(h, compact, rowH);
+        // P1039 — the whole stores block is furniture: a target readout may never be
+        // placed over it, and every run below belongs to the "stores" element.
+        AddFurniture(new RectangleF(left, headerTop,
+            236f * scale, MathF.Max(0f, JetStoresPanel.Bottom(h) - headerTop)));
+        _painter.Element("stores");
         if (!compact) _painter.Text(StoresHeader, new(left, headerTop), large: false, scale, _painter.Dim);
 
         HudGauge? hull = GaugeOf(model, GaugeKind.Hull);
@@ -324,7 +329,10 @@ public sealed partial class JetHudRenderer
         JetStoresPanel.Annunciators set = JetStoresPanel.AnnunciatorsOf(status);
         if (!JetStoresPanel.AnyAnnunciator(set)) return;
         float cursor = x;
-        float gap = 6f * scale;
+        // P1039 — 2·scale px between annunciator words (the minimum that still separates
+        // two keylined words) so the compact row ends before the ladder's left numeral
+        // column: the six lit annunciators can no longer touch a rung numeral's ink.
+        float gap = 2f * scale;
         if ((set & JetStoresPanel.Annunciators.Eye) != 0)
             cursor = TextRun(cursor, y, scale, "EYE", _painter.Dim, ref cursor) + gap;
         if ((set & JetStoresPanel.Annunciators.Cloak) != 0)
@@ -459,6 +467,12 @@ public sealed partial class JetHudRenderer
         float throttleBandTop = h * 0.2f - textHeight - 2f * scale;
         float top = MathF.Max(2f, throttleBandTop - panelHeight);
         var panel = new RectangleF(right - panelWidth, top, panelWidth, panelHeight);
+        // P1039 — the caution panel is the HIGHER-PRIORITY element: it is never moved or
+        // shrunk for another HUD element. It is registered as furniture (no readout may be
+        // placed over it) and as the F4 pane's top limit (the pane shrinks instead).
+        _cautionPanel = panel;
+        AddFurniture(panel);
+        _painter.Element("caution");
         _painter.FillPlate(panel, 0.62f);
         _painter.Text(CautionHeader, new(panel.X + pad, panel.Y + pad), large: false, textScale, _painter.Primary);
 
@@ -610,11 +624,16 @@ public sealed partial class JetHudRenderer
         if (rows == 0) return;
 
         float slide = model.Context.InventorySlide;
-        float paneScale = JetInventoryPresentation.Scale(h);
-        float left = JetInventoryPresentation.Left(w, h);
-        float top = JetInventoryPresentation.Top(rows, w, h, slide);
-        float width = JetInventoryPresentation.Width(w, h);
-        float height = JetInventoryPresentation.Height(rows, h);
+        // P1039 — the pane never covers the master-caution panel: it shrinks its own scale
+        // (keeping every row/column) so its top starts below the caution panel + gutter.
+        // The caution is the higher-priority element and is never moved or resized.
+        float gutter = 4f * scale;
+        float topLimit = _cautionPanel.Height > 0f ? _cautionPanel.Y + _cautionPanel.Height + gutter : 0f;
+        float paneScale = JetInventoryPresentation.FitScale(rows, h, topLimit);
+        float left = JetInventoryPresentation.LeftAt(w, h, paneScale);
+        float top = JetInventoryPresentation.TopAt(rows, w, h, slide, paneScale);
+        float width = JetInventoryPresentation.WidthAt(w, h, paneScale);
+        float height = JetInventoryPresentation.HeightAt(rows, paneScale);
         float headerRow = JetInventoryPresentation.HeaderRow * paneScale;
         float rowH = JetInventoryPresentation.RowHeight * paneScale;
         float pad = JetInventoryPresentation.Pad * paneScale;
@@ -626,6 +645,8 @@ public sealed partial class JetHudRenderer
         // icon, ladder numeral or tape reading behind it stays legible. Every other Jet
         // plate keeps the readout plate's 0.82.
         var panel = new RectangleF(left, top, width, height);
+        _painter.Element("inventory");
+        AddFurniture(panel);
         _painter.FillPlate(panel, JetInventoryPresentation.PlateOpacity);
 
         // Title: own-ship / hull name top-aligned in its OWN row of 24 native units
@@ -636,7 +657,7 @@ public sealed partial class JetHudRenderer
         if (pane.ShipName.Length > 0)
         {
             Vector2 nameSize = _painter.Measure(pane.ShipName, large: false, paneScale);
-            float nameY = JetInventoryPresentation.TitleTop(rows, w, h, slide);
+            float nameY = JetInventoryPresentation.TitleTopAt(rows, w, h, slide, paneScale);
             _painter.Text(pane.ShipName, new(left + (width - nameSize.X) * 0.5f, nameY),
                 large: false, paneScale, _painter.Primary);
         }
@@ -646,7 +667,7 @@ public sealed partial class JetHudRenderer
         // three leading cells are narrow in native units, so each caption starts no earlier
         // than the previous one's measured end plus a gap: the words never overlap.
         Vector2 captionSize = _painter.Measure("X", large: false, rowScale);
-        float headerTop = JetInventoryPresentation.HeaderTop(rows, w, h, slide);
+        float headerTop = JetInventoryPresentation.HeaderTopAt(rows, w, h, slide, paneScale);
         float captionY = headerTop + (headerRow - captionSize.Y) * 0.5f;
         float captionLimit = left + width - pad;
         float captionGap = 4f * paneScale;
@@ -665,7 +686,7 @@ public sealed partial class JetHudRenderer
         for (int i = 0; i < rows; i++)
         {
             HudInventoryRow row = pane.Rows[i];
-            float rowTop = JetInventoryPresentation.RowTop(rows, w, h, slide, i);
+            float rowTop = JetInventoryPresentation.RowTopAt(rows, w, h, slide, i, paneScale);
             Vector2 textSize = _painter.Measure("X", large: false, rowScale);
             float textY = rowTop + (rowH - textSize.Y) * 0.5f;
             DrawInventoryRow(row, i, left, textY, rowTop, rowH, paneScale, rowScale, width, textSize.Y, pad);

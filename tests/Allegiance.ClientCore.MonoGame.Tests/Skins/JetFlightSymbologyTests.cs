@@ -448,7 +448,9 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
         jet.DrawCommand(model);
         jet.DrawConsole(model);
 
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
         Assert.Equal(1, resources.Chat);

@@ -330,7 +330,9 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         jet.DrawCommand(model);
         jet.DrawConsole(model);
         // The shared passes are the Classic composition, every state.
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
         Assert.Equal(1, resources.Chat);
@@ -435,7 +437,9 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         Assert.True(resources.CommandWasClassicComposition);
         resources.Order.Clear();
         jet.Draw(model, new(new(0, 0, 800, 480), null, false));
-        Assert.Equal(new[] { "radar", "tags", "pod/death" }, resources.Order);
+        // P1039 — the shared Classic radar pass is gone from the Jet composition: Jet draws
+        // its own scope inside the HUD pass, so the order is tags → its own pass → pod/death.
+        Assert.Equal(new[] { "tags", "pod/death" }, resources.Order);
         Assert.False(resources.TagsWereModern);
     }
 

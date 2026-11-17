@@ -190,6 +190,7 @@ sealed class Proof : Game
     // is the production RadarBracketRenderer; the fixture draws no chat/cargo/tags).
     private JetHudRenderer? _jet;
     private JetHudRenderer? _jetAudit;
+    private HudSettings? _jetSettings;
     private RecordingSurface? _jetAuditSurface;
     private HudSkinDefinition? _jetDefinition;
 
@@ -258,14 +259,15 @@ sealed class Proof : Game
             var radar = new RadarBracketRenderer(_batch, _white, _status);
             var resources = new HudSkinResources(model => radar.Draw(model, GraphicsDevice.Viewport),
                 (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
+            _jetSettings = new HudSettings { Skin = HudSkinIds.Jet, Size = 1f };
             _jet = new JetHudRenderer(_batch, _white, _small, _big,
-                new HudSettings { Skin = HudSkinIds.Jet, Size = 1f }, resources, _jetDefinition, radarIcons: null);
+                _jetSettings, resources, _jetDefinition, radarIcons: null);
             // P1037 — a second Jet renderer bound to a recording surface, so `--jet`
             // can audit the exact text/plate boxes of every scene (no screenshot-only
             // claim). It draws the same model through the same production primitives.
             _jetAuditSurface = new RecordingSurface(_jet.Painter.Surface);
             _jetAudit = new JetHudRenderer(_jetAuditSurface,
-                new HudSettings { Skin = HudSkinIds.Jet, Size = 1f }, resources, _jetDefinition);
+                _jetSettings, resources, _jetDefinition);
         }
         Console.WriteLine(hasArtwork
             ? "HUD2_ARTWORK present (native gauge/status/indicator art loaded)"
@@ -445,6 +447,31 @@ sealed class Proof : Game
             ("jet-locksmall", 800, 480, "dark"),
             ("jet-locklarge", 1920, 1080, "dark"),
             ("jet-locklarge", 800, 480, "dark"),
+            // P1039 — the Jet radar: square tactical scope and circular RWR, sparse and
+            // dense (64 contacts with labels), all four LOD modes, every contact kind with
+            // every overlay, and the null-bearing fallback, at both resolutions and both
+            // backdrops.
+            ("jet-radar", 1920, 1080, "dark"),
+            ("jet-radar", 1920, 1080, "bright"),
+            ("jet-radar", 800, 480, "dark"),
+            ("jet-radar", 800, 480, "bright"),
+            ("jet-radar-round", 1920, 1080, "dark"),
+            ("jet-radar-round", 1920, 1080, "bright"),
+            ("jet-radar-round", 800, 480, "dark"),
+            ("jet-radar-round", 800, 480, "bright"),
+            ("jet-radar-dense", 1920, 1080, "dark"),
+            ("jet-radar-dense", 1920, 1080, "bright"),
+            ("jet-radar-dense", 800, 480, "dark"),
+            ("jet-radar-dense", 3840, 2160, "dark"),
+            ("jet-radar-dense-round", 1920, 1080, "dark"),
+            ("jet-radar-kinds", 1920, 1080, "dark"),
+            ("jet-radar-kinds", 800, 480, "dark"),
+            ("jet-radar-nobearing", 1920, 1080, "dark"),
+            ("jet-radar-nobearing", 800, 480, "dark"),
+            ("jet-radar-All", 1920, 1080, "dark"),
+            ("jet-radar-Default", 1920, 1080, "dark"),
+            ("jet-radar-Target", 1920, 1080, "dark"),
+            ("jet-radar-Minimal", 1920, 1080, "dark"),
             // The shared Classic radar pass with every overlay/label flag set.
             ("radar-overlays", 1920, 1080, "dark"),
             // Instrument-hidden states prove the native gate (pod keeps them,
@@ -453,12 +480,22 @@ sealed class Proof : Game
             ("docked", 800, 480, "dark"),
             ("command", 1920, 1080, "dark"),
         };
+        static object Box(RectangleF box) => new { x = box.X, y = box.Y, w = box.Width, h = box.Height };
+        List<object> Furniture()
+        {
+            var list = new List<object>(_jetAudit!.FurnitureBoxes.Length);
+            foreach (RectangleF box in _jetAudit.FurnitureBoxes) list.Add(Box(box));
+            return list;
+        }
         var summaries = new List<object>(scenes.Length);
         foreach (var (scenario, width, height, backdropName) in scenes)
         {
             using var target = new RenderTarget2D(GraphicsDevice, width, height);
             var backdrop = Backdrops.First(b => b.Name == backdropName).Color;
             var model = Scenario(scenario, width, height);
+            // P1039 — the ONE shared round-radar option decides the scope's border: square
+            // tactical scope off, circular RWR on (P972 §5.4 row 1).
+            _jetSettings!.RoundRadar = scenario is "jet-radar-round" or "jet-radar-dense-round";
             // Each scene starts from no held attitude (the proof's frames are
             // independent; in the live client the hold carries across frames).
             _jet.ResetFlightState();
@@ -544,15 +581,52 @@ sealed class Proof : Game
                 // own line height at this frame's scale).
                 capHeight = _jetAudit!.Painter.Measure("X", large: false, scale).Y,
                 layout = audit,
+                // P1039 — the placement the renderer committed this frame (the furniture it
+                // avoided, the two readout blocks and the caution/scope rectangles), so the
+                // priority order is evidence, not an assertion.
+                placement = new
+                {
+                    targetReadout = Box(_jetAudit!.TargetReadoutBox),
+                    lockReadout = Box(_jetAudit.LockReadoutBox),
+                    targetSlot = _jetAudit.TargetReadoutSlot,
+                    lockSlot = _jetAudit.LockReadoutSlot,
+                    cautionPanel = Box(_jetAudit.CautionPanel),
+                    radarScope = Box(_jetAudit.RadarScope),
+                    furniture = Furniture(),
+                },
                 tag = JetHudRenderer.TagText,
             });
         }
+        // P1039 — the Jet radar's draw cost against the Modern radar on the SAME dense scene
+        // (66 contacts, labels at LOD active). Both renderers draw the whole frame, so the
+        // numbers include the shared shadow of every other element; the radar dominates at
+        // this contact count.
+        if (_jet is not null)
+        {
+            HudModel dense = Scenario("jet-radar-dense", 1920, 1080);
+            var frame = new HudDrawFrame(GraphicsDevice.Viewport, null, false);
+            const int frames = 120;
+            _jet.Draw(dense, frame);                     // warm-up (JIT, first allocations)
+            var jetWatch = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < frames; i++) _jet.Draw(dense, frame);
+            jetWatch.Stop();
+            var modernSettings = new HudSettings { Style = HudStyle.Modern, Size = 1f };
+            using var modern = new ModernHudRenderer(_batch, _white, _small, _big, modernSettings, _modernOutline);
+            modern.Draw(dense, GraphicsDevice.Viewport);
+            var modernWatch = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < frames; i++) modern.Draw(dense, GraphicsDevice.Viewport);
+            modernWatch.Stop();
+            Console.WriteLine($"HUD2_JET_RADAR_COST scene=jet-radar-dense 1920x1080 contacts={dense.Context.Contacts.Count} "
+                + $"jet={jetWatch.Elapsed.TotalMilliseconds / frames:0.000} ms/frame "
+                + $"modern={modernWatch.Elapsed.TotalMilliseconds / frames:0.000} ms/frame ratio="
+                + $"{jetWatch.Elapsed.TotalMilliseconds / Math.Max(1e-6, modernWatch.Elapsed.TotalMilliseconds):0.00}");
+        }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 6, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 7, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         // P1038b/c — the layout classes must be 0 in every Jet scene; print the offending
         // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
-        int inPlate = 0, cueHits = 0, legible = 0;
+        int inPlate = 0, cueHits = 0, legible = 0, cross = 0;
         foreach (var scene in summaries)
         {
             var layout = (LayoutAudit)scene.GetType().GetProperty("layout")!.GetValue(scene)!;
@@ -563,10 +637,12 @@ sealed class Proof : Game
             inPlate += layout.TextOverlapInPlate;
             cueHits += layout.CueReadoutHits;
             legible += layout.LegibleBehindPane;
+            cross += layout.TextOverlapCross;
         }
         Console.WriteLine($"HUD2_JET_AUDIT stroke-vs-text {strokeHits}, text-outside-plate {outsidePlate}, "
             + $"text-off-screen {offScreen}, icon-too-small {smallIcons}, text-in-plate {inPlate}, "
-            + $"cue-vs-readout {cueHits}, legible-behind-pane {legible} over {scenes.Length} scenes");
+            + $"cue-vs-readout {cueHits}, legible-behind-pane {legible}, text-overlap-cross {cross} "
+            + $"over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1477,6 +1553,10 @@ sealed class Proof : Game
                 // P1038 — stores / caution / inventory scenes (level flight).
                 "jet-stores" or "jet-stores-low" or "jet-stores-critical" or "jet-pod"
                     or "jet-flags" or "jet-caution" or "jet-ghost" or "jet-f4" or "jet-f4-empty"
+                    // P1039 — the radar scenes fly level, heading 045.
+                    or "jet-radar" or "jet-radar-round" or "jet-radar-dense"
+                    or "jet-radar-dense-round" or "jet-radar-kinds" or "jet-radar-nobearing"
+                    or "jet-radar-All" or "jet-radar-Default" or "jet-radar-Target" or "jet-radar-Minimal"
                     => (FlightReference(0f, 0f, 45f), 260f, .6f, false),
                 _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown Jet scene"),
             };
@@ -1570,7 +1650,9 @@ sealed class Proof : Game
         bool flightCockpit = scenario is "flight" or "chat-stress" or "combat" or "critical" or "lifepod" or "training"
             || scenario.StartsWith("radar-") || scenario.StartsWith("jet-");
         var mode = scenario == "radar-overlays" ? RadarMode.All
-            : scenario.StartsWith("radar-") ? Enum.Parse<RadarMode>(scenario[6..]) : RadarMode.Default;
+            : scenario.StartsWith("radar-") ? Enum.Parse<RadarMode>(scenario[6..])
+            : scenario.StartsWith("jet-radar-", StringComparison.Ordinal) ? JetRadarMode(scenario)
+            : RadarMode.Default;
         var contacts = new List<HudContact>();
         for (int i = 0; i < 18; i++)
         {
@@ -1613,6 +1695,8 @@ sealed class Proof : Game
                     Ripcord: overlays && i == 12, DetectionEye: overlays && i == 13,
                     Fill: overlays && kind == HudContactKind.Asteroid ? .6f : null));
         }
+        if (scenario.StartsWith("jet-radar", StringComparison.Ordinal))
+            contacts = JetRadarContacts(mode, scenario, w, h);
         return HudModel.Create(frame, new HudContext
         {
             Docked = scenario == "docked", Dead = scenario == "dead",
@@ -1688,7 +1772,8 @@ sealed class Proof : Game
             InventoryVisible = jetScene ? scenario is "jet-f4" or "jet-f4-empty" : scenario != "systems",
             CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
             RadarMode = mode,
-            RoundRadar = scenario.StartsWith("radar-"),
+            RoundRadar = scenario.StartsWith("radar-") || scenario == "jet-radar-round"
+                || scenario == "jet-radar-dense-round",
             Ripcord = jetScene ? (scenario is "jet-caution" or "jet-ghost" ? "Ripcord in: 9" : null)
                 : "Ripcord in: 9",
             Ghost = scenario is "ghost" or "jet-ghost",
@@ -1738,6 +1823,85 @@ sealed class Proof : Game
             sweepDegrees = JetTargetGeometry.LockCornerSweep * 180f / MathF.PI,
             dashesPerCorner = JetTargetGeometry.LockCornerDashes,
         };
+    }
+
+    /// <summary>P1039 — the radar mode of a Jet radar scene: the four LOD names are parsed
+    /// verbatim, the shape variants stay on Default/All.</summary>
+    private static RadarMode JetRadarMode(string scenario)
+    {
+        string suffix = scenario["jet-radar-".Length..];
+        return suffix switch
+        {
+            "round" or "nobearing" => RadarMode.Default,
+            "dense" or "dense-round" or "kinds" => RadarMode.All,
+            _ => Enum.Parse<RadarMode>(suffix),
+        };
+    }
+
+    /// <summary>
+    /// P1039 — the Jet radar scenes' contact set. Every contact is a normal
+    /// <see cref="HudContact"/> the snapshot builder could produce: the same per-kind LOD
+    /// filter (<see cref="RadarLod"/>) decides presence, the bearing is the presentation-only
+    /// own-relative value (−π…π, computed by <see cref="RadarBearing"/>) and the range/label
+    /// payload is the same native one. `kinds` puts one of every kind plus every overlay in
+    /// the frame; `dense` is 66 contacts (the brief's ≥ 60) with labels at LOD active;
+    /// `nobearing` leaves every bearing null to prove the projected-scope fallback.
+    /// </summary>
+    private static List<HudContact> JetRadarContacts(RadarMode mode, string scenario, float w, float h)
+    {
+        bool dense = scenario.Contains("dense", StringComparison.Ordinal);
+        bool kinds = scenario.Contains("kinds", StringComparison.Ordinal);
+        bool noBearing = scenario.Contains("nobearing", StringComparison.Ordinal);
+        int count = dense ? 66 : kinds ? 12 : 10;
+        var list = new List<HudContact>(count);
+        for (int i = 0; i < count; i++)
+        {
+            var kind = (HudContactKind)(i % 9);
+            // Bearings spread around the circle; the dense frame fills every quadrant.
+            float bearing = (i * 2.399963f) % (2f * MathF.PI) - MathF.PI;
+            int range = dense ? 240 + (i * 53) % 3400 : 400 + i * 260;
+            int separation = range;
+            bool enemy = i % 4 == 0 && kind == HudContactKind.Ship;
+            bool selected = i == 0;
+            bool shown = kind switch
+            {
+                HudContactKind.Ship => RadarLod.ShowShip(mode, !enemy, isSelf: false, isSelected: selected),
+                HudContactKind.Station => RadarLod.ShowStation(mode, pedestal: false, ownOrAllied: i % 3 == 0,
+                    onScreen: true, separation, selected),
+                HudContactKind.Warp => RadarLod.ShowWarp(mode, selected),
+                HudContactKind.Asteroid => RadarLod.ShowAsteroid(mode, namedSpecial: i % 2 == 0,
+                    rangeZero: false, separation, selected),
+                HudContactKind.Missile => RadarLod.ShowMissile(mode, aimsAtOwnSide: true, selected),
+                HudContactKind.Probe or HudContactKind.Mine => RadarLod.ShowProbeOrMine(mode,
+                    ownOrAllied: i % 3 == 0, separation, selected),
+                _ => RadarLod.ShowTreasure(mode, useful: true, separation, selected),
+            };
+            if (!shown) continue;
+            float? relative = noBearing ? null : (i == 0 ? 0f : bearing);
+            list.Add(new HudContact(
+                kind,
+                // A projected point too: the null-bearing fallback maps it into the scope.
+                new HudPoint(w * 0.5f + MathF.Cos(bearing) * w * 0.3f, h * 0.5f + MathF.Sin(bearing) * h * 0.3f),
+                true, 1f, new HudColor(.1f, .8f, .9f), selected, i == 5,
+                Name: i % 3 == 0 ? "Contact " + i.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+                Range: range,
+                Shield: kind is HudContactKind.Ship or HudContactKind.Station ? .55f : null,
+                Hull: kind is HudContactKind.Ship or HudContactKind.Station ? .82f : null,
+                Fill: kind == HudContactKind.Asteroid && i % 4 == 0 ? .5f : null,
+                IsEnemy: enemy, IsSelf: i == 9 && !dense, IsSameSide: !enemy && kind == HudContactKind.Ship,
+                AcceptedOrder: i == 1, QueuedOrder: i == 2,
+                Threat: i == 4, ThreatFlash: i == 4,
+                Subject: i == 6, CarriedFlag: i == 7, CarriedArtifact: i == 8,
+                Ripcord: i == 5, Highlight: i == 3, NearestEnemy: i == 0,
+                CommandId: i is 1 or 2 ? 2 : null, CommandAccepted: i == 1,
+                RipcordSeconds: i == 5 ? 7 : null, DetectionEye: i == 1 && kind == HudContactKind.Ship,
+                IsTech: kind == HudContactKind.Tech,
+                ClipSeparation: separation, MissileTargetsOwnSide: kind == HudContactKind.Missile,
+                TreasureUseful: kind is HudContactKind.Treasure or HudContactKind.Tech,
+                CameraDistance: range,
+                RelativeBearingRadians: i == 9 && !dense ? 0f : relative));
+        }
+        return list;
     }
 
     /// <summary>P1038 — the projected target radius the Jet lock scenes pin on BOTH the
@@ -1837,8 +2001,15 @@ sealed class Proof : Game
     /// <b>text-outside-plate</b>, <b>text-off-screen</b> and the <b>minimum icon glyph
     /// size</b>.</para>
     /// </summary>
-    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit, IJetCueAudit
+    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit, IJetCueAudit, IJetElementAudit
     {
+        /// <summary>P1039 — the element the runs that follow belong to (the renderer
+        /// announces each block once; a run with no announcement carries null).</summary>
+        private string? _element;
+
+        /// <summary>P1039 — name the block whose runs follow.</summary>
+        public void Element(string id) => _element = id;
+
         /// <summary>A cursor-invisible sub-pixel tolerance: anything inside this is the same
         /// geometric run submitted twice (keyline then ink).</summary>
         private const float SameRun = 0.35f;
@@ -1914,7 +2085,7 @@ sealed class Proof : Game
         public void CueReadout(RectangleF box)
             => _cueReadouts.Add(new("LOCK", box.X, box.Y, box.Width, box.Height, _seq++));
 
-        private static void Record(List<LayoutBox> list, string text, float x, float y, float w, float h, int seq)
+        private void Record(List<LayoutBox> list, string text, float x, float y, float w, float h, int seq)
         {
             for (int i = list.Count - 1; i >= 0; i--)
             {
@@ -1922,11 +2093,11 @@ sealed class Proof : Game
                 if (string.Equals(run.Text, text, StringComparison.Ordinal)
                     && MathF.Abs(run.X - x) <= 2.5f && MathF.Abs(run.Y - y) <= 2.5f)
                 {
-                    list[i] = new LayoutBox(text, x, y, w, h, seq);   // keep the ink run (submitted last)
+                    list[i] = new LayoutBox(text, x, y, w, h, seq, _element);   // keep the ink run (submitted last)
                     return;
                 }
             }
-            list.Add(new LayoutBox(text, x, y, w, h, seq));
+            list.Add(new LayoutBox(text, x, y, w, h, seq, _element));
         }
 
         /// <summary>P1038b — record one stroke, keeping the INK width when the painter
@@ -1939,11 +2110,11 @@ sealed class Proof : Game
                 LayoutStroke run = _strokes[i];
                 if (Near(run.A, a) && Near(run.B, b) || Near(run.A, b) && Near(run.B, a))
                 {
-                    if (width < run.Width) _strokes[i] = new LayoutStroke(a, b, width, seq);
+                    if (width < run.Width) _strokes[i] = new LayoutStroke(a, b, width, seq, _element);
                     return;
                 }
             }
-            _strokes.Add(new LayoutStroke(a, b, width, seq));
+            _strokes.Add(new LayoutStroke(a, b, width, seq, _element));
         }
 
         private static bool Near(Vector2 a, Vector2 b)
@@ -1959,6 +2130,7 @@ sealed class Proof : Game
             _cues.Clear();
             _cueReadouts.Clear();
             _ink.Clear();
+            _element = null;
         }
 
         /// <summary>
@@ -2033,13 +2205,21 @@ sealed class Proof : Game
                     if (stroke.Seq < text.Seq) continue;      // background under the ink
                     if (BehindLaterPlate(text)) continue;     // a pane drawn on top hides it
                     if (!HasLetter(text.Text)) continue;      // a scale graduation, not a label
+                    // P1039 — the radar scope is FIXED furniture and world-anchored symbology
+                    // (the target designator/lock bracket, the ballistic lead, the order
+                    // chevrons) follows the target: a bracket may cross the scope's frame, its
+                    // mode caption or a contact label, and neither mark may move. Stated
+                    // exception (the brief's own example: world-anchored markers crossing
+                    // fixed HUD furniture); the label keeps its full text.
+                    if (IsRadarVsWorldMarker(stroke.Element, text.Element)) continue;
                     float pad = stroke.Width * 0.5f;
                     float inkTop = text.Y + text.H * InkTopFraction + 1f;
                     float inkBottom = text.Y + text.H * InkBottomFraction - 1f;
                     if (inkBottom <= inkTop) continue;
                     if (!SegmentHitsBox(stroke.A, stroke.B,
                         text.X - pad, inkTop - pad, text.X + text.W + pad, inkBottom + pad)) continue;
-                    strokeHits.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} x stroke {stroke.A.X:0.#},{stroke.A.Y:0.#}->{stroke.B.X:0.#},{stroke.B.Y:0.#} w{stroke.Width:0.#}");
+                    strokeHits.Add($"{text.Element}:{text.Text}@{text.X:0.#},{text.Y:0.#} x "
+                        + $"stroke[{stroke.Element}] {stroke.A.X:0.#},{stroke.A.Y:0.#}->{stroke.B.X:0.#},{stroke.B.Y:0.#} w{stroke.Width:0.#}");
                 }
 
             // ── P1038b: text-outside-plate ─────────────────────────────────
@@ -2099,6 +2279,37 @@ sealed class Proof : Game
                     inPlateOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#} in plate seq {owner}");
                 }
 
+            // ── P1039: text-vs-text across ELEMENTS ────────────────────────
+            // Every run is stamped with the block that drew it (the renderer announces an
+            // element before its runs). Two runs from DIFFERENT elements that intersect is
+            // the count the brief requires: at 800×480 the designator readout landed on the
+            // ladder `-10`, on `CUR` and on `PITCH 00`, and `LOCK 62%` landed on the
+            // `HOSTILE` name line. Same-element rows (a two-line block) are its own layout,
+            // already covered by `TextOverlapInPlate`.
+            var crossOverlaps = new List<string>();
+            for (int i = 0; i < _texts.Count; i++)
+                for (int j = i + 1; j < _texts.Count; j++)
+                {
+                    LayoutBox a = _texts[i], b = _texts[j];
+                    if (!Intersects(a, b)) continue;
+                    if (a.Element is null || b.Element is null) continue;
+                    if (string.Equals(a.Element, b.Element, StringComparison.Ordinal)) continue;
+                    // Exception 1 — two FIXED INSTRUMENT FURNITURE marks (the ladder's
+                    // numerals, the ACC/CUR order words, the heading/tape graduations).
+                    // Native draws these over each other by design (the order arrows are
+                    // drawn over the same ladder, indicator.cpp:786-791), so this pair stays
+                    // informational in `TextOverlaps` and is not a readout crossing another
+                    // element's reading.
+                    if (IsInstrumentFurniture(a.Element) && IsInstrumentFurniture(b.Element)) continue;
+                    // Exception 2 — an overlap HIDDEN behind a later near-opaque plate (the F4
+                    // pane, alpha ≥ 240 of 255, the same threshold `LegibleBehindPane` uses):
+                    // when the EARLIER run's share of the intersecting area is under the pane,
+                    // the pilot sees one run there, not two.
+                    if (OverlapHiddenByOpaquePlate(a, b)) continue;
+                    crossOverlaps.Add($"{a.Element}:{a.Text}@{a.X:0.#},{a.Y:0.#} {a.W:0.#}x{a.H:0.#} "
+                        + $"x {b.Element}:{b.Text}@{b.X:0.#},{b.Y:0.#} {b.W:0.#}x{b.H:0.#}");
+                }
+
             // ── P1038c: cue-vs-own-readout ─────────────────────────────────
             // The cue is drawn BEFORE its caption, so the generic stroke-vs-text rule
             // (background strokes are exempt) cannot see this: the renderer reports each cue
@@ -2148,10 +2359,51 @@ sealed class Proof : Game
             return new LayoutAudit(_texts.Count, _fills.Count, _strokes.Count, textOverlaps.Count,
                 captionOverlaps.Count, boxOverlaps.Count, strokeHits.Count, outsidePlate.Count, offScreen.Count,
                 _glyphs.Count, smallGlyphs.Count, inPlateOverlaps.Count, cueHits.Count, legibleBehindPane.Count,
+                crossOverlaps.Count,
                 captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray(),
                 strokeHits.Take(4).ToArray(), outsidePlate.Take(4).ToArray(),
                 offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray(),
-                inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray());
+                inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray(),
+                crossOverlaps.Take(4).ToArray());
+        }
+
+        /// <summary>P1039 — the one stated stroke-vs-text exception: the Jet radar's fixed
+        /// scope (frame, bands, mode caption, contact labels) against a WORLD-ANCHORED
+        /// marker (target designator, lock cue, ballistic lead, order chevrons, target data
+        /// block). The radar cannot move and the marker is anchored to the projected target,
+        /// so the two may share sky; no reading is truncated or hidden by it.</summary>
+        private static bool IsRadarVsWorldMarker(string? a, string? b)
+            => (a == "radar" && IsWorldMarker(b)) || (b == "radar" && IsWorldMarker(a));
+
+        private static bool IsWorldMarker(string? element)
+            => element is "target" or "lock" or "lead" or "order" or "target-pane";
+
+        /// <summary>P1039 — the fixed instrument furniture whose marks may share sky with
+        /// each other (the ladder numerals, the ACC/CUR order words, the heading and tape
+        /// graduations). They are the same navigation instrument and native draws them over
+        /// one another; the exception is stated in the report.</summary>
+        private static bool IsInstrumentFurniture(string element)
+            => element is "ladder" or "order" or "hdg" or "spd" or "thr";
+
+        /// <summary>P1039 — is the INTERSECTION of two runs covered by a plate that was drawn
+        /// after the earlier of them (alpha ≥ 240/255: the F4 pane's 0.97 backing)? Then the
+        /// overlap region shows one run over the plate, never two.</summary>
+        private bool OverlapHiddenByOpaquePlate(LayoutBox a, LayoutBox b)
+        {
+            // The plate must be drawn after the EARLIER run — that is what hides it. (The
+            // later run may be the plate's own content, drawn after the plate.)
+            int earlier = Math.Min(a.Seq, b.Seq);
+            float x0 = Math.Max(a.X, b.X), y0 = Math.Max(a.Y, b.Y);
+            float x1 = Math.Min(a.X + a.W, b.X + b.W), y1 = Math.Min(a.Y + a.H, b.Y + b.H);
+            if (x1 <= x0 || y1 <= y0) return false;
+            foreach (LayoutFill plate in _plates)
+            {
+                if (plate.Seq <= earlier || plate.Tint.A < 240) continue;
+                if (plate.X <= x0 + 0.01f && plate.Y <= y0 + 0.01f
+                    && plate.X + plate.W >= x1 - 0.01f && plate.Y + plate.H >= y1 - 0.01f)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>P1038c — the plate a run belongs to: the last plate drawn BEFORE the run
@@ -2310,10 +2562,14 @@ sealed class Proof : Game
         }
     }
 
-    private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H, int Seq);
+    /// <summary>P1039 — a recorded text run: its ink box, draw order and the ELEMENT that
+    /// drew it (`TextOverlapCross` compares runs from different elements).</summary>
+    private readonly record struct LayoutBox(string Text, float X, float Y, float W, float H, int Seq,
+        string? Element = null);
 
     /// <summary>P1038b — one recorded stroke: its endpoints, ink width (px) and draw order.</summary>
-    private readonly record struct LayoutStroke(Vector2 A, Vector2 B, float Width, int Seq);
+    private readonly record struct LayoutStroke(Vector2 A, Vector2 B, float Width, int Seq,
+        string? Element = null);
 
     /// <summary>P1038c — a recorded plate (a readout box or a pane), its draw order and the
     /// tint it was filled with (its alpha is the plate's opacity).</summary>
@@ -2328,8 +2584,9 @@ sealed class Proof : Game
 
     private sealed record LayoutAudit(int Texts, int Fills, int Strokes, int TextOverlaps, int CaptionOverlaps,
         int BoxOverlaps, int StrokeHits, int TextOutsidePlate, int TextOffScreen, int Icons, int IconTooSmall,
-        int TextOverlapInPlate, int CueReadoutHits, int LegibleBehindPane,
+        int TextOverlapInPlate, int CueReadoutHits, int LegibleBehindPane, int TextOverlapCross,
         string[] CaptionOverlapSamples, string[] BoxOverlapSamples, string[] StrokeHitSamples,
         string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples,
-        string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples);
+        string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples,
+        string[] TextOverlapCrossSamples);
 }

@@ -239,13 +239,15 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
 
         jet.Draw(model, Frame());
         Assert.Equal(9, surface.count("MASTER CAUTION"));   // one keyline+ink text run
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
 
         Assert.True(switcher.Request(HudSkinIds.Classic));
         Assert.True(switcher.ApplyPending());
         jet.Draw(model, Frame());
         Assert.Equal(18, surface.count("MASTER CAUTION"));  // one panel per frame, no replay
-        Assert.Equal(2, resources.Radar);
+        Assert.Equal(0, resources.Radar);                   // no shared radar pass, ever (P1039)
         Assert.Equal(2, surface.Frames);
         switcher.Dispose();
     }
@@ -1004,7 +1006,9 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         HudModel model = State(state);
         jet.Draw(model, new HudDrawFrame(new Viewport(0, 0, 1280, 720), null, state == "turret"));
 
-        Assert.Equal(1, resources.Radar);
+        // P1039 — Jet draws its OWN radar scope (P972 §4.4 RWR): the shared Classic radar pass
+        // is no longer composed for the Jet skin, so the resource stays untouched.
+        Assert.Equal(0, resources.Radar);
         Assert.Equal(1, resources.Tags);
         Assert.Equal(1, resources.PodDeath);
         if (state == "hidden")

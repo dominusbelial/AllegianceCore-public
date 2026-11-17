@@ -1113,6 +1113,30 @@ list in **reverse**.
   Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetStoresCautionTests.cs`; report:
   `docs/reports/JET_LAYOUT_FIXES_P1038C.md`.
 
+- **Jet radar + readout placement (P1039, skin story 5/9)** — the Jet scope is the SAME
+  native-radar-allowed contact snapshot drawn as an own-relative polar instrument
+  (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetRadar.cs`): square tactical scope when
+  `HudSettings.RoundRadar` is off, an inscribed circular RWR when it is on, the two sharing one
+  measured rectangle; a contact sits at its bearing × range fraction, four equal bands over the
+  frame's own maximum range (rounded to 1/2/5×10ⁿ, floor 1000 m), and a null bearing falls back
+  to the contact's ordinary projected point, never an invented direction. The one shared change
+  is the presentation-only `HudContact.RelativeBearingRadians` (`Rendering/HudModel.cs`), derived
+  by `Rendering/RadarBearing.Relative` from the own forward and the sector plane normal (0 =
+  ahead, positive = LEFT, roll-invariant, null on the plane normal). Labels come from the native
+  per-kind LOD tier (`RadarLabelModel.Resolve`) and the level fade is mapped to monochrome
+  opacity; the renderer is `Rendering/Jet/JetHudRenderer.Radar.cs` (glyph pass → glyph-word pass →
+  label pass, so no stroke can strike a label). Readout placement is a PRIORITY, not a nudge:
+  `Rendering/Jet/JetReadoutPlacement.cs` tries right → left → below → above (captions above →
+  below → right → left), clamped to the viewport gutter and clear of the registered FURNITURE
+  (ladder numerals, `PITCH`, `ACC`/`CUR`, heading plate, tape columns, stores, caution, target
+  pane, radar scope, F4 pane); the F4 pane keeps every row and shrinks its scale below the
+  master-caution panel (caution is the higher-priority element,
+  `JetInventoryPresentation.FitScale`). The proof stamps every run/stroke with an ELEMENT
+  (`IJetElementAudit`) and audits **text-overlap-cross** (`jet-capture.json` schema 7); all
+  classes are 0 in 96 scenes except one listed exception. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
+  `docs/reports/JET_RWR_P1039.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

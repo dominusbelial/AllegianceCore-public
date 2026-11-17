@@ -54,6 +54,19 @@ public interface IJetCueAudit
     void CueReadout(RectangleF box);
 }
 
+/// <summary>
+/// P1039 — an optional audit channel for the ELEMENT a text run belongs to. The proof's
+/// recording surface implements it to stamp every run with the block that drew it, so
+/// cross-element text-vs-text (`TextOverlapCross`) can be counted per frame. The renderer
+/// announces a block once before drawing its runs; production and test surfaces do not
+/// implement the interface, so the call is one type test per block and allocates nothing.
+/// </summary>
+public interface IJetElementAudit
+{
+    /// <summary>Name the element whose runs follow until the next call.</summary>
+    void Element(string id);
+}
+
 /// <summary>P1035 — the production Jet surface: Game1's shared SpriteBatch, the
 /// 1×1 white pixel and the two classic HUD fonts. Borrows every resource; it owns
 /// nothing and therefore has nothing to dispose.</summary>
@@ -310,6 +323,14 @@ public sealed class JetVectorPainter
     {
         if (_surface is IJetCueAudit audit) audit.CueArc(center, radius, start, sweep);
         Arc(center, radius, start, sweep, width, color, CueArcSegments);
+    }
+
+    /// <summary>P1039 — report the element whose text runs follow, to the optional
+    /// <see cref="IJetElementAudit"/> channel (the proof's cross-element text audit).
+    /// A no-op on the production and test surfaces.</summary>
+    public void Element(string id)
+    {
+        if (_surface is IJetElementAudit audit) audit.Element(id);
     }
 
     /// <summary>P1038c — report the lock readout block to the optional cue-audit channel.</summary>
