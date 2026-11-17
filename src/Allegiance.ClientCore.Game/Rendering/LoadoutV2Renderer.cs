@@ -5,6 +5,14 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
+/// P1042 — a screen skin's re-ink of the P1013 loadout composition. Every value is a
+/// colour only: rows, geometry, selection and transactions are unchanged, and Classic/
+/// Modern pass null (their existing constants).
+/// </summary>
+public readonly record struct LoadoutV2Palette(Color Better, Color Worse, Color Accent,
+    Color Muted, Color Body, Color Background, Color? Keyline);
+
+/// <summary>
 /// P1014: draw-only V2 screen. Its pure presentation snapshot contains the text,
 /// selection and semantic inks; layout owns all bounds and hover hit targets.
 /// Game1 draws the real P519 hull model in ShipPreview before this overlay.
@@ -22,11 +30,26 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
         _ => style == HudStyle.Modern ? new Color(224, 236, 238) : new Color(242, 247, 250),
     };
 
-    public void Draw(LoadoutV2Presentation frame, LoadoutV2Layout layout, HudStyle style,
-        LoadoutV2Layout.Element? hover = null, LoadoutV2HardpointMarker? hardpoint = null)
+    /// <summary>P1042 — the active skin's re-ink; null = the Classic/Modern constants.</summary>
+    private LoadoutV2Palette? _palette;
+
+    /// <summary>The Classic/Modern ink unless the caller passed a skin palette.</summary>
+    private Color InkColor(LoadoutV2Ink ink, HudStyle style) => _palette is { } palette ? ink switch
     {
-        var accent = ColorFor(LoadoutV2Ink.Accent, style);
-        var background = new Color(.03f, .042f, .058f, .98f);
+        LoadoutV2Ink.Better => palette.Better,
+        LoadoutV2Ink.Worse => palette.Worse,
+        LoadoutV2Ink.Accent => palette.Accent,
+        LoadoutV2Ink.Muted => palette.Muted,
+        _ => palette.Body,
+    } : ColorFor(ink, style);
+
+    public void Draw(LoadoutV2Presentation frame, LoadoutV2Layout layout, HudStyle style,
+        LoadoutV2Layout.Element? hover = null, LoadoutV2HardpointMarker? hardpoint = null,
+        LoadoutV2Palette? palette = null)
+    {
+        _palette = palette;
+        var accent = InkColor(LoadoutV2Ink.Accent, style);
+        var background = palette?.Background ?? new Color(.03f, .042f, .058f, .98f);
         batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp);
         try
         {
@@ -101,6 +124,13 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
 
     private readonly RasterizerState _previewClip = new() { CullMode = CullMode.None, ScissorTestEnable = true };
 
+    /// <summary>The eight surrounding keyline offsets (P1042, the Jet painter's order).</summary>
+    private static readonly Vector2[] TextKeylineOffsets =
+    [
+        new(-1f, 0f), new(1f, 0f), new(0f, -1f), new(0f, 1f),
+        new(-1f, -1f), new(1f, -1f), new(-1f, 1f), new(1f, 1f),
+    ];
+
     public void Dispose() => _previewClip.Dispose();
 
     private void DrawHardpoint(LoadoutV2HardpointMarker marker, LoadoutV2Layout layout, HudStyle style)
@@ -111,7 +141,7 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
         var preview = layout.ShipPreview;
         device.ScissorRectangle = new Rectangle((int)preview.X + 1, (int)preview.Y + 1,
             (int)preview.Width - 2, (int)preview.Height - 2);
-        var accent = ColorFor(LoadoutV2Ink.Accent, style) * (marker.Occluded ? .4f : 1f);
+        var accent = InkColor(LoadoutV2Ink.Accent, style) * (marker.Occluded ? .4f : 1f);
         float scale = layout.Scale;
         batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp,
             DepthStencilState.None, _previewClip);
@@ -164,7 +194,7 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
     private void Row(LoadoutV2DisplayRow row, LoadoutV2Layout.Element element, HudStyle style,
         float scale, LoadoutV2Layout.Element? hover, bool stat = false)
     {
-        var accent = ColorFor(LoadoutV2Ink.Accent, style);
+        var accent = InkColor(LoadoutV2Ink.Accent, style);
         if (row.Selected || row.Focused || hover == element)
         {
             Fill(element.Bounds, accent * (hover == element ? .22f : .12f));
@@ -217,7 +247,16 @@ public sealed class LoadoutV2Renderer(SpriteBatch batch, Texture2D white, Sprite
         var size = font.MeasureString(fitted) * scale;
         var pos = new Vector2(bounds.X + (centered ? (bounds.Width - size.X) / 2 : 0),
             bounds.Y + (bounds.Height - font.LineSpacing * scale) / 2);
-        batch.DrawString(font, fitted, pos, ColorFor(text.Ink, style), 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+        var ink = InkColor(text.Ink, style);
+        if (_palette?.Keyline is { } keyline && !keyline.Equals(ink))
+        {
+            // P1042 — a skin may ask for keylined screen text: the eight surrounding
+            // near-black offsets first, then the ink (the Jet painter's convention).
+            for (int i = 0; i < TextKeylineOffsets.Length; i++)
+                batch.DrawString(font, fitted, pos + TextKeylineOffsets[i], keyline, 0, Vector2.Zero, scale,
+                    SpriteEffects.None, 0);
+        }
+        batch.DrawString(font, fitted, pos, ink, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
         return size.X;
     }
 

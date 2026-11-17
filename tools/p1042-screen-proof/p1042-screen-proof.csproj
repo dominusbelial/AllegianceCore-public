@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><RootNamespace>P1042Proof</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" ReferenceOutputAssembly="false" />
+    <Compile Include="../hud2-proof/PngCodec.cs" Link="PngCodec.cs" />
+    <None Include="../../src/Allegiance.ClientCore.MonoGame/Content/bin/DesktopGL/Content/HUDModern.xnb" Link="Content/HUDModern.xnb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../hud-polish-proof/Content/*" Link="Content/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

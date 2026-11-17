@@ -71,6 +71,26 @@ public sealed partial class Game1
         }
         _hudSkins = new(_hudSettings, classic, modern, jet, jetEnabled: JetSkinEnabled);
         _hudSkins.Active.Renderer.SetRadarIcons(_radarIconTextures);
+
+        // P1042 — screen chrome: all adapters preloaded here, so a skin/palette switch
+        // is a reference swap at the update/draw boundary (never a decode in Draw).
+        _hangarScreenRenderer ??= BuildHangarScreenRenderer();
+        _loadoutV2Renderer ??= new Rendering.LoadoutV2Renderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        var introPainter = new Rendering.Screens.IntroScreenPainter(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        var classicScreen = new ClassicScreenSkinRenderer(HudSkinIds.Classic, introPainter,
+            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer);
+        var modernScreen = new ClassicScreenSkinRenderer(HudSkinIds.Modern, introPainter,
+            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer);
+        IScreenSkinRenderer? jetScreen = null;
+        if (jet is not null && _jetPalettes is not null)
+        {
+            jetScreen = new Rendering.Jet.JetScreenSkinRenderer(
+                new Rendering.Jet.JetSpriteBatchSurface(_spriteBatch, _whitePixel, _hudSmall, _hudBig),
+                _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer,
+                _hudSettings, _jetPalettes);
+        }
+        InstallScreenSkins(new ScreenSkinRegistry(classicScreen, modernScreen, jetScreen));
+        _screenSkins!.Publish(_hudSkins.Active.Renderer.Id, JetSkinEnabled());
     }
 
     /// <summary>P1035 — the live <c>hud.jetSkin</c> gate. Read at the update
@@ -103,6 +123,11 @@ public sealed partial class Game1
         // request; either change saves and announces exactly once.
         bool skinChanged = _hudSkins?.ApplyPending() == true;
         bool paletteChanged = _jetPalettes?.ApplyPending() == true;
+        // P1042 — the screen chrome is published in this same call, so the frame draws
+        // the new HUD and the new intro/hangar/loadout chrome together (P972 §2.5:
+        // no half-switched frame). The palette needs no republish: the Jet screen
+        // adapter reads the published variant per frame.
+        if (skinChanged) _screenSkins?.Publish(_hudSkins!.Active.Renderer.Id, JetSkinEnabled());
         if (!skinChanged && !paletteChanged) return;
         SaveHudSettingsQuietly(); // activation succeeded; now persist and announce
         _hudSkinNotice = HudSkinNotice.Format(_hudSkins!.Active.Definition.Name, ActiveJetPalette());

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -29,79 +30,53 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>P1042 — the screen-chrome registry (desktop lifecycle initializes it at
+    /// <c>LoadContent</c>; the browser intro keeps a classic fallback because it runs the
+    /// shared intro partial without the flight/HUD lifecycle). Published in the same
+    /// update-boundary call as the HUD skin and the palette.</summary>
+    private ScreenSkinRegistry? _screenSkins;
+    private IScreenSkinRenderer? _screenFallback;
+
+    /// <summary>P1042 — install the preloaded screen adapters (desktop lifecycle only;
+    /// the browser keeps the classic fallback).</summary>
+    private void InstallScreenSkins(ScreenSkinRegistry registry) => _screenSkins = registry;
+
+    /// <summary>P1042 — the active screen chrome (a single reference read per frame).</summary>
+    private IScreenSkinRenderer ActiveScreen => _screenSkins?.Active
+        ?? (_screenFallback ??= new ClassicScreenSkinRenderer(HudSkinIds.Classic,
+            new Rendering.Screens.IntroScreenPainter(_spriteBatch, _whitePixel, _hudSmall, _hudBig),
+            null, null, null));
+
     private void DrawIntroMain(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "ALLEGIANCE", "Choose how to play  -  Single Player or Multiplayer", titleCol, dimCol);
+        // P1042 — the main menu is drawn by the active screen skin. Classic/Modern
+        // forward the untouched pre-boundary drawing (IntroScreenPainter); Jet draws
+        // vector chrome over the same rows. The frame carries the resolved
+        // IntroLayout result, so drawing and hit testing share one geometry source.
+        ActiveScreen.DrawIntro(BuildIntroMainFrame(w, h, titleCol, dimCol, textCol));
+    }
 
-        float cx = w / 2f;
-        var lay = IntroLayout.Compute(w, h, IntroMainLabels.Length);
-        float y = lay.Rows.Length > 0 ? lay.Rows[0].Y + 4f : h * 0.24f;
-        float rowH = lay.RowHeight;
-        float rowScale = lay.RowTextScale;
-        for (int i = 0; i < IntroMainLabels.Length; i++)
-        {
-            string label = IntroMainLabels[i];
-            var sz = _hudSmall.MeasureString(label);
-            bool sel = i == _introIndex;
-            if (sel)
-            {
-                _spriteBatch.Draw(_whitePixel, new Rectangle((int)lay.Rows[i].X, (int)lay.Rows[i].Y,
-                        (int)lay.Rows[i].Width, (int)lay.Rows[i].Height),
-                    new Color(0.08f, 0.35f, 0.33f, 0.55f));
-            }
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2(cx - sz.X * rowScale / 2f, y + 2f),
-                sel ? titleCol : textCol, 0, Vector2.Zero, rowScale, SpriteEffects.None, 0);
-            y += rowH;
-        }
-
-        // P946 — pilot name entry (native remembered the last character name,
-        // introscreen.cpp:1604-1608; the field itself is the port's addition).
-        // The field shows a highlight box + caret while it owns typed text, so
-        // the screen makes its focus visible. With an identity account the
-        // label is the verified callsign and Tab does nothing, so the field is
-        // not shown as focused and typed keys are not invited.
+    /// <summary>P1042 — the intro main menu as a read-only screen model. Every value is
+    /// the model's own; nothing here can move the selection or issue a command.</summary>
+    private IntroMainFrame BuildIntroMainFrame(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
         bool tabAllowed = _identityScreen.Account is null;
         bool pilotFocus = _introEditingPilot && tabAllowed;
         string pilotText = _pilotBuf.ToString();
-        var nameLabel = _identityScreen.PilotLabel(pilotText);
-        var nsz = _hudSmall.MeasureString(nameLabel);
-        var field = IntroLayout.PilotField(w, h);
-        if (pilotFocus)
-        {
-            float fieldW = MathF.Min(w - 40f, MathF.Max(field.Width, nsz.X + 28f));
-            _spriteBatch.Draw(_whitePixel,
-                new Rectangle((int)(cx - fieldW / 2f), (int)field.Y, (int)fieldW, (int)field.Height),
-                new Color(0.10f, 0.42f, 0.39f, 0.65f));
-            _spriteBatch.Draw(_whitePixel,
-                new Rectangle((int)(cx - fieldW / 2f), (int)field.Bottom, (int)fieldW, 2), titleCol);
-        }
-        float textX = cx - nsz.X / 2f;
-        _spriteBatch.DrawString(_hudSmall, nameLabel, new Vector2(textX, lay.PilotY),
-            pilotFocus ? titleCol : dimCol);
-        if (pilotFocus)
-        {
-            // A real caret bar after the typed name: the "_" glyph sits on the
-            // text baseline, exactly where the field's underline is painted, so
-            // an explicit bar is what makes the insertion point visible.
-            float caretX = textX + _hudSmall.MeasureString("Pilot: " + pilotText).X;
-            _spriteBatch.Draw(_whitePixel, new Rectangle((int)caretX, (int)lay.PilotY + 1, 2, 17), titleCol);
-        }
-
+        var lay = IntroLayout.Compute(w, h, IntroMainLabels.Length);
         var identityLine = _identityScreen.ApprovalLine;
         var identitySize = _hudSmall.MeasureString(identityLine);
         float identityScale = Math.Min(1f, (w - 40f) / Math.Max(1f, identitySize.X));
-        _spriteBatch.DrawString(_hudSmall, identityLine, new Vector2((w - identitySize.X * identityScale) / 2f, lay.IdentityY),
-            titleCol, 0, Vector2.Zero, identityScale, SpriteEffects.None, 0);
-
-        // P946 — one line that says what the screen accepts: the arrows always
-        // move the menu, Enter selects, Tab switches typed-text focus (only
-        // when an account does not) and Esc leaves. The footer sits below the
-        // pilot field, so it never enters the button column.
         string hint = IntroScreenModel.MainHint(tabAllowed);
         var fsz = _hudSmall.MeasureString(hint);
         float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, lay.FooterY),
-            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
+        return new IntroMainFrame(GraphicsDevice.Viewport,
+            "ALLEGIANCE", "Choose how to play  -  Single Player or Multiplayer",
+            IntroMainLabels, lay, _introIndex,
+            _identityScreen.PilotLabel(pilotText), pilotText, pilotFocus,
+            IntroLayout.PilotField(w, h), _hudSmall.MeasureString("Pilot: " + pilotText).X,
+            identityLine, identityScale, hint, hintScale,
+            new ScreenInks(titleCol, textCol, dimCol, Color.Orange));
     }
 
     private void DrawIntroChooser(float w, float h, Color titleCol, Color dimCol, Color textCol)

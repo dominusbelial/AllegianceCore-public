@@ -17,6 +17,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Allegiance.Core.Content;
 using Allegiance.Core.Rendering;
 using Allegiance.Core.Visual;
@@ -2109,8 +2110,12 @@ public sealed partial class Game1
             // P276 — right-side part-info / connector-compat panel for the
             // currently-highlighted shop row (real stats + fits/no-fit).
             var detailRows = Rendering.PartInfoLayout.Build(dockShop);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney,
-                backdropAlpha: 0.62f, footerHeight: 84f);
+            // P1042 — the legacy docked shop is chrome too: the same frame the V2 path
+            // uses, with its own rows and the resolved rectangles the docked renderer
+            // measures. Classic/Modern forward the untouched drawing.
+            ActiveScreen.DrawLoadout(new LoadoutScreenFrame(GraphicsDevice.Viewport,
+                shopRows, detailRows, _session.World.MyMoney, 0.62f, 84f, false, null, false,
+                null, null, _hudSettings.Style, null, null, LoadoutScreenInks));
         }
 
         // P803 — the loadout screen's board-state text (native BoardTextImage /
