@@ -533,6 +533,8 @@ sealed class Proof : Game
             return list;
         }
         var summaries = new List<object>(scenes.Length);
+        int missingTotal = 0, hintBlocked = 0, cellLeaks = 0;
+        var missingScenes = new List<string>();
         foreach (var (scenario, width, height, backdropName) in scenes)
         {
             using var target = new RenderTarget2D(GraphicsDevice, width, height);
@@ -586,6 +588,15 @@ sealed class Proof : Game
             using (var file = File.Create(Path.Combine(root, stem + ".png")))
                 target.SaveAsPng(file, width, height);
             var attitude = _jet.Attitude;
+            // P1040b — the `ElementMissing` class: the elements this scene's model makes
+            // eligible (its gate true, after the panel's own stated line limit) against the
+            // elements the renderer reported as DRAWN this frame.
+            string[] eligible = EligibleElements(_jetAudit!, model, height);
+            string[] missing = eligible.Where(id => !_jetAuditSurface!.DrawnIds.Contains(id)).ToArray();
+            missingTotal += missing.Length;
+            if (missing.Length > 0) missingScenes.Add(stem + ":" + string.Join("+", missing));
+            if (_jetAudit!.HintBox.Height > 0f && !_jetAudit.HintClear) hintBlocked++;
+            cellLeaks += CellLeaks(_jetAudit!, _jetAuditSurface!, model.Context.CommandWing);
             summaries.Add(new
             {
                 scene = stem, scenario, width, height, backdrop = backdropName,
@@ -676,16 +687,41 @@ sealed class Proof : Game
                 // was drawn with (the `AUTOVLOCK FLAG` defect's evidence).
                 annunciatorRow = Box(_jetAudit!.AnnunciatorRow),
                 annunciatorWordGap = _jetAudit!.AnnunciatorGap,
+                // P1040b — the elements this scene's model makes eligible and the ones the
+                // renderer actually drew (the `ElementMissing` class: an eligible survival/
+                // critical element left undrawn is a counted failure).
+                elements = new
+                {
+                    eligible,
+                    drawn = _jetAuditSurface!.DrawnIds.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                    missing,
+                },
                 // P1040 — the console/chat/lifecycle boxes the renderer committed this frame,
                 // so the placement is evidence rather than an assertion.
                 console = new
                 {
                     chatPane = Box(_jetAudit!.ChatPane),
                     consoleColumn = Box(_jetAudit.ConsoleColumn),
+                    // P1040b — the console column's own rows (the lifepod block is survived first:
+                    // the evidence that it was really drawn, not merely gated).
+                    columnRows = _jetAuditSurface!.TextsInside(_jetAudit.ConsoleColumn),
                     vote = Box(_jetAudit.VoteBox),
                     compose = Box(_jetAudit.ComposeBox),
                     commandPanel = Box(_jetAudit.CommandPanel),
                     lifepod = Box(_jetAudit.LifepodBox),
+                    lifepodDrawable = _jetAudit.LifepodDrawable,
+                    hintSlot = _jetAudit.HintSlotIndex,
+                    // P1040b — the CMD panel's cells: every drawn cell word must be INSIDE its own
+                    // cell (the native hit rectangle), so the evidence is the leak count per cell.
+                    commandCells = CommandCells(_jetAudit!, _jetAuditSurface!, model.Context.CommandWing),
+                    // P1040b — the bottom band and the diagnostic rows at this frame's scale.
+                    hint = Box(_jetAudit.HintBox),
+                    hintClear = _jetAudit.HintClear,
+                    tips = Box(_jetAudit.TipBlock),
+                    tipRows = _jetAuditSurface!.TextsInside(_jetAudit.TipBlock),
+                    cargo = Box(_jetAudit.CargoBox),
+                    flightParts = Box(_jetAudit.FlightPartsBox),
+                    cargoTexts = _jetAuditSurface!.TextsInside(_jetAudit.CargoBox),
                     chatLines = model.Context.Chat?.Lines.Count ?? 0,
                     chatOffset = model.Context.Chat?.Offset ?? 0,
                     composeState = model.Context.Chat?.ComposeState.ToString(),
@@ -766,8 +802,113 @@ sealed class Proof : Game
         Console.WriteLine($"HUD2_JET_RADAR_LABELS placed {radarPlaced}, shortened {radarShortened}, "
             + $"hidden {radarHidden}, priority hidden {radarPriorityHidden}, never-hidden overflows {radarOverflow}, "
             + $"priority misses {radarMisses}, words dropped {radarWords} over {scenes.Length} scenes");
+        // P1040b — the two new classes: an eligible survival/critical element that was not
+        // drawn, and a controls hint that could not find a clear slot (both must be 0).
+        Console.WriteLine($"HUD2_JET_ELEMENTS element-missing {missingTotal} over {scenes.Length} scenes"
+            + (missingScenes.Count > 0 ? " [" + string.Join(", ", missingScenes) + "]" : ""));
+        Console.WriteLine($"HUD2_JET_CONSOLE hint-blocked {hintBlocked}, cmd-cell leaks {cellLeaks} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
-        return 0;
+        return missingTotal == 0 && hintBlocked == 0 && cellLeaks == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// P1040b — the elements this scene's model makes ELIGIBLE for the `ElementMissing`
+    /// class: the survival/critical elements whose shared-model gate is true, restricted to
+    /// the master-caution panel's own selected set (priority order + the stated line limit),
+    /// so the comparison is "what must be on screen" against "what the renderer reported as
+    /// committed", never a claim about an element the panel legitimately does not show.
+    /// </summary>
+    private static string[] EligibleElements(JetHudRenderer renderer, HudModel model, int height)
+    {
+        var eligible = new List<string>(6);
+        if (model.PodVisible) eligible.Add("lifepod");
+        // The caution panel keeps its own native gate (JetHudRenderer.DrawCaution returns
+        // unless the cockpit is visible), so nothing is eligible from it when it cannot draw.
+        if (model.FlightVisible)
+        {
+            Span<JetCaution> buffer = new JetCaution[JetCautionModel.MaxCautions];
+            int count = JetCautionModel.Build(model, buffer);
+            bool podDrawn = renderer.LifepodDrawable;
+            int limit = JetCautionModel.LineLimit(JetStoresPanel.Compact(height));
+            int selected = 0;
+            for (int i = 0; i < count && selected < limit; i++)
+            {
+                JetCaution caution = buffer[i];
+                if (caution.Kind == JetCautionKind.Vote) continue;
+                if (caution.Kind == JetCautionKind.PodOxygen && podDrawn) continue;
+                selected++;
+                if (caution.Kind == JetCautionKind.Ghost) eligible.Add("death");
+                else if (caution.Kind == JetCautionKind.MissileTrack) eligible.Add("missile");
+            }
+            if (selected > 0) eligible.Add("caution");
+        }
+        if (model.Context.Console?.VoteText is { Length: > 0 } && model.Visible) eligible.Add("vote");
+        return eligible.ToArray();
+    }
+
+    /// <summary>
+    /// P1040b — the CMD panel's drawn cells at panel-absolute coordinates, with the number of
+    /// runs that leak past each cell's border and the wing cell's own runs. Every cell is the
+    /// native <see cref="CommandBarLayout"/> rectangle the hit test resolves; the fit rule keeps
+    /// the words inside them.
+    /// </summary>
+    /// <summary>P1040b — the last CMD cell-leak detail (evidence for the report).</summary>
+    private static string[] _cmdLeakDetail = Array.Empty<string>();
+
+    private static object? CommandCells(JetHudRenderer renderer, RecordingSurface surface, int wingIndex)
+    {
+        RectangleF panel = renderer.CommandPanel;
+        if (panel.Width <= 0f || panel.Height <= 0f) return null;
+        RectangleF Abs(RectangleF cell) => new(panel.X + cell.X, panel.Y + cell.Y, cell.Width, cell.Height);
+        RectangleF wing = Abs(JetCommandConsole.WingCell);
+        return new
+        {
+            panel = new { x = panel.X, y = panel.Y, w = panel.Width, h = panel.Height },
+            wingCell = new { x = wing.X, y = wing.Y, w = wing.Width, h = wing.Height },
+            wingRuns = surface.RunsInside(wing),
+            leaks = CellLeaks(renderer, surface, wingIndex),
+            leakDetail = _cmdLeakDetail,
+        };
+    }
+
+    /// <summary>P1040b — the number of drawn cell words that leave their cell (must be 0).
+    /// Only the runs whose text IS that cell's word and whose anchor lies in the cell are
+    /// tested: the native wing combo overlaps the verb bar's band, so a neighbour's run that
+    /// merely touches another cell's rectangle is not this cell's word.</summary>
+    private static int CellLeaks(JetHudRenderer renderer, RecordingSurface surface, int wingIndex)
+    {
+        RectangleF panel = renderer.CommandPanel;
+        if (panel.Width <= 0f || panel.Height <= 0f) return 0;
+        var detail = new List<string>();
+        int leaks = 0;
+
+        void Check(string word, string name, RectangleF cell)
+        {
+            foreach ((float x, float y, float w, float h) in surface.RunsWithText(word))
+            {
+                if (x < cell.X - 2f || x > cell.X + cell.Width) continue;
+                if (y < cell.Y - 2f || y > cell.Y + cell.Height) continue;
+                bool inside = x >= cell.X - 1.5f && x + w <= cell.X + cell.Width + 1.5f
+                    && y >= cell.Y - 1.5f && y + h <= cell.Y + cell.Height + 1.5f;
+                if (inside) continue;
+                leaks++;
+                detail.Add($"{name}:{word}@{x:0.#},{y:0.#} {w:0.#}x{h:0.#} cell {cell.X:0.#},{cell.Y:0.#} {cell.Width:0.#}x{cell.Height:0.#}");
+            }
+        }
+
+        RectangleF Abs(RectangleF cell) => new(panel.X + cell.X, panel.Y + cell.Y, cell.Width, cell.Height);
+        for (int c = 0; c < JetCommandConsole.RecipientCount; c++)
+            Check(JetCommandConsole.RecipientWord(c), "recipient" + c, Abs(JetCommandConsole.RecipientCell(c)));
+        {
+            RectangleF wing = Abs(JetCommandConsole.WingCell);
+            Check("WING", "wing", wing);
+            Check(CommandBarLayout.WingNames[Math.Clamp(wingIndex, 0,
+                CommandBarLayout.WingNames.Length - 1)].ToUpperInvariant(), "wing", wing);
+        }
+        for (int c = 0; c < JetCommandConsole.VerbCount; c++)
+            Check(JetCommandConsole.VerbWord(c), "verb" + c, Abs(JetCommandConsole.VerbCell(c)));
+        _cmdLeakDetail = detail.ToArray();
+        return leaks;
     }
 
     private sealed record RenderResult(
@@ -2243,12 +2384,22 @@ sealed class Proof : Game
         /// announces each block once; a run with no announcement carries null).</summary>
         private string? _element;
 
+        /// <summary>P1040b — the elements whose ink the renderer COMMITTED this frame
+        /// (reported through <see cref="IJetElementAudit.Drawn"/>); the proof compares this
+        /// set with the scene model's gates for the `ElementMissing` class.</summary>
+        private readonly HashSet<string> _drawn = new(StringComparer.Ordinal);
+
+        public IReadOnlySet<string> DrawnIds => _drawn;
+
         /// <summary>P1039c — the radar contact whose marks and runs follow (-1 outside the
         /// radar or for its captions).</summary>
         private int _contact = -1;
 
         /// <summary>P1039 — name the block whose runs follow.</summary>
         public void Element(string id) => _element = id;
+
+        /// <summary>P1040b — an element's ink was committed this frame.</summary>
+        public void Drawn(string id) => _drawn.Add(id);
 
         /// <summary>P1039c — name the radar contact whose runs follow.</summary>
         public void Contact(int index) => _contact = index;
@@ -2403,6 +2554,7 @@ sealed class Proof : Game
             _ink.Clear();
             _element = null;
             _contact = -1;
+            _drawn.Clear();
         }
 
         /// <summary>
@@ -2474,7 +2626,22 @@ sealed class Proof : Game
             foreach (LayoutStroke stroke in _strokes)
                 foreach (LayoutBox text in _texts)
                 {
-                    if (stroke.Seq < text.Seq) continue;      // background under the ink
+                    if (stroke.Seq < text.Seq)
+                    {
+                        // P1040b — a FIXED INSTRUMENT's stroke drawn before the run is not
+                        // "background under the ink" when the run is somebody else's label:
+                        // the ladder's rungs, the tape rails and the radar frame are painted
+                        // first, so a hint laid across the +20 rung used to be invisible here.
+                        // The instrument's own marks (same element) and world-anchored markers
+                        // (order arrows over the ladder, native by design) stay exempt.
+                        if (!IsFixedInstrumentStroke(stroke.Element)) continue;
+                        if (string.Equals(stroke.Element, text.Element, StringComparison.Ordinal)) continue;
+                        if (IsInstrumentFurniture(text.Element ?? "") || IsWorldMarker(text.Element)) continue;
+                        // A near-opaque plate drawn AFTER the stroke and BEFORE the run hides
+                        // the instrument behind the run (the F4 pane's 0.97 backing): the rung
+                        // is not visible under the pane's own rows, so it is not a hit.
+                        if (OpaquePlateBetween(text, stroke.Seq)) continue;
+                    }
                     if (BehindLaterPlate(text)) continue;     // a pane drawn on top hides it
                     if (!HasLetter(text.Text)) continue;      // a scale graduation, not a label
                     // P1039 — the radar scope is FIXED furniture and world-anchored symbology
@@ -2721,13 +2888,39 @@ sealed class Proof : Game
         /// <summary>P1039 — the fixed instrument furniture whose marks may share sky with
         /// each other (the ladder numerals, the ACC/CUR order words, the heading and tape
         /// graduations). They are the same navigation instrument and native draws them over
-        /// one another; the exception is stated in the report.</summary>
+        /// one another; the exception is stated in the report. The TRAINING CALLOUT stays here
+        /// because its anchors are the shared native table (<c>indicator.cpp:461-701</c>) — a
+        /// skin cannot move it without diverging from native — while the controls HINT is no
+        /// longer exempt: its position is the skin's own, and that exemption is exactly why
+        /// P1040's audit read 0 for a hint drawn across the ladder.
+        /// <para><b>P1040b — the second half of the gap.</b> The stroke rule ignores every
+        /// stroke drawn before the text (the ladder's rungs are drawn first), so a label over
+        /// them was never a `StrokeHit` either. <see cref="IsFixedInstrumentStroke"/> closes
+        /// that: a fixed instrument's stroke drawn before a run that is NOT that instrument's
+        /// own mark, NOT shared tutorial geometry and NOT a world-anchored marker counts.</para>
+        /// </summary>
         private static bool IsInstrumentFurniture(string element)
-            // P1040 — the training callout and the fresh-profile controls hint are FIXED
-            // tutorial furniture at shared anchors: native draws them over the ladder and the
-            // order arrows with the same geometry (indicator.cpp:461-701, P949), so a
-            // furniture-vs-furniture pair stays informational.
-            => element is "ladder" or "order" or "hdg" or "spd" or "thr" or "training" or "hint";
+            => element is "ladder" or "order" or "hdg" or "spd" or "thr" or "training";
+
+        /// <summary>P1040b — the fixed instrument whose STROKES (rungs, rails, graduations,
+        /// ring frame) are drawn before every label: a run drawn over one is the hint-over-the-
+        /// ladder class the P1040 audit could not see.</summary>
+        private static bool IsFixedInstrumentStroke(string? element)
+            => element is "ladder" or "hdg" or "spd" or "thr" or "radar";
+
+        /// <summary>P1040b — is <paramref name="text"/> INSIDE a near-opaque plate (alpha
+        /// ≥ 240/255, the F4 pane's backing) drawn after <paramref name="strokeSeq"/> and
+        /// before the run? Then the plate hides whatever was painted under that region.</summary>
+        private bool OpaquePlateBetween(LayoutBox text, int strokeSeq)
+        {
+            foreach (LayoutFill plate in _plates)
+            {
+                if (plate.Seq <= strokeSeq || plate.Seq >= text.Seq || plate.Tint.A < 240) continue;
+                var box = new LayoutBox("#", plate.X, plate.Y, plate.W, plate.H, plate.Seq);
+                if (Contains(box, text)) return true;
+            }
+            return false;
+        }
 
         /// <summary>P1039 — is the INTERSECTION of two runs covered by a plate that was drawn
         /// after the earlier of them (alpha ≥ 240/255: the F4 pane's 0.97 backing)? Then the
@@ -2805,6 +2998,35 @@ sealed class Proof : Game
             {
                 if (!Contains(outer, text)) continue;
                 if (!list.Contains(text.Text)) list.Add(text.Text);
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>P1040b — every text run recorded inside <paramref name="box"/>, with its
+        /// ink box: the CMD cell evidence (a cell word must be inside its cell).</summary>
+        public object[] RunsInside(RectangleF box)
+        {
+            if (box.Width <= 0f || box.Height <= 0f) return Array.Empty<object>();
+            var outer = new LayoutBox("#", box.X, box.Y, box.Width, box.Height, int.MaxValue);
+            var list = new List<object>();
+            foreach (LayoutBox text in _texts)
+            {
+                if (!Intersects(outer, text)) continue;
+                bool inside = Contains(outer, text);
+                list.Add(new { text = text.Text, x = MathF.Round(text.X, 1), y = MathF.Round(text.Y, 1),
+                    w = MathF.Round(text.W, 1), h = MathF.Round(text.H, 1), inside });
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>P1040b — every recorded run of <paramref name="text"/> with its ink box.</summary>
+        public (float X, float Y, float W, float H)[] RunsWithText(string text)
+        {
+            var list = new List<(float X, float Y, float W, float H)>();
+            foreach (LayoutBox run in _texts)
+            {
+                if (!string.Equals(run.Text, text, StringComparison.Ordinal)) continue;
+                list.Add((run.X, run.Y, run.W, run.H));
             }
             return list.ToArray();
         }

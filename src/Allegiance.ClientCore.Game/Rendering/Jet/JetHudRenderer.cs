@@ -412,6 +412,13 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 // as furniture when a readout is placed (P1039: a readout may never be put
                 // over the caution panel or the stores block). Each keeps its own gate.
                 DrawStores(model, w, h, scale);
+                // P1040b — the console boxes the caution stack's compaction reads are resolved
+                // BEFORE the panel: `POD OXY` leaves the stack only when the lifepod block the
+                // column reserves is actually drawable this frame (`_lifepodDrawable`), not on
+                // the pod gate alone (P1040 dropped the line while drawing no panel at
+                // 800×480, so the endurance was shown nowhere).
+                _chatPane = ChatPaneRect(model, w, scale);
+                _lifepodDrawable = LifepodReserved(model, scale);
                 DrawCaution(model, w, h, scale);
 
                 // P1040 — the console text family owns the left column below the chat pane
@@ -419,7 +426,6 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 // designator readout not yet placed) so it is furniture when a world-anchored
                 // readout is placed: a target readout can never land on the sector/orders
                 // rows, and the chat pane's box is the same value DrawConsole re-reads.
-                _chatPane = ChatPaneRect(model, w, scale);
                 float columnLeft = ConsoleLeftEdge(scale);
                 float columnRight = JetConsoleLayout.ColumnRight(w, scale);
                 float columnTop = _chatPane.Y + _chatPane.Height + JetConsoleLayout.ChatToColumn * scale;

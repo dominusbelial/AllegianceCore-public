@@ -47,6 +47,24 @@ public static class JetConsoleLayout
     /// <summary>Gap between the chat pane's bottom edge and the console column.</summary>
     public const float ChatToColumn = 8f;
 
+    /// <summary>
+    /// P1040b — rows the LIFEPOD block occupies. The block is survival-critical, so the
+    /// column RESERVES it before any other row is placed (P1040b defect 1: at 800×480 the
+    /// single free row went to `SECTOR` and the pod's oxygen endurance and return binding
+    /// were drawn nowhere).
+    /// <para>Standard form (three rows): <c>LIFEPOD</c> / <c>OXY ▮ nn s</c> / <c>RETURN …</c>
+    /// (native <c>EjectPodImage</c> identity + <c>GetEndurance</c> gauge, dialog.mdl:1922-1996,
+    /// consoledata.cpp:534-545). Compact form (two rows): <c>LIFEPOD OXY ▮ nn s</c> (one row:
+    /// the identity, the segmented endurance bar and the numeric endurance) and
+    /// <c>RETURN …</c> — the stated compact form the brief allows.</para>
+    /// </summary>
+    public const int PodRowsStandard = 3;
+    public const int PodRowsCompact = 2;
+
+    /// <summary>The LIFEPOD block's rows at this viewport height.</summary>
+    public static int PodRows(float viewportHeight)
+        => viewportHeight < JetStoresPanel.CompactHeight ? PodRowsCompact : PodRowsStandard;
+
     /// <summary>Gap between a row's word and its value.</summary>
     public const float WordGap = 5f;
 
@@ -117,6 +135,34 @@ public static class JetConsoleLayout
     public static float RowPitch(float textHeight, float scale)
         => textHeight + RowGap * (scale > 0f ? scale : 1f);
 
+    /// <summary>
+    /// P1040b — the height the LIFEPOD block reserves at the bottom of the console column:
+    /// its rows plus the gap the column keeps to the chat/compose block. The column places
+    /// the critical block FIRST (anchored to the band's bottom edge) and only then fills the
+    /// rows above it, so the pod is drawn whenever the model says `PodVisible` and a lower
+    /// row (sector/turret/orders/mission) is dropped instead.
+    /// </summary>
+    public static float PodBlockHeight(float viewportHeight, float textHeight, float scale)
+        => PodRows(viewportHeight) * RowPitch(textHeight, scale);
+
+    /// <summary>
+    /// P1040b — the chat pane's DRAWN line count once the critical block is reserved: the
+    /// configured count, reduced only as far as the block needs (never below one line). At
+    /// 800×480 the log is a scrolling native window with the OLDER marker, so a shorter
+    /// window loses no reading; the lifepod panel loses everything if it is not drawn.
+    /// </summary>
+    public static int ChatLinesWithReserve(int lines, float top, float columnBottom,
+        float rowPitch, float scale, float reservedHeight)
+    {
+        int configured = Math.Max(1, lines);
+        if (reservedHeight <= 0f) return configured;
+        float s = scale > 0f ? scale : 1f;
+        float room = columnBottom - top - ChatToColumn * s - reservedHeight - 8f * s;
+        if (rowPitch <= 0f) return configured;
+        int fit = (int)MathF.Floor((room + 0.01f) / rowPitch);
+        return Math.Max(1, Math.Min(configured, fit));
+    }
+
     /// <summary>The top of tip slot <paramref name="slot"/> (0 = newest), px from the top.</summary>
     public static float TipTop(float viewportHeight, int slot)
         => viewportHeight - TipFirstInset + TipPitch * slot;
@@ -126,4 +172,97 @@ public static class JetConsoleLayout
 
     /// <summary>The flight-parts line's top (native fixed offset).</summary>
     public static float FlightPartsTop(float viewportHeight) => viewportHeight - FlightPartsInset;
+
+    // ── P1040b: the bottom band and the controls-hint slots ─────────────────
+
+    /// <summary>Gap the bottom band and the hint keep from any other element.</summary>
+    public const float BandGap = 4f;
+
+    /// <summary>
+    /// P1040b — the right edge of a BOTTOM-BAND row (cargo / flight-parts / tips / the
+    /// controls hint) at <paramref name="rowTop"/>: the viewport edge gutter, trimmed to the
+    /// first fixed furniture box that the row's own ink band would cross. The bottom band runs
+    /// below the stores block and below the ladder's last rung at both required resolutions,
+    /// so in practice only the ladder's <c>PITCH</c> caption and the radar's bottom edge can
+    /// bound it — and a row is never allowed to reach either (the P1040 defect cut the reading
+    /// to `WEAPONS: G...` because the band was bounded by the *console column* at the ladder's
+    /// numeral edge, 152 px, instead of the band it actually occupies).
+    /// </summary>
+    public static float BandRight(ReadOnlySpan<RectangleF> furniture, float left, float rowTop,
+        float rowHeight, float viewportWidth, float scale)
+    {
+        float s = scale > 0f ? scale : 1f;
+        float right = viewportWidth - JetReadoutPlacement.Gutter * s;
+        for (int i = 0; i < furniture.Length; i++)
+        {
+            RectangleF box = furniture[i];
+            if (box.Height <= 0f || box.Width <= 0f) continue;
+            if (box.X + box.Width <= left) continue;                    // furniture to the left
+            if (box.Y >= rowTop + rowHeight || box.Y + box.Height <= rowTop) continue; // other rows
+            right = MathF.Min(right, box.X - BandGap * s);
+        }
+        return MathF.Max(left, right);
+    }
+
+    /// <summary>
+    /// P1040b — the controls-hint slots, in the order they are tried. The hint is a
+    /// one-line tutorial band, so it goes where a band of that kind belongs and never across
+    /// the pitch ladder, the chat pane or a live readout:
+    /// <list type="number">
+    /// <item><b>0 — below the ordinary tip stack</b> (the bottom band's free row),</item>
+    /// <item><b>1 — above the chat pane's marker row</b> (the band the native hint's
+    /// unscaled anchor lands in at 1080p),</item>
+    /// <item><b>2 — the bottom-right band under the radar scope</b>.</item>
+    /// </list>
+    /// Each candidate is a full-width centred row; the caller accepts the first one whose box
+    /// is clear of every obstacle it has registered this frame
+    /// (<see cref="IsClear(ReadOnlySpan{RectangleF}, RectangleF)"/>) and fits the viewport, and
+    /// otherwise takes the least-covered one — a blocked hint is then counted by the audit,
+    /// never silently laid over the ladder.
+    /// </summary>
+    public static RectangleF HintSlot(int slot, float viewportWidth, float viewportHeight,
+        float scale, float width, float height, RectangleF chatPane, float tipBlockBottom,
+        float rowPitch, RectangleF radarScope)
+    {
+        float s = scale > 0f ? scale : 1f;
+        float gutter = JetReadoutPlacement.Gutter * s;
+        float cx = viewportWidth * 0.5f;
+        float y = slot switch
+        {
+            0 => tipBlockBottom + BandGap * s,
+            1 => chatPane.Y - 2f * rowPitch - BandGap * s,
+            _ => radarScope.Height > 0f
+                ? radarScope.Y + radarScope.Height + BandGap * s
+                : viewportHeight - TipFirstInset * 0.5f,
+        };
+        float x = cx - width * 0.5f;
+        if (slot == 2 && radarScope.Height > 0f)
+            x = MathF.Max(x, radarScope.X);
+        y = Math.Clamp(y, gutter, MathF.Max(gutter, viewportHeight - gutter - height));
+        x = Math.Clamp(x, gutter, MathF.Max(gutter, viewportWidth - gutter - width));
+        return new RectangleF(x, y, width, height);
+    }
+
+    /// <summary>True when <paramref name="box"/> touches none of <paramref name="obstacles"/>.
+    /// Two boxes that merely share an edge are not an overlap: the box is inset by
+    /// <see cref="ClearanceTolerance"/> so a layout that stops exactly at a furniture edge
+    /// (the tip band's own first row under the <c>PITCH</c> caption) is accepted.</summary>
+    public static bool IsClear(ReadOnlySpan<RectangleF> obstacles, RectangleF box)
+        => Cover(obstacles, box) <= 0f;
+
+    /// <summary>The area <paramref name="box"/> shares with the obstacles, edges that merely
+    /// touch excluded.</summary>
+    public static float Cover(ReadOnlySpan<RectangleF> obstacles, RectangleF box)
+    {
+        const float t = ClearanceTolerance;
+        var inner = new RectangleF(box.X + t, box.Y + t,
+            MathF.Max(0f, box.Width - 2f * t), MathF.Max(0f, box.Height - 2f * t));
+        float cover = 0f;
+        for (int i = 0; i < obstacles.Length; i++)
+            cover += JetReadoutPlacement.OverlapArea(obstacles[i], inner);
+        return cover;
+    }
+
+    /// <summary>The half-pixel tolerance a slot's clearance test keeps.</summary>
+    public const float ClearanceTolerance = 0.5f;
 }
