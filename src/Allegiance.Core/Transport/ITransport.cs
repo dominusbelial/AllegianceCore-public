@@ -15,6 +15,9 @@ namespace Allegiance.Core.Transport;
 /// </summary>
 public interface ITransport
 {
+    /// <summary>Actual transport protocol for diagnostics; unknown implementations must not be mislabeled.</summary>
+    string ProtocolName => "unknown";
+
     /// <summary>Bind and listen. <paramref name="port"/> 0 selects an ephemeral
     /// port (see <see cref="BoundPort"/>). Throws on bind failure.</summary>
     void Host(ushort port = 0);

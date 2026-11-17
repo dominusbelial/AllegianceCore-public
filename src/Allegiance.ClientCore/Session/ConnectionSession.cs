@@ -34,7 +34,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
         {
             var transport = _transport;
             return transport?.IsConnected != true ? "disconnected"
-                : TransportFactory.ActiveTransport(transport) is UdpTransport ? "udp" : "tcp";
+                : TransportFactory.ActiveTransport(transport).ProtocolName;
         }
     }
     /// <summary>P895: null uses ALLEGIANCE_TRANSPORT_PROTOCOL (default tcp).</summary>

@@ -4,7 +4,7 @@ namespace Allegiance.Core.Transport;
 
 /// <summary>Optional UDP listener alongside the unchanged TCP pool. High-bit ids
 /// separate UDP peers from TCP peers; the site never sees colliding ids.</summary>
-public sealed class DualTransport : IServerTransport
+public sealed class DualTransport : IServerTransport, ISendPoolDiagnostics, IUdpReceiveDiagnostics
 {
     private const uint UdpBit = 0x80000000;
     public TcpTransport Tcp { get; }
@@ -23,6 +23,8 @@ public sealed class DualTransport : IServerTransport
             MeasureReceiveDelay = measureReceiveDelay,
             IdleTimeout = TcpTransport.DataLinkIdleTimeout, MaxBufferedBytes = (int)Math.Min(int.MaxValue, TcpTransport.HardCapBytes) };
     }
+    public SendWindow DrainSendWindow(Span<PeerSendWindow> peers, Span<SendWorkerWindow> workers) => Tcp.DrainSendWindow(peers, workers);
+    public UdpReceiveDelayWindow DrainReceiveDelay() => Udp.DrainReceiveDelay();
     public EgressAccounting? Egress => Tcp.Egress;
     public ReliableTelemetry? Reliable => Tcp.Reliable;
     public long TotalWrittenBytes => Tcp.TotalWrittenBytes + Udp.TotalWrittenBytes;
@@ -47,13 +49,7 @@ public sealed class DualTransport : IServerTransport
     public bool IsPeerLoopback(ConnectionId id) => Route(id).IsPeerLoopback(Inner(id));
     /// <summary>P1022 — the peer's source address on whichever half owns it
     /// (the credential-guessing address key), or <c>null</c> when unknown.</summary>
-    public IPAddress? PeerAddress(ConnectionId id)
-        => Route(id) switch
-        {
-            TcpTransport tcp => tcp.PeerAddress(Inner(id)),
-            UdpTransport udp => udp.PeerAddress(Inner(id)),
-            _ => null,
-        };
+    public IPAddress? PeerAddress(ConnectionId id) => Route(id).PeerAddress(Inner(id));
     public void SetPeerHuman(ConnectionId id, bool human) => Route(id).SetPeerHuman(Inner(id), human);
     public bool IsPeerClosed(ConnectionId id) => Route(id).IsPeerClosed(Inner(id));
     public void ClosePeer(ConnectionId id, DisconnectReason reason = DisconnectReason.Shutdown) => Route(id).ClosePeer(Inner(id), reason);

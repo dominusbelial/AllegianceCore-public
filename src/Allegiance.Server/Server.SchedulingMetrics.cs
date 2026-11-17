@@ -13,7 +13,7 @@ public sealed partial class Server
         var pool = telemetry.DrainWindow();
         Console.WriteLine(FormattableString.Invariant(
             $"[thread-pool] scope=process windowSecs={pool.Seconds:0.000} threads={pool.Threads} pendingItems={pool.PendingItems} completedPerSecond={pool.CompletedPerSecond:0.###} probeSamples={pool.Delay.Samples} probeMeanMs={pool.Delay.MeanMs:0.###} probeP95UpperMs={pool.Delay.P95UpperMs:0.###} probeMaxMs={pool.Delay.MaxMs:0.###} probePendingMs={pool.ProbePendingMs:0.###}"));
-        var udp = (_host?.Transport as DualTransport)?.Udp ?? _host?.Transport as UdpTransport;
+        var udp = _host?.Transport as IUdpReceiveDiagnostics;
         if (udp is null) return;
         var receive = udp.DrainReceiveDelay();
         var delay = receive.CompletionToWorker;

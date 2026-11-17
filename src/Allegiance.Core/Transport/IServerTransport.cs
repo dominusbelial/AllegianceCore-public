@@ -6,6 +6,8 @@ namespace Allegiance.Core.Transport;
 public interface IServerTransport : ITransport
 {
     void Host(ushort port, IPAddress? bindAddress);
+    /// <summary>Transport-observed source address, or null if unavailable. Never use untrusted client metadata.</summary>
+    IPAddress? PeerAddress(ConnectionId id);
     bool IsPeerLoopback(ConnectionId id);
     void SetPeerHuman(ConnectionId id, bool human);
     bool IsPeerClosed(ConnectionId id);
@@ -17,4 +19,16 @@ public interface IServerTransport : ITransport
     long TotalEnqueuedBytes { get; }
     EgressAccounting? Egress { get; }
     ReliableTelemetry? Reliable { get; }
+}
+
+/// <summary>Optional send-worker diagnostics, independent of listener composition.</summary>
+public interface ISendPoolDiagnostics
+{
+    SendWindow DrainSendWindow(Span<PeerSendWindow> peers, Span<SendWorkerWindow> workers);
+}
+
+/// <summary>Optional UDP receive scheduling diagnostics.</summary>
+public interface IUdpReceiveDiagnostics
+{
+    UdpReceiveDelayWindow DrainReceiveDelay();
 }

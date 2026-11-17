@@ -286,6 +286,7 @@ public sealed class P895UdpTransportTests
             client.Send(ConnectionId.Server, Value(895), true);
             Until(() => hs.Data.Count == 1);
             Assert.Equal(0, cs.Lost);
+            Assert.Equal("tcp", TransportFactory.ActiveTransport(client).ProtocolName);
         }
         finally { client.Shutdown(); host.Shutdown(); }
     }
@@ -324,7 +325,14 @@ public sealed class P895UdpTransportTests
             Until(() => ts.Data.Count == 1 && us.Data.Count == 1);
             Assert.Equal(1, Number(ts.Data.Single())); Assert.Equal(2, Number(us.Data.Single()));
             Assert.Equal(2, hs.Joins.Select(j => j.Id).Distinct().Count());
-            Assert.All(hs.Joins, join => Assert.True(host.IsPeerLoopback(join.Id)));
+            IServerTransport server = host;
+            Assert.All(hs.Joins, join =>
+            {
+                Assert.True(server.IsPeerLoopback(join.Id));
+                Assert.Equal(IPAddress.Loopback, server.PeerAddress(join.Id));
+            });
+            Assert.Equal("tcp", tc.ProtocolName);
+            Assert.Equal("udp", uc.ProtocolName);
         }
         finally { tc.Shutdown(); host.Shutdown(); }
     }

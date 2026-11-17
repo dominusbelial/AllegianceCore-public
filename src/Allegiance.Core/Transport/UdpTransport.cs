@@ -13,7 +13,7 @@ namespace Allegiance.Core.Transport;
 /// Wire protocol and congestion/security policy are modern port infrastructure.
 /// Socket sends and protocol state are serialized; callbacks execute outside the state lock.
 /// </summary>
-public sealed partial class UdpTransport : IServerTransport, IDisposable
+public sealed partial class UdpTransport : IServerTransport, IUdpReceiveDiagnostics, IDisposable
 {
     internal const int Mtu = 1200;
     internal const int Header = 32;
@@ -754,6 +754,8 @@ public sealed partial class UdpTransport : IServerTransport, IDisposable
     /// credential-guessing address key), or <c>null</c> for an unknown/retired
     /// peer. Endpoints are stored IPv6-normalised, so an IPv4 peer is mapped
     /// back to its IPv4 form.</summary>
+    public string ProtocolName => "udp";
+
     public IPAddress? PeerAddress(ConnectionId id)
     {
         lock (_gate)

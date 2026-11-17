@@ -76,13 +76,7 @@ public sealed partial class Server
         return ResolvePeerAddress(peer) is { } address ? Canonical(address) : $"peer:{peer.Value}";
     }
 
-    private IPAddress? ResolvePeerAddress(ConnectionId peer) => _host.Transport switch
-    {
-        DualTransport dual => dual.PeerAddress(peer),
-        TcpTransport tcp => tcp.PeerAddress(peer),
-        UdpTransport udp => udp.PeerAddress(peer),
-        _ => null,
-    };
+    private IPAddress? ResolvePeerAddress(ConnectionId peer) => _host.Transport?.PeerAddress(peer);
 
     private static string Canonical(IPAddress address)
         => (address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address).ToString();
