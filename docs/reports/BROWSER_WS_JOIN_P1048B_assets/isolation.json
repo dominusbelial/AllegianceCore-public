@@ -1,0 +1,146 @@
+[
+  {
+    "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.3437361,
+    "message": null
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.3151487,
+    "message": null
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.323843,
+    "message": null
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 3.0993106,
+    "message": null
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 3.0419241,
+    "message": null
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 3.0707009,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.4156545,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.4201468,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidCombatLiveTests.Lethal_hit_kills_asteroid_removes_from_mineable_and_broadcasts_destroy_to_whole_mission",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.4258819,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.5664152,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.5279032,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.5189409,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.7538332,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.7590309,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 1.7578763,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players",
+    "repeat": 1,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.3263315,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players",
+    "repeat": 2,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.3253233,
+    "message": null
+  },
+  {
+    "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players",
+    "repeat": 3,
+    "exitCode": 0,
+    "outcome": "Passed",
+    "seconds": 0.3255216,
+    "message": null
+  }
+]

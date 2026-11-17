@@ -1,0 +1,151 @@
+{
+  "browserVersion": "153.0.8010.0",
+  "pngBytes": 742596,
+  "previewSmoke": true,
+  "results": [
+    {
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "passed": true,
+      "passkeyLogin": true,
+      "canonicalPlayer": "BrowserM1920",
+      "serverState": {
+        "players": [
+          "BrowserM1920"
+        ],
+        "ships": [
+          {
+            "Id": 8096,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = -1.2933714, Y = 320.13693, Z = 111.44576 }"
+          }
+        ]
+      },
+      "pose": "Ship 8096 · sector 1053 · position Vector3 { X = -1.2933714, Y = 308.6987, Z = 111.44576 } · 25,465 bytes received",
+      "joinMilliseconds": 296,
+      "launchMilliseconds": 246,
+      "residentBytes": 2561241,
+      "ticketAfterStaging": true,
+      "errors": []
+    },
+    {
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "passed": true,
+      "passkeyLogin": true,
+      "canonicalPlayer": "BrowserM800",
+      "serverState": {
+        "players": [
+          "BrowserM800"
+        ],
+        "ships": [
+          {
+            "Id": 8097,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = 78.562935, Y = 11385.124, Z = 143.89944 }"
+          },
+          {
+            "Id": 8098,
+            "SideId": 1,
+            "StationId": null,
+            "position": "Vector3 { X = 509.91037, Y = -105.20465, Z = 14.950225 }"
+          },
+          {
+            "Id": 8099,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = 4.0678005, Y = -369.31903, Z = -110.269035 }"
+          }
+        ]
+      },
+      "pose": "Ship 8099 · sector 1053 · position Vector3 { X = 4.0678005, Y = -358.87897, Z = -110.269035 } · 153,139 bytes received",
+      "joinMilliseconds": 166,
+      "launchMilliseconds": 7887,
+      "residentBytes": 2561241,
+      "ticketAfterStaging": true,
+      "errors": []
+    },
+    {
+      "style": "Classic",
+      "width": 1920,
+      "height": 1080,
+      "passed": true,
+      "passkeyLogin": true,
+      "canonicalPlayer": "BrowserC1920",
+      "serverState": {
+        "players": [
+          "BrowserC1920"
+        ],
+        "ships": [
+          {
+            "Id": 8100,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = -1211.5461, Y = 912.90234, Z = 12.361254 }"
+          },
+          {
+            "Id": 8101,
+            "SideId": 1,
+            "StationId": null,
+            "position": "Vector3 { X = -1673.6632, Y = 1788.0686, Z = -401.20798 }"
+          },
+          {
+            "Id": 8102,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = 1.5431166, Y = -320.15817, Z = -111.74246 }"
+          }
+        ]
+      },
+      "pose": "Ship 8102 · sector 1053 · position Vector3 { X = 1.5431166, Y = -313.19122, Z = -111.74246 } · 26,190 bytes received",
+      "joinMilliseconds": 179,
+      "launchMilliseconds": 139,
+      "residentBytes": 2561241,
+      "ticketAfterStaging": true,
+      "errors": []
+    },
+    {
+      "style": "Classic",
+      "width": 800,
+      "height": 480,
+      "passed": true,
+      "passkeyLogin": true,
+      "canonicalPlayer": "BrowserC800",
+      "serverState": {
+        "players": [
+          "BrowserC800"
+        ],
+        "ships": [
+          {
+            "Id": 8103,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = -19.118355, Y = 11416.302, Z = 78.33455 }"
+          },
+          {
+            "Id": 8104,
+            "SideId": 1,
+            "StationId": null,
+            "position": "Vector3 { X = 714.4247, Y = -919.2174, Z = 18.625448 }"
+          },
+          {
+            "Id": 8105,
+            "SideId": 0,
+            "StationId": null,
+            "position": "Vector3 { X = 0.1114558, Y = -367.37558, Z = -104.40027 }"
+          }
+        ]
+      },
+      "pose": "Ship 8105 · sector 1053 · position Vector3 { X = 0.1114558, Y = -359.77304, Z = -104.40027 } · 144,819 bytes received",
+      "joinMilliseconds": 107,
+      "launchMilliseconds": 8338,
+      "residentBytes": 2561241,
+      "ticketAfterStaging": true,
+      "errors": []
+    }
+  ]
+}

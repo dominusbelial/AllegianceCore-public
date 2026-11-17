@@ -327,6 +327,7 @@ public sealed partial class Server
             _heartbeat.LiveMissions = () => LiveMissions;
             _heartbeat.MaxGames = _config.MaxGames;
             _heartbeat.UdpPort = UdpListenerPort;
+            _heartbeat.WebSocketUrl = _config.WebSocket?.AdvertisedUrl;
             if (_config.Identity is not null)
                 _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
             Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
@@ -362,6 +363,7 @@ public sealed partial class Server
         _heartbeat.LiveMissions = () => LiveMissions;
         _heartbeat.MaxGames = _config.MaxGames;
         _heartbeat.UdpPort = UdpListenerPort;
+        _heartbeat.WebSocketUrl = _config.WebSocket?.AdvertisedUrl;
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);

@@ -1,10 +1,14 @@
 namespace Allegiance.Core.Transport;
 
-/// <summary>Default TCP; opt-in UDP with a bounded handshake and TCP fallback.</summary>
+/// <summary>Default TCP; opt-in UDP with bounded TCP fallback, or an explicit validated WebSocket listing/config route.</summary>
 public static class TransportFactory
 {
-    public static ITransport CreateClient(ITransportSite site, string? protocol = null, ushort? udpPort = null)
+    public static ITransport CreateClient(ITransportSite site, string? protocol = null, ushort? udpPort = null, WebSocketEndpoint? webSocketEndpoint = null, string? webSocketOrigin = null)
     {
+        if (webSocketEndpoint is not null) return new WebSocketTransport(site, webSocketEndpoint, webSocketOrigin);
+#if BROWSER
+        throw new PlatformNotSupportedException("TCP/UDP is not available in the browser; select an advertised WebSocket route");
+#else
         protocol ??= Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_PROTOCOL");
         protocol = string.IsNullOrWhiteSpace(protocol) ? "tcp" : protocol.Trim().ToLowerInvariant();
         return protocol switch
@@ -13,10 +17,18 @@ public static class TransportFactory
             "udp" => new FallbackTransport(site, udpPort),
             _ => throw new ArgumentException($"Unknown transport protocol '{protocol}' (expected tcp or udp)", nameof(protocol)),
         };
+#endif
     }
 
     /// <summary>Resolved transport for diagnostics after Join (UDP or fallback TCP).</summary>
-    public static ITransport ActiveTransport(ITransport transport) => transport is FallbackTransport fallback && fallback.Active is { } active ? active : transport;
+    public static ITransport ActiveTransport(ITransport transport)
+#if BROWSER
+        => transport;
+#else
+        => transport is FallbackTransport fallback && fallback.Active is { } active ? active : transport;
+#endif
+
+#if !BROWSER
 
     /// <summary>Callbacks are suppressed for a failed handshake. Once connected,
     /// session loss belongs to the ordinary reconnect policy, never a hidden switch.</summary>
@@ -54,4 +66,5 @@ public static class TransportFactory
         public void SendCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey) => _active?.SendCoalescing(target, data, coalesceKey);
         public void SendGuaranteedCoalescing(ConnectionId target, ReadOnlySpan<byte> data, int coalesceKey) => _active?.SendGuaranteedCoalescing(target, data, coalesceKey);
     }
+#endif
 }

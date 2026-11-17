@@ -533,6 +533,24 @@ override may add `ports: ["127.0.0.1:6080:6080"]`. The default compose file publ
 no WebSocket port. Restrict the backend port to that proxy; do not expose an
 unauthenticated forwarding service. No public proxy/hosting route is added here.
 
+P1048B adds optional `webSocket.publicUrl`, for example
+`"wss://games.example.invalid/game"`. The server publishes `webSocketUrl` in its
+lobby heartbeat only when the listener is enabled and this URL is configured.
+The lobby relays the validated route; old servers omit it and old clients ignore
+it. It is never inferred from request headers. `wss` is accepted; `ws` requires
+a loopback URI. Userinfo, fragments and non-WebSocket schemes are rejected.
+Leaving the key absent preserves the default-off discovery contract. No extra
+Compose mapping or environment variable is introduced; the existing optional
+listener mapping and trusted proxy policy above apply.
+
+The browser menu's loopback join slice reads the route only from the selected
+lobby listing, stages the verified starter pack before requesting a fresh join
+ticket, and uses the same client transport and session decoder as desktop.
+Public hosting, other cores, password prompts, client update qualification,
+pointer capture and flight controls remain explicitly unavailable in this slice.
+The local proof proxy keeps the existing static host CSP and relays WS upgrade
+bytes to a fixed loopback listener; it is a proof tool, not a deployable gateway.
+
 Other `webSocket` settings (all numeric limits must be positive; deadlines finite
 and at most one hour):
 

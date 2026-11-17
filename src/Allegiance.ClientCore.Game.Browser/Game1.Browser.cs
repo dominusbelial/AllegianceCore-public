@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Allegiance.ClientCore.MonoGame;
 
-/// <summary>Browser lifecycle for the shared Game1 intro/options partials. No connection/offline session is created.</summary>
+/// <summary>Browser lifecycle for the shared Game1 intro/options partials. The browser head owns the async online session; offline hosting is excluded.</summary>
 public sealed partial class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
@@ -16,7 +16,7 @@ public sealed partial class Game1 : Game
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _whitePixel = null!;
     private SpriteFont _hudSmall = null!, _hudBig = null!;
-    private readonly IdentityScreenModel _identityScreen = new() { Status = "Browser preview - online play is not available yet." };
+    private readonly IdentityScreenModel _identityScreen = new() { Status = "Browser preview - loopback online slice available." };
     private readonly StringBuilder _pilotBuf = new();
     private static readonly string[] IntroMainLabels = IntroScreenModel.MainLabels;
     private int _introIndex;
@@ -48,6 +48,7 @@ public sealed partial class Game1 : Game
     public string HudStyleName => _hudSettings.Style.ToString();
     public void SelectHudStyle(HudStyle style) => _hudSettings.Style = style;
     public long ManagedHeapBytes => GC.GetTotalMemory(false);
+    public Action? OpenOnline { get; set; }
     public Action? DownloadScreenshot { get; set; }
 
     public Game1(IAssetSource assets, HudStyle style, int width, int height)
@@ -147,6 +148,7 @@ public sealed partial class Game1 : Game
             _optionsPrefsLoaded = false;
             EnsureOptionsPrefs();
         }
+        else if (command == IntroCommand.Lobby) OpenOnline?.Invoke();
         else if (command == IntroCommand.SinglePlayer) _introView = IntroView.SinglePlayer;
         else ShowUnavailable(IntroMainLabels[_introIndex]);
     }

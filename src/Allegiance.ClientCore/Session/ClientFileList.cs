@@ -23,7 +23,9 @@ public static class ClientFileList
     /// executable.</summary>
     public static readonly string[] CandidateNames = ["artwork-manifest.txt", "FileList.txt"];
 
+#if !BROWSER
     private static int? _cached;
+#endif
 
     /// <summary>The path the identity was computed from, or null when none is
     /// installed.</summary>
@@ -47,18 +49,24 @@ public static class ClientFileList
     /// directory does not change under a running client).</summary>
     public static int Compute(string? baseDirectory = null)
     {
+#if BROWSER
+        return FileListCrc.Unknown;
+#else
         if (baseDirectory is null && _cached is { } cached) return cached;
         string? path = Find(baseDirectory);
         ResolvedPath = path;
         int crc = path is null ? FileListCrc.Unknown : FileListCrc.ComputeFile(path);
         if (baseDirectory is null) _cached = crc;
         return crc;
+#endif
     }
 
     /// <summary>Test seam: forget the cached value.</summary>
     public static void ResetCache()
     {
+#if !BROWSER
         _cached = null;
+#endif
         ResolvedPath = null;
     }
 }

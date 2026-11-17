@@ -30,13 +30,14 @@ public sealed class P1047CompileBoundaryTests
         Assert.Contains(paths, p => p.EndsWith("Game1.OptionsMenu.cs", StringComparison.Ordinal));
         Assert.Contains(paths, p => p.EndsWith("HudRenderer.cs", StringComparison.Ordinal));
         Assert.Contains(paths, p => p.EndsWith("ModernHudRenderer.cs", StringComparison.Ordinal));
-        string[] excluded = ["ConnectionSession", "SkirmishHost", "UpdateClient", "UpdateApplier", "DiscoveryEngine",
+        string[] excluded = ["SkirmishHost", "UpdateClient", "UpdateApplier", "DiscoveryEngine",
             "DiscoveryCoordinator", "NatTraversalClient", "GlFrameTimer", "RelativeMouse", "CapturePngSaver", "SavedGamePasswords", "TextCoreAssets", "SoundManager", "AudioVoice", "AsrSound", "TrainingVoicePcm"];
         foreach (string name in excluded)
         {
             Assert.DoesNotContain(paths, p => Path.GetFileName(p).StartsWith(name + ".", StringComparison.Ordinal));
             Assert.DoesNotContain(typeof(Game1).Assembly.GetTypes(), t => t.Name == name);
         }
+        Assert.Contains(typeof(Game1).Assembly.GetTypes(), t => t.Name == "ConnectionSession");
         var coreTypes = typeof(Allegiance.Core.IgcFile).Assembly.GetTypes();
         foreach (string name in new[] { "NatTraversalClient", "TcpTransport", "UdpTransport", "ProcessLifetime", "ThreadPoolTelemetry" })
             Assert.DoesNotContain(coreTypes, t => t.Name == name);

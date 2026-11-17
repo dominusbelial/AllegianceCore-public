@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Source-identical data/model/parsers, with OS transports/process ownership
-       excluded at compile time. The ordinary Core project is unchanged. -->
+  <!-- Shared data/model/parsers and asynchronous WebSocket client;
+       TCP/UDP and process ownership excluded at compile time. The ordinary Core project is unchanged. -->
   <PropertyGroup>
     <AssemblyName>Allegiance.Core.Browser</AssemblyName>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
     <RootNamespace>Allegiance.Core</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
@@ -11,5 +12,6 @@
                ../Allegiance.Core/Transport/**;../Allegiance.Core/ProcessLifetime.cs;
                ../Allegiance.Core/ConsoleLog.cs;../Allegiance.Core/Profiling/ThreadPoolTelemetry.cs"
       Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.Core/Transport/ITransport.cs;../Allegiance.Core/Transport/ConnectionId.cs;../Allegiance.Core/Transport/WebSocket*.cs;../Allegiance.Core/Transport/TransportFactory.cs" Link="Shared/Transport/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

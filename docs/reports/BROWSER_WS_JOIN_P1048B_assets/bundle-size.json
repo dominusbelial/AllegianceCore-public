@@ -1,0 +1,21 @@
+{
+  "note": "Complete payload including identical generated packs; duplicate .br/.gz files excluded. Offline per-file gzip-9/Brotli-11, not network accounting. Baseline is HEAD published with the same SDK and options.",
+  "baseline": {
+    "files": 121,
+    "raw": 19844420,
+    "gzip": 6529139,
+    "brotli": 5052964
+  },
+  "current": {
+    "files": 123,
+    "raw": 20025022,
+    "gzip": 6600974,
+    "brotli": 5114799
+  },
+  "delta": {
+    "files": 2,
+    "raw": 180602,
+    "gzip": 71835,
+    "brotli": 61835
+  }
+}

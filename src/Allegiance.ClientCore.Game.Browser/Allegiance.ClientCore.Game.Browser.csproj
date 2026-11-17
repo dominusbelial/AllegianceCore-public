@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Source-compiled KNI presentation library. Game1 selects the shared intro/options
-       partials and a browser lifecycle; flight/session/offline orchestration is a later slice. -->
+       partials and a browser lifecycle; the head owns the shared async session.
+       Flight/offline orchestration remains excluded. -->
   <PropertyGroup>
     <AssemblyName>Allegiance.ClientCore.Game.Browser</AssemblyName>
     <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>
@@ -22,7 +23,8 @@
     <ProjectReference Include="../Allegiance.Core.Browser/Allegiance.Core.Browser.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- No ConnectionSession/keepalive, identity client, recording or transport ownership in this slice. -->
+    <!-- Shared session uses an async event-loop lifecycle on BROWSER. -->
+    <Compile Include="../Allegiance.ClientCore/Session/ConnectionSession*.cs;../Allegiance.ClientCore/Session/ClientFileList.cs" Link="ClientCore/Session/%(Filename)%(Extension)" />
     <Compile Include="../Allegiance.ClientCore/**/*.cs"
       Exclude="../Allegiance.ClientCore/obj/**;../Allegiance.ClientCore/bin/**;../Allegiance.ClientCore/Session/**;../Allegiance.ClientCore/Replay/**"
       Link="ClientCore/%(RecursiveDir)%(Filename)%(Extension)" />

@@ -22,11 +22,17 @@ namespace Allegiance.ClientCore.Session;
 /// the lock. This is the client half of the transport, so only
 /// <see cref="ITransportSite.OnReceive"/> is raised.
 /// </summary>
-public sealed partial class ConnectionSession : ITransportSite, IDisposable
+public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAsyncDisposable
 {
     private ITransport? _transport;
     private string? _joinedProtocol;
     private ushort? _joinedUdpPort;
+    private WebSocketEndpoint? _joinedWebSocketEndpoint;
+    private string? _joinedWebSocketOrigin;
+    /// <summary>Route from the selected listing/configuration, frozen for reconnect.</summary>
+    public WebSocketEndpoint? WebSocketEndpoint { get; set; }
+    /// <summary>Desktop only; browsers supply their own Origin header.</summary>
+    public string? WebSocketOrigin { get; set; }
     /// <summary>Actual transport after the bounded handshake, including TCP fallback.</summary>
     public string ActiveTransportProtocol
     {
@@ -41,14 +47,18 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     public string? TransportProtocol { get; set; }
     /// <summary>Advertised UDP port; null uses the game TCP port/environment override.</summary>
     public ushort? UdpPort { get; set; }
+#if !BROWSER
     public InternetJoin? InternetJoinTarget { get; set; }
     private InternetJoin? _joinedInternet;
     internal HttpClient? TraversalHttpForTesting { get; set; }
     internal Action<UdpTransport>? ConfigureTraversalForTesting { get; set; }
+#endif
     internal Func<ITransportSite, ITransport>? TransportFactoryForTesting { get; set; }
 
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
+#if !BROWSER
     public Allegiance.ClientCore.Replay.WireRecording? Recording { get; set; }
+#endif
     public long? ReplayMilliseconds { get; private set; }
     public void ReplayPacket(ReadOnlySpan<byte> packet, long milliseconds)
     {
@@ -190,9 +200,14 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     private const int KeepAliveIntervalMs = 6000;   // maxLagCheck = 6.0f
     private const int PingsTimeout = 5;             // g_cPingsTimeout
     private const int DeadTimeMs = 30000;           // g_sDeadTime (s -> ms)
+#if BROWSER
+    private readonly CancellationTokenSource _keepAliveCancellation = new();
+    private Task? _keepAliveTask;
+#else
     private Thread? _keepAliveThread;
     private readonly ManualResetEventSlim _keepAliveGate = new(false); // set = wake/stop
     private int _keepAliveStop;
+#endif
     private int _unansweredPings;        // guarded by _gate
     private long _lastServerMessageTick; // Environment.TickCount64, guarded by _gate
     private long _keepAlivePingsSent;    // guarded by _gate
@@ -414,7 +429,13 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// this session's netem-latency experiment needed a real non-loopback
     /// peer).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
-        => ConnectAsync(port, playerName, host).GetAwaiter().GetResult();
+    {
+#if BROWSER
+        throw new PlatformNotSupportedException("Use ConnectAsync in the browser");
+#else
+        ConnectAsync(port, playerName, host).GetAwaiter().GetResult();
+#endif
+    }
 
     public Task ConnectAsync(ushort port, string playerName, string host = "127.0.0.1", CancellationToken cancellationToken = default)
         => StartOwned(async owner =>
@@ -447,7 +468,15 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             if (UdpPort is null && _joinedProtocol.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase)
                 && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } envPort)
                 _joinedUdpPort = ushort.Parse(envPort, System.Globalization.CultureInfo.InvariantCulture);
+#if !BROWSER
             _joinedInternet = InternetJoinTarget;
+#endif
+            _joinedWebSocketEndpoint = WebSocketEndpoint;
+            _joinedWebSocketOrigin = WebSocketOrigin;
+#if !BROWSER
+            if (_joinedInternet is not null && _joinedWebSocketEndpoint is not null)
+                throw new InvalidOperationException("Choose either an Internet UDP join or a WebSocket listing");
+#endif
         }
         await ConnectTransportAsync(owner, host, port, playerName).ConfigureAwait(false);
         lock (_gate) { RequireOwner(owner); StartKeepAlive(); }
@@ -477,12 +506,16 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             _lastServerMessageTick = Environment.TickCount64;
             _keepAlivePingsSent = 0;
         }
+#if BROWSER
+        _keepAliveTask ??= BrowserKeepAliveAsync();
+#else
         if (_keepAliveThread != null) return;          // already running
         Volatile.Write(ref _keepAliveStop, 0);
         _keepAliveGate.Reset();
         var t = new Thread(KeepAliveLoop) { IsBackground = true, Name = "session-keepalive" };
         _keepAliveThread = t;
         t.Start();
+#endif
     }
 
     /// <summary>
@@ -499,6 +532,27 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// <c>Transport.Join</c>. A lost connection is skipped until a new owner
     /// resets it. Exits only on <see cref="StopKeepAlive"/> (dispose).
     /// </summary>
+#if BROWSER
+    private async Task BrowserKeepAliveAsync()
+    {
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(KeepAliveIntervalMs, _keepAliveCancellation.Token);
+                bool lostNow = false;
+                lock (_gate)
+                {
+                    if (_disposed || _lost || _transport?.IsConnected != true) continue;
+                    SendPing(); _unansweredPings++; _keepAlivePingsSent++;
+                    lostNow = _unansweredPings > PingsTimeout && Environment.TickCount64 - _lastServerMessageTick >= DeadTimeMs;
+                }
+                if (lostNow) RaiseLost();
+            }
+        }
+        catch (OperationCanceledException) when (_keepAliveCancellation.IsCancellationRequested) { }
+    }
+#else
     private void KeepAliveLoop()
     {
         try
@@ -536,6 +590,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
         }
     }
 
+#endif
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
     public void SendLogonRequest(LogonRequest req)
     {
@@ -565,6 +620,9 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// <summary>Block until a LOGONACK arrives (or <paramref name="timeoutMs"/>). Returns the ACK.</summary>
     public LogonAck WaitForAck(int timeoutMs)
     {
+#if BROWSER
+        throw new PlatformNotSupportedException("Use JoinAsync in the browser");
+#else
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
         while (DateTime.UtcNow < deadline)
         {
@@ -573,6 +631,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             Thread.Sleep(5);
         }
         throw new TimeoutException("timed out waiting for LOGONACK");
+#endif
     }
 
     /// <summary>
@@ -589,6 +648,9 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// </summary>
     public DelPositionReq? WaitForJoinAnswer(int timeoutMs)
     {
+#if BROWSER
+        throw new PlatformNotSupportedException("Use JoinAsync in the browser");
+#else
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
         while (DateTime.UtcNow < deadline)
         {
@@ -603,6 +665,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             Thread.Sleep(5);
         }
         return null;
+#endif
     }
 
     /// <summary>Command the ship's controls: the four axes and the movement-bit
@@ -1442,7 +1505,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
                     {
                         lock (_gate) RequireOwner(owner);
                         Console.WriteLine($"[reconnect] attempt {ResumeAttempts} failed: {e.GetType().Name}: {e.Message}");
-                        RetireTransport(owner);
+                        await RetireTransportAsync(owner).ConfigureAwait(false);
                         await Task.Delay(250, owner.Token).ConfigureAwait(false);
                     }
                 }
@@ -1487,7 +1550,9 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+#if !BROWSER
         Recording?.Write(data);
+#endif
         if (_disposed || _lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
@@ -2259,6 +2324,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
     /// loop's own locked iteration. Called ONLY from <see cref=\"Dispose\"/>: the
     /// thread is persistent, so a <see cref=\"Shutdown\"/> (used by a reconnect's
     /// old-transport teardown) must NOT stop it.</summary>
+#if !BROWSER
     private void StopKeepAlive()
     {
         Volatile.Write(ref _keepAliveStop, 1);
@@ -2268,13 +2334,52 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
         _keepAliveThread = null;
     }
 
+#endif
     /// <summary>Close the client socket. The server sees EOF / a dropped peer.
     /// P813c — an explicit shutdown also cancels any in-flight reconnect: a
     /// caller that deliberately closes the session must never be re-dialed.</summary>
-    public void Shutdown() => ShutdownAsync().GetAwaiter().GetResult();
+    public void Shutdown()
+    {
+#if BROWSER
+        throw new PlatformNotSupportedException("Use ShutdownAsync in the browser");
+#else
+        ShutdownAsync().GetAwaiter().GetResult();
+#endif
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+#if !BROWSER
+        await Task.CompletedTask;
+        Dispose();
+#else
+        TaskCompletionSource completion;
+        bool dispose;
+        lock (_gate)
+        {
+            dispose = _disposeCompletion is null;
+            completion = _disposeCompletion ??= new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _disposed = true;
+        }
+        if (!dispose) { await completion.Task; return; }
+        try
+        {
+            await ShutdownAsync();
+            _keepAliveCancellation.Cancel();
+            if (_keepAliveTask is not null) await _keepAliveTask;
+            _keepAliveCancellation.Dispose();
+            lock (_gate) { _owner?.Cancellation.Dispose(); _owner = null; _world.ReleaseBotView(); }
+            completion.SetResult();
+        }
+        catch (Exception ex) { completion.SetException(ex); throw; }
+#endif
+    }
 
     public void Dispose()
     {
+#if BROWSER
+        throw new PlatformNotSupportedException("Use DisposeAsync in the browser");
+#else
         TaskCompletionSource completion;
         bool dispose;
         lock (_gate)
@@ -2297,5 +2402,6 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable
             completion.SetResult();
         }
         catch (Exception ex) { completion.SetException(ex); throw; }
+#endif
     }
 }

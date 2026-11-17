@@ -53,6 +53,7 @@ public sealed class LobbyHeartbeat : IDisposable
     // Native lobby logon advertises g.cMaxGames (FedSrv/FedSrv.CPP:8107,8850).
     internal int MaxGames { get; set; } = 99;
     public int? UdpPort { get; set; }
+    public string? WebSocketUrl { get; set; }
     private readonly System.Collections.Concurrent.ConcurrentQueue<GameReadyRequest> _completedGames = new();
     internal void CompleteGame(string id, uint? cookie) => _completedGames.Enqueue(new(id, cookie));
     /// <summary>P866 — reads the server's lobby-dirty VERSION, the thread-safe
@@ -247,7 +248,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 _location, Allegiance.Core.LobbyProtocol.Version, UdpPort,              // P894 — location + stated lobby protocol version
                 // P970 — "a password is required": the advertised form of the
                 // refusal the game server already sends at the join.
-                PasswordRequired: missions?.Any(m => m.PasswordRequired) ?? false);
+                PasswordRequired: missions?.Any(m => m.PasswordRequired) ?? false, WebSocketUrl: WebSocketUrl);
 
 
             HttpResponseMessage resp;
@@ -676,7 +677,8 @@ internal sealed record LobbyRegisterRequest(
     // rides this or any other payload. Omitted when false so a pre-P970 host's
     // bytes are unchanged.
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
-    bool PasswordRequired = false);
+    bool PasswordRequired = false,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
 
 public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game,
     /// <summary>P970 — this game demands a mission password (the per-game lock the

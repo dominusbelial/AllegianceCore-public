@@ -7,6 +7,7 @@
     <span>Menu preview · @_style · @_persistence</span>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern)">Modern</button>
+    <button id="online-open" disabled="@(_game is null || _online || _onlineBusy)" @onclick="OpenOnlineAsync">Play on loopback</button>
     <button disabled="@(_game is null)" @onclick="EnableAudio">@_audioStatus</button>
     <button disabled="@(_game is null)" @onclick="ScreenshotAsync">Download screenshot</button>
 </nav>
@@ -22,3 +23,62 @@
         <p>@_error</p><button id="retry" @onclick="LoadAsync">Retry</button>
     }
 </div>
+
+@if (_online)
+{
+    <section id="online-panel" class="panel" aria-live="polite" data-state="@_onlineState">
+        <p class="eyebrow">ALLEGIANCE · ONLINE LOOPBACK SLICE · @_style</p>
+        <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Sign in")</h2>
+        @if (_onlineState == "Login")
+        {
+            <p>Sign in to the local lobby, then return to this tab.</p>
+            <a href="/identity.html" target="_blank" rel="noopener">Open lobby sign-in</a>
+            <button id="online-refresh" disabled="@_onlineBusy" @onclick="OpenOnlineAsync">Refresh identity and servers</button>
+        }
+        else
+        {
+            <p>Signed in as @_account?.Callsign</p>
+            @if (_onlineState == "Servers")
+            {
+                @foreach (var server in _servers)
+                {
+                    <article class="online-server">
+                        <strong>@server.Name</strong>
+                        @if (Unavailable(server) is { } reason) { <p>@reason</p> }
+                        else if (server.Missions is { Length: > 0 } missions)
+                        {
+                            @foreach (var mission in missions)
+                            {
+                                <button class="online-join" disabled="@(_onlineBusy || mission.PasswordRequired)" @onclick="() => JoinServerAsync(server, mission)">Join @mission.Name</button>
+                            }
+                        }
+                        else { <button class="online-join" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, null)">Join @server.MissionName</button> }
+                    </article>
+                }
+                @if (_servers.Length == 0) { <p>No local servers are listed.</p> }
+            }
+            else if (_onlineState == "Sides")
+            {
+                <p>@_onlineName · @_session?.ActiveTransportProtocol</p>
+                @foreach (var side in _session?.World.SideRoster?.Sides ?? [])
+                {
+                    <button class="online-side" disabled="@_onlineBusy" @onclick="() => SelectSideAsync(side.SideId)">@side.Name · @side.PlayerCount players</button>
+                }
+            }
+            else if (_onlineState == "Hangar")
+            {
+                <p>@_onlineName · side @_session?.World.MySideId</p>
+                <button id="online-launch" disabled="@_onlineBusy" @onclick="LaunchOnlineAsync">Ready and launch · enable audio</button>
+            }
+            else if (_onlineState == "Flight")
+            {
+                <p>@_onlineName · @_session?.ActiveTransportProtocol · server assigned ship</p>
+                <p id="online-pose">@_pose</p>
+                <p>Mission briefings, flight controls, pointer capture, fullscreen and flight rendering parity are not available in the browser.</p>
+            }
+        }
+        @if (_onlineBusy) { <p role="status">Waiting for the server…</p> }
+        @if (_onlineError is not null) { <p role="alert">@_onlineError</p> }
+        <button id="online-close" @onclick="CloseOnlineAsync">Disconnect and return to menu</button>
+    </section>
+}
