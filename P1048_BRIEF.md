@@ -82,6 +82,14 @@ the rig, VPS, mini, Mac or any public host; no contact with them. Do not publish
   `~/.dotnet/dotnet`. Artwork `/srv/corpus/Artwork`, native reference `/srv/corpus/Allegiance/src/` (read-only;
   `local.env`). Docker is not installed (state `docker compose config` as not run if so). **Do not leave the brief file
   in the change set** (check `git status`).
+- **NuGet in your sandbox (first attempt stopped on this — do not stop on it again):** `~/.nuget/packages` and
+  `~/.local/share/NuGet` are read-only inside your sandbox. Every package the solution and all `tools/` projects need
+  is already in `~/.nuget/packages` (pre-restored by Claude). Before any build/test/restore run
+  `export NUGET_HTTP_CACHE_PATH=$PWD/.scratch/p1048/nuget-http` (P1047 did the same). If a NEW package is genuinely
+  needed (e.g. for the WS listener), first prefer the shared framework (`Microsoft.AspNetCore.App` is a framework
+  reference, not a NuGet package); otherwise restore it into `NUGET_PACKAGES=$PWD/.scratch/p1048/nuget-packages` with
+  `~/.nuget/packages` as a fallback folder, and state it in the report. A restore/sandbox problem is something to work
+  around, never a reason to end the task early.
 - **Never `git stash`**, never `pkill -f`/`pgrep -f`, no synthetic CPU load, scratch in `.scratch/p1048/`, do not commit
   or push, do not contact the rig, mini, Mac, VPS or any public host; network only on loopback. Public-repo hygiene: no
   secrets, no personal paths/IPs/hostnames in committed files. Every process you start must end before you finish.

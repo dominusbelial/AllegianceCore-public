@@ -318,6 +318,7 @@ public sealed class P895UdpTransportTests
         try
         {
             host.Host(); tc.Join("127.0.0.1", host.BoundPort, "TCP"); uc.Join("127.0.0.1", host.UdpPort, "UDP");
+            Assert.Equal(host.UdpPort, Assert.IsAssignableFrom<IUdpListenerInfo>(host).UdpPort);
             Until(() => hs.Joins.Count == 2 && hs.Data.Count == 1);
             Assert.Equal(42, Number(hs.Data.Single()));
             Assert.Equal("join", hs.Events.First());

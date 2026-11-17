@@ -325,7 +325,7 @@ public sealed partial class Server
             _heartbeat = factory(_config.Lobby);
             _heartbeat.LiveMissions = () => LiveMissions;
             _heartbeat.MaxGames = _config.MaxGames;
-            _heartbeat.UdpPort = (_host?.Transport as DualTransport)?.UdpPort;
+            _heartbeat.UdpPort = (_host?.Transport as IUdpListenerInfo)?.UdpPort;
             if (_config.Identity is not null)
                 _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
             Console.WriteLine($"[lobby] heartbeat enabled (injected) -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
@@ -360,7 +360,7 @@ public sealed partial class Server
             _config.ResolveMinimumClientVersion());
         _heartbeat.LiveMissions = () => LiveMissions;
         _heartbeat.MaxGames = _config.MaxGames;
-        _heartbeat.UdpPort = (_host?.Transport as DualTransport)?.UdpPort;
+        _heartbeat.UdpPort = (_host?.Transport as IUdpListenerInfo)?.UdpPort;
         // Only an identity server refuses reserved names; others never poll the lobby for them.
         if (_config.Identity is not null)
             _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
@@ -968,14 +968,17 @@ public sealed partial class Server
         ushort udpPort = _config.Transport?.UdpPort ?? 0;
         if (!RequireLanListeners && Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_UDP_PORT") is { Length: > 0 } udpValue)
             udpPort = ushort.Parse(udpValue, System.Globalization.CultureInfo.InvariantCulture);
-        _host.Transport = protocol == "udp"
-            ? new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
+        if (protocol == "udp")
+        {
+            var dual = new DualTransport(_host, transport, udpPort, transport.Egress, transport.Reliable, Counters, _reliableOneShot,
                 measureReceiveDelay: _threadPoolTelemetry is not null)
-                { UdpBindAddress = RequireUdpIntroductions ? System.Net.IPAddress.IPv6Any : null }
-            : transport;
-        if (_host.Transport is DualTransport internetTransport) internetTransport.Udp.RequireIntroductions = RequireUdpIntroductions;
+                { UdpBindAddress = RequireUdpIntroductions ? System.Net.IPAddress.IPv6Any : null };
+            dual.Udp.RequireIntroductions = RequireUdpIntroductions;
+            _host.Transport = dual;
+        }
+        else _host.Transport = transport;
         _host.Transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);
-        if (_host.Transport is DualTransport dual) Console.WriteLine($"[boot] UDP transport listening on {dual.UdpPort} (TCP remains available)");
+        if (_host.Transport is IUdpListenerInfo udpListener) Console.WriteLine($"[boot] UDP transport listening on {udpListener.UdpPort} (TCP remains available)");
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
 
         StartDiscoveryResponder();
@@ -1025,7 +1028,7 @@ public sealed partial class Server
                         MaxPlayers: 0,
                         Version: _core?.Version.ToString() ?? "",
                         GamePort: BoundPort,
-                        UdpPort: (_host?.Transport as DualTransport)?.UdpPort);
+                        UdpPort: (_host?.Transport as IUdpListenerInfo)?.UdpPort);
                 },
                 port, rate, mgroup);
             _discoveryResponder.Start();

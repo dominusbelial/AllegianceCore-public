@@ -765,7 +765,7 @@ list in **reverse**.
   retain their TCP default. Proof: `tools/p897-transport-proof/`,
   `tests/Allegiance.ClientCore.MonoGame.Tests/P897ClientTransportTests.cs`;
   report `docs/reports/P897_REPORT.md`, operator guide `docs/UDP_TRANSPORT.md`.
-- **Transport peer facts (P1048, partial)** — `src/Allegiance.Core/Transport/IServerTransport.cs` exposes transport-observed source addresses and optional diagnostic interfaces; `src/Allegiance.Core/Transport/ITransport.cs` supplies an honest protocol label. Work remaining: `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`.
+- **Transport peer facts (P1048, partial)** — `src/Allegiance.Core/Transport/IServerTransport.cs` exposes transport-observed source addresses, UDP listener information and optional diagnostic interfaces; `src/Allegiance.Core/Transport/ITransport.cs` supplies an honest protocol label. Work remaining: `docs/reports/BROWSER_WS_TRANSPORT_P1048.md`.
 - **Optional UDP transport (P895, default off)** — `transport.protocol=udp`
   adds UDP alongside TCP pool: `src/Allegiance.Core/Transport/UdpTransport.cs`
   (cookie handshake, ordered/independent latest-wins channels, fragmentation,

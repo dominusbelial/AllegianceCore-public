@@ -9824,3 +9824,20 @@ The six calibrated-limit offenders are timing-only and already ledgered for thei
 (12.0 s), both **3/3 alone** in the skin suite). No tier, limit or assertion was relaxed; P1040
 changes no sim, server, wire, audio or buy/drone code.
 3×/3× confirmations in `~/allegiance-evidence/P1040/flakes3x.log`.
+
+## P1048 partial seam fast run (2026-11-17)
+
+Fast failed with 15,151 passed, 3 failed and 7 skipped; the calibrated case limit was 11.545 s. Each case below was run in three separate isolated processes. These observations do not establish root cause.
+
+| Case | Fast result | Isolated result |
+|---|---|---|
+| `Allegiance.ClientCore.MonoGame.Tests.Skins.JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing` | passed, 12.165 s | pass / pass / pass |
+| `Allegiance.ClientCore.MonoGame.Tests.Skins.JetFlightSymbologyTests.Jet_draw_allocates_zero_bytes_per_frame_with_the_full_symbology` | passed, 11.727 s | pass / pass / pass |
+| `Allegiance.ClientCore.MonoGame.Tests.Skins.JetAmberPaletteTests.Amber_draw_allocates_zero_bytes_per_frame` | passed, 15.467 s | pass / pass / pass |
+| `Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed, 18.808 s | pass / pass / pass |
+| `Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | passed, 19.255 s | pass / pass / pass |
+| `Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | passed, 12.435 s | pass / pass / pass |
+| `Allegiance.Core.Tests.LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire` | failed, 31.375 s | pass / pass / pass |
+| `Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | passed, 18.572 s | pass / pass / pass |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | failed: 7.0000000000000009 above 7 | pass / pass / pass |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | failed: unexpected mining broadcast | pass / pass / fail |

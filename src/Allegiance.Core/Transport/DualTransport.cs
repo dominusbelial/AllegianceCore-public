@@ -4,7 +4,7 @@ namespace Allegiance.Core.Transport;
 
 /// <summary>Optional UDP listener alongside the unchanged TCP pool. High-bit ids
 /// separate UDP peers from TCP peers; the site never sees colliding ids.</summary>
-public sealed class DualTransport : IServerTransport, ISendPoolDiagnostics, IUdpReceiveDiagnostics
+public sealed class DualTransport : IServerTransport, ISendPoolDiagnostics, IUdpReceiveDiagnostics, IUdpListenerInfo
 {
     private const uint UdpBit = 0x80000000;
     public TcpTransport Tcp { get; }

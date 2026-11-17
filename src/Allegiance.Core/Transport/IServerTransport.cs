@@ -32,3 +32,9 @@ public interface IUdpReceiveDiagnostics
 {
     UdpReceiveDelayWindow DrainReceiveDelay();
 }
+
+/// <summary>Optional UDP listener advertised by a composed server transport.</summary>
+public interface IUdpListenerInfo
+{
+    ushort UdpPort { get; }
+}
