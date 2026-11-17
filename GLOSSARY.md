@@ -1187,6 +1187,32 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
   `docs/reports/JET_RADAR_FIXES_P1039B.md`.
 
+- **Jet radar glyph/band obstacles, compact label budget, real 800×480 scope zone (P1039c,
+  skin story 5/9 follow-up 2)** — the second readability pass (still no inclusion-rule change).
+  Every contact's **glyph/overlay box** (`JetRadarLabels.GlyphBox`: bracket 8.5 units plus the
+  nearest-enemy bracket, flag pennant, artifact mark and ripcord stroke) is an obstacle for every
+  OTHER contact's label and marker word (a contact's own box is skipped by index), the four
+  **range-band strokes** are geometry (`JetRadarLabels.Rings`, square outline or exact
+  circle-vs-box), leaders are tested against every other label/glyph, and a cell a band crosses is
+  only taken with an **opaque backing plate** in the readout-plate opacity 0.82 (the compact
+  144 px scope has 15.8 px annuli, less than one text line; plate-drawn-after-band, text-after-plate,
+  so no band reads as a strikethrough). The **label budget** is a rule of the scope's own area
+  (`LabelBudget` = inner area ÷ `LabelCellPixels` 4800 px² at scale 1 → 9 cells at 800×480, 24 at
+  1080p; `FullFormAllowed` needs two full blocks = 24 cells): a non-priority label is only ever a
+  shortest form and the budget caps how many blocks exist; a never-hidden class keeps a block and,
+  when the scope has no cell clear of glyphs and readings, is HIDDEN (`RadarPriorityHidden`, 1 in 96
+  scenes) rather than drawn over a glyph. The compact scope's right edge keeps
+  `JetRadar.CompactPlateGap` (8 units) from the throttle plate and the report states that the
+  bottom-right CORNER at 800×480 is the shared mini-map, so the scope sits in the right-hand column
+  above it. The designator's TGT fallback prints only what the target pane LACKS (the relationship
+  word) so the target data is never shown twice, and the compact annunciator row uses
+  `JetStoresPanel.WordGap` (6 units, reduced only to stay before the ladder column). The proof adds
+  **text-over-glyph** and the radar **stroke-through-text** classes (`IJetRadarAudit`,
+  `jet-capture.json` schema 9), counts backing plates, and records the readout's own rows; every
+  class is 0 in 96 scenes. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
+  `docs/reports/JET_RADAR_FIXES_P1039C.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

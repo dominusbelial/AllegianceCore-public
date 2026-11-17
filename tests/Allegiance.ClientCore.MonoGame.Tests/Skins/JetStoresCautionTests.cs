@@ -1044,6 +1044,33 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
         SignaturePercent: 42f, Detected: false, AutopilotEngaged: false, VectorLockEngaged: false,
         CarriedFlag: false, CarriedArtifact: false, CloakStrengthPercent: null);
 
+    [Fact]
+    public void The_compact_annunciator_words_keep_a_word_gap_and_the_row_ends_before_the_ladder()
+    {
+        // P1039c — every lit annunciator word at 800×480 (the `AUTOVLOCK FLAG` defect): the
+        // words get JetStoresPanel.WordGap (reduced only as far as the ladder column needs) and
+        // the measured row still ends clear of the ladder's left numeral column.
+        var surface = new Recorder();
+        using var jet = Jet(surface);
+        var model = Model(eye: true, cloak: true, autopilot: true, vectorLock: true,
+            carriedFlag: true, carriedArtifact: true, flightReference: Reference(0f, 0f, 45f));
+        jet.Draw(model, new HudDrawFrame(new Viewport(0, 0, 800, 480), null, false));
+
+        RectangleF row = jet.AnnunciatorRow;
+        Assert.True(row.Width > 0f, "the compact annunciator row exists");
+        float scale = ModernHudScale.Core(1f, 1f, 480f);
+        // The gap leaves more than the two 1 px keylines of sky between two words.
+        Assert.True(jet.AnnunciatorGap > 2f * MathF.Max(1f, scale),
+            $"word gap {jet.AnnunciatorGap:0.##} px");
+        Assert.True(jet.AnnunciatorGap <= JetStoresPanel.WordGap * scale + 0.01f);
+        // The row (and so every word in it) ends before the ladder's numeral column.
+        Assert.True(row.X + row.Width <= JetStoresPanel.LadderColumnLeft(800f, scale),
+            $"row ends {row.X + row.Width:0.#}, ladder column {JetStoresPanel.LadderColumnLeft(800f, scale):0.#}");
+        Assert.Contains("VLOCK", surface.Seen);
+        Assert.Contains("FLAG", surface.Seen);
+        Assert.Contains("ART", surface.Seen);
+    }
+
     private static HudModel Model(
         float hullFraction = .8f, float shieldFraction = .7f, float ammoFraction = .8f, float energyFraction = .9f,
         bool flashing = false, bool lifepod = false, bool commandView = false, bool ghost = false,

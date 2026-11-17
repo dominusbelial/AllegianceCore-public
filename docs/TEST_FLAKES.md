@@ -4,6 +4,24 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1039c gate observations — 2026-11-17 UTC
+
+The Fast sweep is **FAIL**: **15,093 tests, 549.3 s**, four failures, 7 not executed,
+9/9 infrastructure checks pass. Six executions over the
+calibrated 10 s limit (all passed). HUD-only change (Jet skin renderer, proof tool, skin
+tests): no Core, server, sim, clock, countdown, warp, reconnect or gun-damage path is
+touched by P1039c.
+
+| Exact case | Failure in the sweep | Three repetitions alone | Diagnosis |
+|---|---|---|---|
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")` | `14.850000000054024` outside `[14.94, 15.06]` | pass / pass / **fail** (one case), 10 s per run | The clock-observation boundary already ledgered (rows recording 14.90 and 14.65); load-sensitive even in single-process runs on this shared host. No countdown or clock code changed. |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Warp receipt: peer collection held the old sector only | **pass / pass / pass** | Ledgered warp-receipt family (many rows above). |
+| `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | Sweep missed the expected single-round damage observation | **pass / pass / pass** | Ledgered gun/development live family (row above). No gun or development rule changed. |
+| `P813cReconnectGraceTests.Seated_connection_cannot_take_or_retire_a_parked_seat` | Seat take/retire receipt under the sweep | **pass / pass / pass** | Existing reconnect-grace receipt race (its sibling `Voluntary_logoff_is_immediate_and_reports_quit` is ledgered below); load-only, no reconnect path changed. |
+
+Raw log: `~/allegiance-evidence/P1039C/fast-tier.log`; the alone confirmations are in
+`~/allegiance-evidence/P1039C/flakes3x-core.log` and `.../flakes3x-clientcore.log`.
+
 ## P1047 gate observations — 2026-11-16–17 UTC
 
 The completed Fast sweep is **FAIL**: **14,973 passed / 2 failed / 7 skipped**,

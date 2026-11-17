@@ -191,6 +191,26 @@ public static class JetStoresPanel
     /// introduces, in standard-stroke units (× scale).</summary>
     public const float IconGap = 4f;
 
+    /// <summary>
+    /// P1039c — the gap between two adjacent annunciator WORDS (and between two
+    /// glyph+word groups) of one row, in standard-stroke units (× scale). Every word is
+    /// keylined by one px on each side, so the compact row's old 2-unit gap made
+    /// `AUTOVLOCK FLAG` read as one run of letters; 6 units leaves ≈4 px of untouched sky
+    /// between two neighbouring words at scale 1 (≥ ¼ cap) and still ends the six-word compact
+    /// row clear of the pitch ladder's numeral column at 800×480 (measured in the report:
+    /// row 176…353.3 px, ladder column 356.7 px).
+    /// </summary>
+    public const float WordGap = 6f;
+
+    /// <summary>P1039c — the pitch ladder's numeral column distance from the boresight, in
+    /// standard-stroke units (× scale): the left column's inner edge, which the compact
+    /// annunciator row must end before (65 units → 356.7 px at 800×480).</summary>
+    public const float LadderColumn = 65f;
+
+    /// <summary>The left edge of the ladder's left numeral column (the compact row's limit).</summary>
+    public static float LadderColumnLeft(float viewportWidth, float scale)
+        => viewportWidth * 0.5f - LadderColumn * (scale > 0f ? scale : 1f);
+
     /// <summary>P1038c — the gap between an icon glyph and its word as a fraction of the
     /// word's cap height. The brief requires ≥ ¼ cap of clear space; Jet uses ¾ cap so that
     /// after the icon's and the word's 1 px keylines at least ¼ cap of untouched sky still
