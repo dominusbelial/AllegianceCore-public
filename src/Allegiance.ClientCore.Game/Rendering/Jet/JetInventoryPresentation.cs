@@ -31,9 +31,32 @@ public static class JetInventoryPresentation
     /// by this band instead of stealing a row's line.</summary>
     public const float HeaderRow = 14f;
 
+    /// <summary>
+    /// P1038c — the hull title's OWN row, in native px units (× pane scale). The P1038b
+    /// title was centred in the native 14-unit top cap while the HUD font's line spacing
+    /// is 22 native units (22 px at scale 1), so `Fig Adv` spilled into the caption band
+    /// and sat on `QTY STATE`. The title row is 24 units: the measured 22-unit line box
+    /// plus the 2-unit minimum gap to the caption band. It replaces the top cap (the pane
+    /// grows by TitleRow − CapHeight = 10 native px) and the caption band and rows shift
+    /// down by it. Because the pane scale is ≥ the HUD scale at both reference windows,
+    /// the measured leftover (2 × paneScale px) is ≥ the required 2 × scale px.
+    /// </summary>
+    public const float TitleRow = 24f;
+
     /// <summary>P1038b — inner padding on every side of the pane, in native px units
     /// (× pane scale). No cell or caption may end closer than this to the plate edge.</summary>
     public const float Pad = 6f;
+
+    /// <summary>
+    /// P1038c — the F4 pane's backing opacity. The pane is a full 12-row table over the
+    /// right-bottom quadrant of the HUD, not a small numeric readout plate, so its
+    /// near-black backing must not leave HUD text, contact icons or tape numerals legible
+    /// behind it. 0.97 is the lowest hundredth-step that keeps every composited ghost below
+    /// the audit's stated threshold (≥ 8 of 255 channel separation from the plate on both
+    /// the dark and the bright proof backdrop); the world stays faintly visible (unlike a
+    /// fully opaque 1.0 fill). Every OTHER Jet plate keeps <c>0.82</c>.
+    /// </summary>
+    public const float PlateOpacity = 0.97f;
 
     /// <summary>Native slide distance (px) the open animation travels
     /// (<c>dialog.mdl:5387</c>, 0.5 s) — the same offset the shared pane applies.</summary>
@@ -43,7 +66,11 @@ public static class JetInventoryPresentation
     /// get the wider half of the line: the Jet stat vocabulary (RNG/DMG/ROF …) is longer
     /// than the native combined stats string.</summary>
     public const float KeyColumn = 8f;
-    public const float MarkerColumn = 26f;
+    /// <summary>P1038c — the selected/active marker's own gutter. The P1038b marker sat at
+    /// 26 and, once drawn at cap height (the P1038b icon rule), its two shapes ran into the
+    /// part-name column; the gutter now starts at 20 so a cap-height mark ends at 28 and
+    /// keeps 10 native px (a measured gap) before the name at 38.</summary>
+    public const float MarkerColumn = 20f;
     public const float NameColumn = 38f;
     public const float QuantityColumn = 190f;
     public const float StateColumn = 224f;
@@ -105,22 +132,27 @@ public static class JetInventoryPresentation
         => InventoryPaneLayout.BottomY(viewportWidth, viewportHeight)
            + (1f - Math.Clamp(slide, 0f, 1f)) * SlideDistance;
 
+    /// <summary>P1038c — the title row's top edge (the pane's own top): the hull title is
+    /// top-aligned in its 24-unit row, then the caption band, then the data rows.</summary>
+    public static float TitleTop(int rowCount, float viewportWidth, float viewportHeight, float slide)
+        => Top(rowCount, viewportWidth, viewportHeight, slide);
+
     public static float Height(int rowCount, float viewportHeight)
-        => (CapHeight * 2f + HeaderRow + RowHeight * rowCount) * Scale(viewportHeight);
+        => (TitleRow + CapHeight + HeaderRow + RowHeight * rowCount) * Scale(viewportHeight);
 
     public static float Top(int rowCount, float viewportWidth, float viewportHeight, float slide)
         => Bottom(viewportWidth, viewportHeight, slide) - Height(rowCount, viewportHeight);
 
-    /// <summary>P1038b — the top edge of the column-caption band, directly under the hull
-    /// title cap (the caption belongs at the TOP of the pane, not on its last row).</summary>
+    /// <summary>P1038c — the top edge of the column-caption band, directly under the hull
+    /// title's own row (title row → caption band → data rows).</summary>
     public static float HeaderTop(int rowCount, float viewportWidth, float viewportHeight, float slide)
-        => Top(rowCount, viewportWidth, viewportHeight, slide) + CapHeight * Scale(viewportHeight);
+        => Top(rowCount, viewportWidth, viewportHeight, slide) + TitleRow * Scale(viewportHeight);
 
-    /// <summary>Screen y of row <paramref name="index"/>'s top edge (after the title cap
+    /// <summary>Screen y of row <paramref name="index"/>'s top edge (after the title row
     /// and the caption band).</summary>
     public static float RowTop(int rowCount, float viewportWidth, float viewportHeight, float slide, int index)
         => Top(rowCount, viewportWidth, viewportHeight, slide)
-           + (CapHeight + HeaderRow + RowHeight * index) * Scale(viewportHeight);
+           + (TitleRow + HeaderRow + RowHeight * index) * Scale(viewportHeight);
 
     /// <summary>One labelled stat run of a row (<c>RNG 800m</c>).</summary>
     public readonly record struct StatRun(string Label, string Value);

@@ -387,7 +387,7 @@ public sealed partial class JetHudRenderer
                 _painter.Line(new(x, y + mid), new(x + mid, y), _painter.Hairline, ink);
                 break;
         }
-        float textX = x + size + JetStoresPanel.IconGap * scale;
+        float textX = x + size + JetStoresPanel.IconWordGap(capHeight, scale);
         _painter.Text(word, new(textX, y), large: false, scale, ink);
         return textX + _painter.Measure(word, large: false, scale).X;
     }
@@ -419,7 +419,7 @@ public sealed partial class JetHudRenderer
         float pad = 6f * scale;
         // P1038b — the leading mark is an icon at the word's cap height, not a tick.
         float capHeight = JetStoresPanel.CapHeight(_painter.Measure("X", large: false, scale).Y);
-        float iconWidth = JetStoresPanel.IconSize(capHeight) + JetStoresPanel.IconGap * scale;
+        float iconWidth = JetStoresPanel.IconSize(capHeight) + JetStoresPanel.IconWordGap(capHeight, scale);
 
         // Measure first at the frame scale, then (only if a tip would run past the bounded
         // panel) re-measure at the measured fit scale — no glyph is clipped, no value is cut.
@@ -438,8 +438,8 @@ public sealed partial class JetHudRenderer
             float widestText = MathF.Max(1f, widest - iconWidth);
             float room = maxWidth - pad * 2f - iconWidth;
             textScale = scale * Math.Clamp(room / widestText, 0.4f, 1f);
-            iconWidth = JetStoresPanel.IconSize(JetStoresPanel.CapHeight(
-                _painter.Measure("X", large: false, textScale).Y)) + JetStoresPanel.IconGap * textScale;
+            float fitCap = JetStoresPanel.CapHeight(_painter.Measure("X", large: false, textScale).Y);
+            iconWidth = JetStoresPanel.IconSize(fitCap) + JetStoresPanel.IconWordGap(fitCap, textScale);
             headerSize = _painter.Measure(CautionHeader, large: false, textScale);
             widest = headerSize.X;
             for (int i = 0; i < count; i++)
@@ -615,34 +615,39 @@ public sealed partial class JetHudRenderer
         float top = JetInventoryPresentation.Top(rows, w, h, slide);
         float width = JetInventoryPresentation.Width(w, h);
         float height = JetInventoryPresentation.Height(rows, h);
-        float cap = JetInventoryPresentation.CapHeight * paneScale;
+        float headerRow = JetInventoryPresentation.HeaderRow * paneScale;
         float rowH = JetInventoryPresentation.RowHeight * paneScale;
         float pad = JetInventoryPresentation.Pad * paneScale;
         float rowScale = paneScale * JetInventoryPresentation.RowTextScale;
 
         // Panel: a plate with a keyline frame (the native pane's dark line background).
-        // P1038b — the same opacity rule the Jet readout plate uses (JetHudRenderer.DrawReadout),
-        // so the HUD behind cannot clutter the table.
+        // P1038c — the pane is a FULL overlay table, not a numeric readout plate: its
+        // backing is JetInventoryPresentation.PlateOpacity (0.97), so no HUD text, contact
+        // icon, ladder numeral or tape reading behind it stays legible. Every other Jet
+        // plate keeps the readout plate's 0.82.
         var panel = new RectangleF(left, top, width, height);
-        _painter.FillPlate(panel, ReadoutPlateOpacity);
+        _painter.FillPlate(panel, JetInventoryPresentation.PlateOpacity);
 
-        // Title: own-ship / hull name centred in the top cap (native ShipNameImage,
-        // dialog.mdl:1803-1807). P1038b — the title's run box is taller than the native cap
-        // at scale, so its top is clamped to the plate instead of starting above it.
+        // Title: own-ship / hull name top-aligned in its OWN row of 24 native units
+        // (native ShipNameImage, dialog.mdl:1803-1807). P1038c — the P1038b title was
+        // centred in the 14-unit native cap while the font's line box is 22 units, so it
+        // spilled into the caption band; the title row now contains the whole line box and
+        // keeps the measured ≥ 2·scale px gap before the band.
         if (pane.ShipName.Length > 0)
         {
             Vector2 nameSize = _painter.Measure(pane.ShipName, large: false, paneScale);
-            float nameY = MathF.Max(top, top + (cap - nameSize.Y) * 0.5f);
+            float nameY = JetInventoryPresentation.TitleTop(rows, w, h, slide);
             _painter.Text(pane.ShipName, new(left + (width - nameSize.X) * 0.5f, nameY),
                 large: false, paneScale, _painter.Primary);
         }
 
-        // P1038b — the column captions live in their own band UNDER the title cap, each
+        // P1038b — the column captions live in their own band UNDER the title row, each
         // over the column it names, at the table font, inside the plate's padding. The
         // three leading cells are narrow in native units, so each caption starts no earlier
         // than the previous one's measured end plus a gap: the words never overlap.
         Vector2 captionSize = _painter.Measure("X", large: false, rowScale);
-        float captionY = top + cap + (JetInventoryPresentation.HeaderRow * paneScale - captionSize.Y) * 0.5f;
+        float headerTop = JetInventoryPresentation.HeaderTop(rows, w, h, slide);
+        float captionY = headerTop + (headerRow - captionSize.Y) * 0.5f;
         float captionLimit = left + width - pad;
         float captionGap = 4f * paneScale;
         float captionCursor = 0f;
@@ -660,7 +665,7 @@ public sealed partial class JetHudRenderer
         for (int i = 0; i < rows; i++)
         {
             HudInventoryRow row = pane.Rows[i];
-            float rowTop = top + cap + JetInventoryPresentation.HeaderRow * paneScale + rowH * i;
+            float rowTop = JetInventoryPresentation.RowTop(rows, w, h, slide, i);
             Vector2 textSize = _painter.Measure("X", large: false, rowScale);
             float textY = rowTop + (rowH - textSize.Y) * 0.5f;
             DrawInventoryRow(row, i, left, textY, rowTop, rowH, paneScale, rowScale, width, textSize.Y, pad);
@@ -668,9 +673,15 @@ public sealed partial class JetHudRenderer
     }
 
     /// <summary>The Jet readout plate's opacity (P1036/P1037): a Jet plate keeps the world
-    /// behind it visible but cannot let HUD text through it. P1038b — the F4 pane uses the
-    /// same value instead of its own weaker 0.78.</summary>
+    /// behind it visible but cannot let HUD text through it. The F4 pane uses its own,
+    /// stronger backing (<see cref="JetInventoryPresentation.PlateOpacity"/>) because it is
+    /// a full table overlay, not a small numeric plate.</summary>
     private const float ReadoutPlateOpacity = 0.82f;
+
+    /// <summary>The inventory slot's glyph ids (pre-built so a frame allocates nothing).</summary>
+    private const string InventorySlotSelected = "inventory:slot:selected";
+    private const string InventorySlotActive = "inventory:slot:active";
+    private const string InventorySlotSelectedActive = "inventory:slot:selected+active";
 
     private void DrawInventoryRow(in HudInventoryRow row, int index, float left, float textY,
         float rowTop, float rowH, float paneScale, float rowScale, float width, float textHeight, float pad)
@@ -687,12 +698,24 @@ public sealed partial class JetHudRenderer
             return;
         }
 
-        // Selected / active markers: an open box for selected, a solid box for active.
+        // P1038c — the selected/active state is ONE cap-height mark in its own gutter
+        // (the P1038b icon rule). P1038b drew two small boxes side by side; once they were
+        // drawn legibly the pair ran into the part-name column. The gutter starts at 20
+        // native px, a cap-height mark ends at 28, and the name starts at 38, so there are
+        // 10 measured native px between the mark and the first glyph of the name.
+        float capHeight = JetStoresPanel.CapHeight(textHeight);
+        float markerSize = JetStoresPanel.IconSize(capHeight);
         float markerX = Column(JetInventoryPresentation.MarkerColumn);
-        float markerY = textY + 1f * rowScale;
-        float markerSize = 5f * rowScale;
+        float markerY = textY + (textHeight - markerSize) * 0.5f;
+        if (row.Selected || row.Active)
+        {
+            string glyphId = row.Selected && row.Active ? InventorySlotSelectedActive
+                : row.Selected ? InventorySlotSelected : InventorySlotActive;
+            _painter.Glyph(glyphId, new RectangleF(markerX, markerY, markerSize, markerSize), capHeight);
+        }
         if (row.Selected)
         {
+            // Selected: an open square outline (shape, never hue alone).
             _painter.Line(new(markerX, markerY), new(markerX + markerSize, markerY), _painter.Hairline, _painter.Primary);
             _painter.Line(new(markerX + markerSize, markerY), new(markerX + markerSize, markerY + markerSize),
                 _painter.Hairline, _painter.Primary);
@@ -701,8 +724,13 @@ public sealed partial class JetHudRenderer
             _painter.Line(new(markerX, markerY + markerSize), new(markerX, markerY), _painter.Hairline, _painter.Primary);
         }
         if (row.Active)
-            _painter.Surface.Fill(new(markerX + markerSize + 3f * rowScale, markerY),
-                new(markerSize, markerSize), _painter.Hot);
+        {
+            // Active: a solid square, INSET inside the open one when both states are set,
+            // so the two cues share the single cap-height cell instead of colliding.
+            float inset = row.Selected ? markerSize * 0.3f : 0f;
+            float filled = MathF.Max(1f, markerSize - inset * 2f);
+            _painter.Surface.Fill(new(markerX + inset, markerY + inset), new(filled, filled), _painter.Hot);
+        }
 
         // Key.
         if (row.Key.Length > 0)

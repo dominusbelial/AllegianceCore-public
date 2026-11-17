@@ -9612,3 +9612,31 @@ and already ledgered for their families (`P796VariedLoadoutTests…civ: 35` 12.8
 18.1 s, `P814GunnerTests.P814b…` 14.9 s, `SC2NaniteSupportTests…civ: 3` 12.4 s). No tier, limit or assertion was
 relaxed; P1038b changes no sim, server, wire, audio or buy/drone code. Raw log:
 `~/allegiance-evidence/P1038B/fast-tier-20261116T232035/` (`summary.json` + the two `*-main.log`).
+
+## 2026-11-16 — P1038c Jet layout follow-up, Fast sweep (final tree)
+
+One completed sweep on the final tree (master `6553f09d` + the P1038c working-tree changes, Jet-only
+presentation code + `tools/hud2-proof` + the Jet test suites): **15,034 tests, 642.4 s**, **3 failed / 7 not
+executed**, 7 Fast executions over the calibrated 10 s limit (all pre-existing families). Infrastructure checks
+passed (Browser 12, Update 55, Lobby 209). The three failures are ledgered flake families and each passes
+**3/3 alone**:
+
+| Method | Sweep observation | Alone |
+| --- | --- | --- |
+| `Allegiance.ClientCore.MonoGame.Tests.Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state` | formatted HUD readouts allocated 7,096 B over 10,000 frames under parallel load (19 ms) | **3/3 pass** (15–16 ms) — the ledgered allocation-under-parallel-load family (earlier entries above) |
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | `B never saw A's death (IsDead never latched)` | **3/3 pass** (≈1 s) — the ledgered asynchronous death-receipt family |
+| `Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | destination `SHIP_STATUS` held only the old sector (30 ms) | **3/3 pass** (0.33–0.34 s) — the ledgered warp-receipt family |
+
+The seven calibrated-limit offenders are timing-only and already ledgered for their families
+(`P796VariedLoadoutTests…civ: 35` 13.6 s, `SC2NaniteSupportTests…civ: 25` 17.5 s / `civ: 3` 12.2 s,
+`P814GunnerTests.P814b…` 17.6 s, `P999CivStrategyTests…civ: 5` 13.0 s, `Every_loaded_civ_has_immutable_specs…`
+12.8 s, `P750NativeAsteroidTypesTests…` 15.0 s). No tier, limit or assertion was relaxed; P1038c changes no sim,
+server, wire, audio or buy/drone code.
+
+**One genuine regression was caught and fixed by the first sweep**, not ledgered: the new corner-arc cue initially
+used the painter's automatic arc tessellation (up to 70 chords per 30° arc), and
+`JetTargetLockTests.Draw_with_a_locked_leading_ordered_target_allocates_nothing` (100,000 frames) rose to
+**13.6 s** under the sweep. `JetVectorPainter.CueArc` now draws each 30° arc with **6 chords**
+(`CueArcSegments`, ≤ 0.24 px sagitta at the largest cue radius: 48–96 segment submissions per frame, close to the
+old ring's 32), and the test runs **0.67–0.70 s, 3/3 alone** (it is no longer an offender in the final sweep). Raw
+log: `~/allegiance-evidence/P1038C/fast-tier2.log` + `~/allegiance-evidence/P1038C/fast-tier2-summary.json`.

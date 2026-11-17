@@ -96,42 +96,61 @@ public static class JetTargetGeometry
     public const float LockClearance = 6f;
 
     /// <summary>√2: the distance from a square's centre to its corner when its half-span
-    /// is 1 — the factor the lock ring uses to enclose the native-size designator.</summary>
+    /// is 1 — the factor that turns the designator's half-span into its corner distance.</summary>
     public const float Sqrt2 = 1.41421356f;
 
     /// <summary>
-    /// P1038b — the lock cue's half-span: the native per-state sizing
-    /// <see cref="LockBracketStyle.HalfSizeForFraction"/> (native
-    /// <c>radiusBracket + 40·(1−lock)</c>, radarimage.cpp:325-332) with the P1037
-    /// readability floor, so the native shrink still drives the size change. This is the
-    /// designator's own native size (1.05 × the projected radius), NOT a contracted copy.
+    /// P1038c — the native partial-lock closing span: <c>+40·(1−lock)</c>
+    /// (radarimage.cpp:325-332). Native enlarges the partial bracket by exactly this many
+    /// px as the lock builds and drops the term at full lock, so the cue visibly closes
+    /// onto the target. The term is per axis in native; the Jet cue keeps it on the
+    /// corner diagonal in the same units, so the same number drives the closing.
     /// </summary>
-    public static float LockCueHalf(MissileLockFeedback.LockState state, float fraction,
-        float? screenRadius, float distanceToEdge, float scale)
-    {
-        float radius = LockBracketStyle.HalfSizeForFraction(state, fraction, screenRadius, distanceToEdge);
-        // The established fixed floor keeps a small projected radius legible (P1037);
-        // for any normal hull the native term above dominates it.
-        return MathF.Max(radius, DefaultHalf * (scale > 0f ? scale : 1f) + 8f * (scale > 0f ? scale : 1f));
-    }
+    public const float LockClosingSpan = 40f;
 
     /// <summary>
-    /// P1038b — the radius of the segmented lock ring that ENCLOSES the designator:
-    /// <c>√2·lockHalf + clearance</c>. The designator keeps its native half-span, so its
-    /// corner lies <c>√2·lockHalf</c> from the centre — the ring is always exactly
-    /// <see cref="LockClearance"/> outside the corners at full lock and further out while
-    /// the native <c>+40·(1−lock)</c> shrink term is active. P1038 instead contracted the
-    /// designator to fit a diamond (126 → ~60 px at radius 120); that is gone.
+    /// P1038c — distance from the lock centre to one corner arc: the designator's own
+    /// corner distance (<c>√2·designatorHalf</c>, so the cue hugs the native-size box)
+    /// plus <see cref="LockClearance"/> plus the native
+    /// <see cref="LockClosingSpan"/>·<c>(1−lock)</c> term. The designator itself never
+    /// shrinks (P1038b rule); only the cue closes.
     /// </summary>
-    public static float LockRingRadius(float lockHalf, float scale)
-        => lockHalf * Sqrt2 + LockClearance * (scale > 0f ? scale : 1f);
+    public static float LockCueCornerDistance(float designatorHalf, float fraction, float scale)
+    {
+        float s = scale > 0f ? scale : 1f;
+        return designatorHalf * Sqrt2 + LockClearance * s
+            + LockClosingSpan * s * Math.Clamp(1f - fraction, 0f, 1f);
+    }
+
+    /// <summary>P1038c — one corner arc spans 30° (π/6) centred on the designator's
+    /// diagonal, so the four arcs hug the corners and leave a 60° gap at each axis
+    /// direction (top/right/bottom/left) where the readouts and the heading plate live.
+    /// The arc's axis-aligned extent from the centre is therefore
+    /// <c>distance·cos(15°)</c> (<see cref="LockCueExtentFraction"/>).</summary>
+    public const float LockCornerSweep = MathF.PI / 6f;
+
+    /// <summary>cos 15° — how far the corner arc reaches along an axis.</summary>
+    public const float LockCueExtentFraction = 0.96592583f;
+
+    /// <summary>Corner arcs, one per designator diagonal (top-right, top-left,
+    /// bottom-left, bottom-right).</summary>
+    public const int LockCornerCount = 4;
+
+    /// <summary>Dashes in one corner arc (7.5° each). A partial lock inks every other
+    /// dash, marching with the shared clock; a full lock inks the whole 30° arc.</summary>
+    public const int LockCornerDashes = 4;
+
+    /// <summary>The axis-aligned extent of the cue from the lock centre: the corner arc
+    /// distance projected onto an axis (cos 15°). Readouts are placed outside this.</summary>
+    public static float LockCueExtent(float cornerDistance)
+        => cornerDistance * LockCueExtentFraction;
+
+    /// <summary>Screen-space angle of corner <paramref name="corner"/>'s diagonal
+    /// (45°, 135°, 225°, 315°; +Y down like every Jet screen angle).</summary>
+    public static float LockCornerAngle(int corner)
+        => MathF.PI * 0.25f + corner * MathF.PI * 0.5f;
 
     // ── lock ─────────────────────────────────────────────────────────────
-    /// <summary>Segments per quadrant: 4 → a 16-segment lock ring. A partial lock draws
-    /// every other segment (open/dashed), a full lock draws them all (closed) — shape, not
-    /// hue, carries the state (P972 §4.3 "segmented diamond/arc").</summary>
-    public const int LockSegmentsPerSide = 4;
-
     /// <summary>The presentation flash clock of the partial lock: one dash phase per
     /// this many seconds. Driven by the shared feedback time
     /// (<c>HudLock.NowSeconds</c>), never by a renderer-owned timer, and it emits no
@@ -141,14 +160,14 @@ public static class JetTargetGeometry
 
     /// <summary>The dash phase index of the partial lock at
     /// <paramref name="nowSeconds"/>: alternates 0/1 every
-    /// <see cref="LockPhasePeriodSeconds"/>, so the open segments march around the
-    /// ring instead of freezing.</summary>
+    /// <see cref="LockPhasePeriodSeconds"/>, so the open dashes march around the corner
+    /// arcs instead of freezing.</summary>
     public static int LockPhase(double nowSeconds)
         => nowSeconds <= 0d ? 0 : (int)(nowSeconds / LockPhasePeriodSeconds) & 1;
 
-    /// <summary>True when segment <paramref name="index"/> carries ink in this
-    /// lock state: nothing for None, every other segment for Partial (marching with the
-    /// shared clock), all of them for Full (closed).</summary>
+    /// <summary>True when dash <paramref name="index"/> carries ink in this lock state:
+    /// nothing for None, every other dash for Partial (marching with the shared clock),
+    /// all of them for Full (closed corner arcs).</summary>
     public static bool LockSegmentVisible(int index, int segmentsPerSide,
         MissileLockFeedback.LockState state, double nowSeconds) => state switch
     {
@@ -156,21 +175,6 @@ public static class JetTargetGeometry
         MissileLockFeedback.LockState.Full => true,
         _ => ((index + LockPhase(nowSeconds)) & 1) == 0,
     };
-
-    /// <summary>The two endpoints of ring segment <paramref name="index"/> on a ring of
-    /// <paramref name="radius"/> centred at <paramref name="center"/>. Segments are chords
-    /// running clockwise from the top (−90°); 16 of them read as a segmented circle.</summary>
-    public static (Vector2 A, Vector2 B) LockRingSegment(int index, int segments, Vector2 center, float radius)
-    {
-        if (segments <= 0) return (center, center);
-        float sweep = MathHelper.TwoPi / segments;
-        float start = -MathF.PI * 0.5f + index * sweep;
-        return (RingPoint(center, radius, start), RingPoint(center, radius, start + sweep));
-    }
-
-    /// <summary>A point on a ring at <paramref name="angle"/> (radians, screen space).</summary>
-    public static Vector2 RingPoint(Vector2 center, float radius, float angle)
-        => new(center.X + MathF.Cos(angle) * radius, center.Y + MathF.Sin(angle) * radius);
 
 
     // ── lead / aim ───────────────────────────────────────────────────────

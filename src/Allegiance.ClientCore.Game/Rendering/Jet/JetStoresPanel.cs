@@ -186,6 +186,16 @@ public static class JetStoresPanel
     /// introduces, in standard-stroke units (× scale).</summary>
     public const float IconGap = 4f;
 
+    /// <summary>P1038c — the gap between an icon glyph and its word as a fraction of the
+    /// word's cap height. The brief requires ≥ ¼ cap of clear space; Jet uses ¾ cap so that
+    /// after the icon's and the word's 1 px keylines at least ¼ cap of untouched sky still
+    /// separates the two marks at every density, and never below the P1038b
+    /// <see cref="IconGap"/> floor.</summary>
+    public const float IconGapFraction = 0.75f;
+
+    public static float IconWordGap(float capHeight, float scale)
+        => MathF.Max(IconGap * (scale > 0f ? scale : 1f), IconGapFraction * capHeight);
+
     /// <summary>P1038b — the drawn size of an icon glyph: at least the cap height of the
     /// word it introduces, so the mark is legible instead of a 2–4 px speck (the P1038
     /// defect). The word stays beside it, so state never depends on the icon or the hue.</summary>

@@ -1094,6 +1094,24 @@ list in **reverse**.
   (`tools/hud2-proof --jet`) now measures **stroke-vs-text**, **text-outside-plate**, **text-off-screen** and
   **icon glyph size** per scene (`jet-capture.json` schema 5). Report:
   `docs/reports/JET_LAYOUT_FIXES_P1038B.md`.
+- **Jet layout rules follow-up (P1038c, skin story 4/9)** — the four defects Claude's own P1038b screenshots
+  still showed. **Title row**: the F4 hull title has its own `JetInventoryPresentation.TitleRow` (24 native px =
+  the font's 22-unit line box + the 2 px minimum gap) above the caption band; the pane grows by
+  `TitleRow − CapHeight` and the caption/rows keep their screen position (bottom-anchored). **Pane backing**: the
+  F4 pane is a full overlay, so it uses `JetInventoryPresentation.PlateOpacity` **0.97** (the lowest hundredth that
+  keeps every composited ghost under 8/255 on both proof backdrops) while every other Jet plate keeps 0.82.
+  **Slot marker**: `JetInventoryPresentation.MarkerColumn` (20) is a cap-height gutter; row 1's selected+active
+  state is one `IconSize(CapHeight)` square (open + inset fill) reported as an icon glyph, with ≥ 8 native px before
+  the part name. **Icon gap**: `JetStoresPanel.IconWordGap(capHeight, scale)` = `max(IconGap·scale, ¾·cap)`, so the
+  icon and word keylines never merge (≥ ¼ cap of clean sky). **Compact lock cue**: four 30° corner arcs centred on
+  the designator's diagonals at `√2·designatorHalf + LockClearance + LockClosingSpan·(1−lock)`
+  (`JetTargetGeometry.LockCueCornerDistance`/`LockCueExtent`/`LockCornerAngle`), partial = every other 7.5° dash
+  marching on the shared clock, full = closed hot arcs; the designator keeps its native size and the readout clears
+  the cue's `cos 15°` extent. The proof records cue arcs and the lock readout through the optional
+  `IJetCueAudit` channel and audits **text-vs-text inside one plate**, **cue-vs-own-readout** and
+  **legible-behind-pane** as counted classes (`jet-capture.json` schema 6); all seven classes are 0 in 75 scenes.
+  Tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetStoresCautionTests.cs`; report:
+  `docs/reports/JET_LAYOUT_FIXES_P1038C.md`.
 
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
