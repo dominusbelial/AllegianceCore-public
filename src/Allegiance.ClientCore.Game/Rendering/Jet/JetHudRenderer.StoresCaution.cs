@@ -90,7 +90,9 @@ public sealed partial class JetHudRenderer
         // P1039 — the whole stores block is furniture: a target readout may never be
         // placed over it, and every run below belongs to the "stores" element.
         AddFurniture(new RectangleF(left, headerTop,
-            236f * scale, MathF.Max(0f, JetStoresPanel.Bottom(h) - headerTop)));
+            JetStoresPanel.BlockWidth * scale, MathF.Max(0f, JetStoresPanel.Bottom(h) - headerTop)));
+        // P1039b — the TGT fallback slot hangs above this measured top edge.
+        _storesTop = headerTop;
         _painter.Element("stores");
         if (!compact) _painter.Text(StoresHeader, new(left, headerTop), large: false, scale, _painter.Dim);
 

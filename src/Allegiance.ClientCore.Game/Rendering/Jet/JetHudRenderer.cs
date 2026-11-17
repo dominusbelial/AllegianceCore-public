@@ -88,6 +88,8 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     private const string ReverseLabel = "REV";
     // P1037 — target / lock / order text (pure ASCII: the HUD fonts bake 32..126).
     private const string LockCaption = "LOCK";
+    /// <summary>P1039b — the label of the fixed target-data fallback slot (the TGT block).</summary>
+    private const string TargetBlockWord = "TGT";
     private const string InRangeLabel = "IN RANGE";
     private const string AcceptedLabel = "ACC";
     private const string CurrentLabel = "CUR";
@@ -218,6 +220,8 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     /// <summary>P1039 — the master-caution panel drawn this frame, for the F4 pane's top
     /// limit and the readout placement.</summary>
     private RectangleF _cautionPanel;
+    /// <summary>P1039b — the measured top edge of the stores block (the TGT slot's anchor).</summary>
+    private float _storesTop;
     /// <summary>P1039 — the Jet radar scope's reserved rectangle this frame (empty when the
     /// scope is suppressed).</summary>
     private RectangleF _radarScope;
@@ -241,6 +245,7 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         _lockReadoutBox = default;
         _cautionPanel = default;
         _radarScope = default;
+        _storesTop = 0f;
     }
 
     /// <summary>P1039 — register one furniture box for this frame.</summary>
@@ -938,9 +943,35 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         JetReadoutPlacement.Placement placed = JetReadoutPlacement.Place(
             JetReadoutPlacement.DesignatorOrder, cx, cy, box.Y, clear, textWidth, blockHeight,
             scale, w, h, Furniture, default);
+        // P1039b — when NO slot beside the target is free the readout does not fall through to
+        // wherever the viewport clamp lands (P1039's 800×480 defect: `HOSTILE En …` parked in
+        // the top-left corner beside the heading tape). It takes the fixed, LABELLED target-data
+        // slot in the reserved bottom-left band (JetReadoutPlacement.TargetSlot): clear of the
+        // heading tape, the stores block, the master-caution panel, the boresight column and the
+        // radar scope by construction. At the compact window the band is only as wide as the
+        // stores-to-ladder gap, so the hull and shield readings take one line each — no field is
+        // dropped, the block just gets narrower.
+        bool tagged = !placed.Clear;
+        bool splitBars = tagged && compactReadout && hasBars;
+        float blockWidth = textWidth;
+        if (tagged)
+        {
+            if (splitBars)
+                blockWidth = MathF.Max(row1, MathF.Max(row2, MathF.Max(
+                    MeasureRuns(scale, "  ", hull is null ? null : HullWord, hull, null, null),
+                    MeasureRuns(scale, "  ", shield is null ? null : ShieldWord, shield, null, null))));
+            float tagHeight = blockHeight + (splitBars ? rowH : 0f) + rowH;   // + the TGT row
+            placed = JetReadoutPlacement.TargetSlot(w, h, scale, _storesTop, blockWidth, tagHeight);
+        }
         float x = placed.X, y = placed.Y;
         _targetPlacement = placed;
-        _targetReadoutBox = new RectangleF(x, y, textWidth, blockHeight);
+        _targetReadoutBox = new RectangleF(x, y, blockWidth,
+            blockHeight + (splitBars ? rowH : 0f) + (tagged ? rowH : 0f));
+        if (tagged)
+        {
+            _painter.Text(TargetBlockWord, new(x, y), large: false, scale, _painter.Dim);
+            y += rowH;
+        }
 
         DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
         y += rowH;
@@ -951,9 +982,25 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         }
         if (hasBars)
         {
-            DrawRuns(x, y, scale, _painter.Dim, "  ", hull is null ? null : HullWord, hull,
-                shield is null ? null : ShieldWord, shield);
-            y += rowH;
+            if (splitBars)
+            {
+                if (hull is not null)
+                {
+                    DrawRuns(x, y, scale, _painter.Dim, "  ", HullWord, hull, null, null);
+                    y += rowH;
+                }
+                if (shield is not null)
+                {
+                    DrawRuns(x, y, scale, _painter.Dim, "  ", ShieldWord, shield, null, null);
+                    y += rowH;
+                }
+            }
+            else
+            {
+                DrawRuns(x, y, scale, _painter.Dim, "  ", hull is null ? null : HullWord, hull,
+                    shield is null ? null : ShieldWord, shield);
+                y += rowH;
+            }
             DrawTargetBars(x, y, scale, target.HullFraction, target.ShieldFraction);
         }
     }
@@ -1124,12 +1171,19 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         bool full = lockState.State == MissileLockFeedback.LockState.Full;
         Color ink = full ? _painter.Hot : _painter.Dim;
         float step = JetTargetGeometry.LockCornerSweep / JetTargetGeometry.LockCornerDashes;
+        // P1039b — the radar scope is fixed furniture drawn BEFORE this world-anchored cue: an
+        // arc that would overwrite the instrument's frame, bands or readings is clipped (native
+        // clips radiusBracket at the screen edge the same way, radarimage.cpp:308-319). The cue's
+        // radius, state and timing are untouched — only the ink that would land on the scope.
+        float clipPad = _painter.Stroke * 2f;
         for (int corner = 0; corner < JetTargetGeometry.LockCornerCount; corner++)
         {
             float angle = JetTargetGeometry.LockCornerAngle(corner);
             float start = angle - JetTargetGeometry.LockCornerSweep * 0.5f;
             if (full)
             {
+                if (JetTargetGeometry.ArcEntersRect(center, distance, start,
+                        JetTargetGeometry.LockCornerSweep, _radarScope, clipPad)) continue;
                 _painter.CueArc(center, distance, start, JetTargetGeometry.LockCornerSweep,
                     _painter.Stroke, ink);
                 continue;
@@ -1140,7 +1194,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                         corner * JetTargetGeometry.LockCornerDashes + dash,
                         JetTargetGeometry.LockCornerDashes, lockState.State, lockState.NowSeconds))
                     continue;
-                _painter.CueArc(center, distance, start + dash * step, step, _painter.Stroke, ink);
+                float dashStart = start + dash * step;
+                if (JetTargetGeometry.ArcEntersRect(center, distance, dashStart, step,
+                        _radarScope, clipPad)) continue;
+                _painter.CueArc(center, distance, dashStart, step, _painter.Stroke, ink);
             }
         }
 
@@ -1377,7 +1434,19 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float x = w * 0.5f + 70f * scale;
         float y = h - 34f * scale - height;
         // P1039 — the block's own rows are furniture (no readout may be placed over them).
-        AddFurniture(new RectangleF(x, y, MathF.Max(140f * scale, 0f), height));
+        // P1039b — the width is the MEASURED widest row: the old fixed 140·scale under-reported
+        // a long pilot name (264 px at 800×480), so a readout could be placed over ink the
+        // furniture list did not cover.
+        float widest = MathF.Max(140f * scale,
+            pane.Name is null ? 0f : _painter.Measure(pane.Name, large: false, scale).X);
+        if (hasType)
+            widest = MathF.Max(widest, MeasureRuns(scale, " / ", pane.TypeDescription, pane.SideName, null, null));
+        if (hasRange)
+            widest = MathF.Max(widest, MeasureRuns(scale, "  ", range, range is null ? null : ClosureWord, closure, null));
+        if (hasHull)
+            widest = MathF.Max(widest, MeasureRuns(scale, "  ", hull is null ? null : HullWord, hull,
+                shield is null ? null : ShieldWord, shield));
+        AddFurniture(new RectangleF(x, y, widest, height));
 
         if (pane.Name is { } name)
         {

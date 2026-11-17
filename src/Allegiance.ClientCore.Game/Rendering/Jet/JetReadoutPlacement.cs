@@ -82,8 +82,14 @@ public static class JetReadoutPlacement
     /// frame). Inside one slot the search is bounded and deterministic: the preferred
     /// position first, then the block slid along the slot's own axis by one block, then
     /// slid sideways by half a block — a slot is "below" (or "right") even when it has to
-    /// slide to keep off a numeral. When every candidate is blocked the least-covered one
-    /// is returned with <c>Clear = false</c>, still clamped on screen.
+    /// slide to keep off a numeral.
+    /// <para><b>P1039b — a clamped candidate is never "clear".</b> A slot that the viewport
+    /// gutter has to move is not a slot BESIDE the anchor any more (it is the block the old
+    /// code let fall into a screen corner: P1039's 800×480 <c>HOSTILE En …</c> beside the
+    /// heading tape). It is returned with <c>Clear = false</c> and only as the least-covered
+    /// fallback, so the designator readout goes to its fixed TGT slot instead. A caller that
+    /// has no fallback (the one-line lock caption) still gets the least-covered clamped
+    /// position, exactly as before.</para>
     /// </summary>
     public static Placement Place(ReadOnlySpan<Slot> order,
         float anchorX, float anchorY, float anchorTop, float clear,
@@ -93,9 +99,9 @@ public static class JetReadoutPlacement
     {
         float gutter = MathF.Max(0f, Gutter * scale);
         float gap = MathF.Max(1f, SideGap * scale);
-        Placement best = default;
-        float bestCover = float.MaxValue;
-        bool found = false;
+        Placement bestFree = default, bestClamped = default;
+        float bestFreeCover = float.MaxValue, bestClampedCover = float.MaxValue;
+        bool haveFree = false, haveClamped = false;
         for (int i = 0; i < order.Length; i++)
         {
             Placement baseSlot = Rect(order[i], anchorX, anchorY, anchorTop, clear, width, height, scale);
@@ -116,21 +122,34 @@ public static class JetReadoutPlacement
                     4 => stack ? (-width * 0.5f - gap, 0f) : (0f, -height * 0.5f - gap),
                     _ => stack ? (width * 0.5f + gap, axisY) : (axisX, height * 0.5f + gap),
                 };
-                float x = Math.Clamp(baseSlot.X + dx, gutter, MathF.Max(gutter, viewportWidth - gutter - width));
-                float y = Math.Clamp(baseSlot.Y + dy, gutter, MathF.Max(gutter, viewportHeight - gutter - height));
+                float rawX = baseSlot.X + dx, rawY = baseSlot.Y + dy;
+                float x = Math.Clamp(rawX, gutter, MathF.Max(gutter, viewportWidth - gutter - width));
+                float y = Math.Clamp(rawY, gutter, MathF.Max(gutter, viewportHeight - gutter - height));
+                bool clamped = MathF.Abs(x - rawX) > 0.5f || MathF.Abs(y - rawY) > 0.5f;
                 var box = new RectangleF(x, y, width, height);
                 float cover = CoveredArea(box, furniture, avoid);
-                if (cover <= 0f)
+                if (cover <= 0f && !clamped)
                     return new Placement(x, y, order[i], true);
-                if (!found || cover < bestCover)
+                if (clamped)
                 {
-                    best = new Placement(x, y, order[i], false);
-                    bestCover = cover;
-                    found = true;
+                    if (!haveClamped || cover < bestClampedCover)
+                    {
+                        bestClamped = new Placement(x, y, order[i], false);
+                        bestClampedCover = cover;
+                        haveClamped = true;
+                    }
+                    continue;
+                }
+                if (!haveFree || cover < bestFreeCover)
+                {
+                    bestFree = new Placement(x, y, order[i], false);
+                    bestFreeCover = cover;
+                    haveFree = true;
                 }
             }
         }
-        return found ? best : new Placement(gutter, gutter, Slot.Right, false);
+        if (haveFree) return bestFree;
+        return haveClamped ? bestClamped : new Placement(gutter, gutter, Slot.Right, false);
     }
 
     /// <summary>Summed area of the furniture and the avoided block that
@@ -149,5 +168,55 @@ public static class JetReadoutPlacement
         float w = MathF.Min(a.X + a.Width, b.X + b.Width) - MathF.Max(a.X, b.X);
         float h = MathF.Min(a.Y + a.Height, b.Y + b.Height) - MathF.Max(a.Y, b.Y);
         return w > 0f && h > 0f ? w * h : 0f;
+    }
+
+    // ── P1039b: the fixed TGT fallback slot ─────────────────────────────
+
+    /// <summary>Gap between the stores block's right edge and the TGT slot.</summary>
+    public const float TargetSlotGap = 6f;
+
+    /// <summary>Margin the TGT slot keeps from the boresight column (the pitch ladder's left
+    /// numeral column starts ≈ 80 px left of the centre at the reference density).</summary>
+    public const float TargetSlotCentreMargin = 80f;
+
+    /// <summary>
+    /// P1039b — the TGT slot's reserved ZONE, stated once so the renderer and its tests cannot
+    /// drift: the BOTTOM-LEFT data band between the stores block and the boresight column,
+    /// BOTTOM-ANCHORED on the stores block's own top edge (<paramref name="storesTop"/>, the
+    /// measured header top the renderer records). It overlaps nothing fixed: the stores block is
+    /// its bottom neighbour (its compact annunciator row can run wider than the block, which is
+    /// why the TGT block sits ABOVE it, not beside it), the pitch ladder / <c>PITCH</c> column is
+    /// its right bound, the heading tape and the master-caution panel are at the top of the
+    /// frame, the shared cargo/flight-parts lines are below the stores block, and the radar scope
+    /// and the sector mini-map are the bottom-right corner. Returned un-clamped for the block
+    /// size given; <see cref="TargetSlot"/> fits the block inside it.
+    /// </summary>
+    public static RectangleF TargetZone(float viewportWidth, float viewportHeight, float scale,
+        float storesTop)
+    {
+        float s = scale > 0f ? scale : 1f;
+        float left = (JetStoresPanel.LeftColumn + JetStoresPanel.BlockWidth + TargetSlotGap) * s;
+        float right = viewportWidth * 0.5f - TargetSlotCentreMargin * s;
+        float bottom = storesTop > 0f ? storesTop - TargetSlotGap * s : viewportHeight - JetStoresPanel.BottomInset;
+        return new RectangleF(left, 0f, MathF.Max(0f, right - left), MathF.Max(0f, bottom));
+    }
+
+    /// <summary>
+    /// P1039b — the FIXED, LABELLED target-data slot: a block of
+    /// <paramref name="width"/>×<paramref name="height"/> whose bottom edge sits on the TGT
+    /// zone's bottom edge and whose left edge is the zone's left edge. Used only when every
+    /// slot beside the target is blocked, so the readout is a stable, labelled block in a
+    /// reserved zone instead of wherever the viewport clamp happened to land (P1039's
+    /// 800×480 defect: <c>HOSTILE En …</c> parked in the top-left corner next to the heading
+    /// tape). <c>Clear</c> reports whether the block fits the zone.
+    /// </summary>
+    public static Placement TargetSlot(float viewportWidth, float viewportHeight, float scale,
+        float storesTop, float width, float height)
+    {
+        RectangleF zone = TargetZone(viewportWidth, viewportHeight, scale, storesTop);
+        float x = zone.X;
+        float y = zone.Y + MathF.Max(0f, zone.Height - height);
+        bool clear = width <= zone.Width + 0.5f && zone.Height >= height - 0.5f;
+        return new Placement(x, y, Slot.Left, clear);
     }
 }

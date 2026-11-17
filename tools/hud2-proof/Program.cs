@@ -594,6 +594,22 @@ sealed class Proof : Game
                     radarScope = Box(_jetAudit.RadarScope),
                     furniture = Furniture(),
                 },
+                // P1039b — the radar's placement pass measured for this scene: how many labels
+                // were placed, shortened or hidden, the never-hidden overflow (must be 0), the
+                // dropped marker words, and the four band values the scope drew.
+                radar = _jetAudit.RadarScope.Width > 0f ? new
+                {
+                    scope = Box(_jetAudit.RadarScope),
+                    scopeRange = JetRadar.ScopeRange(model.Context.Contacts),
+                    bands = Bands(model.Context.Contacts),
+                    placed = _jetAudit.RadarLabelsPlaced,
+                    shortened = _jetAudit.RadarLabelsShortened,
+                    hidden = _jetAudit.RadarLabelsHidden,
+                    overflows = _jetAudit.RadarLabelOverflows,
+                    priorityMisses = _jetAudit.RadarPriorityLabelMisses,
+                    wordsDropped = _jetAudit.RadarWordsDropped,
+                    labels = Labels(_jetAudit),
+                } : null,
                 tag = JetHudRenderer.TagText,
             });
         }
@@ -622,11 +638,12 @@ sealed class Proof : Game
                 + $"{jetWatch.Elapsed.TotalMilliseconds / Math.Max(1e-6, modernWatch.Elapsed.TotalMilliseconds):0.00}");
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 7, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+            JsonSerializer.Serialize(new { schema = 8, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
         // P1038b/c — the layout classes must be 0 in every Jet scene; print the offending
         // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
-        int inPlate = 0, cueHits = 0, legible = 0, cross = 0;
+        int inPlate = 0, cueHits = 0, legible = 0, cross = 0, same = 0;
+        int radarPlaced = 0, radarShortened = 0, radarHidden = 0, radarOverflow = 0, radarMisses = 0, radarWords = 0;
         foreach (var scene in summaries)
         {
             var layout = (LayoutAudit)scene.GetType().GetProperty("layout")!.GetValue(scene)!;
@@ -638,11 +655,24 @@ sealed class Proof : Game
             cueHits += layout.CueReadoutHits;
             legible += layout.LegibleBehindPane;
             cross += layout.TextOverlapCross;
+            same += layout.TextOverlapSame;
+            object? radar = scene.GetType().GetProperty("radar")!.GetValue(scene);
+            if (radar is null) continue;
+            var type = radar.GetType();
+            radarPlaced += (int)type.GetProperty("placed")!.GetValue(radar)!;
+            radarShortened += (int)type.GetProperty("shortened")!.GetValue(radar)!;
+            radarHidden += (int)type.GetProperty("hidden")!.GetValue(radar)!;
+            radarOverflow += (int)type.GetProperty("overflows")!.GetValue(radar)!;
+            radarMisses += (int)type.GetProperty("priorityMisses")!.GetValue(radar)!;
+            radarWords += (int)type.GetProperty("wordsDropped")!.GetValue(radar)!;
         }
         Console.WriteLine($"HUD2_JET_AUDIT stroke-vs-text {strokeHits}, text-outside-plate {outsidePlate}, "
             + $"text-off-screen {offScreen}, icon-too-small {smallIcons}, text-in-plate {inPlate}, "
-            + $"cue-vs-readout {cueHits}, legible-behind-pane {legible}, text-overlap-cross {cross} "
-            + $"over {scenes.Length} scenes");
+            + $"cue-vs-readout {cueHits}, legible-behind-pane {legible}, text-overlap-cross {cross}, "
+            + $"text-overlap-same {same} over {scenes.Length} scenes");
+        Console.WriteLine($"HUD2_JET_RADAR_LABELS placed {radarPlaced}, shortened {radarShortened}, "
+            + $"hidden {radarHidden}, never-hidden overflows {radarOverflow}, priority misses {radarMisses}, "
+            + $"words dropped {radarWords} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1825,6 +1855,32 @@ sealed class Proof : Game
         };
     }
 
+    /// <summary>P1039b — the planned block of every contact of this scene (form 0 = hidden), so
+    /// the placement is evidence in the JSON, not an assertion.</summary>
+    private static object?[] Labels(JetHudRenderer renderer)
+    {
+        var boxes = renderer.RadarLabelBoxes;
+        var forms = renderer.RadarLabelForms;
+        var list = new object?[boxes.Length];
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            if (forms[i] == 0) { list[i] = null; continue; }
+            RectangleF box = boxes[i];
+            list[i] = new { form = (int)forms[i], x = MathF.Round(box.X, 1), y = MathF.Round(box.Y, 1),
+                w = MathF.Round(box.Width, 1), h = MathF.Round(box.Height, 1) };
+        }
+        return list;
+    }
+
+    /// <summary>P1039b — the four band values the scope draws for this scene's contact set.</summary>
+    private static int[] Bands(IReadOnlyList<HudContact> contacts)
+    {
+        float range = JetRadar.ScopeRange(contacts);
+        var bands = new int[JetRadar.RingCount];
+        for (int ring = 1; ring <= JetRadar.RingCount; ring++) bands[ring - 1] = JetRadar.RingRange(ring, range);
+        return bands;
+    }
+
     /// <summary>P1039 — the radar mode of a Jet radar scene: the four LOD names are parsed
     /// verbatim, the shape variants stay on Default/All.</summary>
     private static RadarMode JetRadarMode(string scenario)
@@ -2310,6 +2366,24 @@ sealed class Proof : Game
                         + $"x {b.Element}:{b.Text}@{b.X:0.#},{b.Y:0.#} {b.W:0.#}x{b.H:0.#}");
                 }
 
+            // ── P1039b: text-vs-text inside ONE element ────────────────────
+            // Any two runs the SAME block drew that intersect: the radar's contact labels and
+            // ring captions (P1039 drew them all at fixed offsets, a solid mass of text), a
+            // plate's rows, the stores block's rows. After the Jet radar's placement pass no
+            // two reads of one element may share ink; a label the pass HID is never drawn, so
+            // it cannot be counted here.
+            var sameOverlaps = new List<string>();
+            for (int i = 0; i < _texts.Count; i++)
+                for (int j = i + 1; j < _texts.Count; j++)
+                {
+                    LayoutBox a = _texts[i], b = _texts[j];
+                    if (!Intersects(a, b)) continue;
+                    if (a.Element is null || b.Element is null) continue;
+                    if (!string.Equals(a.Element, b.Element, StringComparison.Ordinal)) continue;
+                    sameOverlaps.Add($"{a.Element}:{a.Text}@{a.X:0.#},{a.Y:0.#} {a.W:0.#}x{a.H:0.#} "
+                        + $"x {b.Text}@{b.X:0.#},{b.Y:0.#} {b.W:0.#}x{b.H:0.#}");
+                }
+
             // ── P1038c: cue-vs-own-readout ─────────────────────────────────
             // The cue is drawn BEFORE its caption, so the generic stroke-vs-text rule
             // (background strokes are exempt) cannot see this: the renderer reports each cue
@@ -2359,12 +2433,12 @@ sealed class Proof : Game
             return new LayoutAudit(_texts.Count, _fills.Count, _strokes.Count, textOverlaps.Count,
                 captionOverlaps.Count, boxOverlaps.Count, strokeHits.Count, outsidePlate.Count, offScreen.Count,
                 _glyphs.Count, smallGlyphs.Count, inPlateOverlaps.Count, cueHits.Count, legibleBehindPane.Count,
-                crossOverlaps.Count,
+                crossOverlaps.Count, sameOverlaps.Count,
                 captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray(),
                 strokeHits.Take(4).ToArray(), outsidePlate.Take(4).ToArray(),
                 offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray(),
                 inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray(),
-                crossOverlaps.Take(4).ToArray());
+                crossOverlaps.Take(4).ToArray(), sameOverlaps.Take(4).ToArray());
         }
 
         /// <summary>P1039 — the one stated stroke-vs-text exception: the Jet radar's fixed
@@ -2585,8 +2659,9 @@ sealed class Proof : Game
     private sealed record LayoutAudit(int Texts, int Fills, int Strokes, int TextOverlaps, int CaptionOverlaps,
         int BoxOverlaps, int StrokeHits, int TextOutsidePlate, int TextOffScreen, int Icons, int IconTooSmall,
         int TextOverlapInPlate, int CueReadoutHits, int LegibleBehindPane, int TextOverlapCross,
+        int TextOverlapSame,
         string[] CaptionOverlapSamples, string[] BoxOverlapSamples, string[] StrokeHitSamples,
         string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples,
         string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples,
-        string[] TextOverlapCrossSamples);
+        string[] TextOverlapCrossSamples, string[] TextOverlapSameSamples);
 }

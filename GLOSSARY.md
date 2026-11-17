@@ -1141,7 +1141,8 @@ list in **reverse**.
   (`src/Allegiance.ClientCore.Game/Rendering/Jet/JetRadar.cs`): square tactical scope when
   `HudSettings.RoundRadar` is off, an inscribed circular RWR when it is on, the two sharing one
   measured rectangle; a contact sits at its bearing × range fraction, four equal bands over the
-  frame's own maximum range (rounded to 1/2/5×10ⁿ, floor 1000 m), and a null bearing falls back
+  frame's own maximum range (P1039 rounded the scale to 1/2/5×10ⁿ; P1039b rounds the band step
+  instead, floor 1000 m), and a null bearing falls back
   to the contact's ordinary projected point, never an invented direction. The one shared change
   is the presentation-only `HudContact.RelativeBearingRadians` (`Rendering/HudModel.cs`), derived
   by `Rendering/RadarBearing.Relative` from the own forward and the sector plane normal (0 =
@@ -1155,10 +1156,36 @@ list in **reverse**.
   pane, radar scope, F4 pane); the F4 pane keeps every row and shrinks its scale below the
   master-caution panel (caution is the higher-priority element,
   `JetInventoryPresentation.FitScale`). The proof stamps every run/stroke with an ELEMENT
-  (`IJetElementAudit`) and audits **text-overlap-cross** (`jet-capture.json` schema 7); all
-  classes are 0 in 96 scenes except one listed exception. Tests:
+  (`IJetElementAudit`) and audits **text-overlap-cross** (`jet-capture.json` schema 7; P1039b adds
+  text-overlap-same and the TGT fallback, schema 8); all classes are 0 in 96 scenes. Tests:
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
   `docs/reports/JET_RWR_P1039.md`.
+
+- **Jet radar label placement + compact corner zone (P1039b, skin story 5/9 follow-up)** — the
+  readability pass over the same native-eligible labels (no inclusion rule changes).
+  `Rendering/Jet/JetRadarLabels.cs` is the pure placement math: eight slots around a glyph
+  (right, left, above, below, then the four diagonals) with bounded slides away from the glyph,
+  the priority queue (**selected target → order subject → threat/missile → own command verb
+  `ACC`/`QUE` → nearest range**, ties in model order), the fallback ladder **full block → range
+  line alone → native's bare digits → hidden (glyph, overlays and verb keep)**, the diagonal
+  leader stroke, and a scope-wide scan for a never-hidden label whose eight slots are taken. The
+  renderer (`JetHudRenderer.Radar.cs`) plans every word and label before drawing (frame → bands →
+  glyphs → leaders → band captions → words → labels, so a stroke can never strike a text),
+  reserves the ring captions (one fixed vertical spoke, a caption that would touch another is
+  skipped) and the `RDR <mode>` corner, and reports placed/shortened/hidden/overflow/word-drop
+  counts. The band scale rounds the BAND (`ScaleFor`: 1/1.5/2/2.5/3/4/5/6/8×10ⁿ ×4, outer ring
+  ≤ 1.6× the farthest contact) so contacts no longer crowd the inner rings. Below 700 px height
+  `JetRadar.Scope` holds the scope in the bottom-right CORNER ZONE
+  (`CompactSideFraction` 0.30·h, left edge ≥ `CompactLeftFraction` 0.66·w, right at the throttle
+  band, bottom above the mini-map, top below the caution panel) instead of next to the centre.
+  `JetReadoutPlacement.TargetSlot`/`TargetZone` add the fixed, labelled **TGT** target-data
+  fallback (band between the stores column and the boresight column, bottom-anchored on the
+  measured stores top), and a slot the viewport clamp has to move is no longer "clear". The lock
+  cue clips at the fixed scope (`JetTargetGeometry.ArcEntersRect`). The proof adds
+  **text-overlap-same** (same-element pairs; `jet-capture.json` schema 8) and the per-scene
+  radar counts; every class is 0 in 96 scenes. Tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetRadarTests.cs`; report:
+  `docs/reports/JET_RADAR_FIXES_P1039B.md`.
 
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
