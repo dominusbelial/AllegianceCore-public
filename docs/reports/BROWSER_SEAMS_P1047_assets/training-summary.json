@@ -1,0 +1,108 @@
+{
+  "generatedUtc": "2026-11-17T05:42:54.708341+00:00",
+  "requestedCompleteCohorts": 3,
+  "completeCohorts": 1,
+  "completeCohortIds": [
+    1
+  ],
+  "overlappingCohorts": true,
+  "rows": [
+    {
+      "cohort": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "expectedCases": 126,
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "observedCases": 126,
+      "selectionComplete": true,
+      "failures": [],
+      "trxSha256": "2dce1a342be7c1a4e743f1a35f935e9ea31b03c6e5d3441d3f4f6e0d67d15218",
+      "start": "2026-11-16T22:40:57.1969107+00:00",
+      "finish": "2026-11-16T22:41:07.9068302+00:00"
+    },
+    {
+      "cohort": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "expectedCases": 294,
+      "passed": 290,
+      "failed": 2,
+      "skipped": 2,
+      "observedCases": 294,
+      "selectionComplete": true,
+      "failures": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")"
+      ],
+      "trxSha256": "d4c8f20373def15d47a2dc0bdb409f7f3f7c48ea2e36079e7d244e9a43b4f994",
+      "start": "2026-11-16T22:41:08.2664381+00:00",
+      "finish": "2026-11-17T02:40:57.3011876+00:00",
+      "p912Windows": {
+        "Passed": 40,
+        "Failed": 2,
+        "NotExecuted": 2
+      }
+    },
+    {
+      "cohort": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "expectedCases": 126,
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "observedCases": 126,
+      "selectionComplete": true,
+      "failures": [],
+      "trxSha256": "a066941efa4f0371cda27fba3fab402b1d0d238ab6befbb23362bab463492321",
+      "start": "2026-11-17T01:52:20.7393692+00:00",
+      "finish": "2026-11-17T01:52:33.8740463+00:00"
+    },
+    {
+      "cohort": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "expectedCases": 294,
+      "selectionComplete": false,
+      "aggregateResultsAvailable": false,
+      "status": "interrupted at task time cap",
+      "observedFailureRecords": 2,
+      "observedFailures": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")"
+      ]
+    },
+    {
+      "cohort": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "expectedCases": 126,
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "observedCases": 126,
+      "selectionComplete": true,
+      "failures": [],
+      "trxSha256": "6a4512dbb86b5a698ac085946627d1762fa40a8bf8df4ece9f1a3e1a10ce0fe7",
+      "start": "2026-11-17T01:52:20.7393693+00:00",
+      "finish": "2026-11-17T01:52:33.8979311+00:00"
+    },
+    {
+      "cohort": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "expectedCases": 294,
+      "selectionComplete": false,
+      "aggregateResultsAvailable": false,
+      "status": "interrupted at task time cap",
+      "observedFailureRecords": 2,
+      "observedFailures": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")"
+      ]
+    }
+  ],
+  "remainingCohorts": [
+    2,
+    3
+  ],
+  "originalMultiRepeatContinuation": "interrupted after first complete project pair; duplicate partial second repetition is not counted",
+  "stoppedAtTimeCap": true,
+  "partialWindowCheckpointReceipt": "training-window-checkpoints.json"
+}

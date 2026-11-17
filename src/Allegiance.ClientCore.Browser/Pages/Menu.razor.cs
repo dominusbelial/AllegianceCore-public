@@ -1,0 +1,157 @@
+using Allegiance.ClientCore.Browser.Assets;
+using Allegiance.ClientCore.MonoGame;
+using Allegiance.ClientCore.MonoGame.Platform;
+using Allegiance.ClientCore.MonoGame.Rendering;
+using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
+
+namespace Allegiance.ClientCore.Browser.Pages;
+
+public partial class Menu
+{
+    private Game1? _game;
+    private IJSObjectReference? _platform;
+    private DotNetObjectReference<Menu>? _reference;
+    private readonly ResidentProfileStorage _storage = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private StagedAssetSource? _assets;
+    private bool _loading, _attempted, _flushPending, _disposed, _captureRequested;
+    private string? _error;
+    private string _status = "Preparing verified starter pack…", _persistence = "Preferences in memory", _audioStatus = "Enable menu sound";
+    private int _progress;
+    private HudStyle _style = HudStyle.Modern;
+    private long _savedRevision = -1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        if (_loading || _disposed) return;
+        _loading = true; _error = null; _progress = 0; StateHasChanged();
+        try
+        {
+            _platform ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./game-platform.js");
+            if (!_attempted)
+            {
+                var snapshot = await _platform.InvokeAsync<Dictionary<string, string>>("settingsRead");
+                _storage.Import(snapshot);
+                ProfileStorage.Default = _storage;
+                var hud = HudSettings.Load("hud.json", _storage.Exists("player.json"), _storage);
+                _style = hud.Style;
+                _savedRevision = _storage.Revision;
+                // Remember the initial migration/default choice before a later
+                // player.json write can make this new profile look like a legacy one.
+                if (!_storage.Exists("hud.json")) hud.Save("hud.json", _storage);
+            }
+            bool retry = _attempted;
+            var stager = new AssetStager(Http, new BrowserAssetCache(_platform), request =>
+            {
+                request.SetBrowserResponseStreamingEnabled(true);
+                if (retry) request.SetBrowserRequestCache(BrowserRequestCache.Reload);
+            });
+            _attempted = true;
+            var manifest = await stager.ReadManifestAsync(_lifetime.Token);
+            _assets = await stager.StageAsync(manifest, (percent, status) =>
+            {
+                _progress = percent; _status = status; StateHasChanged();
+            }, _lifetime.Token);
+            var dimensions = await JsRuntime.InvokeAsync<int[]>("menuViewport");
+            StopGame();
+            _game = new Game1(_assets, _style, dimensions[0], dimensions[1]);
+            _game.DownloadScreenshot = () => _ = ScreenshotAsync();
+            _reference ??= DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("menuText", _reference);
+            await JsRuntime.InvokeVoidAsync("preview.startFrames", _reference);
+        }
+        catch (OperationCanceledException) when (_disposed) { }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine(error);
+            StopGame();
+            _error = "The starter pack or renderer could not start. " + error.Message;
+        }
+        finally { _loading = false; if (!_disposed) StateHasChanged(); }
+    }
+    private async Task SetStyleAsync(HudStyle style)
+    {
+        _style = style;
+        _game?.SelectHudStyle(style);
+        var settings = HudSettings.Load("hud.json", true, _storage);
+        settings.Style = style;
+        settings.Save("hud.json", _storage);
+        await FlushAsync();
+        // The shared intro has identical artwork in both styles; the style is a persisted HUD preference.
+        StateHasChanged();
+    }
+    private async Task FlushAsync()
+    {
+        if (_flushPending || _platform is null) return;
+        _flushPending = true;
+        try
+        {
+            while (_savedRevision != _storage.Revision && !_disposed)
+            {
+                long revision = _storage.Revision;
+                bool persisted = await _platform.InvokeAsync<bool>("settingsWrite", _storage.Snapshot());
+                _persistence = persisted ? "Preferences saved" : "Browser storage unavailable — preferences last until this tab closes";
+                _savedRevision = revision;
+                StateHasChanged();
+            }
+        }
+        finally { _flushPending = false; }
+    }
+    private void EnableAudio() => _audioStatus = _game?.EnableMenuAudio() == true ? "Menu sound on" : "Menu sound unavailable";
+    private Task ScreenshotAsync()
+    {
+        _captureRequested = true;
+        return Task.CompletedTask;
+    }
+    private async Task CaptureFrameAsync()
+    {
+        try { if (_platform is not null) await _platform.InvokeVoidAsync("screenshot"); }
+        catch (JSException error) { Console.Error.WriteLine("[browser] Screenshot download failed: " + error.Message); }
+    }
+    [JSInvokable]
+    public void TextInput(string text) => _game?.InputText(text);
+    [JSInvokable]
+    public void SetKeyboardFocus(bool focused) => _game?.SetKeyboardFocus(focused);
+    [JSInvokable]
+    public bool TickDotNet()
+    {
+        try
+        {
+            if (_game is null) return false;
+            if (!_game.Started) { _game.Run(); _game.Started = true; }
+            _game.Tick();
+            // Snapshot in this RAF submission, before WebGL discards the drawing buffer.
+            if (_captureRequested) { _captureRequested = false; _ = CaptureFrameAsync(); }
+            if (_savedRevision != _storage.Revision) _ = FlushAsync();
+            return true;
+        }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine(error);
+            _error = "Game1 rendering stopped. " + error.Message;
+            StopGame(); StateHasChanged(); return false;
+        }
+    }
+    [JSInvokable]
+    public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
+        invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
+        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName };
+    private void StopGame()
+    {
+        var game = _game; _game = null;
+        try { game?.Dispose(); }
+        catch (Exception error) { Console.Error.WriteLine("[browser] Cleanup after failed initialization: " + error.Message); }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true; _lifetime.Cancel(); StopGame();
+        if (_reference is not null) await JsRuntime.InvokeVoidAsync("menuDetachText");
+        _reference?.Dispose(); _lifetime.Dispose();
+        if (_platform is not null) await _platform.DisposeAsync();
+    }
+}

@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Platform;
 using System;
 using System.IO;
 
@@ -51,8 +52,17 @@ public sealed class KeyBindingStore
         return Path.Combine(dir, FileName);
     }
 
-    public KeyBindingStore()
+    private readonly IProfileStorage _storage;
+    private readonly string? _explicitPath;
+
+    public KeyBindingStore() : this(ProfileStorage.Default) { }
+
+    public KeyBindingStore(IProfileStorage storage) : this(storage, null) { }
+
+    public KeyBindingStore(IProfileStorage storage, string? explicitPath)
     {
+        _storage = storage;
+        _explicitPath = explicitPath;
         // P949 — a fresh profile (no keymap file) starts on the Port layout
         // (keyboard steering, the refreshed-install complaint this fixes); a file
         // that records a preset keeps that preset, and a pre-P941 flat file (no
@@ -60,13 +70,13 @@ public sealed class KeyBindingStore
         // The fallback is not written: the file stays absent until the player
         // changes something (native's LoadMap fallback writes nothing).
         Map = new ActionMap(InputActionCatalog.Definitions);
-        string path = ResolvePath();
-        if (File.Exists(path))
+        string path = _explicitPath ?? ResolvePath();
+        if (_storage.Exists(path))
         {
             LoadedFromFile = true;
             try
             {
-                Map.ApplyJson(File.ReadAllText(path));
+                Map.ApplyJson(_storage.ReadAllText(path));
             }
             catch (Exception ex)
             {
@@ -89,11 +99,11 @@ public sealed class KeyBindingStore
     /// file. Only differences from defaults are written.</summary>
     public void Save()
     {
-        string path = ResolvePath();
+        string path = _explicitPath ?? ResolvePath();
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
-            File.WriteAllText(path, Map.ToJson());
+            _storage.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
+            _storage.WriteAllText(path, Map.ToJson());
             SavedThisSession = true;
             Console.WriteLine($"[keymap] saved bindings -> {path}");
         }
@@ -133,13 +143,13 @@ public sealed class KeyBindingStore
     /// <c>LoadMap(DEFAULTINPUTMAP_FILE)</c>). This is the popup's Cancel path —
     /// it discards every unsaved in-popup mutation. Deliberately does NOT
     /// persist the fallback (the file stays as it was).</summary>
-    public void Reload() => ReloadFrom(ResolvePath());
+    public void Reload() => ReloadFrom(_explicitPath ?? ResolvePath());
 
     /// <summary>The reload body with an explicit path (the test seam behind
     /// <see cref="Reload"/>, which always passes the resolved user path).</summary>
     internal void ReloadFrom(string path)
     {
-        if (File.Exists(path))
+        if (_storage.Exists(path))
         {
             LoadedFromFile = true;
             try
@@ -148,7 +158,7 @@ public sealed class KeyBindingStore
                 // overrides; applying the JSON to the mutated map alone would
                 // leave removed overrides behind, so reset first.
                 Map.ResetToDefaults();
-                Map.ApplyJson(File.ReadAllText(path));
+                Map.ApplyJson(_storage.ReadAllText(path));
                 Console.WriteLine($"[keymap] reloaded bindings <- {path} ({InputLayouts.Name(Map.Layout)})");
                 return;
             }

@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Platform;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,12 +18,21 @@ public sealed record PlayerConfig(string Server = "", ushort Port = 6073, string
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException) { return ""; }
     }
 
-    public static PlayerConfig Load(string? path = null)
+    public static PlayerConfig Load(string? path = null) => Load(path, ProfileStorage.Default);
+
+    public static PlayerConfig Load(string? path, IProfileStorage? storage)
     {
+        storage ??= ProfileStorage.Default;
         path ??= FilePath;
-        if (!File.Exists(path)) return new();
-        return JsonSerializer.Deserialize<PlayerConfig>(File.ReadAllText(path),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+        if (!storage.Exists(path)) return new();
+        return JsonSerializer.Deserialize<PlayerConfig>(storage.ReadAllText(path),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+#if BROWSER
+                TypeInfoResolver = BrowserProfileJson.Default,
+#endif
+            })
             ?? throw new InvalidDataException($"Empty player configuration: {path}");
     }
 }

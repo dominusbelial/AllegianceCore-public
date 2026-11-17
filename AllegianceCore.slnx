@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Allegiance.ClientCore.Browser/Allegiance.ClientCore.Browser.csproj" />
     <Project Path="src/Allegiance.Core/Allegiance.Core.csproj" />
+    <Project Path="src/Allegiance.Core.Browser/Allegiance.Core.Browser.csproj" />
     <Project Path="src/Allegiance.Server/Allegiance.Server.csproj" />
     <Project Path="src/Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
     <Project Path="src/Allegiance.Bot/Allegiance.Bot.csproj" />
@@ -10,10 +11,12 @@
     <Project Path="src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
     <Project Path="src/Allegiance.ClientCore.Explorer/Allegiance.ClientCore.Explorer.csproj" />
     <Project Path="src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+    <Project Path="src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj" />
     <Project Path="src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Allegiance.ClientCore.Browser.Tests/Allegiance.ClientCore.Browser.Tests.csproj" />
+    <Project Path="tests/Allegiance.ClientCore.Game.Browser.Tests/Allegiance.ClientCore.Game.Browser.Tests.csproj" />
     <Project Path="tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj" />
     <Project Path="tests/Allegiance.Update.Tests/Allegiance.Update.Tests.csproj" />
     <Project Path="tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj" />

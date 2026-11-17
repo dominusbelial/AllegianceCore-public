@@ -95,6 +95,9 @@ public static class ShipStandInModel
         var ibuf = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
         ibuf.SetData(indices);
 
+#if BROWSER
+        return KniCompatibility.StandIn(gd, vbuf, ibuf, indices.Length / 3, verts.Length);
+#else
         var effect = new BasicEffect(gd);
 #pragma warning disable CS0618 // ModelMeshPart's parameterless ctor is deprecated but is the only way to build a Model at runtime (as the content loader itself does).
         var part = new ModelMeshPart
@@ -124,5 +127,6 @@ public static class ShipStandInModel
         // ensure it explicitly so the invariant holds even if the ctor changes.
         model.Root = bone;
         return model;
+#endif
     }
 }

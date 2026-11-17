@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Source-compiled KNI presentation library. Game1 selects the shared intro/options
+       partials and a browser lifecycle; flight/session/offline orchestration is a later slice. -->
+  <PropertyGroup>
+    <AssemblyName>Allegiance.ClientCore.Game.Browser</AssemblyName>
+    <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <KniPlatform>BlazorGL</KniPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="nkast.Xna.Framework" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Content" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Graphics" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Audio" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Media" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Input" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Game" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Devices" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Storage" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.XR" Version="4.3.9001" />
+    <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.3.9001" />
+    <ProjectReference Include="../Allegiance.Core.Browser/Allegiance.Core.Browser.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- No ConnectionSession/keepalive, identity client, recording or transport ownership in this slice. -->
+    <Compile Include="../Allegiance.ClientCore/**/*.cs"
+      Exclude="../Allegiance.ClientCore/obj/**;../Allegiance.ClientCore/bin/**;../Allegiance.ClientCore/Session/**;../Allegiance.ClientCore/Replay/**"
+      Link="ClientCore/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.ClientCore.Game/**/*.cs"
+      Exclude="../Allegiance.ClientCore.Game/obj/**;../Allegiance.ClientCore.Game/bin/**;
+               ../Allegiance.ClientCore.Game/Game1*.cs;
+               ../Allegiance.ClientCore.Game/Discovery/**;
+               ../Allegiance.ClientCore.Game/Diagnostics/**;
+               ../Allegiance.ClientCore.Game/Capture/**;
+               ../Allegiance.ClientCore.Game/Audio/SoundManager.cs;
+               ../Allegiance.ClientCore.Game/Audio/Music.cs;
+               ../Allegiance.ClientCore.Game/Audio/AudioDevice.cs;
+               ../Allegiance.ClientCore.Game/Audio/AsrSound.cs;
+               ../Allegiance.ClientCore.Game/Audio/TrainingVoicePcm.cs;
+               ../Allegiance.ClientCore.Game/Audio/AudioVoice.cs;
+               ../Allegiance.ClientCore.Game/Flight/RelativeMouse.cs;
+               ../Allegiance.ClientCore.Game/SavedGamePasswords.cs;
+               ../Allegiance.ClientCore.Game/Assets/AssetSources.cs;
+               ../Allegiance.ClientCore.Game/Assets/TextCoreAssets.cs;
+               ../Allegiance.ClientCore.Game/Rendering/GameOverPerfPanel.cs;
+               ../Allegiance.ClientCore.Game/Rendering/UpscalingSettings.cs;
+               ../Allegiance.ClientCore.Game/SkirmishScreenModel.cs;
+               ../Allegiance.ClientCore.Game/HostLanScreenModel.cs;
+               ../Allegiance.ClientCore.Game/BenchmarkSharing.cs;
+               ../Allegiance.ClientCore.Game/LaunchOptions.cs;
+               ../Allegiance.ClientCore.Game/IntroFindServerList.cs;
+               ../Allegiance.ClientCore.Game/Training/**;
+               ../Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs;
+               ../Allegiance.ClientCore.Game/Rendering/FsrPostProcessor.cs;
+               ../Allegiance.ClientCore.Game/CommandFanout.cs;
+               ../Allegiance.ClientCore.Game/CommandOrderResolver.cs;
+               ../Allegiance.ClientCore.Game/QuickChat/QuickChatOrderResolver.cs;
+               ../Allegiance.ClientCore.Game/Flight/CommandActionInput.cs;
+               ../Allegiance.ClientCore.Game/JoinLinkConfirmation.cs;
+               ../Allegiance.ClientCore.Game/ServerListing.cs;
+               ../Allegiance.ClientCore.Game/LobbyBrowserStatus.cs;
+               ../Allegiance.ClientCore.Game/LobbyGameSort.cs;
+               ../Allegiance.ClientCore.Game/LobbyUrl.cs;
+               ../Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs"
+      Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.ClientCore.Game/Game1.IntroMenu.cs;../Allegiance.ClientCore.Game/Game1.OptionsMenu.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="Assets/PreviewAssets.cs" />
+    <EmbeddedResource Include="../Allegiance.ClientCore.Game/Rendering/Skins/*.skin.json" Link="Rendering/Skins/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

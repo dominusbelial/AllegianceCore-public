@@ -40,6 +40,29 @@ list in **reverse**.
   `/play/preview/` before the API limiter. Publish with
   `scripts/publish-browser-preview.sh`; optional compose exporter and setup in
   `docker/README.md`. Report: `docs/reports/BROWSER_PREVIEW_P1046.md`.
+- **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
+  in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
+  selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and
+  `src/Allegiance.ClientCore.Game/Game1.OptionsMenu.cs`, with a browser lifecycle.
+  `src/Allegiance.ClientCore.Game.Browser/Game1.Browser.cs` owns that intro-only
+  lifecycle; `src/Allegiance.ClientCore.Browser/wwwroot/menu.js` bridges text and
+  keyboard focus between the native menu and the browser toolbar.
+  `src/Allegiance.Core.Browser/Allegiance.Core.Browser.csproj` reuses Core sources
+  while excluding OS transports, NAT/process ownership and console worker threads;
+  session/offline/native platform orchestration is excluded from the game variant.
+  Resident staging and version-2 provenance/dependency manifests live in
+  `src/Allegiance.ClientCore.Game.Browser/Assets/AssetStager.cs` and
+  `src/Allegiance.ClientCore.Game.Browser/Assets/StagedManifest.cs`, reusing the
+  preview integrity contract. Bounded Cache API/IndexedDB storage and async settings
+  flush live in `src/Allegiance.ClientCore.Browser/wwwroot/game-platform.js`.
+  Shared profile/keymap persistence uses
+  `src/Allegiance.ClientCore.Game/Platform/ProfileStorage.cs` and
+  `src/Allegiance.ClientCore.Game/Platform/ResidentProfileStorage.cs`.
+  The separate `menu.html` entry stages recorded desktop opens via
+  `tools/p1047-menu-opens/Program.cs` and `tools/p1047-browser-packs.py`;
+  publish locally with `scripts/publish-browser-menu.sh`. The slice-1 page stays
+  independent; no login, session or flight is enabled. Report:
+  `docs/reports/BROWSER_SEAMS_P1047.md`.
 - **`src/Allegiance.ClientCore.Game`** — the MonoGame presentation layer
   (rendering, HUD, input, screens).
 - **`src/Allegiance.Bot`** — the minimal BotClass client used by the MCP driver

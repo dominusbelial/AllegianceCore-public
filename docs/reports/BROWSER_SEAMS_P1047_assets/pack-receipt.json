@@ -1,0 +1,1085 @@
+{
+  "traceScenes": [
+    "Classic/Intro",
+    "Classic/Options",
+    "Classic/GameOptions",
+    "Modern/Intro",
+    "Modern/Options",
+    "Modern/GameOptions"
+  ],
+  "recordedOpens": 1784,
+  "selection": "All recorded SpriteFont opens, recorded PCore001 binary, and recorded native mouseclickSound closure. Intro/Options use procedural fills; flight assets eagerly opened by desktop boot are deferred.",
+  "starter": {
+    "files": 19,
+    "rawBytes": 2561241,
+    "gzipBytes": 264625,
+    "assets": [
+      {
+        "source": "content/fonts/nativeb10.xnb",
+        "path": "packs/51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+        "byteSize": 48154,
+        "sha256": "51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb10@2x.xnb",
+        "path": "packs/d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+        "byteSize": 156698,
+        "sha256": "d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb7.xnb",
+        "path": "packs/1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+        "byteSize": 31770,
+        "sha256": "1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb7@2x.xnb",
+        "path": "packs/4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+        "byteSize": 85018,
+        "sha256": "4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb8.xnb",
+        "path": "packs/66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+        "byteSize": 37914,
+        "sha256": "66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb8@2x.xnb",
+        "path": "packs/b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+        "byteSize": 97306,
+        "sha256": "b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb9.xnb",
+        "path": "packs/7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+        "byteSize": 44058,
+        "sha256": "7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativeb9@2x.xnb",
+        "path": "packs/f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+        "byteSize": 123930,
+        "sha256": "f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer6.xnb",
+        "path": "packs/03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+        "byteSize": 25626,
+        "sha256": "03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer6@2x.xnb",
+        "path": "packs/05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+        "byteSize": 60442,
+        "sha256": "05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer8.xnb",
+        "path": "packs/3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+        "byteSize": 35866,
+        "sha256": "3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer8@2x.xnb",
+        "path": "packs/ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+        "byteSize": 89114,
+        "sha256": "ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer9.xnb",
+        "path": "packs/c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+        "byteSize": 39962,
+        "sha256": "c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/fonts/nativer9@2x.xnb",
+        "path": "packs/fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+        "byteSize": 111642,
+        "sha256": "fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/hud.xnb",
+        "path": "packs/6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+        "byteSize": 22042,
+        "sha256": "6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/hudlarge.xnb",
+        "path": "packs/f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+        "byteSize": 67610,
+        "sha256": "f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/hudmodern.xnb",
+        "path": "packs/cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+        "byteSize": 832538,
+        "sha256": "cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+        "contentType": "application/octet-stream",
+        "provenance": "Bundled DejaVu fonts; Bitstream Vera/DejaVu licence; desktop MonoGame XNB bake",
+        "dependencies": []
+      },
+      {
+        "source": "content/sounds/mousedown.xnb",
+        "path": "packs/0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+        "byteSize": 3433,
+        "sha256": "0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+        "contentType": "application/octet-stream",
+        "provenance": "FreeAllegiance Artwork; MIT (2017 FreeAllegiance)",
+        "dependencies": []
+      },
+      {
+        "source": "pcore001.igc",
+        "path": "packs/f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+        "byteSize": 648118,
+        "sha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+        "contentType": "application/octet-stream",
+        "provenance": "FreeAllegiance Artwork; MIT (2017 FreeAllegiance)",
+        "dependencies": []
+      }
+    ]
+  },
+  "proposedJoinCut": {
+    "files": 110,
+    "rawBytes": 42255180,
+    "gzipBytes": 13260123,
+    "deferredGroups": [
+      "map-sky except first-sector-sky",
+      "rock-surfaces",
+      "font-sources"
+    ],
+    "note": "Planning only: needs capped/shared rock surfaces and tested emergency geometry before joining; no playable-pack certification."
+  },
+  "projectedJoin": {
+    "note": "Measure-only union of every P1045 candidate group, including high-resolution rocks/all-map skies and alternative TTF/XNB fonts; not a certified playable closure and not staged.",
+    "files": 146,
+    "rawBytes": 245554228,
+    "gzipBytes": 57482329,
+    "entries": [
+      {
+        "path": "Content/Fonts/DejaVuSans-Bold.ttf",
+        "rawBytes": 708920,
+        "gzipBytes": 352431,
+        "sha256": "e1d733afbbfce842a1b43dced0c9885a76a4e67290dc7e690c4e9b76ebfc7d23"
+      },
+      {
+        "path": "Content/Fonts/DejaVuSans.ttf",
+        "rawBytes": 759720,
+        "gzipBytes": 381847,
+        "sha256": "b4c632e3cdf9acc7f28758fb5a323c8524d7fc6660d46904d9b6cbe2809c419c"
+      },
+      {
+        "path": "Content/Fonts/DejaVuSansMono.ttf",
+        "rawBytes": 343140,
+        "gzipBytes": 203158,
+        "sha256": "a54dca07c76d6289e717e75e0a58c0128f6d7269ef3faf76417c9d7d3bba37ab"
+      },
+      {
+        "path": "Content/Vfx/atlas/Cloud01.png",
+        "rawBytes": 621794,
+        "gzipBytes": 614742,
+        "sha256": "f3f7708bb34b06da8915375d4a6daad6cfa8453336e75fee8d2c2c9c5e8a7704"
+      },
+      {
+        "path": "Content/Vfx/atlas/DiscSmoke01.png",
+        "rawBytes": 782113,
+        "gzipBytes": 770572,
+        "sha256": "b363d9dde4d3e854239c2e1832c97c19916d71ec5ea493a9f1d726377389f19e"
+      },
+      {
+        "path": "Content/Vfx/atlas/Explosion00.png",
+        "rawBytes": 332930,
+        "gzipBytes": 331722,
+        "sha256": "182c5b543a54ec96542fe6797865a0d24695d97a71afd60126d106b1836c57d6"
+      },
+      {
+        "path": "Content/Vfx/atlas/Explosion01-light.png",
+        "rawBytes": 394859,
+        "gzipBytes": 390516,
+        "sha256": "8b69d147a5369e7fd9b71746352126619c07af60efa03e9cb61cc84dbe61c7fb"
+      },
+      {
+        "path": "Content/Vfx/atlas/Explosion01.png",
+        "rawBytes": 344315,
+        "gzipBytes": 339965,
+        "sha256": "8377ca93e880d307ff61bdbf630a6ac14acb520857d1cf048714cb2688629a04"
+      },
+      {
+        "path": "Content/Vfx/atlas/WispySmoke01.png",
+        "rawBytes": 721778,
+        "gzipBytes": 707733,
+        "sha256": "cded07fe66209df60ab1f9ef2d41acd540330099324006e0061609581961a412"
+      },
+      {
+        "path": "Fonts/NativeB10.xnb",
+        "rawBytes": 48154,
+        "gzipBytes": 7441,
+        "sha256": "51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc"
+      },
+      {
+        "path": "Fonts/NativeB10@2x.xnb",
+        "rawBytes": 156698,
+        "gzipBytes": 16133,
+        "sha256": "d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943"
+      },
+      {
+        "path": "Fonts/NativeB7.xnb",
+        "rawBytes": 31770,
+        "gzipBytes": 5292,
+        "sha256": "1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e"
+      },
+      {
+        "path": "Fonts/NativeB7@2x.xnb",
+        "rawBytes": 85018,
+        "gzipBytes": 10902,
+        "sha256": "4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae"
+      },
+      {
+        "path": "Fonts/NativeB8.xnb",
+        "rawBytes": 37914,
+        "gzipBytes": 6216,
+        "sha256": "66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8"
+      },
+      {
+        "path": "Fonts/NativeB8@2x.xnb",
+        "rawBytes": 97306,
+        "gzipBytes": 12105,
+        "sha256": "b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037"
+      },
+      {
+        "path": "Fonts/NativeB9.xnb",
+        "rawBytes": 44058,
+        "gzipBytes": 6992,
+        "sha256": "7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac"
+      },
+      {
+        "path": "Fonts/NativeB9@2x.xnb",
+        "rawBytes": 123930,
+        "gzipBytes": 14056,
+        "sha256": "f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d"
+      },
+      {
+        "path": "Fonts/NativeR6.xnb",
+        "rawBytes": 25626,
+        "gzipBytes": 4311,
+        "sha256": "03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b"
+      },
+      {
+        "path": "Fonts/NativeR6@2x.xnb",
+        "rawBytes": 60442,
+        "gzipBytes": 9118,
+        "sha256": "05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc"
+      },
+      {
+        "path": "Fonts/NativeR8.xnb",
+        "rawBytes": 35866,
+        "gzipBytes": 5945,
+        "sha256": "3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97"
+      },
+      {
+        "path": "Fonts/NativeR8@2x.xnb",
+        "rawBytes": 89114,
+        "gzipBytes": 12059,
+        "sha256": "ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f"
+      },
+      {
+        "path": "Fonts/NativeR9.xnb",
+        "rawBytes": 39962,
+        "gzipBytes": 6624,
+        "sha256": "c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418"
+      },
+      {
+        "path": "Fonts/NativeR9@2x.xnb",
+        "rawBytes": 111642,
+        "gzipBytes": 13835,
+        "sha256": "fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89"
+      },
+      {
+        "path": "HUD.xnb",
+        "rawBytes": 22042,
+        "gzipBytes": 6220,
+        "sha256": "6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed"
+      },
+      {
+        "path": "HUDLarge.xnb",
+        "rawBytes": 67610,
+        "gzipBytes": 12239,
+        "sha256": "f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc"
+      },
+      {
+        "path": "HUDModern.xnb",
+        "rawBytes": 832538,
+        "gzipBytes": 48480,
+        "sha256": "cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9"
+      },
+      {
+        "path": "artwork/Alephbmp.mdl",
+        "rawBytes": 628,
+        "gzipBytes": 260,
+        "sha256": "3026043bb0892b714fa080025ea9538d2215b746a86a090f46738da937ae76a7"
+      },
+      {
+        "path": "artwork/AmmoGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 872,
+        "sha256": "9a80fed351c49573057cf228bc629aad8723c553f93553a2ae8142af67246d07"
+      },
+      {
+        "path": "artwork/EnergyGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 894,
+        "sha256": "b6d57f4bb038fb193e4104f1ec2b16df0d8ee8ba224a037c277a3ea5db95c6ae"
+      },
+      {
+        "path": "artwork/FuelGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 1029,
+        "sha256": "27d810eb075fb1ef853c0ca9e1988c84e749fe3131aacf87f53ef3e736b4f030"
+      },
+      {
+        "path": "artwork/HullGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 1010,
+        "sha256": "71a888f8bb71033cbba1bec90b4c9d6b891340705fd77f5f7207685747d140da"
+      },
+      {
+        "path": "artwork/PCore001.igc",
+        "rawBytes": 648118,
+        "gzipBytes": 65051,
+        "sha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8"
+      },
+      {
+        "path": "artwork/ShieldGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 994,
+        "sha256": "c81eddb269460769e27247060eb9de55a689d543ca04b685c5efeb6bd13067b6"
+      },
+      {
+        "path": "artwork/ThrustGaugebmp.mdl",
+        "rawBytes": 32888,
+        "gzipBytes": 1026,
+        "sha256": "10aaaed48b1571972b53816713b4bf27f48daea7d10213c9746806be4ac128f2"
+      },
+      {
+        "path": "artwork/XXV_simple.igc",
+        "rawBytes": 5798,
+        "gzipBytes": 1869,
+        "sha256": "84c06bc649682f8fd4a96aa7efa6ba49bcd408b75442e352a49c2922802c7b71"
+      },
+      {
+        "path": "artwork/accelsmall.ogg",
+        "rawBytes": 39105,
+        "gzipBytes": 37700,
+        "sha256": "c100a7e5d943935f5751b25ccec2af47c49c82332042126cb3ab6182a851715b"
+      },
+      {
+        "path": "artwork/alephloop.ogg",
+        "rawBytes": 43706,
+        "gzipBytes": 42839,
+        "sha256": "24db50fd5e5941eb136f1d5029156f8f2ffee74cbe47cf29ea282a714ec05a2a"
+      },
+      {
+        "path": "artwork/bgrnd05bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 1724094,
+        "sha256": "da905c072c4b68178167ff04503e383e60ede8582981502605f0cd30f64632fa"
+      },
+      {
+        "path": "artwork/bgrnd51bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 2567505,
+        "sha256": "a9eb5e53e86101506ac2f6de76c4c5d2cdb85f62845f6c4c0ca8be9b9a49cb52"
+      },
+      {
+        "path": "artwork/bgrnd52bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3532547,
+        "sha256": "ce2d634157f4b60ad37601105181302debd474f3ca89990d51649f427c972f5a"
+      },
+      {
+        "path": "artwork/bgrnd53bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3489230,
+        "sha256": "bfbabbf12d8547c600d2d128dd18a862e2098a4e19100b4986cbafbfcece0fd9"
+      },
+      {
+        "path": "artwork/bgrnd55bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3025660,
+        "sha256": "2ab648469bbabd78dc168d078c4e7bb67c1edc22826a6935ec3a56d2d6efeadb"
+      },
+      {
+        "path": "artwork/btnchangewing3bmp.mdl",
+        "rawBytes": 5836,
+        "gzipBytes": 1436,
+        "sha256": "aa4539fb8f3a392f3f9f4e66dedcb8eddd3b59eabc56ff179200d23cd0c7359d"
+      },
+      {
+        "path": "artwork/chatcommandbmp.mdl",
+        "rawBytes": 10504,
+        "gzipBytes": 786,
+        "sha256": "de2409448bc0537ba1d11767cda3254f6f4dba9f34ee5789316a911f79ab3a34"
+      },
+      {
+        "path": "artwork/chatmousebmp.mdl",
+        "rawBytes": 3524,
+        "gzipBytes": 354,
+        "sha256": "573068d99ff4050e277187c4b229e4b26f0661ae6acc844585db68c1642cfd44"
+      },
+      {
+        "path": "artwork/chatshellbmp.mdl",
+        "rawBytes": 10504,
+        "gzipBytes": 351,
+        "sha256": "e35fce3a9ce5a4d7006a87de4b04f0ff579643b8ef37f27e0ded337ab15ecc73"
+      },
+      {
+        "path": "artwork/chattextbmp.mdl",
+        "rawBytes": 11820,
+        "gzipBytes": 719,
+        "sha256": "e09e78fbdab93f7b23c6cb423c6a4a443cf17e31ab552b079cdcba4adcad652f"
+      },
+      {
+        "path": "artwork/comacceptbmp.mdl",
+        "rawBytes": 632,
+        "gzipBytes": 119,
+        "sha256": "fcc030b94758866d82fa8f2016cc1443d2da95af712c34fe87739f29e0dc28c8"
+      },
+      {
+        "path": "artwork/commandbkgndbmp.mdl",
+        "rawBytes": 70040,
+        "gzipBytes": 7850,
+        "sha256": "99be1428e21521c2d187dddc6cfe9298244e24dfa79e898a28ba900832ea7376"
+      },
+      {
+        "path": "artwork/comqueuedbmp.mdl",
+        "rawBytes": 632,
+        "gzipBytes": 105,
+        "sha256": "39d2453ef6d86ccc6613e838f80ac00216824dff92c6f87bbb5e28b0be2e762d"
+      },
+      {
+        "path": "artwork/creditbox.png",
+        "rawBytes": 4091,
+        "gzipBytes": 4114,
+        "sha256": "c59be6f0692249341198c4032106642f3010ec239368329f058c8f8fddee14dd"
+      },
+      {
+        "path": "artwork/creditboxbmp.mdl",
+        "rawBytes": 75,
+        "gzipBytes": 87,
+        "sha256": "bbcf99505ac7244169c8ad769c7ba188aaa6c65f971b89c3318e2386fd50b01d"
+      },
+      {
+        "path": "artwork/dgarr.cvh",
+        "rawBytes": 13385,
+        "gzipBytes": 2927,
+        "sha256": "69ed2123a616dc690f075bfdcfdcd452e94ed97a86a5502b8a1d6406d81f9db7"
+      },
+      {
+        "path": "artwork/dgarr.mdl",
+        "rawBytes": 48988,
+        "gzipBytes": 14712,
+        "sha256": "d725b04afc841f3f9fbe87e9cb2dcc6ac8f10d11ac7e8f8e5c9a1527c5c5d718"
+      },
+      {
+        "path": "artwork/dgarrbmp.mdl",
+        "rawBytes": 131188,
+        "gzipBytes": 26955,
+        "sha256": "c5476444ddd2941d559385998bc70355ee901434f2747ad0b187f0032dbdf4d4"
+      },
+      {
+        "path": "artwork/dminr.cvh",
+        "rawBytes": 3182,
+        "gzipBytes": 722,
+        "sha256": "e055c98d85bee66ad9dbd5cac7874035581f5ab1da709c95738653ff9de60daa"
+      },
+      {
+        "path": "artwork/dminr.mdl",
+        "rawBytes": 8636,
+        "gzipBytes": 5043,
+        "sha256": "08525144f5b3a9fc7dafe1a4d674ac7410923dccccb48cbfc94bebe6fb7e7e69"
+      },
+      {
+        "path": "artwork/dminrbmp.mdl",
+        "rawBytes": 65652,
+        "gzipBytes": 16496,
+        "sha256": "0c2eb3898757093487ebb1bd50fee442a642139a51945533a6f6fbaeede6d3fb"
+      },
+      {
+        "path": "artwork/dregbaybmp.mdl",
+        "rawBytes": 131188,
+        "gzipBytes": 25482,
+        "sha256": "e4444210e6a28b2522cec4b24a5fcfb0c8afb490ddbe293d74bd3b43e8aefdbf"
+      },
+      {
+        "path": "artwork/dreghpod.cvh",
+        "rawBytes": 2636,
+        "gzipBytes": 473,
+        "sha256": "7d01b13d54f930e882b3331cb62ded07f26d9fbbc166ce3455840f69530cd768"
+      },
+      {
+        "path": "artwork/dreghpod.mdl",
+        "rawBytes": 3980,
+        "gzipBytes": 1338,
+        "sha256": "f2c753748b949a0587b806438a5aaeaa47c67aee9cd5e60331020e82f876f5fa"
+      },
+      {
+        "path": "artwork/dreghpodbmp.mdl",
+        "rawBytes": 131188,
+        "gzipBytes": 17403,
+        "sha256": "ad10c2bfbc01507ee64f8bee2c03b7adbbdd0f7b0a392ec1ed45e1f8a56f76b7"
+      },
+      {
+        "path": "artwork/dropmine.ogg",
+        "rawBytes": 31458,
+        "gzipBytes": 30672,
+        "sha256": "c031daa85c7308434d98905d55b53cf7fd8efedd531d0c79a9b37ba882d92a1c"
+      },
+      {
+        "path": "artwork/dropobject.ogg",
+        "rawBytes": 32826,
+        "gzipBytes": 32040,
+        "sha256": "84e3b0cd62728d47dca2d193d138d907707e48643450ff2a07ed1d82f2de5778"
+      },
+      {
+        "path": "artwork/ef120.ogg",
+        "rawBytes": 15273,
+        "gzipBytes": 14463,
+        "sha256": "d77912512e59974735f3fefec13ce39f4bbd657430c253fa007a7d1758ab7676"
+      },
+      {
+        "path": "artwork/ef24.ogg",
+        "rawBytes": 41393,
+        "gzipBytes": 40563,
+        "sha256": "28108237aa44125ecd327e5208ffb906010528e610604a41edbb1bb57634406c"
+      },
+      {
+        "path": "artwork/environment1bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1200649,
+        "sha256": "755a7e4df4901ae698477c378b027851eddd4b3f80fe7a6726313ab950863d59"
+      },
+      {
+        "path": "artwork/environment2bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1018342,
+        "sha256": "335fead2b02e4af4ec6a8ac5daaeeb774f770b9d2960a09665a91c16dacb18e6"
+      },
+      {
+        "path": "artwork/environment3bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 661099,
+        "sha256": "13b794c68693558db2c70aded4277d0861fcb78f26157e579435d8ee5db2bd55"
+      },
+      {
+        "path": "artwork/environment4bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 761570,
+        "sha256": "f4d42379e812c6644504adc7e6dde10f87936c82bad71a8c10982fba10e16225"
+      },
+      {
+        "path": "artwork/environment5bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 663462,
+        "sha256": "c93f90ea1c29a8e946938e42fb769a72559b3a8d326f10d3af6016ea2e3f2975"
+      },
+      {
+        "path": "artwork/environment6bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 672561,
+        "sha256": "4ea35ea1b36de91e54adc373de997b77c3401fd55ec8494fcec535d47c20395b"
+      },
+      {
+        "path": "artwork/environment7bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 827554,
+        "sha256": "5181b3ce7a7741a9576afdfbc57b1d7106fa956a5e4e9d6d11d8b93cfd14bfb2"
+      },
+      {
+        "path": "artwork/environment8bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 812271,
+        "sha256": "8d9a7b6c74be7b619f3e628eade1c7699e4999f43af87c089db33ce11aa0c3d5"
+      },
+      {
+        "path": "artwork/environment9bmp.mdl",
+        "rawBytes": 131192,
+        "gzipBytes": 43691,
+        "sha256": "87540cc033efb635f8a71f37bda4f027fe3b6677d4393f8cead84106d3c8ac50"
+      },
+      {
+        "path": "artwork/erbeam.ogg",
+        "rawBytes": 8335,
+        "gzipBytes": 7485,
+        "sha256": "287b019b6944270380d2b070420e41d36680329d6e84fe2bca9a4df12599ab93"
+      },
+      {
+        "path": "artwork/eye.png",
+        "rawBytes": 950,
+        "gzipBytes": 717,
+        "sha256": "d7ca6dbb34ada4178d7a221ae0d5a35eaffae36f35c7a28d5a205f3ecf9d931a"
+      },
+      {
+        "path": "artwork/eyebmp.mdl",
+        "rawBytes": 62,
+        "gzipBytes": 81,
+        "sha256": "96fde0d5fee0ccb8c6536bddef917cd25dd9454b11e451c4fde9898cff3a9e2a"
+      },
+      {
+        "path": "artwork/fig400bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 147460,
+        "sha256": "6e1fdca5e66b5ffea8303f9ae94218c8c694587eb05a278600e1a586dfe8a85d"
+      },
+      {
+        "path": "artwork/fig402bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 119471,
+        "sha256": "7d605d16f5683cb62cf73aa5078014a2b1249b410639735ebf9c7619dee0e958"
+      },
+      {
+        "path": "artwork/fig403bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 124184,
+        "sha256": "7f723c310724aeeb25557faa506d8d8fbc7bc208c78b6986122cbb53db88b675"
+      },
+      {
+        "path": "artwork/fig404bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 111253,
+        "sha256": "09a2b9e0eedb2e4187938ed7c09072f86d59f87d7dc2bd8011f7f41dc703943f"
+      },
+      {
+        "path": "artwork/globe1.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "edda01d268b870397fcd89b189c9a6cc2a56d20202dd8de91b93c240d1f8377b"
+      },
+      {
+        "path": "artwork/globe2.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "2af974ecf7e8ddb527648337b19d7ec144a573f758bc1fd1b60aab0bba30e36e"
+      },
+      {
+        "path": "artwork/globe3.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1375,
+        "sha256": "fcb0ed8d658c047332494c033566c74c5cb783c9d0f91c220f78fd89c89bbb98"
+      },
+      {
+        "path": "artwork/globe4.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "6bfa899e891ee1433fe1551eaca483ba7a2450903fccc01bcd6baf317b2fbb08"
+      },
+      {
+        "path": "artwork/globe5.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "aa796757ab6bbf499210b4c5adb01dc2f4073a7759cc5d64f2984d8b949d7d72"
+      },
+      {
+        "path": "artwork/globe6.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1375,
+        "sha256": "1f6aecb2864f7f3d7a67335de4ac3685e2bd09932617c2f90113e9942624955a"
+      },
+      {
+        "path": "artwork/globe7.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "fc45385924d3af966b0a4487e67a5f67b424cef57e2f811df189ce9034edb24a"
+      },
+      {
+        "path": "artwork/globe8.mdl",
+        "rawBytes": 3224,
+        "gzipBytes": 1374,
+        "sha256": "fc45385924d3af966b0a4487e67a5f67b424cef57e2f811df189ce9034edb24a"
+      },
+      {
+        "path": "artwork/globe9.mdl",
+        "rawBytes": 4056,
+        "gzipBytes": 1543,
+        "sha256": "0d7bc2216fb787dcb897440c90c9364a066bedb1ea58bed9bd3575d12e482a8a"
+      },
+      {
+        "path": "artwork/hitrock.ogg",
+        "rawBytes": 21856,
+        "gzipBytes": 21073,
+        "sha256": "8afefc1945ce6d6fca5b888b737ea63a14f08d8930fc6f3463e0e9bd00d8114d"
+      },
+      {
+        "path": "artwork/hoover.ogg",
+        "rawBytes": 28211,
+        "gzipBytes": 27395,
+        "sha256": "f5422f9b034dc2204c1315603ceda7307a648a2995a8122fddc7aaeeee81fe3b"
+      },
+      {
+        "path": "artwork/lrgslideout.ogg",
+        "rawBytes": 24541,
+        "gzipBytes": 23719,
+        "sha256": "bbee3e457b01fb091cc11bc12bba0cbde039b3c9beca47290330837a7eea0708"
+      },
+      {
+        "path": "artwork/missilelock.ogg",
+        "rawBytes": 8400,
+        "gzipBytes": 7541,
+        "sha256": "6bafeb231b1ca7fb326856627d7d533e82c1a56d4bbe189f77749fa3b3bd34f7"
+      },
+      {
+        "path": "artwork/missilelockonme.ogg",
+        "rawBytes": 8373,
+        "gzipBytes": 7524,
+        "sha256": "cb6aab9193fdfceccc63d0ce6ccb8fbd30ec0172c1251034681cf7bf9fd83ac8"
+      },
+      {
+        "path": "artwork/mmissile.ogg",
+        "rawBytes": 38969,
+        "gzipBytes": 38054,
+        "sha256": "5ba7cffe5eb609560cbb871833d70c36ef59270815f33b863538a164ddaef5e4"
+      },
+      {
+        "path": "artwork/mount.ogg",
+        "rawBytes": 19899,
+        "gzipBytes": 19071,
+        "sha256": "0e65a4740856ebb14bf7501659cbaccfb35f35703bfc06754ee3be64fe22836b"
+      },
+      {
+        "path": "artwork/nebplnt01bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 2765087,
+        "sha256": "a647843245a9407a601b9354e8172819b77c1646467ffb2095a1bb6928629194"
+      },
+      {
+        "path": "artwork/nebplnt02bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1882173,
+        "sha256": "5a8b6d8e4dc9eb03913592877d423671977f6cc8bbdd5aa20d2baa3cb877ab0d"
+      },
+      {
+        "path": "artwork/nebplnt03bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1906013,
+        "sha256": "7e8fd39e05dbc234ea5acd27947cb558cc5a6d1fa8c181b155a9315632cb410f"
+      },
+      {
+        "path": "artwork/nebplnt07bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 3159436,
+        "sha256": "13ab8f5e5fc08f13417f2fad3fe6e038ca0f20dba892e5ab19fd041e4c7d056d"
+      },
+      {
+        "path": "artwork/nebplnt08bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1482063,
+        "sha256": "fbb540a093f894041b0a9220631aab9bec8710a174a7b44c61082af9fc885bc9"
+      },
+      {
+        "path": "artwork/nebplnt09bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 2992527,
+        "sha256": "89daed669da0b61b5f9d9560066fe0b5fc9f07e47fd9098b00d76c00765577a2"
+      },
+      {
+        "path": "artwork/nebplnt19bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 233721,
+        "sha256": "d45b9289c4af2f02a55e2d88958c2fd290e4a8c0d2b22d1432fc7a726489564d"
+      },
+      {
+        "path": "artwork/nebplnt24bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 2313836,
+        "sha256": "c8fab1771de58be99fa4bd559f8550fab07e4f2acc801d47fb20df28efff28fe"
+      },
+      {
+        "path": "artwork/nebplnt31bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 947372,
+        "sha256": "3f9f84207f507e980d6f5182d52ed7f445c02aaaea48eb989e0da959027712c3"
+      },
+      {
+        "path": "artwork/nebplnt33bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 962970,
+        "sha256": "061ec7993f18838f40bfab474d8ea5c54f7718c4b902b1d7cbc5fe4c8367e4c1"
+      },
+      {
+        "path": "artwork/nebplnt42bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 2928968,
+        "sha256": "30709d4533a0abb4f2954e7ce0004afc2b340079d6dd6de3ba5d316edc7d1b33"
+      },
+      {
+        "path": "artwork/nebplnt44bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 1360306,
+        "sha256": "c7985c9c936b219ad7bce0c2c8370e782d3664511eb79a9a1537e2e0f862f078"
+      },
+      {
+        "path": "artwork/nebplnt45bmp.mdl",
+        "rawBytes": 8388728,
+        "gzipBytes": 3218177,
+        "sha256": "416b6da45622d767cf1dab47a7a504a60fac59e5811c7e162bd524e976078cce"
+      },
+      {
+        "path": "artwork/noshld.ogg",
+        "rawBytes": 27151,
+        "gzipBytes": 26298,
+        "sha256": "9a3a0cb5db0f5cfaa1e7999b4b8362dd9a65322f22b4174c5c6f635ed857c3d1"
+      },
+      {
+        "path": "artwork/plnt42bmp.mdl",
+        "rawBytes": 2097268,
+        "gzipBytes": 369205,
+        "sha256": "61fec7dc21f623fa31e9b7205c961519df49b7f6c584753b20c48d227e514029"
+      },
+      {
+        "path": "artwork/pulselaser.ogg",
+        "rawBytes": 8924,
+        "gzipBytes": 8084,
+        "sha256": "cc6831e0ad3813e9909b21c3840aa26415277200295effaddfc6435b237f750d"
+      },
+      {
+        "path": "artwork/quizfig1bmp.mdl",
+        "rawBytes": 2097268,
+        "gzipBytes": 750617,
+        "sha256": "a7f8bae9fbe892d1677df6270ebb0937f8a3d475a67414d90d19a56399df0669"
+      },
+      {
+        "path": "artwork/quizfig2bmp.mdl",
+        "rawBytes": 2097268,
+        "gzipBytes": 570019,
+        "sha256": "393f440ac9287bf2bcb514e1390f48b6b749a1dd49c2763a43a678bba59f9253"
+      },
+      {
+        "path": "artwork/quizfigv2.cvh",
+        "rawBytes": 2630,
+        "gzipBytes": 868,
+        "sha256": "9fdf7a40d3aef9e95c83771b2670b690c860feca05f4eebe463110804d833434"
+      },
+      {
+        "path": "artwork/quizfigv2.mdl",
+        "rawBytes": 16524,
+        "gzipBytes": 10572,
+        "sha256": "5f971a206851d79c23a2587732615e214c10201ec48da8fa171beefcc1aa52b6"
+      },
+      {
+        "path": "artwork/quizscout1bmp.mdl",
+        "rawBytes": 2097272,
+        "gzipBytes": 730674,
+        "sha256": "2c1bbbff06bd08642883d6ab9027a40e5f43175d85b4a8cbb100ca68ae5d1013"
+      },
+      {
+        "path": "artwork/quizscout2bmp.mdl",
+        "rawBytes": 2097272,
+        "gzipBytes": 628267,
+        "sha256": "7f1ae09ff1525755f29148192daf776b9b2ea335b71ec07c8e168b5df52a97e5"
+      },
+      {
+        "path": "artwork/quizscoutv2.cvh",
+        "rawBytes": 2348,
+        "gzipBytes": 781,
+        "sha256": "5da611594c958b4bb3fe4d2fbcfee411a492672fc23dbd4cf723faeeb15a4fc0"
+      },
+      {
+        "path": "artwork/quizscoutv2.mdl",
+        "rawBytes": 18456,
+        "gzipBytes": 11892,
+        "sha256": "a07be80b605e1602bb972f4ff4e5b53297b85169af309612efb297d0ace66031"
+      },
+      {
+        "path": "artwork/quizsf1bmp.mdl",
+        "rawBytes": 2097268,
+        "gzipBytes": 625521,
+        "sha256": "ee88f9e6bffb0f823bc2f3a764c351338240234e579cb98d6f6c8966980cde28"
+      },
+      {
+        "path": "artwork/quizsf2bmp.mdl",
+        "rawBytes": 2097268,
+        "gzipBytes": 570016,
+        "sha256": "66e96f71e782a88b25ce5f4427db3f0f3bc7f17a0857c8ad5a1b04a0dd49d312"
+      },
+      {
+        "path": "artwork/quizsfv2.cvh",
+        "rawBytes": 2819,
+        "gzipBytes": 956,
+        "sha256": "70f42cc3133d451d18fa7334264d38edbe15c779e4882aa2ba9c173a5303deb0"
+      },
+      {
+        "path": "artwork/quizsfv2.mdl",
+        "rawBytes": 19516,
+        "gzipBytes": 12349,
+        "sha256": "a99f9de5c2bac586447797522afb8536655df528a1834159f8894f9d7f52dd88"
+      },
+      {
+        "path": "artwork/receivechat.ogg",
+        "rawBytes": 3991,
+        "gzipBytes": 3571,
+        "sha256": "2e8e0ec7180cbb6affd9349f78507eb2506d55c35fe62ff7399441d7d21e4a61"
+      },
+      {
+        "path": "artwork/recipientsbmp.mdl",
+        "rawBytes": 45816,
+        "gzipBytes": 5903,
+        "sha256": "0823469a0135ad84bf99fbe53dfcd370f95358670628853a34131c8d1a025880"
+      },
+      {
+        "path": "artwork/shieldup.ogg",
+        "rawBytes": 57371,
+        "gzipBytes": 56494,
+        "sha256": "1ad64137cbddd600838df3c820f91e97b149914ab3c01918f1decfd906b0e3ff"
+      },
+      {
+        "path": "artwork/softgaugebmp.mdl",
+        "rawBytes": 536,
+        "gzipBytes": 107,
+        "sha256": "4acf9ab22d4cf9432185dc93b6e9ed4d1b33aadd21087af5a7f5d8ae27e2c422"
+      },
+      {
+        "path": "artwork/ss401.cvh",
+        "rawBytes": 10131,
+        "gzipBytes": 1791,
+        "sha256": "797766bc8a88df6065d54e6d8d804bf721512a044359ed57088d3a339856bf8e"
+      },
+      {
+        "path": "artwork/ss401.mdl",
+        "rawBytes": 112496,
+        "gzipBytes": 65726,
+        "sha256": "90af198f683654aface73aa067bd6bf7e3a2a5519b5201c45281ec2bd2a7d5b9"
+      },
+      {
+        "path": "artwork/ss401bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 179896,
+        "sha256": "89067d5487daeb6d3fe04afa60704faa1802738a5c5deb73b0b6d4a652c35ff8"
+      },
+      {
+        "path": "artwork/sshipint.ogg",
+        "rawBytes": 153568,
+        "gzipBytes": 152317,
+        "sha256": "b424dfb9944baee804c2480804f6b1cebb9947483a8497fc9371fca35de26aee"
+      },
+      {
+        "path": "artwork/utl401bmp.mdl",
+        "rawBytes": 524404,
+        "gzipBytes": 125745,
+        "sha256": "32521b6e108f90b7f63d7b7f0d224da7c820c2ec6005a745dd4aa31e5ca41801"
+      },
+      {
+        "path": "artwork/verbsbmp.mdl",
+        "rawBytes": 91316,
+        "gzipBytes": 15085,
+        "sha256": "e9885fe101369be00161e13d26b875ac955876cccb59c1fc4484be78679d88e7"
+      },
+      {
+        "path": "artwork/wc_gtfig.cvh",
+        "rawBytes": 3493,
+        "gzipBytes": 1169,
+        "sha256": "ad184df4c2321289162c0010787711e459f0b9f58154f2d8c4d3c6a931bb63ab"
+      },
+      {
+        "path": "artwork/wc_gtfig.mdl",
+        "rawBytes": 19772,
+        "gzipBytes": 11104,
+        "sha256": "0883b28f7aca0de5a52c8f149dea61555768a700904d634b8fb36c8a011f218e"
+      },
+      {
+        "path": "artwork/wc_gtmnr.cvh",
+        "rawBytes": 3866,
+        "gzipBytes": 1136,
+        "sha256": "cb037722ec883a85f59ca5629c5db7bd080c48d4dad8e0ef007fc47c10798f01"
+      },
+      {
+        "path": "artwork/wc_gtmnr.mdl",
+        "rawBytes": 20500,
+        "gzipBytes": 10864,
+        "sha256": "170818fa91418e724f6fdfc7b0a8e619e34eb9d26ab90ec5c9950993c02e0257"
+      },
+      {
+        "path": "artwork/wc_gtpod.cvh",
+        "rawBytes": 2675,
+        "gzipBytes": 758,
+        "sha256": "22c8a815a861d0fa023557c126e67f30ae04a5725fda692f66c9ec38bccd77c9"
+      },
+      {
+        "path": "artwork/wc_gtpod.mdl",
+        "rawBytes": 7680,
+        "gzipBytes": 4537,
+        "sha256": "bcaa96f9920588c658dfd72828adc54c23cbae70a6337d21c56bbdc0689afdf7"
+      },
+      {
+        "path": "artwork/wc_gtsct.cvh",
+        "rawBytes": 4067,
+        "gzipBytes": 1371,
+        "sha256": "22fccb7920f8eb9b1629bfbf6475557a3c134cf3d95db6135a075907b64ac005"
+      },
+      {
+        "path": "artwork/wc_gtsct.mdl",
+        "rawBytes": 17484,
+        "gzipBytes": 11775,
+        "sha256": "100101d9393658a86dbb9bbf9fb50d7bf398a4dc7b406a3aae56a68ae606fae2"
+      },
+      {
+        "path": "artwork/wc_gtsf.cvh",
+        "rawBytes": 2585,
+        "gzipBytes": 789,
+        "sha256": "db17424f5e52c87a9a1e256f6c7deb447e2d306c0b2ac535754cf44aefd5b6cd"
+      },
+      {
+        "path": "artwork/wc_gtsf.mdl",
+        "rawBytes": 11088,
+        "gzipBytes": 6215,
+        "sha256": "0ed81d678e4b2fb52969c1e011713442b44230e2b08aefc2273d4053f74aff77"
+      }
+    ]
+  }
+}

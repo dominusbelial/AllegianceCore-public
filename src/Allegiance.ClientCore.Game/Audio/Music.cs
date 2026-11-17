@@ -30,7 +30,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// path — the app keeps rendering/flying. The pure planner still works (it is
 /// what the tests and live harness drive), only the actual audio calls no-op.</para>
 /// </remarks>
-public sealed class Music : IDisposable
+public sealed class Music : IDisposable, IMenuMusic
 {
     /// <summary>Native flight bed name (WinTrek/artwork.h:284).</summary>
     public const string FlightAsset = "Sounds/flightmusic";

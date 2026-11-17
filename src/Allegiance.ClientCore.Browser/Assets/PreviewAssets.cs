@@ -29,9 +29,33 @@ public sealed record PreviewManifest(int Version, PreviewAsset[] Assets)
 
     public static void Verify(PreviewAsset asset, byte[] data)
     {
-        if (data.LongLength != asset.ByteSize ||
-            !string.Equals(Convert.ToHexString(SHA256.HashData(data)), asset.Sha256, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException($"Artwork verification failed: {asset.Source}");
+        Verify(asset.Source, asset.ByteSize, asset.Sha256, data);
+    }
+
+    // Shared by slice-1 preview and slice-2 resident packs: one integrity implementation.
+    public static void Verify(string source, long byteSize, string sha256, byte[] data)
+    {
+        if (data.LongLength != byteSize ||
+            !string.Equals(Convert.ToHexString(SHA256.HashData(data)), sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException($"Artwork verification failed: {source}");
+    }
+
+    public static async Task<byte[]> ReadVerifiedAsync(string source, long byteSize, string sha256,
+        Stream stream, CancellationToken cancellationToken = default)
+    {
+        var bytes = new byte[checked((int)byteSize)];
+        int offset = 0;
+        while (offset < bytes.Length)
+        {
+            int count = await stream.ReadAsync(bytes.AsMemory(offset), cancellationToken);
+            if (count == 0) break;
+            offset += count;
+        }
+        var extra = new byte[1];
+        if (offset != bytes.Length || await stream.ReadAsync(extra, cancellationToken) != 0)
+            throw new InvalidDataException($"Unexpected artwork size: {source}");
+        Verify(source, byteSize, sha256, bytes);
+        return bytes;
     }
 }
 

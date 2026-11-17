@@ -59,7 +59,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// <see cref="Sound3DEnabled"/> option (Sound Options) turns the whole path
 /// off, restoring the pre-P893 per-loop distance curves.</para>
 /// </remarks>
-public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink
+public sealed class SoundManager : IDisposable, IUiSoundSink, ISoundIdEventSink, IMenuSound
 {
     private readonly ContentManager _content;
     private readonly SerializedVoiceQueue _serializedVoices = new();

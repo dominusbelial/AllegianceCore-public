@@ -1,0 +1,77 @@
+{
+  "purpose": "Last assigned-prefix and final Nanite child-window checkpoints from the two additional repetitions. These are not aggregate project test results.",
+  "expectedCheckpoints": 10,
+  "observedCheckpoints": 10,
+  "rows": [
+    {
+      "directory": ".scratch/p931/windows/m3-Modern-lesson=9-7849c052c1fb45958d2ce9ef5dbb46bf",
+      "completedUtc": "2026-11-17T05:19:19.834216+00:00",
+      "marker": "P912_LESSON_PASS M3 Modern lesson=9",
+      "completeTxtPresent": true,
+      "logSha256": "609ff4124911a48f4862fa9b3589e76b5c88ffd1ae63a88a27c849c18b35387c"
+    },
+    {
+      "directory": ".scratch/p931/windows/m3-Modern-lesson=9-80b73ffe2bb54a0b8e8f2e64c3a87452",
+      "completedUtc": "2026-11-17T05:19:17.738227+00:00",
+      "marker": "P912_LESSON_PASS M3 Modern lesson=9",
+      "completeTxtPresent": true,
+      "logSha256": "b7e36086b23658bf017e218f27e576d63b8e85af23c099a89634a71999febe6d"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Classic-sacrifice-2d57bf85bb114bd1bac72bcb9e41ca1c",
+      "completedUtc": "2026-11-17T05:25:11.286323+00:00",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "79b125a536a67436d204041ed6f2101b95c5c59aeb041b5db0acd7ea40280d54"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Classic-sacrifice-619932990d5f4a3fa0b19f8813be7ff3",
+      "completedUtc": "2026-11-17T05:25:08.549338+00:00",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "43c110849629b0c48d4931a6fa22ecfab4ca383061361790f74172d904c0f0d6"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Modern-sacrifice-2765162755554a7b8e95219d0776120f",
+      "completedUtc": "2026-11-17T05:31:03.356418+00:00",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "7cdc77fb184baaed81e417d13288baaaeaa76f97bec663cb8731aaaf9b4a5f7c"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Modern-sacrifice-5d03858344ce4e418b2ce61bfa1ceee1",
+      "completedUtc": "2026-11-17T05:31:01.534428+00:00",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "f1a1d10af6b0ef7f922f28da6ae3b77dff0fe2dcf71216ee9acb3120f3aa7632"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Classic-early-2e9d0a6bbb3e45f78c26a1ba3095d814",
+      "completedUtc": "2026-11-17T05:36:29.877656+00:00",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "a1a939b86f527a4addf0c9e002e8ef22fb66f5fa464addf208ecbcaede8f8136"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Classic-early-fbc8da1eb035406bbd10633161dc6d91",
+      "completedUtc": "2026-11-17T05:36:28.050666+00:00",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "5154b080349f243a217f66390952e7c0c30f34013921cbb4a7be0a680316ab5b"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Modern-early-884c043350d846fb8c4d85ec51113620",
+      "completedUtc": "2026-11-17T05:42:03.409867+00:00",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "0feb1eced7eb10459c11af5d61800c79b9faa7aef58d30540d8ce1f6858cca87"
+    },
+    {
+      "directory": ".scratch/p931/windows/m8-Modern-early-e1888dc865c8463b9bb4ba6ad9e1ad43",
+      "completedUtc": "2026-11-17T05:41:53.554920+00:00",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "completeTxtPresent": true,
+      "logSha256": "965cd779af183abf0aaf11a138ef4508dc50b4618493aee8f35d4936de8a3740"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Platform;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
@@ -160,11 +161,14 @@ public sealed class HudSettings
         if (!Enum.IsDefined(ActiveLevel) || ActiveLevel == HudLevel.Auto) ActiveLevel = HudLevel.Tactical;
     }
 
-    public static HudSettings Load(string path, bool existingPlayer)
+    public static HudSettings Load(string path, bool existingPlayer) => Load(path, existingPlayer, ProfileStorage.Default);
+
+    public static HudSettings Load(string path, bool existingPlayer, IProfileStorage? storage)
     {
+        storage ??= ProfileStorage.Default;
         try
         {
-            string text = File.ReadAllText(path);
+            string text = storage.ReadAllText(path);
             using var doc = JsonDocument.Parse(text);
             string skin = MigrateSkin(doc.RootElement, existingPlayer);
             var settings = JsonSerializer.Deserialize(text, HudSettingsJson.Default.HudSettings) ?? new();
@@ -176,12 +180,15 @@ public sealed class HudSettings
         { return new() { Skin = existingPlayer ? HudSkinIds.Classic : HudSkinIds.Modern }; }
     }
 
-    public void Save(string path)
+    public void Save(string path) => Save(path, ProfileStorage.Default);
+
+    public void Save(string path, IProfileStorage? storage)
     {
+        storage ??= ProfileStorage.Default;
         Normalize();
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(this, HudSettingsJson.Default.HudSettings));
-        File.Move(path + ".tmp", path, true);
+        storage.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        storage.WriteAllText(path + ".tmp", JsonSerializer.Serialize(this, HudSettingsJson.Default.HudSettings));
+        storage.Move(path + ".tmp", path, true);
     }
 
     private static string MigrateSkin(JsonElement root, bool existingPlayer)
