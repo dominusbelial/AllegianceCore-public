@@ -435,6 +435,10 @@ sealed class Proof : Game
             ("jet-f4", 1920, 1080, "dark"),
             ("jet-f4", 1920, 1080, "bright"),
             ("jet-f4", 800, 480, "dark"),
+            // P1038c — the compact pane on the bright backdrop, so the title row, the pane
+            // backing and the slot marker have before/after evidence at BOTH resolutions
+            // and both backdrops.
+            ("jet-f4", 800, 480, "bright"),
             ("jet-f4-empty", 1920, 1080, "dark"),
             ("jet-f4-empty", 800, 480, "dark"),
             ("jet-locksmall", 1920, 1080, "dark"),
@@ -482,7 +486,7 @@ sealed class Proof : Game
                 _jetAuditSurface!.Reset();
                 _jetAudit!.ResetFlightState();
                 _jetAudit.Draw(model, new(GraphicsDevice.Viewport, null, false));
-                audit = _jetAuditSurface.Audit(width, height, scale);
+                audit = _jetAuditSurface.Audit(width, height, scale, backdrop);
             }
             finally
             {
@@ -544,10 +548,11 @@ sealed class Proof : Game
             });
         }
         File.WriteAllText(Path.Combine(root, "jet-capture.json"),
-            JsonSerializer.Serialize(new { schema = 5, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
-        // P1038b — the four new layout classes must be 0 in every Jet scene; print the
-        // offending scenes so a regression is visible in the run log, not only in JSON.
+            JsonSerializer.Serialize(new { schema = 6, skin = _jetDefinition.Id, palette = _jetDefinition.Palette, scenes = summaries }, PrettyJson));
+        // P1038b/c — the layout classes must be 0 in every Jet scene; print the offending
+        // counts so a regression is visible in the run log, not only in JSON.
         int strokeHits = 0, outsidePlate = 0, offScreen = 0, smallIcons = 0;
+        int inPlate = 0, cueHits = 0, legible = 0;
         foreach (var scene in summaries)
         {
             var layout = (LayoutAudit)scene.GetType().GetProperty("layout")!.GetValue(scene)!;
@@ -555,9 +560,13 @@ sealed class Proof : Game
             outsidePlate += layout.TextOutsidePlate;
             offScreen += layout.TextOffScreen;
             smallIcons += layout.IconTooSmall;
+            inPlate += layout.TextOverlapInPlate;
+            cueHits += layout.CueReadoutHits;
+            legible += layout.LegibleBehindPane;
         }
         Console.WriteLine($"HUD2_JET_AUDIT stroke-vs-text {strokeHits}, text-outside-plate {outsidePlate}, "
-            + $"text-off-screen {offScreen}, icon-too-small {smallIcons} over {scenes.Length} scenes");
+            + $"text-off-screen {offScreen}, icon-too-small {smallIcons}, text-in-plate {inPlate}, "
+            + $"cue-vs-readout {cueHits}, legible-behind-pane {legible} over {scenes.Length} scenes");
         Console.WriteLine($"HUD2_JET_CAPTURE_PASS {scenes.Length} scenes -> {root}");
         return 0;
     }
@@ -1703,26 +1712,32 @@ sealed class Proof : Game
         });
     }
 
-    /// <summary>P1038 item 0a — the measured designator/diamond fit of a frame: the
-    /// designator half-span actually used, the diamond half-span, the corner distance along
-    /// the diamond's diagonal (√2·half) and the diamond's boundary there (radius/√2).</summary>
+    /// <summary>P1038c — the measured compact lock cue of a frame: the native-size
+    /// designator half, the corner distance the cue is drawn at (√2·half + clearance +
+    /// 40·(1−lock)), its axis extent (cos 15°) and the gap it keeps outside the
+    /// designator's corner.</summary>
     private static object? LockFit(HudModel model, int width, int height)
     {
         if (model.Context.Lock is not { } lockState || lockState.State == MissileLockFeedback.LockState.None) return null;
         float scale = ModernHudScale.Core(1f, 1f, height);
         float cx = lockState.Center.X, cy = lockState.Center.Y;
         float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(width - cx, height - cy));
-        float lockHalf = JetTargetGeometry.LockCueHalf(lockState.State, lockState.Fraction,
-            lockState.ScreenRadius, toEdge, scale);
-        // P1038b — the cue is the segmented ring that encloses the native-size designator.
-        float ring = JetTargetGeometry.LockRingRadius(lockHalf, scale);
-        float natural = JetTargetGeometry.DesignatorHalf(model.Context.Target?.ScreenRadius, scale, toEdge);
-        bool samePoint = model.Context.Target is { } t
-            && MathF.Abs(t.Center.X - cx) <= 1.5f && MathF.Abs(t.Center.Y - cy) <= 1.5f;
-        float corner = samePoint ? natural * MathF.Sqrt(2f) : 0f;
+        // P1038c — the cue hugs the designator drawn with the SAME native half-span.
+        float designatorHalf = JetTargetGeometry.DesignatorHalf(
+            model.Context.Target?.ScreenRadius ?? lockState.ScreenRadius, scale, toEdge);
+        float corner = designatorHalf * JetTargetGeometry.Sqrt2;
+        float distance = JetTargetGeometry.LockCueCornerDistance(designatorHalf, lockState.Fraction, scale);
+        float extent = JetTargetGeometry.LockCueExtent(distance);
         float clearance = JetTargetGeometry.LockClearance * (scale > 0f ? scale : 1f);
-        return new { lockHalf, ringRadius = ring, designatorHalf = natural, cornerDistance = corner,
-            gap = ring - corner, inside = ring - corner >= clearance - 0.5f };
+        float closing = distance - corner - clearance;
+        return new
+        {
+            designatorHalf, cornerDistance = corner, cueDistance = distance, cueExtent = extent,
+            gap = distance - corner, clearance, closingTerm = closing,
+            inside = distance - corner >= clearance - 0.5f,
+            sweepDegrees = JetTargetGeometry.LockCornerSweep * 180f / MathF.PI,
+            dashesPerCorner = JetTargetGeometry.LockCornerDashes,
+        };
     }
 
     /// <summary>P1038 — the projected target radius the Jet lock scenes pin on BOTH the
@@ -1822,7 +1837,7 @@ sealed class Proof : Game
     /// <b>text-outside-plate</b>, <b>text-off-screen</b> and the <b>minimum icon glyph
     /// size</b>.</para>
     /// </summary>
-    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit
+    private sealed class RecordingSurface : IJetVectorSurface, IJetGlyphAudit, IJetCueAudit
     {
         /// <summary>A cursor-invisible sub-pixel tolerance: anything inside this is the same
         /// geometric run submitted twice (keyline then ink).</summary>
@@ -1834,6 +1849,9 @@ sealed class Proof : Game
         private readonly List<LayoutFill> _plates = new();
         private readonly List<LayoutStroke> _strokes = new();
         private readonly List<LayoutGlyph> _glyphs = new();
+        private readonly List<LayoutCue> _cues = new();
+        private readonly List<LayoutBox> _cueReadouts = new();
+        private readonly Dictionary<int, Color> _ink = new();
         private int _seq;
 
         public RecordingSurface(IJetVectorSurface inner) => _inner = inner;
@@ -1867,7 +1885,9 @@ sealed class Proof : Game
             }
             else if (w >= 8f && h >= 8f)
             {
-                _plates.Add(new(min.X, min.Y, w, h, seq));
+                // P1038c — keep the submitted tint (its alpha is the plate's opacity, which
+                // the legible-behind-pane check composites).
+                _plates.Add(new(min.X, min.Y, w, h, seq, color));
             }
             _inner.Fill(min, size, color);
         }
@@ -1875,14 +1895,24 @@ sealed class Proof : Game
         public void Text(string text, Vector2 position, bool large, float scale, Color color)
         {
             Vector2 size = _inner.Measure(text, large, scale);
-            Record(_texts, text, position.X, position.Y, size.X, size.Y, _seq++);
+            int seq = _seq++;
+            Record(_texts, text, position.X, position.Y, size.X, size.Y, seq);
+            _ink[seq] = color;
             _inner.Text(text, position, large, scale, color);
         }
 
         /// <summary>P1038b — one icon glyph the renderer composed (annunciator, caution or
         /// inventory state mark) with the cap height its word needs.</summary>
         public void Glyph(string id, RectangleF box, float minimumHeight)
-            => _glyphs.Add(new(id, box.X, box.Y, box.Width, box.Height, minimumHeight));
+            => _glyphs.Add(new(id, box.X, box.Y, box.Width, box.Height, minimumHeight, _seq++));
+
+        /// <summary>P1038c — one lock-cue arc, for the cue-vs-own-readout check.</summary>
+        public void CueArc(Vector2 center, float radius, float start, float sweep)
+            => _cues.Add(new(center, radius, start, sweep, _seq++));
+
+        /// <summary>P1038c — the lock readout block the cue belongs to.</summary>
+        public void CueReadout(RectangleF box)
+            => _cueReadouts.Add(new("LOCK", box.X, box.Y, box.Width, box.Height, _seq++));
 
         private static void Record(List<LayoutBox> list, string text, float x, float y, float w, float h, int seq)
         {
@@ -1926,6 +1956,9 @@ sealed class Proof : Game
             _plates.Clear();
             _strokes.Clear();
             _glyphs.Clear();
+            _cues.Clear();
+            _cueReadouts.Clear();
+            _ink.Clear();
         }
 
         /// <summary>
@@ -1942,9 +1975,16 @@ sealed class Proof : Game
         /// gutter (<see cref="EdgeGutter"/> standard-stroke units × scale).</item>
         /// <item><b>minimum glyph</b>: an icon glyph shorter than the cap height of the word
         /// it introduces.</item>
+        /// <item><b>text-vs-text inside one plate</b> (P1038c): two runs owned by the same
+        /// plate that intersect — the F4 title on the caption band, reported per plate.</item>
+        /// <item><b>cue-vs-own-readout</b> (P1038c): a lock-cue arc crossing the
+        /// <c>LOCK nn%</c> readout block it is drawn with.</item>
+        /// <item><b>legible-behind-pane</b> (P1038c): a text/icon drawn BEFORE the F4 pane
+        /// whose box intersects the pane and whose composited ghost keeps at least
+        /// <see cref="GhostLegibleChannel"/> of 255 channel separation from the plate.</item>
         /// </list>
         /// </summary>
-        public LayoutAudit Audit(int viewportWidth, int viewportHeight, float scale)
+        public LayoutAudit Audit(int viewportWidth, int viewportHeight, float scale, Color backdrop)
         {
             // The P1036 review rule: no label may overlap a tape caption ("SPD / MPS",
             // "THR") or a readout box (plate); a readout's own ink inside its plate is
@@ -2042,13 +2082,130 @@ sealed class Proof : Game
                 smallGlyphs.Add($"{glyph.Id}@{glyph.X:0.#},{glyph.Y:0.#} {glyph.W:0.#}x{glyph.H:0.#} < cap {glyph.MinimumHeight:0.#}");
             }
 
+            // ── P1038c: text-vs-text inside ONE plate ──────────────────────
+            // Two runs that belong to the same plate (the last plate drawn before the run
+            // that its box crosses) and intersect each other: the F4 title sitting on the
+            // caption band was exactly this. Cross-plate text-vs-text stays informational
+            // (TextOverlaps), because independent markers can legitimately share sky.
+            var inPlateOverlaps = new List<string>();
+            float panePad = JetInventoryPresentation.Pad * JetInventoryPresentation.Scale(viewportHeight);
+            for (int i = 0; i < _texts.Count; i++)
+                for (int j = i + 1; j < _texts.Count; j++)
+                {
+                    LayoutBox a = _texts[i], b = _texts[j];
+                    if (!Intersects(a, b)) continue;
+                    int owner = OwnerPlate(a, panePad);
+                    if (owner < 0 || owner != OwnerPlate(b, panePad)) continue;
+                    inPlateOverlaps.Add($"{a.Text}@{a.X:0.#},{a.Y:0.#} x {b.Text}@{b.X:0.#},{b.Y:0.#} in plate seq {owner}");
+                }
+
+            // ── P1038c: cue-vs-own-readout ─────────────────────────────────
+            // The cue is drawn BEFORE its caption, so the generic stroke-vs-text rule
+            // (background strokes are exempt) cannot see this: the renderer reports each cue
+            // arc and the readout block, and every arc chord is tested against that block.
+            var cueHits = new List<string>();
+            float cuePad = 2f * (scale > 0f ? scale : 1f);
+            foreach (LayoutBox readout in _cueReadouts)
+                foreach (LayoutCue cue in _cues)
+                {
+                    if (!ArcHitsBox(cue, readout, cuePad)) continue;
+                    cueHits.Add($"LOCK readout@{readout.X:0.#},{readout.Y:0.#} {readout.W:0.#}x{readout.H:0.#} "
+                        + $"x cue arc r{cue.Radius:0.#} {cue.Start * 180f / MathF.PI:0.#}+{cue.Sweep * 180f / MathF.PI:0.#}deg");
+                }
+
+            // ── P1038c: legible-behind-pane ────────────────────────────────
+            // The F4 pane is the near-opaque plate (alpha ≥ 240 of 255) taller than four
+            // rows. A run/icon drawn BEFORE it keeps (1−alpha) of its ink-vs-backdrop
+            // channel difference; ≥ 8 of 255 (3.1 %) reads as legible through the backing.
+            var legibleBehindPane = new List<string>();
+            foreach (LayoutFill pane in _plates)
+            {
+                if (pane.H <= 64f || pane.Tint.A < 240) continue;
+                float residual = 1f - pane.Tint.A / 255f;
+                var paneBox = new LayoutBox("#", pane.X, pane.Y, pane.W, pane.H, pane.Seq);
+                foreach (LayoutBox text in _texts)
+                {
+                    if (text.Seq >= pane.Seq || !Intersects(paneBox, text)) continue;
+                    Color ink = _ink.TryGetValue(text.Seq, out Color recorded) ? recorded : backdrop;
+                    float ghost = ChannelDelta(ink, backdrop) * residual;
+                    if (ghost < GhostLegibleChannel) continue;
+                    legibleBehindPane.Add($"{text.Text}@{text.X:0.#},{text.Y:0.#} ghost {ghost:0.#}/255 "
+                        + $"behind plate seq {pane.Seq} alpha {pane.Tint.A}");
+                }
+                foreach (LayoutGlyph glyph in _glyphs)
+                {
+                    if (glyph.Seq >= pane.Seq) continue;
+                    var glyphBox = new LayoutBox(glyph.Id, glyph.X, glyph.Y, glyph.W, glyph.H, glyph.Seq);
+                    if (!Intersects(paneBox, glyphBox)) continue;
+                    // Worst case: the brightest ink the palette carries.
+                    float ghost = ChannelDelta(new Color(255, 255, 255), backdrop) * residual;
+                    if (ghost < GhostLegibleChannel) continue;
+                    legibleBehindPane.Add($"{glyph.Id}@{glyph.X:0.#},{glyph.Y:0.#} ghost {ghost:0.#}/255 "
+                        + $"behind plate seq {pane.Seq} alpha {pane.Tint.A}");
+                }
+            }
+
             return new LayoutAudit(_texts.Count, _fills.Count, _strokes.Count, textOverlaps.Count,
                 captionOverlaps.Count, boxOverlaps.Count, strokeHits.Count, outsidePlate.Count, offScreen.Count,
-                _glyphs.Count, smallGlyphs.Count,
+                _glyphs.Count, smallGlyphs.Count, inPlateOverlaps.Count, cueHits.Count, legibleBehindPane.Count,
                 captionOverlaps.Take(4).ToArray(), boxOverlaps.Take(4).ToArray(),
                 strokeHits.Take(4).ToArray(), outsidePlate.Take(4).ToArray(),
-                offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray());
+                offScreen.Take(4).ToArray(), smallGlyphs.Take(4).ToArray(),
+                inPlateOverlaps.Take(4).ToArray(), cueHits.Take(4).ToArray(), legibleBehindPane.Take(4).ToArray());
         }
+
+        /// <summary>P1038c — the plate a run belongs to: the last plate drawn BEFORE the run
+        /// that CONTAINS it. A pane's content keeps its native inner padding, so its owned
+        /// box is inset horizontally by <c>Pad × pane scale</c>; the Jet WIP tag drawn at a
+        /// pane's very edge (a debug overlay, not pane content) is therefore not owned by
+        /// it. Readout plates own any run they contain.</summary>
+        private int OwnerPlate(LayoutBox text, float panePad)
+        {
+            int owner = -1;
+            foreach (LayoutFill plate in _plates)
+            {
+                if (plate.Seq > text.Seq) break;
+                float inset = plate.H > 64f ? panePad : 0f;
+                var box = new LayoutBox("#", plate.X + inset, plate.Y,
+                    MathF.Max(0f, plate.W - 2f * inset), plate.H, plate.Seq);
+                if (Contains(box, text)) owner = plate.Seq;
+            }
+            return owner;
+        }
+
+        /// <summary>P1038c — does an arc's chorded ink cross <paramref name="box"/>? The arc
+        /// is sampled at 12 chords (a cue arc is at most 30°), each tested with the same
+        /// Liang–Barsky slab clip the stroke rule uses.</summary>
+        private static bool ArcHitsBox(LayoutCue cue, LayoutBox box, float pad)
+        {
+            const int samples = 12;
+            float x0 = box.X - pad, y0 = box.Y - pad;
+            float x1 = box.X + box.W + pad, y1 = box.Y + box.H + pad;
+            Vector2 previous = ArcPoint(cue, 0f);
+            for (int i = 1; i <= samples; i++)
+            {
+                Vector2 point = ArcPoint(cue, i / (float)samples);
+                if (SegmentHitsBox(previous, point, x0, y0, x1, y1)) return true;
+                previous = point;
+            }
+            return false;
+        }
+
+        private static Vector2 ArcPoint(LayoutCue cue, float t)
+        {
+            float angle = cue.Start + cue.Sweep * t;
+            return new(cue.Center.X + MathF.Cos(angle) * cue.Radius,
+                cue.Center.Y + MathF.Sin(angle) * cue.Radius);
+        }
+
+        /// <summary>P1038c — the largest per-channel difference between two colours (0…255).</summary>
+        private static float ChannelDelta(Color a, Color b)
+            => MathF.Max(MathF.Abs(a.R - b.R), MathF.Max(MathF.Abs(a.G - b.G), MathF.Abs(a.B - b.B)));
+
+        /// <summary>P1038c — the legibility threshold of a ghost through the pane backing:
+        /// 8 of 255 channel separation (3.1 %) from the plate. Stated once so the plate
+        /// opacity and the audit can never drift apart.</summary>
+        public const float GhostLegibleChannel = 8f;
 
         /// <summary>The audit's edge gutter, in standard-stroke units (× scale): the same
         /// 4 px inset every Jet plate keeps from a viewport edge.</summary>
@@ -2158,14 +2315,21 @@ sealed class Proof : Game
     /// <summary>P1038b — one recorded stroke: its endpoints, ink width (px) and draw order.</summary>
     private readonly record struct LayoutStroke(Vector2 A, Vector2 B, float Width, int Seq);
 
-    /// <summary>P1038b — a recorded plate (a readout box or a pane) and its draw order.</summary>
-    private readonly record struct LayoutFill(float X, float Y, float W, float H, int Seq);
+    /// <summary>P1038c — a recorded plate (a readout box or a pane), its draw order and the
+    /// tint it was filled with (its alpha is the plate's opacity).</summary>
+    private readonly record struct LayoutFill(float X, float Y, float W, float H, int Seq, Color Tint);
 
-    /// <summary>P1038b — one recorded icon glyph and the minimum height its word needs.</summary>
-    private readonly record struct LayoutGlyph(string Id, float X, float Y, float W, float H, float MinimumHeight);
+    /// <summary>P1038b — one recorded icon glyph, its minimum height and draw order.</summary>
+    private readonly record struct LayoutGlyph(string Id, float X, float Y, float W, float H,
+        float MinimumHeight, int Seq);
+
+    /// <summary>P1038c — one recorded lock-cue arc.</summary>
+    private readonly record struct LayoutCue(Vector2 Center, float Radius, float Start, float Sweep, int Seq);
 
     private sealed record LayoutAudit(int Texts, int Fills, int Strokes, int TextOverlaps, int CaptionOverlaps,
         int BoxOverlaps, int StrokeHits, int TextOutsidePlate, int TextOffScreen, int Icons, int IconTooSmall,
+        int TextOverlapInPlate, int CueReadoutHits, int LegibleBehindPane,
         string[] CaptionOverlapSamples, string[] BoxOverlapSamples, string[] StrokeHitSamples,
-        string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples);
+        string[] TextOutsidePlateSamples, string[] TextOffScreenSamples, string[] IconTooSmallSamples,
+        string[] TextOverlapInPlateSamples, string[] CueReadoutHitSamples, string[] LegibleBehindPaneSamples);
 }

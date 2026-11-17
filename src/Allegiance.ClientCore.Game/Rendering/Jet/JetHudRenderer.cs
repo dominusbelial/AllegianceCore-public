@@ -756,10 +756,10 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
 
         float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(w - cx, h - cy));
         float half = JetTargetGeometry.DesignatorHalf(target.ScreenRadius, scale, toEdge);
-        // P1038b — the designator keeps its native size at every lock fraction; the lock
-        // cue (a segmented ring, DrawLock) ENCLOSES it instead of the box shrinking into a
-        // diamond. The readout still clears the cue's radius below.
-        float lockRadius = LockCueRadiusAt(model, cx, cy, w, h, scale);
+        // P1038c — the designator keeps its native size (P1038b rule) and the lock cue is
+        // a compact four-corner arc set that hugs its corners (DrawLock); the readout clears
+        // the cue's axis-aligned extent, which is now much smaller than the old ring radius.
+        float cueExtent = LockCueExtentAt(model, cx, cy, half, scale);
         JetTargetGeometry.TargetRelationship relationship = JetTargetGeometry.Relationship(target.IsEnemy);
         // Engaged autopilot (the shared model's P345 flag) brightens the designator;
         // the shape stays identical.
@@ -790,13 +790,16 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float row3 = MeasureRuns(scale, "  ", hull is null ? null : HullWord, hull,
             shield is null ? null : ShieldWord, shield);
         float textWidth = MathF.Max(row1, MathF.Max(row2, row3));
+        int blockRows = 1 + (range is not null || closure is not null ? 1 : 0)
+            + (hull is not null || shield is not null ? 1 : 0);
+        float blockHeight = rowH * blockRows;
         // Keep the readout clear of the edge tapes: the right side must stop before
         // the throttle tape, the left side must start after the speed tape. With a lock
-        // shown the readout also clears the lock RING's right (or left) vertex, so no text
-        // can cross a lock stroke (P1038b: the cue radius, not a contracted box).
+        // shown the readout also clears the lock CUE's axis extent, so no text can cross a
+        // cue arc (P1038c: compact corner arcs, not the old ring).
         float rightLimit = w - 100f * scale;
         float leftLimit = 92f * scale;
-        float clear = MathF.Max(half, lockRadius);
+        float clear = MathF.Max(half, cueExtent);
         bool rightSide = cx + clear + 8f * scale + textWidth <= rightLimit;
         bool leftSide = cx - clear - 8f * scale - textWidth >= leftLimit;
         float gutter = 4f * scale;
@@ -808,9 +811,9 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
                 : cx - clear - 8f * scale - textWidth;
             y = box.Y;
         }
-        else if (cy + clear + 6f * scale + rowH * 3f <= h - gutter)
+        else if (cy + clear + 6f * scale + blockHeight <= h - gutter)
         {
-            // P1038b — neither side is free (a large lock cue at 800×480): put the block
+            // P1038b — neither side is free (a large cue at 800×480): put the block
             // UNDER the cue's bottom vertex instead of letting it run off the screen.
             x = cx - textWidth * 0.5f;
             y = cy + clear + 6f * scale;
@@ -826,9 +829,13 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         y = MathF.Max(y, gutter);
         // P1038 — a readout that would land on the HDG box or a tape caption (the 800×480
         // cases) drops below it instead of covering it.
-        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _headingPlate, scale);
-        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _speedCaptionBox, scale);
-        y = BelowIfCrossed(y, x, textWidth, rowH * 3f, _throttleCaptionBox, scale);
+        y = BelowIfCrossed(y, x, textWidth, blockHeight, _headingPlate, scale);
+        y = BelowIfCrossed(y, x, textWidth, blockHeight, _speedCaptionBox, scale);
+        y = BelowIfCrossed(y, x, textWidth, blockHeight, _throttleCaptionBox, scale);
+        // P1038c — and it is clamped above the bottom gutter too: a block pushed down by a
+        // plate can never have its last line leave the screen (the 800×480 defect 5). The
+        // on-screen rule wins over the drop-below-furniture rule when both cannot hold.
+        y = Math.Clamp(y, gutter, MathF.Max(gutter, h - gutter - blockHeight));
 
         DrawRuns(x, y, scale, _painter.Primary, " / ", relationshipWord, name, null, null);
         y += rowH;
@@ -906,22 +913,24 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         return overlaps ? box.Y + box.Height + 4f * scale : y;
     }
 
-    /// <summary>
-    /// P1038b — the lock cue's RING radius when the shared lock is centred on this target
-    /// (in a real frame both the designator and the lock bracket come from the same
+    /// <summary>P1038c — the lock cue's axis-aligned extent when the shared lock is centred on this
+    /// target (in a real frame both the designator and the lock bracket come from the same
     /// projected target radius: <c>Game1.Camera.cs</c> <c>ComputeTargetSelectionBracket</c> /
     /// <c>ComputeLockBracket</c>). Returns 0 when no lock is shown or the cue sits
     /// elsewhere, so the designator keeps its native size and the readout its old offset.
     /// </summary>
-    private float LockCueRadiusAt(HudModel model, float cx, float cy, float w, float h, float scale)
+    /// <para>The corner arc distance is <c>√2·designatorHalf + clearance + 40·(1−lock)</c>
+    /// (native closing, radarimage.cpp:325-332); the axis extent is that distance ×
+    /// cos 15° (the arc spans 30° centred on the diagonal), plus one stroke width so a
+    /// readout placed at the extent cannot touch the arc ink.</para>
+    /// </summary>
+    private float LockCueExtentAt(HudModel model, float cx, float cy, float designatorHalf, float scale)
     {
         if (model.Context.Lock is not { } lockState) return 0f;
         if (lockState.State == MissileLockFeedback.LockState.None) return 0f;
         if (MathF.Abs(lockState.Center.X - cx) > 1.5f || MathF.Abs(lockState.Center.Y - cy) > 1.5f) return 0f;
-        float toEdge = MathF.Min(MathF.Min(cx, cy), MathF.Min(w - cx, h - cy));
-        float lockHalf = JetTargetGeometry.LockCueHalf(lockState.State, lockState.Fraction,
-            lockState.ScreenRadius, toEdge, scale);
-        return JetTargetGeometry.LockRingRadius(lockHalf, scale);
+        float distance = JetTargetGeometry.LockCueCornerDistance(designatorHalf, lockState.Fraction, scale);
+        return JetTargetGeometry.LockCueExtent(distance) + _painter.Stroke;
     }
 
     /// <summary>
@@ -952,15 +961,19 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
     }
 
     /// <summary>
-    /// The segmented missile lock (P972 §4.3 "segmented diamond/arc"): a 16-segment RING
-    /// around the lock target that ENCLOSES the native-size designator (P1038b). Its radius
-    /// is <c>√2·lockHalf + clearance</c>, so the native per-state sizing
-    /// (<c>radiusBracket + 40·(1−lock)</c>) still drives the shrink and a full lock ends
-    /// just outside the designator's corners. Partial = every other segment inked
+    /// The missile lock cue (P972 §4.3 "segmented diamond/arc"): four corner arcs hugging
+    /// the native-size designator's diagonals (P1038c). Each arc spans
+    /// <see cref="JetTargetGeometry.LockCornerSweep"/> (30°) centred on a diagonal, so the
+    /// four arcs cover the four corners and leave a 60° gap at each axis direction where
+    /// the readouts live. The distance is
+    /// <c>√2·designatorHalf + clearance + 40·scale·(1−lock)</c>, so the native
+    /// <c>radiusBracket + 40·(1−lock)</c> closing (radarimage.cpp:325-332) still drives it
+    /// and a full lock sits just outside the corners. Partial = every other 7.5° dash
     /// (open/dashed, marching with the shared <c>NowSeconds</c> feedback clock) plus
-    /// <c>LOCK nn%</c>; full = all segments (closed) in the hot colour plus <c>LOCK</c>;
-    /// none = nothing. No lock tone, timer or audio state is created or restarted here —
-    /// the tone stays with <see cref="MissileLockFeedback"/> and native dispatch.
+    /// <c>LOCK nn%</c>; full = the whole 30° arc per corner (closed) in the hot colour plus
+    /// <c>LOCK</c>; none = nothing. No lock tone, timer or audio state is created or
+    /// restarted here — the tone stays with <see cref="MissileLockFeedback"/> and native
+    /// dispatch.
     /// </summary>
     private void DrawLock(HudModel model, float w, float h, float scale)
     {
@@ -970,32 +983,43 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         if (center.X < 0f || center.Y < 0f || center.X > w || center.Y > h) return;
 
         float toEdge = MathF.Min(MathF.Min(center.X, center.Y), MathF.Min(w - center.X, h - center.Y));
-        // The native per-state sizing the Classic flower uses (radarimage.cpp:325-332), with
-        // the P1037 readability floor; the RING is placed √2·lockHalf + clearance outside the
-        // centre so it frames the designator instead of shrinking it.
-        float lockHalf = JetTargetGeometry.LockCueHalf(lockState.State, lockState.Fraction,
-            lockState.ScreenRadius, toEdge, scale);
-        float radius = JetTargetGeometry.LockRingRadius(lockHalf, scale);
+        // Native radiusBracket = 1.05·radiusObject clipped to the edge (radarimage.cpp:302-319):
+        // the SAME native-size half the designator draws with, so the cue hugs its corners.
+        float designatorHalf = JetTargetGeometry.DesignatorHalf(lockState.ScreenRadius, scale, toEdge);
+        float distance = JetTargetGeometry.LockCueCornerDistance(designatorHalf, lockState.Fraction, scale);
         bool full = lockState.State == MissileLockFeedback.LockState.Full;
         Color ink = full ? _painter.Hot : _painter.Dim;
-        int segments = JetTargetGeometry.LockSegmentsPerSide * 4;
-        for (int i = 0; i < segments; i++)
+        float step = JetTargetGeometry.LockCornerSweep / JetTargetGeometry.LockCornerDashes;
+        for (int corner = 0; corner < JetTargetGeometry.LockCornerCount; corner++)
         {
-            if (!JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockSegmentsPerSide, lockState.State, lockState.NowSeconds))
+            float angle = JetTargetGeometry.LockCornerAngle(corner);
+            float start = angle - JetTargetGeometry.LockCornerSweep * 0.5f;
+            if (full)
+            {
+                _painter.CueArc(center, distance, start, JetTargetGeometry.LockCornerSweep,
+                    _painter.Stroke, ink);
                 continue;
-            var (a, b) = JetTargetGeometry.LockRingSegment(i, segments, center, radius);
-            _painter.Line(a, b, _painter.Stroke, ink);
+            }
+            for (int dash = 0; dash < JetTargetGeometry.LockCornerDashes; dash++)
+            {
+                if (!JetTargetGeometry.LockSegmentVisible(
+                        corner * JetTargetGeometry.LockCornerDashes + dash,
+                        JetTargetGeometry.LockCornerDashes, lockState.State, lockState.NowSeconds))
+                    continue;
+                _painter.CueArc(center, distance, start + dash * step, step, _painter.Stroke, ink);
+            }
         }
 
-        // Text above the ring: LOCK nn% while building, LOCK when full. P1038b — when the
-        // cue's top vertex is off the viewport (a target near the top edge), the caption
-        // moves below the ring instead of being drawn off screen.
+        // Text clear of the cue: above its topmost ink (axis extent + one stroke), or below
+        // it when the top would leave the viewport (a target near the top edge).
+        float extent = JetTargetGeometry.LockCueExtent(distance) + _painter.Stroke;
         float gutter = 4f * scale;
         if (full)
         {
             Vector2 size = _painter.Measure(LockCaption, large: false, scale);
             float x = Math.Clamp(center.X - size.X * 0.5f, gutter, MathF.Max(gutter, w - gutter - size.X));
-            float y = LockCaptionY(center.Y, radius, size.Y, h, scale);
+            float y = LockCaptionY(center.Y, extent, size.Y, h, scale);
+            _painter.CueReadout(new RectangleF(x, y, size.X, size.Y));
             _painter.Text(LockCaption, new(x, y), large: false, scale, _painter.Hot);
             return;
         }
@@ -1003,12 +1027,14 @@ public sealed partial class JetHudRenderer : IHudSkinRenderer
         float rowH = _painter.Measure("X", large: false, scale).Y + 2f * scale;
         float width = MeasureRuns(scale, " ", LockCaption, percent, null, null);
         float captionX = Math.Clamp(center.X - width * 0.5f, gutter, MathF.Max(gutter, w - gutter - width));
-        float captionY = LockCaptionY(center.Y, radius, rowH, h, scale);
+        float captionY = LockCaptionY(center.Y, extent, rowH, h, scale);
+        _painter.CueReadout(new RectangleF(captionX, captionY, width, rowH));
         DrawRuns(captionX, captionY, scale, _painter.Dim, " ", LockCaption, percent, null, null);
     }
 
-    /// <summary>P1038b — the lock caption's y: above the ring's top vertex, or below its
-    /// bottom vertex when the top would leave the viewport.</summary>
+    /// <summary>P1038b/c — the lock caption's y: above the cue's top ink (its axis extent
+    /// plus one stroke), or below the cue's bottom ink when the top would leave the
+    /// viewport.</summary>
     private static float LockCaptionY(float centerY, float radius, float textHeight, float viewportHeight, float scale)
     {
         float gutter = 4f * scale;

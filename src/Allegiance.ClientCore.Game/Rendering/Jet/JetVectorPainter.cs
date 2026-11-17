@@ -41,6 +41,19 @@ public interface IJetGlyphAudit
     void Glyph(string id, RectangleF box, float minimumHeight);
 }
 
+/// <summary>P1038c — an optional audit channel for the LOCK CUE: the drawing surface may
+/// implement it to receive every cue arc and the box of the lock readout the cue belongs
+/// to, so the proof can prove that no cue segment crosses its own `LOCK nn%` readout.
+/// Production and test surfaces do not implement it (one type test per lock frame).</summary>
+public interface IJetCueAudit
+{
+    /// <summary>Record one cue arc: its centre, radius, start angle and sweep (radians).</summary>
+    void CueArc(Vector2 center, float radius, float start, float sweep);
+
+    /// <summary>Record the lock readout block the cue is drawn with.</summary>
+    void CueReadout(RectangleF box);
+}
+
 /// <summary>P1035 — the production Jet surface: Game1's shared SpriteBatch, the
 /// 1×1 white pixel and the two classic HUD fonts. Borrows every resource; it owns
 /// nothing and therefore has nothing to dispose.</summary>
@@ -199,11 +212,14 @@ public sealed class JetVectorPainter
     public void Circle(Vector2 center, float radius, float width, Color color)
         => Arc(center, radius, 0f, MathHelper.TwoPi, width, color);
 
-    /// <summary>An arc of <paramref name="sweep"/> radians starting at <paramref name="start"/>.</summary>
-    public void Arc(Vector2 center, float radius, float start, float sweep, float width, Color color)
+    /// <summary>An arc of <paramref name="sweep"/> radians starting at <paramref name="start"/>.
+    /// <paramref name="segments"/> overrides the radius-derived tessellation (0 = automatic);
+    /// a bounded short arc (the lock cue) uses a small count.</summary>
+    public void Arc(Vector2 center, float radius, float start, float sweep, float width, Color color,
+        int segments = 0)
     {
         if (radius <= 0f) return;
-        int segments = ArcSegments(radius);
+        if (segments <= 1) segments = ArcSegments(radius);
         if (segments > MaxPathPoints - 1) segments = MaxPathPoints - 1;
         for (int i = 0; i <= segments; i++)
         {
@@ -279,6 +295,27 @@ public sealed class JetVectorPainter
     public void Glyph(string id, RectangleF box, float minimumHeight)
     {
         if (_surface is IJetGlyphAudit audit) audit.Glyph(id, box, minimumHeight);
+    }
+
+    /// <summary>P1038c — the chord count of one lock-cue arc. A 30° arc at the largest cue
+    /// radius (≈220 px) sags 0.24 px between chords at 6, so the cue costs 48–96 line
+    /// submissions per frame (close to the 32 of the old 16-segment ring) instead of the
+    /// automatic 70-per-arc tessellation.</summary>
+    public const int CueArcSegments = 6;
+
+    /// <summary>P1038c — one lock-cue arc: reported to the optional cue-audit channel (so
+    /// the proof can measure cue-vs-own-readout) and then drawn with a bounded chord count.
+    /// No-op extra work on production and test surfaces.</summary>
+    public void CueArc(Vector2 center, float radius, float start, float sweep, float width, Color color)
+    {
+        if (_surface is IJetCueAudit audit) audit.CueArc(center, radius, start, sweep);
+        Arc(center, radius, start, sweep, width, color, CueArcSegments);
+    }
+
+    /// <summary>P1038c — report the lock readout block to the optional cue-audit channel.</summary>
+    public void CueReadout(RectangleF box)
+    {
+        if (_surface is IJetCueAudit audit) audit.CueReadout(box);
     }
 
     /// <summary>Enough segments that a circle reads as a circle at this radius,

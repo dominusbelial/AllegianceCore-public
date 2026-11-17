@@ -166,7 +166,7 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void A_partial_lock_is_an_open_marching_diamond_with_its_percentage()
+    public void A_partial_lock_is_open_corner_arcs_with_its_percentage()
     {
         var surface = new Recorder();
         using var jet = Jet(surface);
@@ -175,9 +175,21 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
 
         Assert.Contains(LockCaption, surface.Seen);
         Assert.Contains("62%", surface.Seen);
-        // 16 segments, every other one inked (open/dashed), each submitted as a
-        // keyline + ink stroke.
-        Assert.Equal(16, surface.linesNear(new Vector2(900f, 400f), 120f));
+        // P1038c — four corner arcs, every other of the four dashes inked: 8 arc pieces,
+        // each a 30°·¼ = 7.5° dash at the cue's corner distance.
+        float half = JetTargetGeometry.DesignatorHalf(null, 1f, 900f);
+        float distance = JetTargetGeometry.LockCueCornerDistance(half, .62f, 1f);
+        Assert.Equal(8, surface.CueArcs.Count);
+        foreach (var arc in surface.CueArcs)
+        {
+            Assert.Equal(distance, arc.Radius, 2);
+            Assert.Equal(JetTargetGeometry.LockCornerSweep / JetTargetGeometry.LockCornerDashes,
+                arc.Sweep, 4);
+            Assert.Equal(900f, arc.Center.X, 2);
+            Assert.Equal(400f, arc.Center.Y, 2);
+        }
+        // The readout block is reported for the cue-vs-own-readout audit.
+        Assert.Single(surface.CueReadouts);
         Assert.DoesNotContain(surface.SegmentColors, color => color == Hot);
     }
 
@@ -191,7 +203,15 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
 
         Assert.Contains(LockCaption, surface.Seen);
         Assert.DoesNotContain("100%", surface.Seen);   // a full lock has no percentage readout
-        Assert.Equal(32, surface.linesNear(new Vector2(900f, 400f), 120f));   // all 16 segments
+        // P1038c — one closed 30° arc per corner (no dashes), at the full-lock distance.
+        float half = JetTargetGeometry.DesignatorHalf(null, 1f, 900f);
+        float distance = JetTargetGeometry.LockCueCornerDistance(half, 1f, 1f);
+        Assert.Equal(4, surface.CueArcs.Count);
+        foreach (var arc in surface.CueArcs)
+        {
+            Assert.Equal(distance, arc.Radius, 2);
+            Assert.Equal(JetTargetGeometry.LockCornerSweep, arc.Sweep, 4);
+        }
         Assert.Contains(surface.SegmentColors, color => color == Hot);
     }
 
@@ -210,18 +230,18 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
     public void The_partial_lock_dashes_march_between_the_two_phases()
     {
         int firstPhase = 0, secondPhase = 0;
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < JetTargetGeometry.LockCornerDashes * JetTargetGeometry.LockCornerCount; i++)
         {
-            if (JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockSegmentsPerSide,
+            if (JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockCornerDashes,
                     MissileLockFeedback.LockState.Partial, 0.0)) firstPhase++;
-            if (JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockSegmentsPerSide,
+            if (JetTargetGeometry.LockSegmentVisible(i, JetTargetGeometry.LockCornerDashes,
                     MissileLockFeedback.LockState.Partial, 0.5)) secondPhase++;
         }
         Assert.Equal(8, firstPhase);
         Assert.Equal(8, secondPhase);
-        Assert.True(JetTargetGeometry.LockSegmentVisible(0, JetTargetGeometry.LockSegmentsPerSide,
+        Assert.True(JetTargetGeometry.LockSegmentVisible(0, JetTargetGeometry.LockCornerDashes,
             MissileLockFeedback.LockState.Partial, 0.0)
-            != JetTargetGeometry.LockSegmentVisible(0, JetTargetGeometry.LockSegmentsPerSide,
+            != JetTargetGeometry.LockSegmentVisible(0, JetTargetGeometry.LockCornerDashes,
                 MissileLockFeedback.LockState.Partial, 0.5));
         // Full/none never depend on the clock.
         Assert.True(JetTargetGeometry.LockSegmentVisible(3, 4, MissileLockFeedback.LockState.Full, 0.0));
@@ -822,11 +842,13 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
 
     /// <summary>Records every submission (delegating nothing — the metrics are a fixed
     /// 6×12 grid so the geometry tests are deterministic and device-free).</summary>
-    private sealed class Recorder : IJetVectorSurface
+    private sealed class Recorder : IJetVectorSurface, IJetCueAudit
     {
         private readonly List<(Vector2 A, Vector2 B, Color Color, float Width)> _segments = new();
         private readonly List<(Vector2 Min, Vector2 Size, Color Color)> _fills = new();
         private readonly List<TextRun> _runs = new();
+        private readonly List<(Vector2 Center, float Radius, float Start, float Sweep)> _cues = new();
+        private readonly List<RectangleF> _cueReadouts = new();
         private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
         private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
 
@@ -834,6 +856,10 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         public IReadOnlyList<TextRun> TextRuns => _runs;
         public IEnumerable<Color> SegmentColors => _segments.Select(s => s.Color);
         public IReadOnlySet<string> Seen => _seen;
+        /// <summary>P1038c — the lock-cue arcs the renderer reported.</summary>
+        public IReadOnlyList<(Vector2 Center, float Radius, float Start, float Sweep)> CueArcs => _cues;
+        /// <summary>P1038c — the lock readout blocks the renderer reported.</summary>
+        public IReadOnlyList<RectangleF> CueReadouts => _cueReadouts;
 
         public int count(string text) => _counts.TryGetValue(text, out int n) ? n : 0;
 
@@ -846,6 +872,12 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         public void Line(Vector2 a, Vector2 b, float width, Color color) => _segments.Add((a, b, color, width));
 
         public void Fill(Vector2 min, Vector2 size, Color color) => _fills.Add((min, size, color));
+
+        /// <summary>P1038c — the cue arcs and readout block the renderer reports.</summary>
+        public void CueArc(Vector2 center, float radius, float start, float sweep)
+            => _cues.Add((center, radius, start, sweep));
+
+        public void CueReadout(RectangleF box) => _cueReadouts.Add(box);
 
         public void Text(string text, Vector2 position, bool large, float scale, Color color)
         {
