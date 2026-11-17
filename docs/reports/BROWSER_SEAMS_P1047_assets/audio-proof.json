@@ -1,0 +1,44 @@
+{
+  "before": {
+    "contexts": [],
+    "buffers": [],
+    "metrics": {
+      "screen": "Main",
+      "optionsPage": "Root",
+      "invertMouseY": false,
+      "menuSoundEnabled": false,
+      "managedHeapBytes": 15754208,
+      "residentBytes": 2561241,
+      "settingsPending": false,
+      "style": "Modern",
+      "gameStyle": "Modern"
+    }
+  },
+  "after": {
+    "contexts": [
+      {
+        "state": "running",
+        "currentTime": 0.14222222222222222,
+        "sampleRate": 44100
+      }
+    ],
+    "buffers": [
+      {
+        "duration": 0.07546485260770976,
+        "channels": 1
+      }
+    ],
+    "metrics": {
+      "screen": "Main",
+      "optionsPage": "Root",
+      "invertMouseY": false,
+      "menuSoundEnabled": true,
+      "managedHeapBytes": 16100776,
+      "residentBytes": 2561241,
+      "settingsPending": false,
+      "style": "Modern",
+      "gameStyle": "Modern"
+    }
+  },
+  "errors": []
+}

@@ -1,0 +1,6 @@
+body { margin: 0; }
+#menu-controls { position: fixed; top: 2px; right: 8px; z-index: 10; display: flex; align-items: center; gap: 6px; font-size: 11px; }
+#menu-controls button { min-height: 22px; padding: 2px 6px; font-size: 11px; }
+#menu-controls button[aria-pressed="true"] { background: #124e4c; border-color: #40d7cc; }
+footer { padding: 2px 6px; font-size: 9px; }
+@media(max-width: 900px) { #menu-controls span { display: none; } }

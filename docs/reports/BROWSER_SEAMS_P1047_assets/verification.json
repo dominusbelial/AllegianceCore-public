@@ -1,0 +1,324 @@
+{
+  "baseline": "7b9a724d5619",
+  "solution": {
+    "passed": true,
+    "warnings": 0,
+    "errors": 0,
+    "sdk": "10.0.404",
+    "extraWorkloads": []
+  },
+  "tools": {
+    "passed": true,
+    "projects": 141
+  },
+  "newTestRepetitions": [
+    {
+      "run": "browser-1",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "browser-2",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "browser-3",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "desktop-1",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "desktop-2",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "desktop-3",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "preview-1",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "preview-2",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": "preview-3",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "cacheTestRepetitions": [
+    {
+      "run": 1,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": 2,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "run": 3,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "affectedDesktopRegressions": {
+    "passed": 187,
+    "failed": 0,
+    "skipped": 0
+  },
+  "hud": {
+    "combinations": 1848,
+    "pixelDifferences": 0,
+    "semanticDifferences": 0,
+    "corruptGoldens": 0,
+    "animationOnlyDifferences": 83,
+    "finalRepeatPassed": true
+  },
+  "desktopOutput": {
+    "beforeFiles": 753,
+    "afterFiles": 753,
+    "added": 0,
+    "removed": 0
+  },
+  "captures": [
+    {
+      "file": "asset-failure-1920x1080.png",
+      "bytes": 41042,
+      "sha256": "a5d9079d7b927c392991c3d2226b7353b21db1c389d2d43e2d19a14033d9d157",
+      "reviewed": true
+    },
+    {
+      "file": "asset-failure-800x480.png",
+      "bytes": 29777,
+      "sha256": "c15dda15ae29ddfe6615c656099cc10d11b7cdecafeaf2bcd67540d65367e94e",
+      "reviewed": true
+    },
+    {
+      "file": "intro-classic-1920x1080.png",
+      "bytes": 36886,
+      "sha256": "907720ec1f134f0d7111c7e5e3ef9a315a244b3efd96fc8d68593930f089e9c1",
+      "reviewed": true
+    },
+    {
+      "file": "intro-classic-800x480.png",
+      "bytes": 23085,
+      "sha256": "f426daf325dd186ccd14f265e4c136d3e7a3f88da8217c82bfc998de118457e7",
+      "reviewed": true
+    },
+    {
+      "file": "intro-modern-1920x1080.png",
+      "bytes": 36932,
+      "sha256": "6c44e16f0bb1745304e9aa664267885e87943c5101d9204c9a780933cea731f3",
+      "reviewed": true
+    },
+    {
+      "file": "intro-modern-800x480.png",
+      "bytes": 23277,
+      "sha256": "c5f3920ad39215c1e2e113c2651cc3c0e7316ca5768303ff808f637e661287d3",
+      "reviewed": true
+    },
+    {
+      "file": "loading-1920x1080.png",
+      "bytes": 35523,
+      "sha256": "0b4a2b83bc367132ea755131d09323adda7945eace3f26a54361822ed518c173",
+      "reviewed": true
+    },
+    {
+      "file": "loading-800x480.png",
+      "bytes": 24675,
+      "sha256": "2486fb975eafd5cfdc2076de9077902206d4d1cbf7749dd2ec2939a0c7c48feb",
+      "reviewed": true
+    },
+    {
+      "file": "options-classic-1920x1080.png",
+      "bytes": 30272,
+      "sha256": "3ee71a200f3943bfb84c9a8dce8b847bba610ebcd4336f3a1ac387119de77ee3",
+      "reviewed": true
+    },
+    {
+      "file": "options-classic-800x480.png",
+      "bytes": 20003,
+      "sha256": "d17933e39033cfe64cabc9e780bcfb9c0e197528ab3fd00851fb407cc744b391",
+      "reviewed": true
+    },
+    {
+      "file": "options-modern-1920x1080.png",
+      "bytes": 30526,
+      "sha256": "2145d26eb9adf165a8c5e1dd16e5bff85886809ca2ed929d80c61b8fd0fc6d4e",
+      "reviewed": true
+    },
+    {
+      "file": "options-modern-800x480.png",
+      "bytes": 20207,
+      "sha256": "b53c73d34c5857931b8f05dc184e33be8b5af53a820f5309fcd9f826e76e05dc",
+      "reviewed": true
+    },
+    {
+      "file": "persisted-classic-1920x1080.png",
+      "bytes": 32778,
+      "sha256": "789401ca876964632499ea0b9de2c9ea604677ed0c4e48d4156579a075e10faf",
+      "reviewed": true
+    },
+    {
+      "file": "persisted-classic-800x480.png",
+      "bytes": 22161,
+      "sha256": "188b5c03b698b68e2f03e49e238baa2b15036a9b027b1ab410127779b2c13582",
+      "reviewed": true
+    },
+    {
+      "file": "persisted-modern-1920x1080.png",
+      "bytes": 33060,
+      "sha256": "e30347f1501cd0947ffa2a4004a984b5d07bebc8a14cc93c20333a1abe01c0c1",
+      "reviewed": true
+    },
+    {
+      "file": "persisted-modern-800x480.png",
+      "bytes": 22369,
+      "sha256": "fa288c150fdece59ce32d6efc984ed782051ce7f82332a9adcf68d408ba11200",
+      "reviewed": true
+    },
+    {
+      "file": "skirmish-unavailable-1920x1080.png",
+      "bytes": 25768,
+      "sha256": "161a6c0cda5e777ffa2d617691b860c1467fde01183ee4690bb068a9749b0fe0",
+      "reviewed": true
+    },
+    {
+      "file": "skirmish-unavailable-800x480.png",
+      "bytes": 15717,
+      "sha256": "55033f412f919f5865da6f23c9ec98f3e96cea745f2c12ed2e3dad820afd7b64",
+      "reviewed": true
+    }
+  ],
+  "hygiene": {
+    "status": "passed",
+    "secretPatternHits": 0,
+    "personalEmailHits": 0,
+    "absoluteHomePathsAddedOutsideDocs": 0,
+    "briefInChangeSet": false,
+    "mediaReviewed": 18,
+    "glossaryPathsValid": 929,
+    "parityMatricesValid": true,
+    "composeChanged": false,
+    "desktopAndroidProjectContentChanged": false
+  },
+  "fast": {
+    "status": "failed: two legacy assertions and two passing timing offenders",
+    "observed": 14982,
+    "passed": 14973,
+    "failedAssertions": 2,
+    "skipped": 7,
+    "expectedButMissing": 0,
+    "seconds": 1065.7840169700212,
+    "calibratedLimitSeconds": 11.788063660477452,
+    "timingOffenders": 2,
+    "infrastructurePassed": 9,
+    "coreMainIsolation": "three complete selections: 6551/1/3, 6549/3/3, 6551/1/3",
+    "exactCaseRepetitions": 27,
+    "isolatedWingman": "pass/fail/pass; expected 16, actual 128 in failure",
+    "otherExactCases": "three passes each",
+    "priorHostAbort": "retained in fast-aborted-summary.json; did not recur in three complete Core selections"
+  },
+  "training": {
+    "status": "failed; incomplete repetitions stopped at task time cap",
+    "requestedRepeats": 3,
+    "reminderIsolations": {
+      "Classic": {
+        "passed": 0,
+        "failed": 3,
+        "skipped": 0
+      },
+      "Modern": {
+        "passed": 0,
+        "failed": 3,
+        "skipped": 0
+      }
+    },
+    "strategy": {
+      "initialInvocation": "--no-build --repeat 3",
+      "additionalCohorts": [
+        2,
+        3
+      ],
+      "additionalInvocation": "--no-build --repeat 1",
+      "separateProfiles": true,
+      "separateResults": true,
+      "serialProjectsAndCasesPerCohort": true,
+      "overlappingCohorts": true,
+      "countOnlyCompleteSelections": true
+    },
+    "completeCohorts": 1,
+    "firstCohort": {
+      "ClientCore": {
+        "passed": 126,
+        "failed": 0,
+        "skipped": 0
+      },
+      "MonoGame": {
+        "passed": 290,
+        "failed": 2,
+        "skipped": 2
+      }
+    },
+    "originalInvocationStopped": true,
+    "originalDuplicateContinuationCounted": false,
+    "completeHeadlessSelections": 3,
+    "completeNativeSelections": 1,
+    "stoppedAtTimeCap": true
+  },
+  "captureTotalBytes": 504058,
+  "browser": {
+    "passed": true,
+    "combinations": 4,
+    "loadingStates": 2,
+    "corruptionRetryRecoveries": 2,
+    "downloadedCanvasReviewed": true,
+    "previewSmokePassed": true,
+    "firefox": "Skipped: Firefox executable unavailable; no browser-CDN downloads attempted",
+    "audioGesture": {
+      "passed": true,
+      "contextBeforeClick": false,
+      "contextAfterClick": "running",
+      "sampleRate": 44100,
+      "bufferDurationSeconds": 0.07546485260770976
+    },
+    "textInput": {
+      "typedAndSaved": true,
+      "unfocusedInputIgnored": true,
+      "backspace": true,
+      "maximumPersistedLength": 24,
+      "reloadPreserved": true,
+      "initialHudChoicePreserved": true,
+      "toolbarKeyboardRoundTrip": true,
+      "toolbarEnterKeptMenu": true,
+      "inputResumedAfterToolbar": true,
+      "errors": []
+    }
+  }
+}

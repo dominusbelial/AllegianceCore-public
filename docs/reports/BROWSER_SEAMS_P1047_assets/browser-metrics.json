@@ -1,0 +1,2469 @@
+{
+  "measurements": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "style": "Classic",
+      "browser": "153.0.8010.0",
+      "cold": {
+        "firstFrameMs": 3698.600000023842,
+        "cpuMs": {
+          "median": 0.9000000357627869,
+          "p95": 2,
+          "p99": 4.099999964237213
+        },
+        "rafMs": {
+          "median": 16.69999999999891,
+          "p95": 16.799999999999272,
+          "p99": 16.80000000000109
+        },
+        "managed": {
+          "screen": "Main",
+          "optionsPage": "Root",
+          "invertMouseY": false,
+          "menuSoundEnabled": false,
+          "managedHeapBytes": 15743120,
+          "residentBytes": 2561241,
+          "settingsPending": false,
+          "style": "Classic",
+          "gameStyle": "Classic"
+        },
+        "resources": [
+          {
+            "name": "/play/preview/preview.css",
+            "transferSize": 989,
+            "encodedBodySize": 689
+          },
+          {
+            "name": "/play/preview/menu.css",
+            "transferSize": 490,
+            "encodedBodySize": 190
+          },
+          {
+            "name": "/play/preview/menu.js",
+            "transferSize": 909,
+            "encodedBodySize": 609
+          },
+          {
+            "name": "/play/preview/preview.js",
+            "transferSize": 1926,
+            "encodedBodySize": 1626
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.JSInterop/js/JSObject.10.0.3.js",
+            "transferSize": 1692,
+            "encodedBodySize": 1392
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Window.10.0.3.js",
+            "transferSize": 1731,
+            "encodedBodySize": 1431
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Document.10.0.3.js",
+            "transferSize": 1094,
+            "encodedBodySize": 794
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Navigator.10.0.3.js",
+            "transferSize": 581,
+            "encodedBodySize": 281
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Gamepad.10.0.3.js",
+            "transferSize": 1004,
+            "encodedBodySize": 704
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Media.10.0.3.js",
+            "transferSize": 821,
+            "encodedBodySize": 521
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XHR/js/XHR.10.0.3.js",
+            "transferSize": 858,
+            "encodedBodySize": 558
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/Canvas.10.0.3.js",
+            "transferSize": 1025,
+            "encodedBodySize": 725
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/CanvasGLContext.10.0.3.js",
+            "transferSize": 3638,
+            "encodedBodySize": 3338
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Audio/js/Audio.10.0.3.js",
+            "transferSize": 2896,
+            "encodedBodySize": 2596
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XR/js/XR.10.0.3.js",
+            "transferSize": 2846,
+            "encodedBodySize": 2546
+          },
+          {
+            "name": "/play/preview/_framework/blazor.webassembly.js",
+            "transferSize": 17054,
+            "encodedBodySize": 16754
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.js",
+            "transferSize": 15351,
+            "encodedBodySize": 15051
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.runtime.v2rwe8u38b.js",
+            "transferSize": 47951,
+            "encodedBodySize": 47651
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.6ilbvndvcf.js",
+            "transferSize": 30733,
+            "encodedBodySize": 30433
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.3bptkeu1pi.wasm",
+            "transferSize": 976733,
+            "encodedBodySize": 976433
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.CoreLib.g72gipn4n7.wasm",
+            "transferSize": 555756,
+            "encodedBodySize": 555456
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.JavaScript.dctxscadr2.wasm",
+            "transferSize": 17316,
+            "encodedBodySize": 17016
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Browser.q7qqsvlapw.wasm",
+            "transferSize": 16979,
+            "encodedBodySize": 16679
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Game.Browser.503rflwkvs.wasm",
+            "transferSize": 796180,
+            "encodedBodySize": 795880
+          },
+          {
+            "name": "/play/preview/_framework/Kni.Platform.ltb4q66uun.wasm",
+            "transferSize": 78218,
+            "encodedBodySize": 77918
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.Core.Browser.kntlomntcn.wasm",
+            "transferSize": 581181,
+            "encodedBodySize": 580881
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.8f52cflfh8.wasm",
+            "transferSize": 92352,
+            "encodedBodySize": 92052
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.Web.ugrzbyw4cd.wasm",
+            "transferSize": 19489,
+            "encodedBodySize": 19189
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.WebAssembly.b7i8rps4cs.wasm",
+            "transferSize": 42199,
+            "encodedBodySize": 41899
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Abstractions.g80u52ij8n.wasm",
+            "transferSize": 2635,
+            "encodedBodySize": 2335
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.w4ckz9zukx.wasm",
+            "transferSize": 3952,
+            "encodedBodySize": 3652
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Json.ixktlrimdt.wasm",
+            "transferSize": 4494,
+            "encodedBodySize": 4194
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.b9mcrj62ry.wasm",
+            "transferSize": 19890,
+            "encodedBodySize": 19590
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.xrieqizdf2.wasm",
+            "transferSize": 10370,
+            "encodedBodySize": 10070
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.Abstractions.3c4b31trca.wasm",
+            "transferSize": 11192,
+            "encodedBodySize": 10892
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.vqiumbbk2y.wasm",
+            "transferSize": 7935,
+            "encodedBodySize": 7635
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Options.7f85fudcxr.wasm",
+            "transferSize": 7424,
+            "encodedBodySize": 7124
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Primitives.m33spxmuwm.wasm",
+            "transferSize": 4877,
+            "encodedBodySize": 4577
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.WebAssembly.5ydn64ly88.wasm",
+            "transferSize": 5191,
+            "encodedBodySize": 4891
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.fboh835v4s.wasm",
+            "transferSize": 18780,
+            "encodedBodySize": 18480
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.b0bdpla3wg.wasm",
+            "transferSize": 16553,
+            "encodedBodySize": 16253
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Concurrent.3m6k5f77fd.wasm",
+            "transferSize": 10424,
+            "encodedBodySize": 10124
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.Primitives.alorgfp9u8.wasm",
+            "transferSize": 3713,
+            "encodedBodySize": 3413
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Immutable.1zzu7vo1e1.wasm",
+            "transferSize": 22016,
+            "encodedBodySize": 21716
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.TypeConverter.6pilhedea4.wasm",
+            "transferSize": 2201,
+            "encodedBodySize": 1901
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.s232flgnjt.wasm",
+            "transferSize": 2008,
+            "encodedBodySize": 1708
+          },
+          {
+            "name": "/play/preview/_framework/System.Console.glb7czj7xx.wasm",
+            "transferSize": 6583,
+            "encodedBodySize": 6283
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.DiagnosticSource.wi2m9kb6j2.wasm",
+            "transferSize": 16957,
+            "encodedBodySize": 16657
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.Process.v9xjoafue5.wasm",
+            "transferSize": 2784,
+            "encodedBodySize": 2484
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.m2omew8tg5.wasm",
+            "transferSize": 4610,
+            "encodedBodySize": 4310
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.Brotli.ted0mu3ikz.wasm",
+            "transferSize": 2616,
+            "encodedBodySize": 2316
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Pipelines.uxxioc395v.wasm",
+            "transferSize": 2956,
+            "encodedBodySize": 2656
+          },
+          {
+            "name": "/play/preview/_framework/System.Linq.2iux2onnd2.wasm",
+            "transferSize": 31774,
+            "encodedBodySize": 31474
+          },
+          {
+            "name": "/play/preview/_framework/System.Memory.cjpm8b2rso.wasm",
+            "transferSize": 6446,
+            "encodedBodySize": 6146
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.Json.3v67t4u4wf.wasm",
+            "transferSize": 6825,
+            "encodedBodySize": 6525
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.5h78xcmpzk.wasm",
+            "transferSize": 53147,
+            "encodedBodySize": 52847
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Primitives.iq0vh16ox0.wasm",
+            "transferSize": 3125,
+            "encodedBodySize": 2825
+          },
+          {
+            "name": "/play/preview/_framework/System.Numerics.Vectors.pcrvftz775.wasm",
+            "transferSize": 2005,
+            "encodedBodySize": 1705
+          },
+          {
+            "name": "/play/preview/_framework/System.ObjectModel.cpkfv2suck.wasm",
+            "transferSize": 2423,
+            "encodedBodySize": 2123
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.Uri.c6ifxx6pt5.wasm",
+            "transferSize": 27685,
+            "encodedBodySize": 27385
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.tloz5ynh2z.wasm",
+            "transferSize": 3252,
+            "encodedBodySize": 2952
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Numerics.yunqabjqim.wasm",
+            "transferSize": 24904,
+            "encodedBodySize": 24604
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Serialization.Primitives.h069wxo4le.wasm",
+            "transferSize": 2278,
+            "encodedBodySize": 1978
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.q7du29sh1y.wasm",
+            "transferSize": 3736,
+            "encodedBodySize": 3436
+          },
+          {
+            "name": "/play/preview/_framework/System.Security.Cryptography.mksvkm9j39.wasm",
+            "transferSize": 9606,
+            "encodedBodySize": 9306
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Encodings.Web.29zaodjq3a.wasm",
+            "transferSize": 10326,
+            "encodedBodySize": 10026
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Json.h2j8wqarm4.wasm",
+            "transferSize": 133138,
+            "encodedBodySize": 132838
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.RegularExpressions.ed6wk9b3lk.wasm",
+            "transferSize": 100910,
+            "encodedBodySize": 100610
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.Tasks.Parallel.55pwlsk5l2.wasm",
+            "transferSize": 6519,
+            "encodedBodySize": 6219
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.bc1yavbj68.wasm",
+            "transferSize": 4047,
+            "encodedBodySize": 3747
+          },
+          {
+            "name": "/play/preview/_framework/System.bzv2fdl90t.wasm",
+            "transferSize": 1770,
+            "encodedBodySize": 1470
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Audio.8ly32jx0rq.wasm",
+            "transferSize": 7899,
+            "encodedBodySize": 7599
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Content.czahhc8cnd.wasm",
+            "transferSize": 19332,
+            "encodedBodySize": 19032
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Devices.deb34eci89.wasm",
+            "transferSize": 6340,
+            "encodedBodySize": 6040
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Game.r61k3or4ub.wasm",
+            "transferSize": 14015,
+            "encodedBodySize": 13715
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Graphics.sb95sf4j83.wasm",
+            "transferSize": 62156,
+            "encodedBodySize": 61856
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Input.xywwla7fe3.wasm",
+            "transferSize": 27583,
+            "encodedBodySize": 27283
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Media.361q7jlovk.wasm",
+            "transferSize": 5251,
+            "encodedBodySize": 4951
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Storage.qhs0x804ug.wasm",
+            "transferSize": 5149,
+            "encodedBodySize": 4849
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.XR.04xxp8tg5m.wasm",
+            "transferSize": 3892,
+            "encodedBodySize": 3592
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.qqpfue592z.wasm",
+            "transferSize": 31633,
+            "encodedBodySize": 31333
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Audio.a8zkntbvvz.wasm",
+            "transferSize": 8245,
+            "encodedBodySize": 7945
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Canvas.zslu8oeo32.wasm",
+            "transferSize": 18717,
+            "encodedBodySize": 18417
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Dom.l0it6flgje.wasm",
+            "transferSize": 10536,
+            "encodedBodySize": 10236
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.JSInterop.yvzx4kyi38.wasm",
+            "transferSize": 8857,
+            "encodedBodySize": 8557
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XHR.jkzbra45c1.wasm",
+            "transferSize": 2914,
+            "encodedBodySize": 2614
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XR.12d3u3erzy.wasm",
+            "transferSize": 9560,
+            "encodedBodySize": 9260
+          },
+          {
+            "name": "/play/preview/_framework/icudt_EFIGS.tptq2av103.dat",
+            "transferSize": 144283,
+            "encodedBodySize": 143983
+          },
+          {
+            "name": "/play/preview/game-platform.js",
+            "transferSize": 2942,
+            "encodedBodySize": 2642
+          },
+          {
+            "name": "/play/preview/starter-manifest.json",
+            "transferSize": 8480,
+            "encodedBodySize": 8180
+          },
+          {
+            "name": "/play/preview/packs/51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+            "transferSize": 7741,
+            "encodedBodySize": 7441
+          },
+          {
+            "name": "/play/preview/packs/d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+            "transferSize": 16433,
+            "encodedBodySize": 16133
+          },
+          {
+            "name": "/play/preview/packs/1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+            "transferSize": 5592,
+            "encodedBodySize": 5292
+          },
+          {
+            "name": "/play/preview/packs/4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+            "transferSize": 11202,
+            "encodedBodySize": 10902
+          },
+          {
+            "name": "/play/preview/packs/66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+            "transferSize": 6516,
+            "encodedBodySize": 6216
+          },
+          {
+            "name": "/play/preview/packs/b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+            "transferSize": 12405,
+            "encodedBodySize": 12105
+          },
+          {
+            "name": "/play/preview/packs/7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+            "transferSize": 7292,
+            "encodedBodySize": 6992
+          },
+          {
+            "name": "/play/preview/packs/f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+            "transferSize": 14356,
+            "encodedBodySize": 14056
+          },
+          {
+            "name": "/play/preview/packs/03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+            "transferSize": 4611,
+            "encodedBodySize": 4311
+          },
+          {
+            "name": "/play/preview/packs/05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+            "transferSize": 9418,
+            "encodedBodySize": 9118
+          },
+          {
+            "name": "/play/preview/packs/3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+            "transferSize": 6245,
+            "encodedBodySize": 5945
+          },
+          {
+            "name": "/play/preview/packs/ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+            "transferSize": 12359,
+            "encodedBodySize": 12059
+          },
+          {
+            "name": "/play/preview/packs/c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+            "transferSize": 6924,
+            "encodedBodySize": 6624
+          },
+          {
+            "name": "/play/preview/packs/fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+            "transferSize": 14135,
+            "encodedBodySize": 13835
+          },
+          {
+            "name": "/play/preview/packs/6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+            "transferSize": 6520,
+            "encodedBodySize": 6220
+          },
+          {
+            "name": "/play/preview/packs/f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+            "transferSize": 12539,
+            "encodedBodySize": 12239
+          },
+          {
+            "name": "/play/preview/packs/cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+            "transferSize": 48780,
+            "encodedBodySize": 48480
+          },
+          {
+            "name": "/play/preview/packs/0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+            "transferSize": 1906,
+            "encodedBodySize": 1606
+          },
+          {
+            "name": "/play/preview/packs/f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+            "transferSize": 65351,
+            "encodedBodySize": 65051
+          }
+        ],
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "transferredBytes": 4629148,
+        "requests": 110,
+        "cachedResponses": 0,
+        "encodings": {
+          "br": 90,
+          "identity": 1,
+          "gzip": 19
+        }
+      },
+      "warm": {
+        "transferredBytes": 36123,
+        "requests": 91,
+        "cachedResponses": 69,
+        "encodings": {
+          "br": 90,
+          "identity": 1
+        },
+        "firstFrameMs": 780.3000000119209,
+        "assetRequests": 0
+      },
+      "logs": [
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch."
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "style": "Modern",
+      "browser": "153.0.8010.0",
+      "cold": {
+        "firstFrameMs": 1227.3999999761581,
+        "cpuMs": {
+          "median": 0.9000000357627869,
+          "p95": 1.5,
+          "p99": 2.5
+        },
+        "rafMs": {
+          "median": 16.699999999999818,
+          "p95": 16.700000000000728,
+          "p99": 16.80000000000109
+        },
+        "managed": {
+          "screen": "Main",
+          "optionsPage": "Root",
+          "invertMouseY": false,
+          "menuSoundEnabled": false,
+          "managedHeapBytes": 15754392,
+          "residentBytes": 2561241,
+          "settingsPending": false,
+          "style": "Modern",
+          "gameStyle": "Modern"
+        },
+        "resources": [
+          {
+            "name": "/play/preview/preview.css",
+            "transferSize": 989,
+            "encodedBodySize": 689
+          },
+          {
+            "name": "/play/preview/menu.css",
+            "transferSize": 490,
+            "encodedBodySize": 190
+          },
+          {
+            "name": "/play/preview/menu.js",
+            "transferSize": 909,
+            "encodedBodySize": 609
+          },
+          {
+            "name": "/play/preview/preview.js",
+            "transferSize": 1926,
+            "encodedBodySize": 1626
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.JSInterop/js/JSObject.10.0.3.js",
+            "transferSize": 1692,
+            "encodedBodySize": 1392
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Window.10.0.3.js",
+            "transferSize": 1731,
+            "encodedBodySize": 1431
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Document.10.0.3.js",
+            "transferSize": 1094,
+            "encodedBodySize": 794
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Navigator.10.0.3.js",
+            "transferSize": 581,
+            "encodedBodySize": 281
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Gamepad.10.0.3.js",
+            "transferSize": 1004,
+            "encodedBodySize": 704
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Media.10.0.3.js",
+            "transferSize": 821,
+            "encodedBodySize": 521
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XHR/js/XHR.10.0.3.js",
+            "transferSize": 858,
+            "encodedBodySize": 558
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/Canvas.10.0.3.js",
+            "transferSize": 1025,
+            "encodedBodySize": 725
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/CanvasGLContext.10.0.3.js",
+            "transferSize": 3638,
+            "encodedBodySize": 3338
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Audio/js/Audio.10.0.3.js",
+            "transferSize": 2896,
+            "encodedBodySize": 2596
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XR/js/XR.10.0.3.js",
+            "transferSize": 2846,
+            "encodedBodySize": 2546
+          },
+          {
+            "name": "/play/preview/_framework/blazor.webassembly.js",
+            "transferSize": 17054,
+            "encodedBodySize": 16754
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.js",
+            "transferSize": 15351,
+            "encodedBodySize": 15051
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.runtime.v2rwe8u38b.js",
+            "transferSize": 47951,
+            "encodedBodySize": 47651
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.6ilbvndvcf.js",
+            "transferSize": 30733,
+            "encodedBodySize": 30433
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.3bptkeu1pi.wasm",
+            "transferSize": 976733,
+            "encodedBodySize": 976433
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.CoreLib.g72gipn4n7.wasm",
+            "transferSize": 555756,
+            "encodedBodySize": 555456
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.JavaScript.dctxscadr2.wasm",
+            "transferSize": 17316,
+            "encodedBodySize": 17016
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Browser.q7qqsvlapw.wasm",
+            "transferSize": 16979,
+            "encodedBodySize": 16679
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Game.Browser.503rflwkvs.wasm",
+            "transferSize": 796180,
+            "encodedBodySize": 795880
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.Core.Browser.kntlomntcn.wasm",
+            "transferSize": 581181,
+            "encodedBodySize": 580881
+          },
+          {
+            "name": "/play/preview/_framework/Kni.Platform.ltb4q66uun.wasm",
+            "transferSize": 78218,
+            "encodedBodySize": 77918
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.8f52cflfh8.wasm",
+            "transferSize": 92352,
+            "encodedBodySize": 92052
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.Web.ugrzbyw4cd.wasm",
+            "transferSize": 19489,
+            "encodedBodySize": 19189
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.WebAssembly.b7i8rps4cs.wasm",
+            "transferSize": 42199,
+            "encodedBodySize": 41899
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Abstractions.g80u52ij8n.wasm",
+            "transferSize": 2635,
+            "encodedBodySize": 2335
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Json.ixktlrimdt.wasm",
+            "transferSize": 4494,
+            "encodedBodySize": 4194
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.w4ckz9zukx.wasm",
+            "transferSize": 3952,
+            "encodedBodySize": 3652
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.b9mcrj62ry.wasm",
+            "transferSize": 19890,
+            "encodedBodySize": 19590
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.xrieqizdf2.wasm",
+            "transferSize": 10370,
+            "encodedBodySize": 10070
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.Abstractions.3c4b31trca.wasm",
+            "transferSize": 11192,
+            "encodedBodySize": 10892
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.vqiumbbk2y.wasm",
+            "transferSize": 7935,
+            "encodedBodySize": 7635
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Options.7f85fudcxr.wasm",
+            "transferSize": 7424,
+            "encodedBodySize": 7124
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Primitives.m33spxmuwm.wasm",
+            "transferSize": 4877,
+            "encodedBodySize": 4577
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.WebAssembly.5ydn64ly88.wasm",
+            "transferSize": 5191,
+            "encodedBodySize": 4891
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.fboh835v4s.wasm",
+            "transferSize": 18780,
+            "encodedBodySize": 18480
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.b0bdpla3wg.wasm",
+            "transferSize": 16553,
+            "encodedBodySize": 16253
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Concurrent.3m6k5f77fd.wasm",
+            "transferSize": 10424,
+            "encodedBodySize": 10124
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.Primitives.alorgfp9u8.wasm",
+            "transferSize": 3713,
+            "encodedBodySize": 3413
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Immutable.1zzu7vo1e1.wasm",
+            "transferSize": 22016,
+            "encodedBodySize": 21716
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.TypeConverter.6pilhedea4.wasm",
+            "transferSize": 2201,
+            "encodedBodySize": 1901
+          },
+          {
+            "name": "/play/preview/_framework/System.Console.glb7czj7xx.wasm",
+            "transferSize": 6583,
+            "encodedBodySize": 6283
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.s232flgnjt.wasm",
+            "transferSize": 2008,
+            "encodedBodySize": 1708
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.DiagnosticSource.wi2m9kb6j2.wasm",
+            "transferSize": 16957,
+            "encodedBodySize": 16657
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.Process.v9xjoafue5.wasm",
+            "transferSize": 2784,
+            "encodedBodySize": 2484
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.m2omew8tg5.wasm",
+            "transferSize": 4610,
+            "encodedBodySize": 4310
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.Brotli.ted0mu3ikz.wasm",
+            "transferSize": 2616,
+            "encodedBodySize": 2316
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Pipelines.uxxioc395v.wasm",
+            "transferSize": 2956,
+            "encodedBodySize": 2656
+          },
+          {
+            "name": "/play/preview/_framework/System.Memory.cjpm8b2rso.wasm",
+            "transferSize": 6446,
+            "encodedBodySize": 6146
+          },
+          {
+            "name": "/play/preview/_framework/System.Linq.2iux2onnd2.wasm",
+            "transferSize": 31774,
+            "encodedBodySize": 31474
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.Json.3v67t4u4wf.wasm",
+            "transferSize": 6825,
+            "encodedBodySize": 6525
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.5h78xcmpzk.wasm",
+            "transferSize": 53147,
+            "encodedBodySize": 52847
+          },
+          {
+            "name": "/play/preview/_framework/System.Numerics.Vectors.pcrvftz775.wasm",
+            "transferSize": 2005,
+            "encodedBodySize": 1705
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Primitives.iq0vh16ox0.wasm",
+            "transferSize": 3125,
+            "encodedBodySize": 2825
+          },
+          {
+            "name": "/play/preview/_framework/System.ObjectModel.cpkfv2suck.wasm",
+            "transferSize": 2423,
+            "encodedBodySize": 2123
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.Uri.c6ifxx6pt5.wasm",
+            "transferSize": 27685,
+            "encodedBodySize": 27385
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.tloz5ynh2z.wasm",
+            "transferSize": 3252,
+            "encodedBodySize": 2952
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Numerics.yunqabjqim.wasm",
+            "transferSize": 24904,
+            "encodedBodySize": 24604
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Serialization.Primitives.h069wxo4le.wasm",
+            "transferSize": 2278,
+            "encodedBodySize": 1978
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.q7du29sh1y.wasm",
+            "transferSize": 3736,
+            "encodedBodySize": 3436
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Encodings.Web.29zaodjq3a.wasm",
+            "transferSize": 10326,
+            "encodedBodySize": 10026
+          },
+          {
+            "name": "/play/preview/_framework/System.Security.Cryptography.mksvkm9j39.wasm",
+            "transferSize": 9606,
+            "encodedBodySize": 9306
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Json.h2j8wqarm4.wasm",
+            "transferSize": 133138,
+            "encodedBodySize": 132838
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.RegularExpressions.ed6wk9b3lk.wasm",
+            "transferSize": 100910,
+            "encodedBodySize": 100610
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.Tasks.Parallel.55pwlsk5l2.wasm",
+            "transferSize": 6519,
+            "encodedBodySize": 6219
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.bc1yavbj68.wasm",
+            "transferSize": 4047,
+            "encodedBodySize": 3747
+          },
+          {
+            "name": "/play/preview/_framework/System.bzv2fdl90t.wasm",
+            "transferSize": 1770,
+            "encodedBodySize": 1470
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Audio.8ly32jx0rq.wasm",
+            "transferSize": 7899,
+            "encodedBodySize": 7599
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Content.czahhc8cnd.wasm",
+            "transferSize": 19332,
+            "encodedBodySize": 19032
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Game.r61k3or4ub.wasm",
+            "transferSize": 14015,
+            "encodedBodySize": 13715
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Devices.deb34eci89.wasm",
+            "transferSize": 6340,
+            "encodedBodySize": 6040
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Graphics.sb95sf4j83.wasm",
+            "transferSize": 62156,
+            "encodedBodySize": 61856
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Input.xywwla7fe3.wasm",
+            "transferSize": 27583,
+            "encodedBodySize": 27283
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Media.361q7jlovk.wasm",
+            "transferSize": 5251,
+            "encodedBodySize": 4951
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Storage.qhs0x804ug.wasm",
+            "transferSize": 5149,
+            "encodedBodySize": 4849
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.XR.04xxp8tg5m.wasm",
+            "transferSize": 3892,
+            "encodedBodySize": 3592
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.qqpfue592z.wasm",
+            "transferSize": 31633,
+            "encodedBodySize": 31333
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Audio.a8zkntbvvz.wasm",
+            "transferSize": 8245,
+            "encodedBodySize": 7945
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Canvas.zslu8oeo32.wasm",
+            "transferSize": 18717,
+            "encodedBodySize": 18417
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Dom.l0it6flgje.wasm",
+            "transferSize": 10536,
+            "encodedBodySize": 10236
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.JSInterop.yvzx4kyi38.wasm",
+            "transferSize": 8857,
+            "encodedBodySize": 8557
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XHR.jkzbra45c1.wasm",
+            "transferSize": 2914,
+            "encodedBodySize": 2614
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XR.12d3u3erzy.wasm",
+            "transferSize": 9560,
+            "encodedBodySize": 9260
+          },
+          {
+            "name": "/play/preview/_framework/icudt_EFIGS.tptq2av103.dat",
+            "transferSize": 144283,
+            "encodedBodySize": 143983
+          },
+          {
+            "name": "/play/preview/game-platform.js",
+            "transferSize": 2942,
+            "encodedBodySize": 2642
+          },
+          {
+            "name": "/play/preview/starter-manifest.json",
+            "transferSize": 8480,
+            "encodedBodySize": 8180
+          },
+          {
+            "name": "/play/preview/packs/51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+            "transferSize": 7741,
+            "encodedBodySize": 7441
+          },
+          {
+            "name": "/play/preview/packs/d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+            "transferSize": 16433,
+            "encodedBodySize": 16133
+          },
+          {
+            "name": "/play/preview/packs/1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+            "transferSize": 5592,
+            "encodedBodySize": 5292
+          },
+          {
+            "name": "/play/preview/packs/4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+            "transferSize": 11202,
+            "encodedBodySize": 10902
+          },
+          {
+            "name": "/play/preview/packs/66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+            "transferSize": 6516,
+            "encodedBodySize": 6216
+          },
+          {
+            "name": "/play/preview/packs/b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+            "transferSize": 12405,
+            "encodedBodySize": 12105
+          },
+          {
+            "name": "/play/preview/packs/7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+            "transferSize": 7292,
+            "encodedBodySize": 6992
+          },
+          {
+            "name": "/play/preview/packs/f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+            "transferSize": 14356,
+            "encodedBodySize": 14056
+          },
+          {
+            "name": "/play/preview/packs/03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+            "transferSize": 4611,
+            "encodedBodySize": 4311
+          },
+          {
+            "name": "/play/preview/packs/05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+            "transferSize": 9418,
+            "encodedBodySize": 9118
+          },
+          {
+            "name": "/play/preview/packs/3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+            "transferSize": 6245,
+            "encodedBodySize": 5945
+          },
+          {
+            "name": "/play/preview/packs/ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+            "transferSize": 12359,
+            "encodedBodySize": 12059
+          },
+          {
+            "name": "/play/preview/packs/c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+            "transferSize": 6924,
+            "encodedBodySize": 6624
+          },
+          {
+            "name": "/play/preview/packs/fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+            "transferSize": 14135,
+            "encodedBodySize": 13835
+          },
+          {
+            "name": "/play/preview/packs/6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+            "transferSize": 6520,
+            "encodedBodySize": 6220
+          },
+          {
+            "name": "/play/preview/packs/f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+            "transferSize": 12539,
+            "encodedBodySize": 12239
+          },
+          {
+            "name": "/play/preview/packs/cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+            "transferSize": 48780,
+            "encodedBodySize": 48480
+          },
+          {
+            "name": "/play/preview/packs/0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+            "transferSize": 1906,
+            "encodedBodySize": 1606
+          },
+          {
+            "name": "/play/preview/packs/f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+            "transferSize": 65351,
+            "encodedBodySize": 65051
+          }
+        ],
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "transferredBytes": 4629148,
+        "requests": 110,
+        "cachedResponses": 0,
+        "encodings": {
+          "br": 90,
+          "identity": 1,
+          "gzip": 19
+        }
+      },
+      "warm": {
+        "transferredBytes": 36123,
+        "requests": 91,
+        "cachedResponses": 69,
+        "encodings": {
+          "br": 90,
+          "identity": 1
+        },
+        "firstFrameMs": 789.5,
+        "assetRequests": 0
+      },
+      "logs": [
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch."
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 480
+      },
+      "style": "Classic",
+      "browser": "153.0.8010.0",
+      "cold": {
+        "firstFrameMs": 1058.8999999761581,
+        "cpuMs": {
+          "median": 0.800000011920929,
+          "p95": 1.399999976158142,
+          "p99": 2.099999964237213
+        },
+        "rafMs": {
+          "median": 16.699999999999818,
+          "p95": 16.700000000000728,
+          "p99": 16.800000000000182
+        },
+        "managed": {
+          "screen": "Main",
+          "optionsPage": "Root",
+          "invertMouseY": false,
+          "menuSoundEnabled": false,
+          "managedHeapBytes": 15743024,
+          "residentBytes": 2561241,
+          "settingsPending": false,
+          "style": "Classic",
+          "gameStyle": "Classic"
+        },
+        "resources": [
+          {
+            "name": "/play/preview/preview.css",
+            "transferSize": 989,
+            "encodedBodySize": 689
+          },
+          {
+            "name": "/play/preview/menu.css",
+            "transferSize": 490,
+            "encodedBodySize": 190
+          },
+          {
+            "name": "/play/preview/menu.js",
+            "transferSize": 909,
+            "encodedBodySize": 609
+          },
+          {
+            "name": "/play/preview/preview.js",
+            "transferSize": 1926,
+            "encodedBodySize": 1626
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.JSInterop/js/JSObject.10.0.3.js",
+            "transferSize": 1692,
+            "encodedBodySize": 1392
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Window.10.0.3.js",
+            "transferSize": 1731,
+            "encodedBodySize": 1431
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Document.10.0.3.js",
+            "transferSize": 1094,
+            "encodedBodySize": 794
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Navigator.10.0.3.js",
+            "transferSize": 581,
+            "encodedBodySize": 281
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Gamepad.10.0.3.js",
+            "transferSize": 1004,
+            "encodedBodySize": 704
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Media.10.0.3.js",
+            "transferSize": 821,
+            "encodedBodySize": 521
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XHR/js/XHR.10.0.3.js",
+            "transferSize": 858,
+            "encodedBodySize": 558
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/Canvas.10.0.3.js",
+            "transferSize": 1025,
+            "encodedBodySize": 725
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/CanvasGLContext.10.0.3.js",
+            "transferSize": 3638,
+            "encodedBodySize": 3338
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Audio/js/Audio.10.0.3.js",
+            "transferSize": 2896,
+            "encodedBodySize": 2596
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XR/js/XR.10.0.3.js",
+            "transferSize": 2846,
+            "encodedBodySize": 2546
+          },
+          {
+            "name": "/play/preview/_framework/blazor.webassembly.js",
+            "transferSize": 17054,
+            "encodedBodySize": 16754
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.js",
+            "transferSize": 15351,
+            "encodedBodySize": 15051
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.runtime.v2rwe8u38b.js",
+            "transferSize": 47951,
+            "encodedBodySize": 47651
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.6ilbvndvcf.js",
+            "transferSize": 30733,
+            "encodedBodySize": 30433
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.3bptkeu1pi.wasm",
+            "transferSize": 976733,
+            "encodedBodySize": 976433
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.CoreLib.g72gipn4n7.wasm",
+            "transferSize": 555756,
+            "encodedBodySize": 555456
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.JavaScript.dctxscadr2.wasm",
+            "transferSize": 17316,
+            "encodedBodySize": 17016
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Browser.q7qqsvlapw.wasm",
+            "transferSize": 16979,
+            "encodedBodySize": 16679
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Game.Browser.503rflwkvs.wasm",
+            "transferSize": 796180,
+            "encodedBodySize": 795880
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.Core.Browser.kntlomntcn.wasm",
+            "transferSize": 581181,
+            "encodedBodySize": 580881
+          },
+          {
+            "name": "/play/preview/_framework/Kni.Platform.ltb4q66uun.wasm",
+            "transferSize": 78218,
+            "encodedBodySize": 77918
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.8f52cflfh8.wasm",
+            "transferSize": 92352,
+            "encodedBodySize": 92052
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.Web.ugrzbyw4cd.wasm",
+            "transferSize": 19489,
+            "encodedBodySize": 19189
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.WebAssembly.b7i8rps4cs.wasm",
+            "transferSize": 42199,
+            "encodedBodySize": 41899
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Abstractions.g80u52ij8n.wasm",
+            "transferSize": 2635,
+            "encodedBodySize": 2335
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Json.ixktlrimdt.wasm",
+            "transferSize": 4494,
+            "encodedBodySize": 4194
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.w4ckz9zukx.wasm",
+            "transferSize": 3952,
+            "encodedBodySize": 3652
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.b9mcrj62ry.wasm",
+            "transferSize": 19890,
+            "encodedBodySize": 19590
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.xrieqizdf2.wasm",
+            "transferSize": 10370,
+            "encodedBodySize": 10070
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.Abstractions.3c4b31trca.wasm",
+            "transferSize": 11192,
+            "encodedBodySize": 10892
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.vqiumbbk2y.wasm",
+            "transferSize": 7935,
+            "encodedBodySize": 7635
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Options.7f85fudcxr.wasm",
+            "transferSize": 7424,
+            "encodedBodySize": 7124
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Primitives.m33spxmuwm.wasm",
+            "transferSize": 4877,
+            "encodedBodySize": 4577
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.WebAssembly.5ydn64ly88.wasm",
+            "transferSize": 5191,
+            "encodedBodySize": 4891
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.fboh835v4s.wasm",
+            "transferSize": 18780,
+            "encodedBodySize": 18480
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.b0bdpla3wg.wasm",
+            "transferSize": 16553,
+            "encodedBodySize": 16253
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Concurrent.3m6k5f77fd.wasm",
+            "transferSize": 10424,
+            "encodedBodySize": 10124
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.Primitives.alorgfp9u8.wasm",
+            "transferSize": 3713,
+            "encodedBodySize": 3413
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Immutable.1zzu7vo1e1.wasm",
+            "transferSize": 22016,
+            "encodedBodySize": 21716
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.TypeConverter.6pilhedea4.wasm",
+            "transferSize": 2201,
+            "encodedBodySize": 1901
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.s232flgnjt.wasm",
+            "transferSize": 2008,
+            "encodedBodySize": 1708
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.DiagnosticSource.wi2m9kb6j2.wasm",
+            "transferSize": 16957,
+            "encodedBodySize": 16657
+          },
+          {
+            "name": "/play/preview/_framework/System.Console.glb7czj7xx.wasm",
+            "transferSize": 6583,
+            "encodedBodySize": 6283
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.Process.v9xjoafue5.wasm",
+            "transferSize": 2784,
+            "encodedBodySize": 2484
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.m2omew8tg5.wasm",
+            "transferSize": 4610,
+            "encodedBodySize": 4310
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Pipelines.uxxioc395v.wasm",
+            "transferSize": 2956,
+            "encodedBodySize": 2656
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.Brotli.ted0mu3ikz.wasm",
+            "transferSize": 2616,
+            "encodedBodySize": 2316
+          },
+          {
+            "name": "/play/preview/_framework/System.Memory.cjpm8b2rso.wasm",
+            "transferSize": 6446,
+            "encodedBodySize": 6146
+          },
+          {
+            "name": "/play/preview/_framework/System.Linq.2iux2onnd2.wasm",
+            "transferSize": 31774,
+            "encodedBodySize": 31474
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.Json.3v67t4u4wf.wasm",
+            "transferSize": 6825,
+            "encodedBodySize": 6525
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.5h78xcmpzk.wasm",
+            "transferSize": 53147,
+            "encodedBodySize": 52847
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Primitives.iq0vh16ox0.wasm",
+            "transferSize": 3125,
+            "encodedBodySize": 2825
+          },
+          {
+            "name": "/play/preview/_framework/System.Numerics.Vectors.pcrvftz775.wasm",
+            "transferSize": 2005,
+            "encodedBodySize": 1705
+          },
+          {
+            "name": "/play/preview/_framework/System.ObjectModel.cpkfv2suck.wasm",
+            "transferSize": 2423,
+            "encodedBodySize": 2123
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.tloz5ynh2z.wasm",
+            "transferSize": 3252,
+            "encodedBodySize": 2952
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.Uri.c6ifxx6pt5.wasm",
+            "transferSize": 27685,
+            "encodedBodySize": 27385
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Numerics.yunqabjqim.wasm",
+            "transferSize": 24904,
+            "encodedBodySize": 24604
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.q7du29sh1y.wasm",
+            "transferSize": 3736,
+            "encodedBodySize": 3436
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Serialization.Primitives.h069wxo4le.wasm",
+            "transferSize": 2278,
+            "encodedBodySize": 1978
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Encodings.Web.29zaodjq3a.wasm",
+            "transferSize": 10326,
+            "encodedBodySize": 10026
+          },
+          {
+            "name": "/play/preview/_framework/System.Security.Cryptography.mksvkm9j39.wasm",
+            "transferSize": 9606,
+            "encodedBodySize": 9306
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Json.h2j8wqarm4.wasm",
+            "transferSize": 133138,
+            "encodedBodySize": 132838
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.Tasks.Parallel.55pwlsk5l2.wasm",
+            "transferSize": 6519,
+            "encodedBodySize": 6219
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.RegularExpressions.ed6wk9b3lk.wasm",
+            "transferSize": 100910,
+            "encodedBodySize": 100610
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.bc1yavbj68.wasm",
+            "transferSize": 4047,
+            "encodedBodySize": 3747
+          },
+          {
+            "name": "/play/preview/_framework/System.bzv2fdl90t.wasm",
+            "transferSize": 1770,
+            "encodedBodySize": 1470
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Audio.8ly32jx0rq.wasm",
+            "transferSize": 7899,
+            "encodedBodySize": 7599
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Content.czahhc8cnd.wasm",
+            "transferSize": 19332,
+            "encodedBodySize": 19032
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Devices.deb34eci89.wasm",
+            "transferSize": 6340,
+            "encodedBodySize": 6040
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Game.r61k3or4ub.wasm",
+            "transferSize": 14015,
+            "encodedBodySize": 13715
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Graphics.sb95sf4j83.wasm",
+            "transferSize": 62156,
+            "encodedBodySize": 61856
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Input.xywwla7fe3.wasm",
+            "transferSize": 27583,
+            "encodedBodySize": 27283
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Storage.qhs0x804ug.wasm",
+            "transferSize": 5149,
+            "encodedBodySize": 4849
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.XR.04xxp8tg5m.wasm",
+            "transferSize": 3892,
+            "encodedBodySize": 3592
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Media.361q7jlovk.wasm",
+            "transferSize": 5251,
+            "encodedBodySize": 4951
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.qqpfue592z.wasm",
+            "transferSize": 31633,
+            "encodedBodySize": 31333
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Audio.a8zkntbvvz.wasm",
+            "transferSize": 8245,
+            "encodedBodySize": 7945
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Canvas.zslu8oeo32.wasm",
+            "transferSize": 18717,
+            "encodedBodySize": 18417
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Dom.l0it6flgje.wasm",
+            "transferSize": 10536,
+            "encodedBodySize": 10236
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XHR.jkzbra45c1.wasm",
+            "transferSize": 2914,
+            "encodedBodySize": 2614
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XR.12d3u3erzy.wasm",
+            "transferSize": 9560,
+            "encodedBodySize": 9260
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.JSInterop.yvzx4kyi38.wasm",
+            "transferSize": 8857,
+            "encodedBodySize": 8557
+          },
+          {
+            "name": "/play/preview/_framework/icudt_EFIGS.tptq2av103.dat",
+            "transferSize": 144283,
+            "encodedBodySize": 143983
+          },
+          {
+            "name": "/play/preview/game-platform.js",
+            "transferSize": 2942,
+            "encodedBodySize": 2642
+          },
+          {
+            "name": "/play/preview/starter-manifest.json",
+            "transferSize": 8480,
+            "encodedBodySize": 8180
+          },
+          {
+            "name": "/play/preview/packs/51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+            "transferSize": 7741,
+            "encodedBodySize": 7441
+          },
+          {
+            "name": "/play/preview/packs/d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+            "transferSize": 16433,
+            "encodedBodySize": 16133
+          },
+          {
+            "name": "/play/preview/packs/1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+            "transferSize": 5592,
+            "encodedBodySize": 5292
+          },
+          {
+            "name": "/play/preview/packs/4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+            "transferSize": 11202,
+            "encodedBodySize": 10902
+          },
+          {
+            "name": "/play/preview/packs/66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+            "transferSize": 6516,
+            "encodedBodySize": 6216
+          },
+          {
+            "name": "/play/preview/packs/b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+            "transferSize": 12405,
+            "encodedBodySize": 12105
+          },
+          {
+            "name": "/play/preview/packs/7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+            "transferSize": 7292,
+            "encodedBodySize": 6992
+          },
+          {
+            "name": "/play/preview/packs/f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+            "transferSize": 14356,
+            "encodedBodySize": 14056
+          },
+          {
+            "name": "/play/preview/packs/03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+            "transferSize": 4611,
+            "encodedBodySize": 4311
+          },
+          {
+            "name": "/play/preview/packs/05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+            "transferSize": 9418,
+            "encodedBodySize": 9118
+          },
+          {
+            "name": "/play/preview/packs/3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+            "transferSize": 6245,
+            "encodedBodySize": 5945
+          },
+          {
+            "name": "/play/preview/packs/ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+            "transferSize": 12359,
+            "encodedBodySize": 12059
+          },
+          {
+            "name": "/play/preview/packs/c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+            "transferSize": 6924,
+            "encodedBodySize": 6624
+          },
+          {
+            "name": "/play/preview/packs/fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+            "transferSize": 14135,
+            "encodedBodySize": 13835
+          },
+          {
+            "name": "/play/preview/packs/6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+            "transferSize": 6520,
+            "encodedBodySize": 6220
+          },
+          {
+            "name": "/play/preview/packs/f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+            "transferSize": 12539,
+            "encodedBodySize": 12239
+          },
+          {
+            "name": "/play/preview/packs/cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+            "transferSize": 48780,
+            "encodedBodySize": 48480
+          },
+          {
+            "name": "/play/preview/packs/0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+            "transferSize": 1906,
+            "encodedBodySize": 1606
+          },
+          {
+            "name": "/play/preview/packs/f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+            "transferSize": 65351,
+            "encodedBodySize": 65051
+          }
+        ],
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "transferredBytes": 4629148,
+        "requests": 110,
+        "cachedResponses": 0,
+        "encodings": {
+          "br": 90,
+          "identity": 1,
+          "gzip": 19
+        }
+      },
+      "warm": {
+        "transferredBytes": 36123,
+        "requests": 91,
+        "cachedResponses": 69,
+        "encodings": {
+          "br": 90,
+          "identity": 1
+        },
+        "firstFrameMs": 771,
+        "assetRequests": 0
+      },
+      "logs": [
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch."
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 480
+      },
+      "style": "Modern",
+      "browser": "153.0.8010.0",
+      "cold": {
+        "firstFrameMs": 992.6000000238419,
+        "cpuMs": {
+          "median": 0.800000011920929,
+          "p95": 1.399999976158142,
+          "p99": 2
+        },
+        "rafMs": {
+          "median": 16.699999999999818,
+          "p95": 16.799999999999272,
+          "p99": 16.800000000000182
+        },
+        "managed": {
+          "screen": "Main",
+          "optionsPage": "Root",
+          "invertMouseY": false,
+          "menuSoundEnabled": false,
+          "managedHeapBytes": 15754392,
+          "residentBytes": 2561241,
+          "settingsPending": false,
+          "style": "Modern",
+          "gameStyle": "Modern"
+        },
+        "resources": [
+          {
+            "name": "/play/preview/menu.css",
+            "transferSize": 490,
+            "encodedBodySize": 190
+          },
+          {
+            "name": "/play/preview/preview.css",
+            "transferSize": 989,
+            "encodedBodySize": 689
+          },
+          {
+            "name": "/play/preview/menu.js",
+            "transferSize": 909,
+            "encodedBodySize": 609
+          },
+          {
+            "name": "/play/preview/preview.js",
+            "transferSize": 1926,
+            "encodedBodySize": 1626
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.JSInterop/js/JSObject.10.0.3.js",
+            "transferSize": 1692,
+            "encodedBodySize": 1392
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Window.10.0.3.js",
+            "transferSize": 1731,
+            "encodedBodySize": 1431
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Document.10.0.3.js",
+            "transferSize": 1094,
+            "encodedBodySize": 794
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Navigator.10.0.3.js",
+            "transferSize": 581,
+            "encodedBodySize": 281
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Gamepad.10.0.3.js",
+            "transferSize": 1004,
+            "encodedBodySize": 704
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Dom/js/Media.10.0.3.js",
+            "transferSize": 821,
+            "encodedBodySize": 521
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XHR/js/XHR.10.0.3.js",
+            "transferSize": 858,
+            "encodedBodySize": 558
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/Canvas.10.0.3.js",
+            "transferSize": 1025,
+            "encodedBodySize": 725
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Canvas/js/CanvasGLContext.10.0.3.js",
+            "transferSize": 3638,
+            "encodedBodySize": 3338
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.Audio/js/Audio.10.0.3.js",
+            "transferSize": 2896,
+            "encodedBodySize": 2596
+          },
+          {
+            "name": "/play/preview/_content/nkast.Wasm.XR/js/XR.10.0.3.js",
+            "transferSize": 2846,
+            "encodedBodySize": 2546
+          },
+          {
+            "name": "/play/preview/_framework/blazor.webassembly.js",
+            "transferSize": 17054,
+            "encodedBodySize": 16754
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.js",
+            "transferSize": 15351,
+            "encodedBodySize": 15051
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.runtime.v2rwe8u38b.js",
+            "transferSize": 47951,
+            "encodedBodySize": 47651
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.6ilbvndvcf.js",
+            "transferSize": 30733,
+            "encodedBodySize": 30433
+          },
+          {
+            "name": "/play/preview/_framework/dotnet.native.3bptkeu1pi.wasm",
+            "transferSize": 976733,
+            "encodedBodySize": 976433
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.CoreLib.g72gipn4n7.wasm",
+            "transferSize": 555756,
+            "encodedBodySize": 555456
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.JavaScript.dctxscadr2.wasm",
+            "transferSize": 17316,
+            "encodedBodySize": 17016
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Browser.q7qqsvlapw.wasm",
+            "transferSize": 16979,
+            "encodedBodySize": 16679
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.ClientCore.Game.Browser.503rflwkvs.wasm",
+            "transferSize": 796180,
+            "encodedBodySize": 795880
+          },
+          {
+            "name": "/play/preview/_framework/Allegiance.Core.Browser.kntlomntcn.wasm",
+            "transferSize": 581181,
+            "encodedBodySize": 580881
+          },
+          {
+            "name": "/play/preview/_framework/Kni.Platform.ltb4q66uun.wasm",
+            "transferSize": 78218,
+            "encodedBodySize": 77918
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.8f52cflfh8.wasm",
+            "transferSize": 92352,
+            "encodedBodySize": 92052
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.Web.ugrzbyw4cd.wasm",
+            "transferSize": 19489,
+            "encodedBodySize": 19189
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.AspNetCore.Components.WebAssembly.b7i8rps4cs.wasm",
+            "transferSize": 42199,
+            "encodedBodySize": 41899
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Abstractions.g80u52ij8n.wasm",
+            "transferSize": 2635,
+            "encodedBodySize": 2335
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.Json.ixktlrimdt.wasm",
+            "transferSize": 4494,
+            "encodedBodySize": 4194
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Configuration.w4ckz9zukx.wasm",
+            "transferSize": 3952,
+            "encodedBodySize": 3652
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.b9mcrj62ry.wasm",
+            "transferSize": 19890,
+            "encodedBodySize": 19590
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.xrieqizdf2.wasm",
+            "transferSize": 10370,
+            "encodedBodySize": 10070
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.Abstractions.3c4b31trca.wasm",
+            "transferSize": 11192,
+            "encodedBodySize": 10892
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Logging.vqiumbbk2y.wasm",
+            "transferSize": 7935,
+            "encodedBodySize": 7635
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Options.7f85fudcxr.wasm",
+            "transferSize": 7424,
+            "encodedBodySize": 7124
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.Extensions.Primitives.m33spxmuwm.wasm",
+            "transferSize": 4877,
+            "encodedBodySize": 4577
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.WebAssembly.5ydn64ly88.wasm",
+            "transferSize": 5191,
+            "encodedBodySize": 4891
+          },
+          {
+            "name": "/play/preview/_framework/Microsoft.JSInterop.fboh835v4s.wasm",
+            "transferSize": 18780,
+            "encodedBodySize": 18480
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.b0bdpla3wg.wasm",
+            "transferSize": 16553,
+            "encodedBodySize": 16253
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Concurrent.3m6k5f77fd.wasm",
+            "transferSize": 10424,
+            "encodedBodySize": 10124
+          },
+          {
+            "name": "/play/preview/_framework/System.Collections.Immutable.1zzu7vo1e1.wasm",
+            "transferSize": 22016,
+            "encodedBodySize": 21716
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.Primitives.alorgfp9u8.wasm",
+            "transferSize": 3713,
+            "encodedBodySize": 3413
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.TypeConverter.6pilhedea4.wasm",
+            "transferSize": 2201,
+            "encodedBodySize": 1901
+          },
+          {
+            "name": "/play/preview/_framework/System.ComponentModel.s232flgnjt.wasm",
+            "transferSize": 2008,
+            "encodedBodySize": 1708
+          },
+          {
+            "name": "/play/preview/_framework/System.Console.glb7czj7xx.wasm",
+            "transferSize": 6583,
+            "encodedBodySize": 6283
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.DiagnosticSource.wi2m9kb6j2.wasm",
+            "transferSize": 16957,
+            "encodedBodySize": 16657
+          },
+          {
+            "name": "/play/preview/_framework/System.Diagnostics.Process.v9xjoafue5.wasm",
+            "transferSize": 2784,
+            "encodedBodySize": 2484
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.m2omew8tg5.wasm",
+            "transferSize": 4610,
+            "encodedBodySize": 4310
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Compression.Brotli.ted0mu3ikz.wasm",
+            "transferSize": 2616,
+            "encodedBodySize": 2316
+          },
+          {
+            "name": "/play/preview/_framework/System.IO.Pipelines.uxxioc395v.wasm",
+            "transferSize": 2956,
+            "encodedBodySize": 2656
+          },
+          {
+            "name": "/play/preview/_framework/System.Linq.2iux2onnd2.wasm",
+            "transferSize": 31774,
+            "encodedBodySize": 31474
+          },
+          {
+            "name": "/play/preview/_framework/System.Memory.cjpm8b2rso.wasm",
+            "transferSize": 6446,
+            "encodedBodySize": 6146
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.Json.3v67t4u4wf.wasm",
+            "transferSize": 6825,
+            "encodedBodySize": 6525
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Http.5h78xcmpzk.wasm",
+            "transferSize": 53147,
+            "encodedBodySize": 52847
+          },
+          {
+            "name": "/play/preview/_framework/System.Net.Primitives.iq0vh16ox0.wasm",
+            "transferSize": 3125,
+            "encodedBodySize": 2825
+          },
+          {
+            "name": "/play/preview/_framework/System.Numerics.Vectors.pcrvftz775.wasm",
+            "transferSize": 2005,
+            "encodedBodySize": 1705
+          },
+          {
+            "name": "/play/preview/_framework/System.ObjectModel.cpkfv2suck.wasm",
+            "transferSize": 2423,
+            "encodedBodySize": 2123
+          },
+          {
+            "name": "/play/preview/_framework/System.Private.Uri.c6ifxx6pt5.wasm",
+            "transferSize": 27685,
+            "encodedBodySize": 27385
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.InteropServices.tloz5ynh2z.wasm",
+            "transferSize": 3252,
+            "encodedBodySize": 2952
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Numerics.yunqabjqim.wasm",
+            "transferSize": 24904,
+            "encodedBodySize": 24604
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.Serialization.Primitives.h069wxo4le.wasm",
+            "transferSize": 2278,
+            "encodedBodySize": 1978
+          },
+          {
+            "name": "/play/preview/_framework/System.Runtime.q7du29sh1y.wasm",
+            "transferSize": 3736,
+            "encodedBodySize": 3436
+          },
+          {
+            "name": "/play/preview/_framework/System.Security.Cryptography.mksvkm9j39.wasm",
+            "transferSize": 9606,
+            "encodedBodySize": 9306
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Encodings.Web.29zaodjq3a.wasm",
+            "transferSize": 10326,
+            "encodedBodySize": 10026
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.Tasks.Parallel.55pwlsk5l2.wasm",
+            "transferSize": 6519,
+            "encodedBodySize": 6219
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.Json.h2j8wqarm4.wasm",
+            "transferSize": 133138,
+            "encodedBodySize": 132838
+          },
+          {
+            "name": "/play/preview/_framework/System.Text.RegularExpressions.ed6wk9b3lk.wasm",
+            "transferSize": 100910,
+            "encodedBodySize": 100610
+          },
+          {
+            "name": "/play/preview/_framework/System.Threading.bc1yavbj68.wasm",
+            "transferSize": 4047,
+            "encodedBodySize": 3747
+          },
+          {
+            "name": "/play/preview/_framework/System.bzv2fdl90t.wasm",
+            "transferSize": 1770,
+            "encodedBodySize": 1470
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Audio.8ly32jx0rq.wasm",
+            "transferSize": 7899,
+            "encodedBodySize": 7599
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Content.czahhc8cnd.wasm",
+            "transferSize": 19332,
+            "encodedBodySize": 19032
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Devices.deb34eci89.wasm",
+            "transferSize": 6340,
+            "encodedBodySize": 6040
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Game.r61k3or4ub.wasm",
+            "transferSize": 14015,
+            "encodedBodySize": 13715
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Input.xywwla7fe3.wasm",
+            "transferSize": 27583,
+            "encodedBodySize": 27283
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Graphics.sb95sf4j83.wasm",
+            "transferSize": 62156,
+            "encodedBodySize": 61856
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Media.361q7jlovk.wasm",
+            "transferSize": 5251,
+            "encodedBodySize": 4951
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.Storage.qhs0x804ug.wasm",
+            "transferSize": 5149,
+            "encodedBodySize": 4849
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.XR.04xxp8tg5m.wasm",
+            "transferSize": 3892,
+            "encodedBodySize": 3592
+          },
+          {
+            "name": "/play/preview/_framework/Xna.Framework.qqpfue592z.wasm",
+            "transferSize": 31633,
+            "encodedBodySize": 31333
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Audio.a8zkntbvvz.wasm",
+            "transferSize": 8245,
+            "encodedBodySize": 7945
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Canvas.zslu8oeo32.wasm",
+            "transferSize": 18717,
+            "encodedBodySize": 18417
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.Dom.l0it6flgje.wasm",
+            "transferSize": 10536,
+            "encodedBodySize": 10236
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XHR.jkzbra45c1.wasm",
+            "transferSize": 2914,
+            "encodedBodySize": 2614
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.JSInterop.yvzx4kyi38.wasm",
+            "transferSize": 8857,
+            "encodedBodySize": 8557
+          },
+          {
+            "name": "/play/preview/_framework/nkast.Wasm.XR.12d3u3erzy.wasm",
+            "transferSize": 9560,
+            "encodedBodySize": 9260
+          },
+          {
+            "name": "/play/preview/_framework/icudt_EFIGS.tptq2av103.dat",
+            "transferSize": 144283,
+            "encodedBodySize": 143983
+          },
+          {
+            "name": "/play/preview/game-platform.js",
+            "transferSize": 2942,
+            "encodedBodySize": 2642
+          },
+          {
+            "name": "/play/preview/starter-manifest.json",
+            "transferSize": 8480,
+            "encodedBodySize": 8180
+          },
+          {
+            "name": "/play/preview/packs/51d270b8e791633d3050c31634c74fb3e8b58f2ce7010ef03a7c09a12934eabc",
+            "transferSize": 7741,
+            "encodedBodySize": 7441
+          },
+          {
+            "name": "/play/preview/packs/d1cb2c4ebbecefa2ed5a315eb16ddd3bae4efb9a6ebcfc194b90ab3a42291943",
+            "transferSize": 16433,
+            "encodedBodySize": 16133
+          },
+          {
+            "name": "/play/preview/packs/1a11eb52da141afe6c3464b4004cc528e7f0b847a9411c8c80376531217ce44e",
+            "transferSize": 5592,
+            "encodedBodySize": 5292
+          },
+          {
+            "name": "/play/preview/packs/4a1265d300fcb8cbdd55ee2e16d3fae2b8540da1567cc1a934f0f961b475e3ae",
+            "transferSize": 11202,
+            "encodedBodySize": 10902
+          },
+          {
+            "name": "/play/preview/packs/66fca2d9f462d0dd081bb19849c4d6512fee878ec605370f1e6635dc391629a8",
+            "transferSize": 6516,
+            "encodedBodySize": 6216
+          },
+          {
+            "name": "/play/preview/packs/b65e2c1316d3a2f733cf300005c08f09ffe52d547c6b445c9c5decc620736037",
+            "transferSize": 12405,
+            "encodedBodySize": 12105
+          },
+          {
+            "name": "/play/preview/packs/7631b0b960343a62d8139eb355d3ab2ddeb9436a1c54d2241dd211ba48a7adac",
+            "transferSize": 7292,
+            "encodedBodySize": 6992
+          },
+          {
+            "name": "/play/preview/packs/f314083e10a7e69bd4c89da2b9029b155dd0eb6ff46826b57f331dc94617434d",
+            "transferSize": 14356,
+            "encodedBodySize": 14056
+          },
+          {
+            "name": "/play/preview/packs/03663374ed870e0dda02325ea25789a605c717cf048eeb0d76c7bf5759179a3b",
+            "transferSize": 4611,
+            "encodedBodySize": 4311
+          },
+          {
+            "name": "/play/preview/packs/05026e790aa1f1d57ad0773ee7a29cd9271c8054aaa1f55baefab83a912350bc",
+            "transferSize": 9418,
+            "encodedBodySize": 9118
+          },
+          {
+            "name": "/play/preview/packs/3dc300fe9d12ad00732b48c39e91cb1f32d1e9ba8816f5c017b9196da0ebbd97",
+            "transferSize": 6245,
+            "encodedBodySize": 5945
+          },
+          {
+            "name": "/play/preview/packs/ce86131bfab4493301f050a2829e7668dfe71700b08ab198c65f973ca741661f",
+            "transferSize": 12359,
+            "encodedBodySize": 12059
+          },
+          {
+            "name": "/play/preview/packs/c4e4da380778d0c44b1b30c7869b18a874fa0681a1efab4a3c0be7d4ddf82418",
+            "transferSize": 6924,
+            "encodedBodySize": 6624
+          },
+          {
+            "name": "/play/preview/packs/fc0e8c06ef5178cd72b6662770f23a2be3f7855b465150be39518b869bb95c89",
+            "transferSize": 14135,
+            "encodedBodySize": 13835
+          },
+          {
+            "name": "/play/preview/packs/6b615f32cc4eab4ef21cbfdee51259249d033bfd389227893ae356284c7aefed",
+            "transferSize": 6520,
+            "encodedBodySize": 6220
+          },
+          {
+            "name": "/play/preview/packs/f7f12ed30f2bbe9cf34ce501ba6ae5aefe53061f09c17511904697f0902861bc",
+            "transferSize": 12539,
+            "encodedBodySize": 12239
+          },
+          {
+            "name": "/play/preview/packs/cb99015fa63bb0b2d3b9ee579ac7602aefb0e45340d51271c1aa56a4aacc46e9",
+            "transferSize": 48780,
+            "encodedBodySize": 48480
+          },
+          {
+            "name": "/play/preview/packs/0b6366e5e85811be9783455b806fe51bcdc0c7da4ce03f4426f642dd9949e108",
+            "transferSize": 1906,
+            "encodedBodySize": 1606
+          },
+          {
+            "name": "/play/preview/packs/f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+            "transferSize": 65351,
+            "encodedBodySize": 65051
+          }
+        ],
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "transferredBytes": 4629148,
+        "requests": 110,
+        "cachedResponses": 0,
+        "encodings": {
+          "br": 90,
+          "identity": 1,
+          "gzip": 19
+        }
+      },
+      "warm": {
+        "transferredBytes": 36123,
+        "requests": 91,
+        "cachedResponses": 69,
+        "encodings": {
+          "br": 90,
+          "identity": 1
+        },
+        "firstFrameMs": 765,
+        "assetRequests": 0
+      },
+      "logs": [
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.",
+        "[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch."
+      ],
+      "errors": []
+    }
+  ],
+  "states": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "loading": true,
+      "corruptRejected": true,
+      "retryRecovered": true,
+      "errorText": "Game menu could not load\n\nThe starter pack or renderer could not start. Artwork verification failed: content/fonts/nativeb10.xnb\n\nRetry"
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 480
+      },
+      "loading": true,
+      "corruptRejected": true,
+      "retryRecovered": true,
+      "errorText": "Game menu could not load\n\nThe starter pack or renderer could not start. Artwork verification failed: content/fonts/nativeb10.xnb\n\nRetry"
+    }
+  ],
+  "textInput": {
+    "typedAndSaved": true,
+    "unfocusedInputIgnored": true,
+    "backspace": true,
+    "maximumPersistedLength": 24,
+    "reloadPreserved": true,
+    "initialHudChoicePreserved": true,
+    "toolbarKeyboardRoundTrip": true,
+    "toolbarEnterKeptMenu": true,
+    "inputResumedAfterToolbar": true,
+    "errors": []
+  },
+  "preview": {
+    "unchangedHeader": true,
+    "originalScoutDrawn": true,
+    "controlsResponded": true,
+    "errors": []
+  },
+  "firefox": "Skipped: Firefox executable unavailable; no browser-CDN downloads attempted"
+}

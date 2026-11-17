@@ -36,7 +36,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Allegiance.Core/Allegiance.Core.csproj" />
+    <Compile Remove="Assets/PreviewAssets.cs" />
+    <ProjectReference Include="../Allegiance.Core.Browser/Allegiance.Core.Browser.csproj" />
+    <ProjectReference Include="../Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj" />
   </ItemGroup>
 
   <!-- Ship the actual runtime's notices (which follow the SDK version), alongside

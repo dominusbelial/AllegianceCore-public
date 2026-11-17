@@ -1,0 +1,24 @@
+@page "/menu.html"
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+@inject HttpClient Http
+
+<nav id="menu-controls" aria-label="Browser menu controls">
+    <span>Menu preview · @_style · @_persistence</span>
+    <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>
+    <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern)">Modern</button>
+    <button disabled="@(_game is null)" @onclick="EnableAudio">@_audioStatus</button>
+    <button disabled="@(_game is null)" @onclick="ScreenshotAsync">Download screenshot</button>
+</nav>
+<div id="canvasHolder"><canvas id="theCanvas" tabindex="@(_game is null ? -1 : 0)" aria-label="Allegiance Game1 intro and Options"></canvas></div>
+<div id="load-panel" class="panel" hidden="@(_game is not null && _error is null)" role="status" aria-live="polite">
+    <h2>@(_error is null ? "Loading game menu" : "Game menu could not load")</h2>
+    @if (_error is null)
+    {
+        <progress max="100" value="@_progress"></progress><p>@_status (@_progress%)</p>
+    }
+    else
+    {
+        <p>@_error</p><button id="retry" @onclick="LoadAsync">Retry</button>
+    }
+</div>

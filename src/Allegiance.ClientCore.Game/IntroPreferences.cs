@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Platform;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -31,7 +32,9 @@ public sealed class IntroPreferences
 
     /// <summary>SP-6 — remembered local skirmish choices (offline), restored when the
     /// Skirmish setup screen opens. Absent <c>null</c> leaves the defaults.</summary>
+#if !BROWSER
     public Allegiance.SinglePlayer.SkirmishPrefs? Skirmish { get; set; }
+#endif
 
     /// <summary>TR-2 — the native <c>Ui.ShowStartupTrainingSuggestion</c> config flag
     /// (WinTrek/introscreen.cpp:1305, 1055): the first-run dialog suggesting the player
@@ -127,15 +130,21 @@ public sealed class IntroPreferences
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
+#if BROWSER
+        TypeInfoResolver = BrowserProfileJson.Default,
+#endif
     };
 
-    public static IntroPreferences Load(string? path = null)
+    public static IntroPreferences Load(string? path = null) => Load(path, ProfileStorage.Default);
+
+    public static IntroPreferences Load(string? path, IProfileStorage? storage)
     {
+        storage ??= ProfileStorage.Default;
         path ??= FilePath;
         try
         {
-            if (!File.Exists(path)) return new IntroPreferences();
-            var json = File.ReadAllText(path);
+            if (!storage.Exists(path)) return new IntroPreferences();
+            var json = storage.ReadAllText(path);
             if (string.IsNullOrWhiteSpace(json)) return new IntroPreferences();
             var prefs = JsonSerializer.Deserialize<IntroPreferences>(json, JsonOptions) ?? new IntroPreferences();
             prefs.Normalize();
@@ -170,14 +179,17 @@ public sealed class IntroPreferences
         }
     }
 
-    public void Save(string? path = null)
+    public void Save(string? path = null) => Save(path, ProfileStorage.Default);
+
+    public void Save(string? path, IProfileStorage? storage)
     {
+        storage ??= ProfileStorage.Default;
         path ??= FilePath;
         try
         {
             Normalize();
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-            File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions));
+            storage.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            storage.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions));
         }
         catch (Exception)
         {

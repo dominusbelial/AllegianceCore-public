@@ -4,6 +4,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build
 WORKDIR /src
 COPY Directory.Build.props .
 COPY src/Allegiance.Core/ src/Allegiance.Core/
+COPY src/Allegiance.Core.Browser/ src/Allegiance.Core.Browser/
+COPY src/Allegiance.ClientCore/ src/Allegiance.ClientCore/
+COPY src/Allegiance.ClientCore.Game/ src/Allegiance.ClientCore.Game/
+COPY src/Allegiance.ClientCore.Game.Browser/ src/Allegiance.ClientCore.Game.Browser/
 COPY src/Allegiance.ClientCore.Browser/ src/Allegiance.ClientCore.Browser/
 RUN dotnet publish src/Allegiance.ClientCore.Browser/Allegiance.ClientCore.Browser.csproj -c Release -o /publish
 FROM alpine:3.22.2 AS bundle

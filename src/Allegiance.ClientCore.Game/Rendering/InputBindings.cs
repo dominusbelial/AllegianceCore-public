@@ -150,7 +150,7 @@ public sealed record InputActionDef(
 /// selectable preset, and a keymap file always records the preset it was saved
 /// with so a saved profile's bindings do not move under the player.</para>
 /// </summary>
-public sealed class ActionMap
+public sealed partial class ActionMap
 {
     /// <summary>Active lesson's translated-key approval (WinTrek.cpp:8753-8769).</summary>
     public Func<string, bool>? ActionFilter { get; set; }
@@ -356,11 +356,22 @@ public sealed class ActionMap
             Layout == InputLayout.Native ? "native" : "port",
             _current.Where(kv => kv.Value != _defaults[kv.Key])
                     .ToDictionary(kv => kv.Key, kv => new[] { (int)kv.Value.Key, (int)kv.Value.Modifiers })),
+#if BROWSER
+        PersistenceJson.Default.PersistedMap);
+#else
         new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+#endif
 
     /// <summary>One persisted keymap document (P941): the layout preset the
     /// overrides sit on top of, plus the overrides themselves. The JSON names are
     /// the contract with older/newer client builds and with hand-written files.</summary>
+#if BROWSER
+    [System.Text.Json.Serialization.JsonSourceGenerationOptions(WriteIndented = true)]
+    [System.Text.Json.Serialization.JsonSerializable(typeof(PersistedMap))]
+    [System.Text.Json.Serialization.JsonSerializable(typeof(Dictionary<string, int[]>), TypeInfoPropertyName = "Bindings")]
+    private partial class PersistenceJson : System.Text.Json.Serialization.JsonSerializerContext;
+#endif
+
     private sealed record PersistedMap(
         [property: System.Text.Json.Serialization.JsonPropertyName("layout")] string Layout,
         [property: System.Text.Json.Serialization.JsonPropertyName("bindings")] Dictionary<string, int[]> Bindings);
@@ -400,9 +411,14 @@ public sealed class ActionMap
                 SetLayout(InputLayout.Port);
             }
 
+#if BROWSER
+            var map = System.Text.Json.JsonSerializer.Deserialize(hasBindings ? bindings.GetRawText() : json,
+                PersistenceJson.Default.Bindings);
+#else
             var map = hasBindings
                 ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(bindings.GetRawText())
                 : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(json);
+#endif
             if (map == null) return;
             foreach (var (action, kv) in map)
             {

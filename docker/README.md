@@ -443,3 +443,39 @@ verified art is missing; disabling it requires neither.
 No additional port, listener, API privilege, identity setting, thread isolation
 header or server change is involved. Existing API limits continue to apply.
 The optional build/export service never needs a network game server.
+
+### Browser game menu qualification (P1047)
+
+The existing browser head also has a separate `menu.html` entry. It compiles the
+shared Game1 intro/Options partials against KNI through the Game.Browser and
+Core.Browser libraries. The ordinary `/play/preview/` scout page and its v1 lobby
+allow-list are unchanged. No browser login, connection session, LAN discovery,
+offline host or flight is enabled.
+
+This slice uses a **local static generation**, rather than extending the lobby's
+v1 artwork registry to game packs. Build `tools/p1047-menu-opens` and run it once
+for Classic and once for Modern with an isolated XDG profile and the existing
+artwork configuration. Those real desktop recordings are required inputs to:
+
+```sh
+scripts/publish-browser-menu.sh OUTPUT_DIRECTORY CLASSIC_TRACE.json MODERN_TRACE.json
+python3 tools/p1047-static-server.py OUTPUT_DIRECTORY
+```
+
+The local tool binds only loopback, on port 8047 by default; open
+`http://127.0.0.1:8047/play/preview/menu.html`. It serves compressed bytes from the
+completed generation. The publisher also stages the unchanged two-file scout
+allow-list so the original preview works on that same local server. See
+`docs/reports/BROWSER_SEAMS_P1047.md` for complete capture/recording commands,
+measurements and qualification limits. Original artwork/font bytes stay in the
+operator's generated directory, outside the repository.
+
+The immutable asset cache is bounded to 64 MiB/1,024 entries in the **browser's
+Cache API**, with IndexedDB holding residency metadata and non-secret settings.
+These stores belong to the user agent, require no container volume or database,
+and add no compose service, listener, secret or environment variable. Browser
+storage refusal leaves verified assets resident in memory and reports that
+preferences cannot survive closing the tab. Saved passwords, credentials and
+identity tokens have no persistent browser path. The existing bundle-exporter
+Dockerfile includes the new library sources; Docker execution remains a separate
+qualification on lanes that have Docker installed.

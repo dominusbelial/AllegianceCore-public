@@ -27,7 +27,7 @@ public static class TextureMipmapBuilder
     /// </summary>
     public static Texture2D CreateMipmapped(GraphicsDevice gd, Color[] basePixels, int width, int height)
     {
-        var tex = new Texture2D(gd, width, height, mipmap: true, SurfaceFormat.Color);
+        var tex = new Texture2D(gd, width, height, true, SurfaceFormat.Color);
         tex.SetData(basePixels);                       // level 0, byte-identical as before
 
         var plane = ToRgba(basePixels);

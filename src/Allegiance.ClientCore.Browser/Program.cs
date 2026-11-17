@@ -15,6 +15,7 @@ namespace Allegiance.ClientCore.Browser
             Microsoft.Xna.Platform.GameFactory.RegisterGameFactory(new Microsoft.Xna.Platform.ConcreteGameFactory());
             Microsoft.Xna.Platform.Input.InputFactory.RegisterInputFactory(new Microsoft.Xna.Platform.Input.ConcreteInputFactory());
             Microsoft.Xna.Platform.Graphics.GraphicsFactory.RegisterGraphicsFactory(new Microsoft.Xna.Platform.Graphics.ConcreteGraphicsFactory());
+            Microsoft.Xna.Platform.Audio.AudioFactory.RegisterAudioFactory(new Microsoft.Xna.Platform.Audio.ConcreteAudioFactory());
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
             builder.RootComponents.Add<HeadOutlet>("head::after");

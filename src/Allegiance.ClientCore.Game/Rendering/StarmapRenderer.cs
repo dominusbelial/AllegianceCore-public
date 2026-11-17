@@ -155,7 +155,7 @@ public sealed class StarmapRenderer
             {
                 if (layout.TryGetPoint(e.SourceClusterId, out var a)
                     && layout.TryGetPoint(e.DestClusterId, out var b))
-                    DrawLine(a, b, 1.6f, EdgeColor);
+                    DrawLine(new Vector2(a.X, a.Y), new Vector2(b.X, b.Y), 1.6f, EdgeColor);
             }
 
             // Each cluster: ring + dot + name; current sector highlighted.

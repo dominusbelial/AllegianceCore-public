@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Source-identical data/model/parsers, with OS transports/process ownership
+       excluded at compile time. The ordinary Core project is unchanged. -->
+  <PropertyGroup>
+    <AssemblyName>Allegiance.Core.Browser</AssemblyName>
+    <RootNamespace>Allegiance.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Allegiance.Core/**/*.cs"
+      Exclude="../Allegiance.Core/obj/**;../Allegiance.Core/bin/**;
+               ../Allegiance.Core/Transport/**;../Allegiance.Core/ProcessLifetime.cs;
+               ../Allegiance.Core/ConsoleLog.cs;../Allegiance.Core/Profiling/ThreadPoolTelemetry.cs"
+      Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

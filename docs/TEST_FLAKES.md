@@ -4,6 +4,82 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1047 gate observations — 2026-11-16–17 UTC
+
+The completed Fast sweep is **FAIL**: **14,973 passed / 2 failed / 7 skipped**,
+14,982 cases, 1,065.8 s. All nine infrastructure checks pass. Two otherwise
+passing cases exceed the unchanged calibrated **11.788064 s** limit (the
+runner's generic error text still says 10 seconds). Core/Bot/Server sources and
+the Core test project are unchanged and do not reference Game.Browser. The
+browser library's final 23 cases pass three times alone; desktop storage/ABI
+cases pass 6/6 three times, and final HUD comparison is 1,848 with zero pixel or
+semantic differences outside its declared animation masks.
+
+| Exact case | Completed sweep | Three one-case/process repetitions / seconds |
+|---|---|---|
+| `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate` | Expected `goto Garrison`, got `goto`; existing relay/lookup receipt family | pass / pass / pass — 0.704 / 0.606 / 0.693 |
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` | Expected 16, got 32; existing live throttle-state family | pass / **fail** / pass — 0.613 / 0.564 / 0.569; the isolated failure expects 16, gets 128 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | Passed, 15.570 s, over limit | pass / pass / pass — 3.990 / 4.401 / 4.010 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | Passed, 13.383 s, over limit | pass / pass / pass — 1.946 / 2.217 / 2.182 |
+
+The wingman case remains intermittent even alone. These repetitions do not
+establish a root cause or turn the sweep green. No timing limit, tier, assertion
+or native gameplay rule is changed.
+
+A preceding sweep aborts in Core's host after **5,595 passed / 3 skipped** main
+cases. Its unhandled background exception is `InvalidOperationException: not
+connected`: `TcpTransport.Send:600` ← `Bot.Send:1895` ← `Bot.OnReceive:2340`.
+No owning test is attributed by the crash log. Its quarantine group subsequently
+passes 17/17; the original aggregate is 14,018 passed / 0 assertion failures /
+7 skipped, with 957 expected cases missing. Three complete fresh-process Core
+Fast main selections (`Tier=Fast&Lane!=LiveTiming`, unchanged collection
+scheduling) then finish **6,551/1/3**, **6,549/3/3**, **6,551/1/3**
+(passed/failed/skipped), exercising every missing case. The crash does not recur.
+Their five distinct assertion failures each also run three times in separate
+one-case processes:
+
+| Case in Core repetitions | Signature | Exact-case ×3 |
+|---|---|---|
+| `LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire` | Shooter kill-credit receipt, 33.286 s | pass / pass / pass, 1.834 / 1.847 / 1.851 s |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Peer collection contains old sector 1051 only | pass / pass / pass |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)` | `10.000000000000002` above inclusive 10 s bound | pass / pass / pass |
+| `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | Proactive diverter does not rescue within fixture budget | pass / pass / pass |
+| `NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines` | NPC ore remains zero after undock | pass / pass / pass |
+
+Each assertion signature already occurs in the historical ledger. The background
+crash itself remains unattributed; no particular test is blamed merely because
+its pass was reported last. An earlier partial invocation exited with SIGTERM
+before MonoGame produced its TRX and is not counted as a completed sweep.
+
+Training Fast+Live ×3 is **INCOMPLETE** at the eight-hour task cap. All three
+headless selections pass **126/0/0** each. One complete native selection is
+**290/2/2** (passed/failed/skipped), covering every assigned prefix and both
+styles of full/early Nanite completion. The initial `--repeat 3` invocation was
+interrupted after this pair; its duplicate second headless pass/partial native
+continuation is excluded. Two independent `--repeat 1` cohorts retained serial
+projects/cases, separate profiles/results and the original sequential settings,
+but overlapped on the shared lane. Both were interrupted at the cap before
+aggregate native results; neither is counted as a complete native selection.
+Each additional run reports the same two reminder failures and no new signature.
+
+The failures are
+`P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
+(`Classic`/`Modern`, policy `reminders`): **M2 9.2: native prompts missing or out
+of order**. Mission-finished and station-1010 dock checks pass before the prompt
+assertion. Each exact case also **fails 3/3 alone**, about 8 m 53 s, with artwork
+and null OpenAL. The historical P1012 entry records this signature on its untouched
+base checkout; that is prior evidence, not a fresh P1047 base-control run. No
+lesson, narration decoder, assertion, tier or timing limit is changed. Isolated
+processes overlapped with the broad gate on the shared lane. Final selection
+counts and TRX hashes are in `training-summary.json`; child-window checkpoints
+are recorded separately and do not count as complete project test results.
+
+Report and bounded receipts: `docs/reports/BROWSER_SEAMS_P1047.md`,
+`docs/reports/BROWSER_SEAMS_P1047_assets/fast-summary.json`,
+`docs/reports/BROWSER_SEAMS_P1047_assets/fast-aborted-summary.json`,
+`docs/reports/BROWSER_SEAMS_P1047_assets/isolated-tests.json`,
+`docs/reports/BROWSER_SEAMS_P1047_assets/training-summary.json`.
+
 ## P1046 gate observations — 2026-11-16 UTC
 
 One fast sweep on the browser-preview tree: **14,953 tests, 577.2 s, FAIL** —

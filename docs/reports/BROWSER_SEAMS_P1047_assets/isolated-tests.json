@@ -1,0 +1,498 @@
+{
+  "coreMainRepetitions": [
+    {
+      "run": "core-1",
+      "passed": 6551,
+      "failed": 1,
+      "skipped": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire",
+          "outcome": "Failed",
+          "seconds": 33.2861913,
+          "message": "shooter must decode its kill credit independently of the victim"
+        }
+      ]
+    },
+    {
+      "run": "core-2",
+      "passed": 6549,
+      "failed": 3,
+      "skipped": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "outcome": "Failed",
+          "seconds": 0.2013813,
+          "message": "Assert.InRange() Failure: Value not in range\nRange:  (9.9000000000000004 - 10)\nActual: 10.000000000000002"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Failed",
+          "seconds": 8.2283324,
+          "message": "proactively-assigned diverter did not rescue the pod"
+        },
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Failed",
+          "seconds": 0.0280086,
+          "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: [ShipStatusMessage { Detected = False, HullId = 1, ParentId = -1, SectorId = 1051, ShipId = 8098, \u00b7\u00b7\u00b7 }, ShipStatusMessage { Detected = False, HullId = 1, ParentId = -1, SectorId = 1051, ShipId = 8098, \u00b7\u00b7\u00b7 }]"
+        }
+      ]
+    },
+    {
+      "run": "core-3",
+      "passed": 6551,
+      "failed": 1,
+      "skipped": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+          "outcome": "Failed",
+          "seconds": 36.8848466,
+          "message": "NPC should mine after auto-undock, got ore 0"
+        }
+      ]
+    }
+  ],
+  "exactCases": [
+    {
+      "run": "civ5-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 3.9898617
+        }
+      ]
+    },
+    {
+      "run": "civ5-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 4.4008969
+        }
+      ]
+    },
+    {
+      "run": "civ5-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 4.009839
+        }
+      ]
+    },
+    {
+      "run": "combat-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire",
+          "outcome": "Passed",
+          "seconds": 1.8341307
+        }
+      ]
+    },
+    {
+      "run": "combat-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire",
+          "outcome": "Passed",
+          "seconds": 1.8469332
+        }
+      ]
+    },
+    {
+      "run": "combat-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.LiveCombatWireTests.Real_two_party_combat_produces_a_kill_ship_over_the_wire",
+          "outcome": "Passed",
+          "seconds": 1.8508598
+        }
+      ]
+    },
+    {
+      "run": "npc-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+          "outcome": "Passed",
+          "seconds": 3.6498648
+        }
+      ]
+    },
+    {
+      "run": "npc-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+          "outcome": "Passed",
+          "seconds": 3.764755
+        }
+      ]
+    },
+    {
+      "run": "npc-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcAutoLaunchLiveTests.Docked_npc_miner_auto_undocks_after_cooldown_then_mines",
+          "outcome": "Passed",
+          "seconds": 3.5676602
+        }
+      ]
+    },
+    {
+      "run": "pod-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 1.1647644
+        }
+      ]
+    },
+    {
+      "run": "pod-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 1.1911378
+        }
+      ]
+    },
+    {
+      "run": "pod-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 1.1185181
+        }
+      ]
+    },
+    {
+      "run": "relay-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "seconds": 0.7039
+        }
+      ]
+    },
+    {
+      "run": "relay-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "seconds": 0.6059057
+        }
+      ]
+    },
+    {
+      "run": "relay-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate",
+          "outcome": "Passed",
+          "seconds": 0.6928879
+        }
+      ]
+    },
+    {
+      "run": "rocks-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.9460924
+        }
+      ]
+    },
+    {
+      "run": "rocks-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 2.2168028
+        }
+      ]
+    },
+    {
+      "run": "rocks-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 2.1822969
+        }
+      ]
+    },
+    {
+      "run": "timer10-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "outcome": "Passed",
+          "seconds": 0.7847302
+        }
+      ]
+    },
+    {
+      "run": "timer10-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "outcome": "Passed",
+          "seconds": 0.8527254
+        }
+      ]
+    },
+    {
+      "run": "timer10-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+          "outcome": "Passed",
+          "seconds": 0.8050136
+        }
+      ]
+    },
+    {
+      "run": "warp-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.4540593
+        }
+      ]
+    },
+    {
+      "run": "warp-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.4524148
+        }
+      ]
+    },
+    {
+      "run": "warp-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+          "outcome": "Passed",
+          "seconds": 0.4581964
+        }
+      ]
+    },
+    {
+      "run": "wingman-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed",
+          "outcome": "Passed",
+          "seconds": 0.6129281
+        }
+      ]
+    },
+    {
+      "run": "wingman-2",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed",
+          "outcome": "Failed",
+          "seconds": 0.5640257,
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 16\nActual:   128"
+        }
+      ]
+    },
+    {
+      "run": "wingman-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed",
+          "outcome": "Passed",
+          "seconds": 0.5690368
+        }
+      ]
+    }
+  ],
+  "trainingReminderRepetitions": [
+    {
+      "run": "Classic-1",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 532.4740981,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    },
+    {
+      "run": "Classic-2",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 532.8631945,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    },
+    {
+      "run": "Classic-3",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 533.6589014,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    },
+    {
+      "run": "Modern-1",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 534.3438575,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    },
+    {
+      "run": "Modern-2",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 535.9010375,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    },
+    {
+      "run": "Modern-3",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "outcome": "Failed",
+          "seconds": 532.8724997,
+          "message": "M2 9.2: native prompts missing or out of order; mission-finished and station-1010 dock checks passed before the prompt assertion."
+        }
+      ]
+    }
+  ]
+}
