@@ -28,6 +28,7 @@ public sealed class P1051OnlineDetachmentTests
         GC.SuppressFinalize(game);
         const BindingFlags hidden = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(Game1).GetField("_mouseFlight", hidden)!.SetValue(game, new MouseFlightController());
+        typeof(Game1).GetField("_gamePadFlight", hidden)!.SetValue(game, new JoystickFlightController());
         typeof(Game1).GetField("_flightSession", hidden)!.SetValue(game, session);
         foreach (var (propertyName, methodName) in new[]
         {

@@ -47,6 +47,25 @@ public sealed partial class Game1
     private int _pointerDx, _pointerDy;
     private bool _pointerLocked;
     private int _mouseButtons;
+    private readonly JoystickFlightController _gamePadFlight = new();
+    private bool _padRbWasDown, _padLbWasDown;
+    private GamePadState? _browserPad;
+    private GamePadState? CurrentPadState() => _browserPad;
+    public void FlightGamepad(float[] axes, float[] buttons)
+    {
+        if (axes.Length != 4) return;
+        float Axis(int i) => float.IsFinite(axes[i]) ? Math.Clamp(axes[i], -1, 1) : 0;
+        float Button(int i) => i < buttons.Length && float.IsFinite(buttons[i]) ? Math.Clamp(buttons[i], 0, 1) : 0;
+        // W3C standard slots -> MonoGame physical controls. Bindings remain in
+        // the source-shared ApplyGamePadFlight, with no browser action table.
+        var pressed = new List<Buttons>();
+        if (Button(0) > .5f) pressed.Add(Buttons.A);
+        if (Button(1) > .5f) pressed.Add(Buttons.B);
+        if (Button(4) > .5f) pressed.Add(Buttons.LeftShoulder);
+        if (Button(5) > .5f) pressed.Add(Buttons.RightShoulder);
+        _browserPad = new GamePadState(new Vector2(Axis(0), Axis(1)), new Vector2(Axis(2), Axis(3)),
+            Button(6), Button(7), pressed.ToArray());
+    }
     public void FlightMouseButtons(int buttons) => _mouseButtons = buttons;
     private HudRenderer? _classicFlightHud;
     private ModernHudRenderer? _modernFlightHud;
@@ -91,6 +110,7 @@ public sealed partial class Game1
     public int DrawnShips { get; private set; }
     public string[] VisibleShipNames { get; private set; } = [];
     public object FlightMetrics => new {
+        viewport = new { width = GraphicsDevice.Viewport.Width, height = GraphicsDevice.Viewport.Height },
         controls = new { yaw = _ownSim.Controls.Yaw, pitch = _ownSim.Controls.Pitch, throttle = _ownSim.Controls.Throttle, stateM = _ownSim.StateM },
         authoritative = _flightSession?.World.MyShipId is { } ownId && _flightSession.World.Ships.TryGetValue(ownId, out var ownShip) ? ownShip.Latest?.Position.ToString() : null, flying = Flying, frames = FlightFrames, drawnShips = DrawnShips,
         ships = VisibleShipNames, appliedResets = AppliedResets, position = _ownSim.Position.ToString(),
@@ -142,6 +162,7 @@ public sealed partial class Game1
     }
     public void ReleaseFlightInput()
     {
+        _browserPad = null; _gamePadFlight.Reset(); _padRbWasDown = _padLbWasDown = false;
         _flightKeys = _lastFlightKeys = default;
         _throttle = -1; _mouseButtons = 0; _browserAutoTarget = null;
         PointerCapture(false);
@@ -192,8 +213,13 @@ public sealed partial class Game1
             command = command with { Controls = command.Controls with
                 { Yaw = input.RollModifier ? 0 : yaw, Pitch = pitch, Roll = input.RollModifier ? yaw : command.Controls.Roll } };
         }
+        if (_browserPad is not null) command = ApplyGamePadFlight(command);
         _pointerDx = _pointerDy = 0;
-        if (input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight || input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight || input.RollLeft || input.RollRight
+        bool padTurnActive = _browserPad is { } pad &&
+            (Math.Abs(pad.ThumbSticks.Left.X) > JoystickFlightController.DeadZone ||
+             Math.Abs(pad.ThumbSticks.Right.X) > JoystickFlightController.DeadZone ||
+             Math.Abs(pad.ThumbSticks.Right.Y) > JoystickFlightController.DeadZone);
+        if (padTurnActive || input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight || input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight || input.RollLeft || input.RollRight
             || (_pointerLocked && _mouseFlight.DeflectionMovedPast(_browserAutoMouseBaseline, MouseFlightController.AutopilotDisengageThreshold)))
             _browserAutoTarget = null;
         if (_browserAutoTarget is { } target)

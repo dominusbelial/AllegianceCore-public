@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 function fixture(){
+ let pads=[], polls=0;const navigator={getGamepads(){polls++;if(pads instanceof Error)throw pads;return pads}};
  class Bus{constructor(){this.handlers=new Map()}addEventListener(n,f){let a=this.handlers.get(n)||[];a.push(f);this.handlers.set(n,a)}removeEventListener(n,f){this.handlers.set(n,(this.handlers.get(n)||[]).filter(x=>x!==f))}dispatch(n,data={}){const event={isTrusted:true,code:'',key:'',repeat:false,altKey:false,buttons:0,target:this,preventDefault(){this.prevented=true},...data};for(const f of this.handlers.get(n)||[])f(event);return event}closest(){return null}}
  const window=new Bus(),document=new Bus(),canvas=new Bus(),calls=[],order=[],audio=[];let lockCalls=0,fullCalls=0;
  class AudioContext{constructor(){this.state='running';audio.push(this)}suspend(){this.state='suspended';return Promise.resolve()}resume(){this.state='running';return Promise.resolve()}}
@@ -10,9 +11,9 @@ function fixture(){
  canvas.requestFullscreen=()=>{fullCalls++;order.push('fullscreen');document.fullscreenElement=canvas;return Promise.resolve()};
  document.exitFullscreen=()=>{document.fullscreenElement=null;return Promise.resolve()};
  document.exitPointerLock=()=>{document.pointerLockElement=null;document.dispatch('pointerlockchange')};
- vm.runInNewContext(fs.readFileSync('src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js','utf8'),{window,document,console:{info(){}},Set,Promise});
+ vm.runInNewContext(fs.readFileSync('src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js','utf8'),{window,document,navigator,console:{info(){}},Set,Promise});
  const detach=window.installFlightInput({invokeMethod:(name,...args)=>{calls.push([name,...args]);order.push(name)}});
- return {window,document,canvas,calls,order,audio,detach,get lockCalls(){return lockCalls},get fullCalls(){return fullCalls}};
+ return {window,document,canvas,calls,order,audio,detach,set pads(value){pads=value},get polls(){return polls},get lockCalls(){return lockCalls},get fullCalls(){return fullCalls}};
 }
 test('pointer refusal retries only on a later fresh gesture and Escape releases it',async()=>{
  const f=fixture();f.canvas.dispatch('mousedown',{buttons:0});assert.equal(f.lockCalls,1);await Promise.resolve();assert.equal(f.lockCalls,1);
@@ -29,7 +30,7 @@ test('blur and hidden tab clear every held key/button, exit capture and suspend 
  f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'running');f.canvas.dispatch('mousedown',{buttons:1});
  f.document.pointerLockElement=f.canvas;f.window.dispatch('blur');assert.equal(f.document.pointerLockElement,null);assert.equal(audio.state,'suspended');
  const release=f.calls.findLastIndex(c=>c[0]==='ReleaseFlightInput');assert.ok(release>=0);assert.deepEqual(Array.from(f.calls.slice(0,release).findLast(c=>c[0]==='FlightKeys')[1]),[]);
- f.document.hidden=true;f.document.dispatch('visibilitychange');assert.equal(audio.state,'suspended');f.document.hidden=false;f.document.dispatch('visibilitychange');assert.equal(audio.state,'running');f.detach();
+ f.document.hidden=true;f.document.dispatch('visibilitychange');assert.equal(audio.state,'suspended');f.document.hidden=false;f.document.dispatch('visibilitychange');assert.equal(audio.state,'suspended');f.window.dispatch('focus');assert.equal(audio.state,'running');f.detach();
 });
 test('untrusted events never activate audio/pointer; canvas context menu and WebGL loss are contained',()=>{
  const f=fixture(),audio=new f.window.AudioContext();f.window.dispatch('keydown',{code:'KeyW',key:'w',isTrusted:false});assert.equal(f.lockCalls,0);assert.equal(audio.state,'suspended');
@@ -43,4 +44,30 @@ test('relative steering reaches the input layer only under actual canvas capture
  assert.deepEqual(f.calls.find(c=>c[0]==='PointerMotion'),['PointerMotion',30,12]);
  f.document.pointerLockElement=null;f.document.dispatch('pointerlockchange');const before=f.calls.filter(c=>c[0]==='PointerMotion').length;
  f.canvas.dispatch('mousemove',{movementX:90,movementY:30});assert.equal(f.calls.filter(c=>c[0]==='PointerMotion').length,before);f.detach();
+});
+
+test('gamepad is polled once per frame, translates physical Y signs and ignores non-standard pads',()=>{
+ const f=fixture(),pad={index:0,connected:true,mapping:'standard',axes:[.2,-.4,.6,-.8],buttons:[{pressed:true,value:1}]};f.pads=[pad];
+ f.window.gameFlight.frame();assert.equal(f.polls,1);const call=f.calls.findLast(c=>c[0]==='FlightGamepad');assert.deepEqual(Array.from(call[1]),[.2,.4,.6,.8]);
+ pad.mapping='';f.window.gameFlight.frame();assert.equal(f.polls,2);assert.equal(f.calls.at(-1)[0],'ReleaseFlightInput');
+ const before=f.calls.filter(c=>c[0]==='FlightGamepad').length;f.window.gameFlight.frame();assert.equal(f.calls.filter(c=>c[0]==='FlightGamepad').length,before);f.detach();
+});
+test('held pad cannot reassert on blur/hidden/disconnect; resumed focus uses a fresh sample',()=>{
+ const f=fixture(),pad={index:0,connected:true,mapping:'standard',axes:[0,0,1,1],buttons:[]};f.pads=[pad];f.window.gameFlight.frame();
+ f.window.dispatch('blur');let before=f.calls.filter(c=>c[0]==='FlightGamepad').length;f.window.gameFlight.frame();assert.equal(f.calls.filter(c=>c[0]==='FlightGamepad').length,before);
+ f.window.dispatch('focus');f.window.gameFlight.frame();assert.equal(f.calls.filter(c=>c[0]==='FlightGamepad').length,before+1);
+ f.document.hidden=true;f.document.dispatch('visibilitychange');before=f.calls.filter(c=>c[0]==='FlightGamepad').length;f.window.gameFlight.frame();assert.equal(f.calls.filter(c=>c[0]==='FlightGamepad').length,before);
+ f.document.hidden=false;f.window.gameFlight.frame();f.window.dispatch('gamepaddisconnected',{gamepad:pad});assert.equal(f.calls.at(-1)[0],'ReleaseFlightInput');f.detach();
+});
+test('pacing suspension cannot enable audio without gesture or override focus and visibility',()=>{
+ const f=fixture(),audio=new f.window.AudioContext();f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'running');f.window.gameFlight.pacing(true);assert.equal(audio.state,'suspended');
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'suspended');f.window.dispatch('blur');f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');
+ f.window.dispatch('focus');assert.equal(audio.state,'running');f.document.hidden=true;f.document.dispatch('visibilitychange');f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');f.detach();
+});
+
+test('a refused Gamepad API releases an active pad without stopping keyboard flight',()=>{
+ const f=fixture();f.pads=[{index:0,connected:true,mapping:'standard',axes:[0,0,1,0],buttons:[]}];f.window.gameFlight.frame();
+ f.pads=Error('permissions policy');assert.doesNotThrow(()=>f.window.gameFlight.frame());assert.equal(f.calls.at(-1)[0],'ReleaseFlightInput');
+ f.window.dispatch('keydown',{code:'ArrowUp',key:'ArrowUp'});assert.deepEqual(Array.from(f.calls.at(-1)[1]),['ArrowUp']);f.detach();
 });

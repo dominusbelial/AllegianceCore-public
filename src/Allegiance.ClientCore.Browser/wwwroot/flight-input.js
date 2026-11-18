@@ -1,28 +1,28 @@
 // Page events own gestures. No request is deferred into RAF or a .NET continuation.
 (() => {
   const contexts = new Set();
-  let audioEnabled = false;
+  let audioEnabled = false, framesLate = false, focused = true;
   if (window.AudioContext) {
     const NativeAudioContext = window.AudioContext;
     window.AudioContext = class extends NativeAudioContext {
-      constructor(...args) { super(...args); contexts.add(this); if (!audioEnabled || document.hidden) void this.suspend().catch(() => {}); }
+      constructor(...args) { super(...args); contexts.add(this); if (!audioEnabled || document.hidden || framesLate || !focused) void this.suspend().catch(() => {}); }
     };
   }
   function audio(visible, gesture = false) {
     if (gesture) audioEnabled = true;
     for (const context of contexts) {
       if (context.state === 'closed') { contexts.delete(context); continue; }
-      void (visible && audioEnabled ? context.resume() : context.suspend()).catch(() => {});
+      void (visible && audioEnabled && !framesLate && focused ? context.resume() : context.suspend()).catch(() => {});
     }
   }
   window.installFlightInput = instance => {
     const canvas = document.getElementById('theCanvas'), held = new Set(), listeners = [];
-    let alive = true, pointerPending = false, wantsPointer = false;
+    let alive = true, pointerPending = false, wantsPointer = false, padConnected = false, padIndex = null;
     const playing = () => document.getElementById('online-panel')?.dataset.state === 'Flight';
     const owns = () => playing() && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');
     const invoke = (method, ...args) => { if (alive) instance.invokeMethod(method, ...args); };
     const on = (target, name, handler, options) => { target.addEventListener(name, handler, options); listeners.push(() => target.removeEventListener(name, handler, options)); };
-    const release = () => { wantsPointer = false; held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); if (document.pointerLockElement === canvas) document.exitPointerLock(); };
+    const release = () => { padConnected = false; padIndex = null; wantsPointer = false; held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); if (document.pointerLockElement === canvas) document.exitPointerLock(); };
     const lock = () => {
       if (!wantsPointer || pointerPending || document.pointerLockElement === canvas) return;
       pointerPending = true;
@@ -59,7 +59,9 @@
       if (!locked) { held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); }
     });
     on(document, 'pointerlockerror', () => { pointerPending = false; console.info('[browser] Pointer lock refused; retry on the next gesture.'); });
-    on(window, 'blur', () => { release(); audio(false); });
+    on(window, 'blur', () => { focused = false; release(); audio(false); });
+    on(window, 'focus', () => { focused = true; audio(!document.hidden); });
+    on(window, 'gamepaddisconnected', event => { if (padIndex === event.gamepad?.index || !event.gamepad) release(); });
     on(document, 'visibilitychange', () => { if (document.hidden) release(); audio(!document.hidden); });
     on(canvas, 'contextmenu', event => event.preventDefault());
     on(canvas, 'webglcontextlost', event => { event.preventDefault(); release(); invoke('ContextLost'); });
@@ -67,7 +69,28 @@
       if (event.isTrusted) audio(!document.hidden, true);
       if (event.target.closest?.('[data-flight-fullscreen]')) fullscreen();
     });
-    window.gameFlight = { activate: () => canvas.focus(), audioStates: () => [...contexts].map(c => c.state) };
-    return () => { release(); alive = false; for (const detach of listeners) detach(); delete window.gameFlight; };
+    window.gameFlight = {
+      activate: () => canvas.focus(), audioStates: () => [...contexts].map(c => c.state),
+      pacing(slow) { if (framesLate !== slow) { framesLate = slow; audio(!document.hidden); } },
+      frame() {
+        // Poll once per game frame; only the W3C standard layout is portable.
+        // Browser Y axes are down-positive; the shared desktop pad path is up-positive.
+        let pads;
+        try { pads = navigator.getGamepads?.() || []; }
+        catch { if (padConnected) release(); return; }
+        const pad = [...pads].find(p => p?.connected && p.mapping === 'standard');
+        if (!focused || document.hidden || !owns()) {
+          if (padConnected) release();
+          return;
+        }
+        if (!pad) { if (padConnected) release(); return; }
+        if (padIndex !== null && padIndex !== pad.index) release();
+        padConnected = true; padIndex = pad.index;
+        const axis = i => Number.isFinite(pad.axes[i]) ? Math.max(-1, Math.min(1, pad.axes[i])) : 0;
+        invoke('FlightGamepad', [axis(0), -axis(1), axis(2), -axis(3)],
+          pad.buttons.map(b => Number.isFinite(b.value) ? Math.max(0, Math.min(1, b.value)) : b.pressed ? 1 : 0));
+      }
+    };
+    return () => { release(); framesLate = false; audio(false); alive = false; for (const detach of listeners) detach(); delete window.gameFlight; };
   };
 })();

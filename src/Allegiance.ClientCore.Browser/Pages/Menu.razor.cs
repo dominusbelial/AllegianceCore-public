@@ -12,13 +12,14 @@ public partial class Menu
     private Game1? _game;
     private IJSObjectReference? _platform;
     private IJSInProcessObjectReference? _briefingDecoder;
+    private Task? _briefingPreparation;
     private DotNetObjectReference<Menu>? _reference;
     private readonly ResidentProfileStorage _storage = new();
     private readonly CancellationTokenSource _lifetime = new();
     private StagedAssetSource? _assets;
     private StagedManifest? _joinManifest;
     private readonly Dictionary<string, byte[]> _assetMemoryFallback = new(StringComparer.Ordinal);
-    private bool _loading, _attempted, _flushPending, _disposed, _captureRequested;
+    private bool _joinStaged, _loading, _attempted, _flushPending, _disposed, _captureRequested;
     private string? _error;
     private string _status = "Preparing verified starter pack…", _persistence = "Preferences in memory", _audioStatus = "Enable menu sound";
     private int _progress;
@@ -32,10 +33,10 @@ public partial class Menu
     private async Task LoadAsync()
     {
         if (_loading || _disposed) return;
-        _loading = true; _error = null; _progress = 0; StateHasChanged();
+        _loading = true; _joinStaged = false; _joinManifest = null; _error = null; _progress = 0; StateHasChanged();
         try
         {
-            _platform ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./game-platform.js");
+            _platform ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", await JsRuntime.InvokeAsync<string>("preview.asset", "./game-platform.js"));
             if (!_attempted)
             {
                 var snapshot = await _platform.InvokeAsync<Dictionary<string, string>>("settingsRead");
@@ -53,20 +54,13 @@ public partial class Menu
             {
                 request.SetBrowserResponseStreamingEnabled(true);
                 if (retry) request.SetBrowserRequestCache(BrowserRequestCache.Reload);
-            });
+            }) { CommitCacheManifest = false };
             _attempted = true;
             var manifest = await stager.ReadManifestAsync(_lifetime.Token);
-            _joinManifest = await stager.ReadManifestAsync(_lifetime.Token, "join-manifest.json");
-            stager.RetainedHashes = _joinManifest.Assets.Select(a => a.Sha256).Distinct().ToArray();
             _assets = await stager.StageAsync(manifest, (percent, status) =>
             {
                 _progress = percent; _status = status; StateHasChanged();
             }, _lifetime.Token);
-            _briefingDecoder ??= (IJSInProcessObjectReference)await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./brotli.js");
-            _briefingDecoder.InvokeVoid("begin");
-            foreach (var module in manifest.Assets.Where(a => a.Source.StartsWith("runtime/brotli/", StringComparison.Ordinal)))
-                await _briefingDecoder.InvokeVoidAsync("addModule", Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets, module.Source));
-            _briefingDecoder.InvokeVoid("finish");
             var dimensions = await JsRuntime.InvokeAsync<int[]>("menuViewport");
             StopGame();
             _game = new Game1(_assets, _style, dimensions[0], dimensions[1]);
@@ -152,6 +146,10 @@ public partial class Menu
     [JSInvokable]
     public void FlightKeys(string[] codes) => _game?.FlightKeys(codes);
     [JSInvokable]
+    public void PresentationSize(int width, int height) => _game?.SetPresentationSize(width, height);
+    [JSInvokable]
+    public void FlightGamepad(float[] axes, float[] buttons) => _game?.FlightGamepad(axes, buttons);
+    [JSInvokable]
     public void FlightMouseButtons(int buttons) => _game?.FlightMouseButtons(buttons);
     [JSInvokable]
     public void PointerMotion(int dx, int dy) => _game?.PointerMotion(dx, dy);
@@ -164,7 +162,7 @@ public partial class Menu
     [JSInvokable]
     public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
         invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
-        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, malformed = _session?.MalformedMessageCount }, flight = _game?.FlightMetrics };
+        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, malformed = _session?.MalformedMessageCount }, flight = _game?.FlightMetrics };
     private void StopGame()
     {
         var game = _game; _game = null;
@@ -179,6 +177,8 @@ public partial class Menu
         if (_reference is not null) await JsRuntime.InvokeVoidAsync("menuDetachText");
         _reference?.Dispose(); _lifetime.Dispose();
         if (_platform is not null) await _platform.DisposeAsync();
+        if (_briefingPreparation is { } preparation)
+            try { await preparation; } catch (Exception) when (_disposed) { }
         if (_briefingDecoder is not null) await _briefingDecoder.DisposeAsync();
     }
 }

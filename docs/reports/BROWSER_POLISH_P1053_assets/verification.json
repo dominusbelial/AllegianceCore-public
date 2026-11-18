@@ -1,0 +1,1143 @@
+{
+  "browserGame": {
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "total": 59,
+    "trxSha256": "f048ec4f5533a61c07c3f471484ddcd899a0d8558d369edd6c4884cfa232e8c6"
+  },
+  "browserHead": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "total": 12,
+    "trxSha256": "f3c88f4e1dc67a8f7c3aad9786502a282b8799d93ddbc85b144b8bf53d782e35"
+  },
+  "newCsharp": [
+    {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "total": 8,
+      "trxSha256": "aa67f8e1427ef9ddaddff5f943437718bf9d3498a54f2e70a5a89c2536d07746"
+    },
+    {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "total": 8,
+      "trxSha256": "cdff75fc48894f6e3b049b73a0c687413c837df4c3ebd398f9615a07d296cfa2"
+    },
+    {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "total": 8,
+      "trxSha256": "a5dff9ce5b80d9e72ef1637b6c2f7ff2c680f72be79ae9e19019d2393cb8be07"
+    }
+  ],
+  "regressions": {
+    "Allegiance.Lobby.Tests": {
+      "passed": 49,
+      "failed": 0,
+      "skipped": 0,
+      "total": 49,
+      "trxSha256": "6cad016f2e39765a764043982925564cfa8ac416012f16b38d6c21e23c86bfb9"
+    },
+    "Allegiance.Core.Tests": {
+      "passed": 207,
+      "failed": 0,
+      "skipped": 0,
+      "total": 207,
+      "trxSha256": "64bcd4e9ba55d75989ef6549e9ccf11893bf3d39c101e93d62932eade8e87b4f"
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "total": 10,
+      "trxSha256": "f4bb49d2438a47c3a75f2ffe69f60c755f4c3e495d277c6505ddde2386d7c57a"
+    }
+  },
+  "rws": {
+    "Allegiance.Lobby.Tests": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "trxSha256": "35695d4b313f731e0f6046ba6c835220cf5982d871746aede8a00e5d4b8d6d81"
+    },
+    "Allegiance.Core.Tests": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "total": 4,
+      "trxSha256": "eaf39a31c4e06f48c15db8be13e40d504acddcf4a51181a8ae9c48da0e532bc4"
+    }
+  },
+  "javascript": {
+    "pacingAndInput": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "repeats": 3
+    },
+    "boundedCache": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "repeats": 1
+    }
+  },
+  "browserSecurityRepeats": [
+    {
+      "repeat": 1,
+      "passed": true,
+      "cases": 11,
+      "noSecrets": true,
+      "sha256": "cc48cdebc16b82bac2395bb44e83928db13d34a9c891c91ee561adbdf676e605"
+    },
+    {
+      "repeat": 2,
+      "passed": true,
+      "cases": 11,
+      "noSecrets": true,
+      "sha256": "cc48cdebc16b82bac2395bb44e83928db13d34a9c891c91ee561adbdf676e605"
+    },
+    {
+      "repeat": 3,
+      "passed": true,
+      "cases": 11,
+      "noSecrets": true,
+      "sha256": "cc48cdebc16b82bac2395bb44e83928db13d34a9c891c91ee561adbdf676e605"
+    }
+  ],
+  "pythonPublication": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "repeats": 3
+  },
+  "solution": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "projects": 148,
+    "warnings": 0,
+    "errors": 0
+  },
+  "releasePublish": true,
+  "publicationFingerprint": {
+    "logicalFiles": 695,
+    "rawBytes": 51212898,
+    "sha256OfCanonicalInventory": "f83820764e343a752a5ed63344bba9abed149aca5a369b8d16730bec18b52ee2",
+    "metadataSha256": {
+      "app-manifest.json": "ae99eb83b823e43c3971ec315a9c5fbb388d811194008a2eb27a17eb7362b55e",
+      "starter-manifest.json": "bd730e2c0b13e8c24339d240ca976e33e87f4ecebee691aa415540762c1cf319",
+      "join-manifest.json": "0d51d8905d9b6b3c156d9d7dc23d9a403569a050fa1be4825cfa1eb1ebe5a294",
+      "starter-receipt.json": "dc11e0897546c8f6ac7ff8a96492415d7a55714dd083565d4e93c79deae0ee1b",
+      "join-receipt.json": "f1ffb8fbd70f21d9255ddbd214c9fd6a9ad0bbda4c3a579477249257f42f4a19"
+    }
+  },
+  "desktopFilenames": {
+    "before": 753,
+    "after": 753,
+    "identical": true,
+    "beforeSha256": "3ece68282e4ade29c1dad8c4716b5de801e61865653d76b0b32f696fa624a9a2",
+    "afterSha256": "3ece68282e4ade29c1dad8c4716b5de801e61865653d76b0b32f696fa624a9a2"
+  },
+  "media": {
+    "pngBytes": 1679365,
+    "files": {
+      "after-docked-Classic-1920x1080.png": "98d1b3abb4b25d9f5e97732f5104751cba85250f52e6e78ed5e6997cb46cdf6a",
+      "after-docked-Classic-800x480.png": "0caa1a8f2f712e582e6b30c54915abe7fa4d6e78c3063d4a159eedaa108c4577",
+      "after-docked-Modern-1920x1080.png": "ae93096e0f5d1b35a082fb53b325190ba1bcc7403746fa6be201cdca6c646ec7",
+      "after-docked-Modern-800x480.png": "ab1b3ec8fff7cefdcab7cd0fc8dd660f628a7d83efcf9152f966f3e054bd6008",
+      "after-flight-Classic-1920x1080.png": "a27536f11c1aa3f111cb16c4d89789ca55e0b82105fc7146265d60ae751c3314",
+      "after-flight-Classic-800x480.png": "5e1916cee94eb58bf70c8957c5d4636d26d2fecfa64f7b22bc771e651fa299fe",
+      "after-flight-Modern-1920x1080.png": "60e12a4f751ddff5a12e8dd97403997d42a2096854e77274ae3fd36a0127aaef",
+      "after-flight-Modern-800x480.png": "bfeaa378afee235748d78f4a0556a733662fe7f665cbd8ebde41a29888f94c75",
+      "after-nearby-Classic-800x480.png": "8d667ef26d8c594dc581be3362daaf6ba7475a3e2903be6ebcf17872b11eae02",
+      "before-docked-Classic-1920x1080.png": "e51a125bdeecde433e2117e86488b5b12672876f4ba7b821cc8e13f783c4af73",
+      "before-docked-Classic-800x480.png": "0a2017c4cd1e47c882616223611ccb97820599a600eda519feeeeac9cdebe4b8",
+      "before-docked-Modern-1920x1080.png": "1dde60cb7fba68dabe374bbd4d968dce7c0b57e3be147d064baf40034fb2daaa",
+      "before-docked-Modern-800x480.png": "e733597a4088a418a80d1355adaf5c74dcf900236992d136b8a3f6c138f7cd63",
+      "before-flight-Classic-1920x1080.png": "2ddee9e9656a82217272de0ddb4a14373158ae7b5d26e75256788ed3ebc7a7e0",
+      "before-flight-Classic-800x480.png": "bb8e267078582a9d9a69cbb28a8185a5636c4ca1d68dbebfa0131c2fc81b7ff7",
+      "before-flight-Modern-1920x1080.png": "c88b23d2538aacf05e8feb52976f27f9a1b5a7f7329223a3299ba3932f37013e",
+      "before-flight-Modern-800x480.png": "976303317f22de370a7a4ae8a033bbebcac41bac1446dcc80eaebd87746ee6ed"
+    },
+    "visuallyReviewed": true,
+    "headlessGpuRepresentative": false
+  },
+  "training": {
+    "command": "tools/run-training-tests.sh --no-build --repeat 3 --window-proofs-once",
+    "artwork": true,
+    "serialProjects": true,
+    "children": [
+      {
+        "repeat": 1,
+        "project": "Allegiance.ClientCore.Tests",
+        "passed": 131,
+        "failed": 0,
+        "skipped": 0,
+        "total": 131,
+        "trxSha256": "fe1261c8d1de14c5d31febb07a48ce2c77684855385a57586f99ef0c3172762f",
+        "resultLine": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 9 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {},
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+            "outcome": "Passed"
+          }
+        ]
+      },
+      {
+        "repeat": 1,
+        "project": "Allegiance.ClientCore.MonoGame.Tests",
+        "passed": 299,
+        "failed": 0,
+        "skipped": 2,
+        "total": 301,
+        "trxSha256": "18593e9dc89efa8be3bf00a8335ed2824a533a23c5628d8e24b3901e6feb0f85",
+        "resultLine": "Passed!  - Failed:     0, Passed:   299, Skipped:     2, Total:   301, Duration: 3 h 59 m - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {
+          "Passed": 42,
+          "NotExecuted": 2
+        },
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+            "outcome": "Passed"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "project": "Allegiance.ClientCore.Tests",
+        "passed": 131,
+        "failed": 0,
+        "skipped": 0,
+        "total": 131,
+        "trxSha256": "6da51c84ba686f3fbb2109d9a71751b93e6124d69e870b43204a9f0eb4cd4e39",
+        "resultLine": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {},
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+            "outcome": "Passed"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "project": "Allegiance.ClientCore.MonoGame.Tests",
+        "passed": 257,
+        "failed": 0,
+        "skipped": 0,
+        "total": 257,
+        "trxSha256": "c1dd19e18e30a796b9ce8e4195f4a825d1efb2dc5c41ff21e3a104b19380c753",
+        "resultLine": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 8 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {},
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+            "outcome": "Passed"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "project": "Allegiance.ClientCore.Tests",
+        "passed": 131,
+        "failed": 0,
+        "skipped": 0,
+        "total": 131,
+        "trxSha256": "b1117899f2d3a8c1f7cb48dc98bacf8cede17c6a18433e93d23ba64c8e8d11c7",
+        "resultLine": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 9 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {},
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+            "outcome": "Passed"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "project": "Allegiance.ClientCore.MonoGame.Tests",
+        "passed": 257,
+        "failed": 0,
+        "skipped": 0,
+        "total": 257,
+        "trxSha256": "3306b1f08a025e77b59463269c30084aed4a252de977580eabcde99e8bb20d67",
+        "resultLine": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 8 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+        "failures": [],
+        "p912Outcomes": {},
+        "naniteResults": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+            "outcome": "Passed"
+          }
+        ]
+      }
+    ],
+    "complete": true,
+    "exitCode": 0,
+    "windowProofs": [
+      {
+        "case": "m3-Classic-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M3 Classic lessons=1,2,3,4,5,6,7,8,9,10,11,12,13",
+        "logSha256": "0a405abd9f951e5dc1bb0147e20c75a27b3b9d944f5dd61113e3bc7bd26ac1c2"
+      },
+      {
+        "case": "m3-Modern-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M3 Modern lessons=1,2,3,4,5,6,7,8,9,10,11,12,13",
+        "logSha256": "9e736d5fb69a237e5cb0221867122a15476d1542e5f820ed2f6f3cc378f42f4b"
+      },
+      {
+        "case": "m3-Modern-lesson=10",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M3 Modern lesson=10",
+        "logSha256": "ba3d36867878bb103edaf5dcb2ff02d92d7d4b12055e2d92af8d867cc55fcaf6"
+      },
+      {
+        "case": "m3-Modern-lesson=11",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M3 Modern lesson=11",
+        "logSha256": "3289e537287b405b76d5d4596a779d096f8a232ea6c4dc5635c5969a58e4c421"
+      },
+      {
+        "case": "m3-Modern-lesson=9",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M3 Modern lesson=9",
+        "logSha256": "aab5a5cc85485939576d3f4f8150f6d22f7b8bcfb7fd84d522f40de98dd175fc"
+      },
+      {
+        "case": "m4-Classic-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M4 Classic lessons=1,2,3,4,5,6,7,8,9,10",
+        "logSha256": "972ef649aac3ffc6cbbaa7987c3accf48006989fb56cd63a8b59ce3458d27f31"
+      },
+      {
+        "case": "m4-Modern-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M4 Modern lessons=1,2,3,4,5,6,7,8,9,10",
+        "logSha256": "fffe96fe37b482067198209e718fd8a8860c60ca0b1da27c89d1894b426d328b"
+      },
+      {
+        "case": "m4-Modern-departure",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M4 Modern lessons=1,2,3,4,5,6,7,8,9,10",
+        "logSha256": "60907184c95c8834e504b0f2b6828a36e9657b5a9ecf5c001545e4ddb291fc4d"
+      },
+      {
+        "case": "m4-Modern-lesson=1",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=1",
+        "logSha256": "a387d3ae52aab15c2a6e6a477f93f077d3a414499b5bea8d7e9ca095da6d6c9d"
+      },
+      {
+        "case": "m4-Modern-lesson=10",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=10",
+        "logSha256": "ad3cb6460421a9d735790ed2103648a71d8e96c8b9835a24987f776a88e460e0"
+      },
+      {
+        "case": "m4-Modern-lesson=2",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=2",
+        "logSha256": "329cd74c40065ac7fe825872c9e581de4a9f1f1df2bd8f8ea9dfd951868927ae"
+      },
+      {
+        "case": "m4-Modern-lesson=3",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=3",
+        "logSha256": "8105f4fb7987ec09908cf74a944c6520b3c239f9c5736eb5de775f5fb7bee165"
+      },
+      {
+        "case": "m4-Modern-lesson=4",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=4",
+        "logSha256": "a34999ea0bd7eb8aaabcbb5d82bc4fc11f9da9ade8e42f96c8f7859784bc66ea"
+      },
+      {
+        "case": "m4-Modern-lesson=5",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=5",
+        "logSha256": "af5d836c9248ab7a05c1b0328fd408bfc72bc0ae738b86a46856f5869056952c"
+      },
+      {
+        "case": "m4-Modern-lesson=7",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=7",
+        "logSha256": "0a682ed886953e6cd0f4f46f9ab59c094855648b16239c6bc80468a2a980bcd5"
+      },
+      {
+        "case": "m4-Modern-lesson=8",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=8",
+        "logSha256": "80e7b8ee17dcdefa1e4ab64f7c4b85a34bf846b6c9bd46fc1abefe93444d3c67"
+      },
+      {
+        "case": "m4-Modern-lesson=9",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M4 Modern lesson=9",
+        "logSha256": "8f9ad353ebd58739e1a322292ad82b1063d7756d449024be3732dbd086fe6e15"
+      },
+      {
+        "case": "m5-Classic-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M5 Classic lessons=1,2,3,4,5",
+        "logSha256": "80dc9db64a27be4e10c22789e7788615ae4a2a6061a57a26e3cde4f56649e341"
+      },
+      {
+        "case": "m5-Modern-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M5 Modern lessons=1,2,3,4,5",
+        "logSha256": "003872ca5e1760428437f6746bf620872af7a30bcf73adc8281192bb0ece22ac"
+      },
+      {
+        "case": "m5-Modern-lesson=1",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M5 Modern lesson=1",
+        "logSha256": "7d73be0a705d64f3eb435d8826136a172f11572e093c2b3fa54765c05b3c062f"
+      },
+      {
+        "case": "m5-Modern-lesson=2",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M5 Modern lesson=2",
+        "logSha256": "084e42e4d0b69211a8796892068e5a266499f5ef100370222d6f82000bf79bcd"
+      },
+      {
+        "case": "m5-Modern-lesson=3",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M5 Modern lesson=3",
+        "logSha256": "9cc91d43cee71e23e6b65bcecdf218220df8833b3112a56bfa527cac5f0c9284"
+      },
+      {
+        "case": "m5-Modern-lesson=4",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M5 Modern lesson=4",
+        "logSha256": "7042dcfe075d7eaeca76cce80a059bdc162cf6ad05424d00bda791e03e2a2cb4"
+      },
+      {
+        "case": "m5-Modern-lesson=5",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M5 Modern lesson=5",
+        "logSha256": "62e01359c1c700d94cdb3dbfef4c6cf06b9dd1dd54351cd40a4169bc02a3925a"
+      },
+      {
+        "case": "m8-Classic-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+        "logSha256": "3fd3a6745f72c6d8ba227c856bbfa537bf7765619fd4a4b960ee3f5f6ab8929c"
+      },
+      {
+        "case": "m8-Classic-early",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+        "logSha256": "0c18393258563f3af87980ff146799d8e8ddc79880feb2ae8a63b5e444963f6e"
+      },
+      {
+        "case": "m8-Classic-sacrifice",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+        "logSha256": "331235cf82843b4512e253e566b369f6afad6b87a9af1b47a61faab8aa54821c"
+      },
+      {
+        "case": "m8-Modern-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+        "logSha256": "68a14b231def9c0af9d6086f86fcab4cf0e44fbe483adf3fa2cf0e134a17d80f"
+      },
+      {
+        "case": "m8-Modern-early",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+        "logSha256": "15d561379cb15c9f6922f70b5c36d8c5a13d9f63fe20468ee91412ca6f62b1e7"
+      },
+      {
+        "case": "m8-Modern-lesson=1",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M8 Modern lesson=1",
+        "logSha256": "2bd4eacd31f65efb38e848a7b74eb38ea6a889dee25fb66e288a31aecf1664b9"
+      },
+      {
+        "case": "m8-Modern-lesson=2",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M8 Modern lesson=2",
+        "logSha256": "f6ec138f574bf33a6b9b03b908401d77f58806461ca463e25eb4ea57433d8205"
+      },
+      {
+        "case": "m8-Modern-lesson=3",
+        "passed": true,
+        "passMarker": "P912_LESSON_PASS M8 Modern lesson=3",
+        "logSha256": "d63f20a66b2c7bbd5b2587ea423c1616ad06d9411d34c96974940329151fbe4b"
+      },
+      {
+        "case": "m8-Modern-loss",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+        "logSha256": "d3f51408fc45384de8c20ca372ddbfee31cbfb06491e349ffd07e430e17907c5"
+      },
+      {
+        "case": "m8-Modern-sacrifice",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+        "logSha256": "c6a440d918deacbbb8dce9947305463e010f4044cb934609e956ccfd937a3fbd"
+      },
+      {
+        "case": "m2-Classic-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "8c4e48b4a5723c46a117d9d5a5e1d209f69f0a875285d005adda28fbfdbf7b0e"
+      },
+      {
+        "case": "m2-Classic-missing-audio",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "930a7ba6ae2f2a4f68326039bd1c09837cc9d2a4f6833f421ca79e6714f52c08"
+      },
+      {
+        "case": "m2-Classic-muted",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "10abd454259278f38ac3088f5f3bfb35ec5240f2a62594878eb3ec4fbb8d06f9"
+      },
+      {
+        "case": "m2-Classic-reminders",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "74d3749f848dd3c338798f60dc969d06430be1659c2d00c672fa5b94eb3619ab"
+      },
+      {
+        "case": "m2-Modern-default",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "81a7f10a2599a680fba5bbcb3e7947c0eb351a4bac1aa52f1ef9977c1e253470"
+      },
+      {
+        "case": "m2-Modern-missing-audio",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "0a3794f9ddac7248ed2e893f8fd4be1590b2cf2748e7d4fcb746d549a874b8a7"
+      },
+      {
+        "case": "m2-Modern-muted",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "179aa156a4b526ce901ce0ca630e98d5ab5b87ca2da9845cf68dc4eeabb5e5bf"
+      },
+      {
+        "case": "m2-Modern-reminders",
+        "passed": true,
+        "passMarker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+        "logSha256": "c4107048bc92b9665162fd13f716f3a7c30a5fba435c781c7a8967d97f798b89"
+      }
+    ],
+    "windowProofsPassed": 42
+  },
+  "fastIsolations": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "b24eb240f7ee24b8cbab6284d5b3a67de44aeeb7c381c62b95adcc129b627cbc",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+              "outcome": "Passed",
+              "seconds": 1.3192067,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "77bcca5bf9c371fd302de6453b11729982177ff6bb278f93493e87729ea6e787",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+              "outcome": "Passed",
+              "seconds": 1.3434634,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "673750de95c6e2b44a1bed9c18739e2588ff3fe22985795b22339dcff389f5d4",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+              "outcome": "Passed",
+              "seconds": 1.3368785,
+              "message": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "647c207ee2efca009f55605c960e64004e543aac1f46d804642aaf9a5576f0fb",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 2.5285793,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 1.831945,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 3.2285475,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 4.0067665,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "f18107793041add02b4c428aaabbd7d3f9746a8cfd8cdf4211cb1f5a76e07956",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 3.2171684,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 2.5993601,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 1.8865142,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 4.0433842,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "231320db2409d7603dbe3eaebafe1a0fe30e6a2c7b254b74bfb83a5eed1c307f",
+          "rows": [
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 1.8969429,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+              "outcome": "Passed",
+              "seconds": 2.5479504,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 4.0271922,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+              "outcome": "Passed",
+              "seconds": 3.3108075,
+              "message": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "d865c024b23ab4552f6003cf26bbb253e865e55388245f9125df6d398fd706cd",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+              "outcome": "Passed",
+              "seconds": 1.7835676,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "599fb0b61e525e1e63cf8a518b5a66cc3bc1b1a824a262ea8b07299681ea785b",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+              "outcome": "Passed",
+              "seconds": 1.7206766,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "1b19e7e4a0fa287faef0bc1d0554c86b3d53c31d1b31888a63d016595b298a52",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+              "outcome": "Passed",
+              "seconds": 1.7847927,
+              "message": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 1,
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "trxSha256": "112e749f20dcdfadb3df1d95e1b8dce735d7a4f139987ecb5a8be7a93b10d966",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "outcome": "Passed",
+              "seconds": 0.1875129,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "outcome": "Passed",
+              "seconds": 0.2538198,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "outcome": "Failed",
+              "seconds": 0.4460508,
+              "message": "Assert.InRange() Failure: Value not in range\nRange:  (6.9000000000000004 - 7)\nActual: 7.0000000000000009"
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "1ce341ee48d42f5775098f3d46922c657880a6df6656f210634c289d9e033c89",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "outcome": "Passed",
+              "seconds": 0.5331736,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "outcome": "Passed",
+              "seconds": 0.1649981,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "outcome": "Passed",
+              "seconds": 0.2145944,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 3,
+          "exitCode": 1,
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "trxSha256": "b08d417c96b841acb3ef7eddb933486880353de2527f847938c23d7a14abe881",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+              "outcome": "Failed",
+              "seconds": 0.1286104,
+              "message": "Assert.InRange() Failure: Value not in range\nRange:  (4.9000000000000004 - 5)\nActual: 5.0000000000000009"
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+              "outcome": "Passed",
+              "seconds": 0.5779595,
+              "message": ""
+            },
+            {
+              "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+              "outcome": "Passed",
+              "seconds": 0.2467502,
+              "message": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "runs": [
+        {
+          "repeat": 1,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "f340fcfdfe9ecb439e240abe24fee4ced1ff8e7170e02831975ea5a7eb04e7e6",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+              "outcome": "Passed",
+              "seconds": 0.5360087,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "927ad96a64a1084033ddaa663b94ea0b1dbcb1988133fb7e6be81360300af12e",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+              "outcome": "Passed",
+              "seconds": 0.5324607,
+              "message": ""
+            }
+          ]
+        },
+        {
+          "repeat": 3,
+          "exitCode": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "trxSha256": "80d0030368fdee0e2affbf8ed0c7cf138df1bc1d56b653a7be1f75a09547eb5d",
+          "rows": [
+            {
+              "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+              "outcome": "Passed",
+              "seconds": 0.5515148,
+              "message": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processAccounting": {
+    "proofHttpAndLobbyPorts": {
+      "8048": "closed",
+      "8049": "closed"
+    },
+    "ownedProofHostStopFiles": 12,
+    "ownedHostBrowserTrainingFastAndIsolationToolSessionsCompleted": true,
+    "trainingExitCode": 0,
+    "fastExitCode": 1,
+    "gateArtifactsCollectedAfterCompletion": true
+  },
+  "glossary": {
+    "paths": 990,
+    "passed": true
+  },
+  "supplementalParity": {
+    "rows": 2,
+    "passed": true,
+    "newCredit": 0
+  },
+  "fast": {
+    "discovery": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "fast": 12,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "fast": 59,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.Lobby.Tests": {
+        "fast": 261,
+        "live": 6,
+        "perf": 0
+      },
+      "Allegiance.Update.Tests": {
+        "fast": 55,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 5896,
+        "live": 139,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 2456,
+        "live": 198,
+        "perf": 6
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 6781,
+        "live": 110,
+        "perf": 74
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 876.2371016900288,
+        "projects": {
+          "Allegiance.ClientCore.Browser.Tests": {
+            "count": 12,
+            "outcomes": {
+              "Passed": 12
+            }
+          },
+          "Allegiance.ClientCore.Game.Browser.Tests": {
+            "count": 59,
+            "outcomes": {
+              "Passed": 59
+            }
+          },
+          "Allegiance.Lobby.Tests": {
+            "count": 261,
+            "outcomes": {
+              "Passed": 261
+            }
+          },
+          "Allegiance.Update.Tests": {
+            "count": 55,
+            "outcomes": {
+              "Passed": 55
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 5896,
+            "outcomes": {
+              "Passed": 5893,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 2456,
+            "outcomes": {
+              "Passed": 2454,
+              "Failed": 2
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 6781,
+            "outcomes": {
+              "Passed": 6775,
+              "NotExecuted": 3,
+              "Failed": 3
+            }
+          }
+        },
+        "calibration": {
+          "factor": 1.1523342175066311,
+          "referenceMs": 4.3443,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 11.523342175066311
+        },
+        "timingOffenders": [],
+        "errors": [
+          "Allegiance.ClientCore.Tests: main failed",
+          "Allegiance.Core.Tests: main failed"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.03501810098532587,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03501810098532587,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  }
+}

@@ -93,6 +93,18 @@ list in **reverse**.
   normal authenticated transport state in `src/Allegiance.Server/Server.ReconnectGrace.cs`;
   parity tracking: `docs/parity/p1051-browser-flight.csv`. Report:
   `docs/reports/BROWSER_FLIGHT_P1051.md`. No new simulation or wire rule.
+- **Browser presentation polish (P1053)** — RAF audio/scale hysteresis in
+  `src/Allegiance.ClientCore.Browser/wwwroot/frame-pacing.js`; standard Gamepad API
+  sampling and lifecycle release in `src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js`
+  reuse `src/Allegiance.ClientCore.Game/Game1.GamePadFlight.cs` and the desktop
+  joystick controller. Browser chrome reserves the canvas viewport through
+  `src/Allegiance.ClientCore.Browser/wwwroot/menu.js`; shared desktop HUDs stay
+  unchanged. Content-addressed publish/preload finalization:
+  `tools/p1053-browser-publish.py`; full join staging and decoder preparation
+  are deferred until Join, with generation-owned cancellation in
+  `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`. Chromium timing/control/layout proof:
+  `tools/p1053-browser-polish.cjs`. Static-file cache contract:
+  `docs/BROWSER_HOSTING.md`. Report: `docs/reports/BROWSER_POLISH_P1053.md`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

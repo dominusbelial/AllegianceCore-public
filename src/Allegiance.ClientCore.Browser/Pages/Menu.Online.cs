@@ -16,6 +16,7 @@ public partial class Menu
 {
     private bool _online, _onlineBusy, _onlineClosing;
     private long _onlineGeneration;
+    private int _pendingJoins;
     private BrowserServer? _pendingServer;
     private BrowserMission? _pendingMission;
     private string? _onlineError;
@@ -59,11 +60,38 @@ public partial class Menu
         if (!string.IsNullOrEmpty(server.MinClientVersion)) return "Client update qualification is not available in the browser.";
         return null;
     }
+    private async Task EnsureBriefingDecoderAsync(StagedManifest manifest)
+    {
+        // A cancelled join and its replacement share preparation; neither may
+        // observe a half-linked decoder or reset the other's WASM modules.
+        var preparation = _briefingPreparation ??= PrepareBriefingDecoderAsync(manifest);
+        try { await preparation; }
+        catch
+        {
+            if (ReferenceEquals(_briefingPreparation, preparation)) _briefingPreparation = null;
+            throw;
+        }
+    }
+    private async Task PrepareBriefingDecoderAsync(StagedManifest manifest)
+    {
+        string path = await JsRuntime.InvokeAsync<string>("preview.asset", _lifetime.Token, "./brotli.js");
+        var decoder = (IJSInProcessObjectReference)await JsRuntime.InvokeAsync<IJSObjectReference>("import", _lifetime.Token, path);
+        try
+        {
+            decoder.InvokeVoid("begin");
+            foreach (var module in manifest.Assets.Where(a => a.Source.StartsWith("runtime/brotli/", StringComparison.Ordinal)))
+                await decoder.InvokeVoidAsync("addModule", _lifetime.Token, Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets!, module.Source));
+            decoder.InvokeVoid("finish");
+            _lifetime.Token.ThrowIfCancellationRequested();
+            _briefingDecoder = decoder;
+        }
+        catch { await decoder.DisposeAsync(); throw; }
+    }
     private async Task JoinServerAsync(BrowserServer server, BrowserMission? mission)
     {
         if (_onlineBusy || _assets is null || _account is null || !_servers.Contains(server) || Unavailable(server) is not null) return;
         if (mission?.PasswordRequired == true) { _onlineError = "Password games are not available in the browser."; return; }
-        long generation = ++_onlineGeneration;
+        long generation = ++_onlineGeneration; ++_pendingJoins;
         ConnectionSession? ownedSession = null;
         _pendingServer = server; _pendingMission = mission;
         _onlineBusy = true; _onlineError = null;
@@ -73,12 +101,22 @@ public partial class Menu
             _onlineState = "Staging";
             var stager = new AssetStager(Http, new BrowserAssetCache(_platform, _assetMemoryFallback), request => request.SetBrowserResponseStreamingEnabled(true));
             var joinManifest = _joinManifest ?? await stager.ReadManifestAsync(_lifetime.Token, "join-manifest.json");
-            var pack = await stager.StageAsync(joinManifest, (percent, status) =>
-            { _progress = percent; _status = status; StateHasChanged(); }, _lifetime.Token);
             if (generation != _onlineGeneration) return;
-            _assets.Merge(pack);
+            _joinManifest = joinManifest;
+            if (!_joinStaged)
+            {
+                var pack = await stager.StageAsync(joinManifest, (percent, status) =>
+                { _progress = percent; _status = status; StateHasChanged(); }, _lifetime.Token);
+                if (generation != _onlineGeneration) return;
+                _assets.Merge(pack);
+                _joinStaged = true;
+            }
+            if (generation != _onlineGeneration) return;
+            await EnsureBriefingDecoderAsync(joinManifest);
+            if (generation != _onlineGeneration) return;
             _game?.AttachOnlineSession(null);
             if (_session is not null) await _session.DisposeAsync();
+            if (generation != _onlineGeneration) return;
             var core = StaticCore.Load(IgcReader.Parse(Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets, "PCore001.igc")));
             var session = ownedSession = _session = new ConnectionSession { WebSocketEndpoint = WebSocketEndpoint.FromLoopbackDirectoryListing(server.Route(LoopbackDirectory)!) };
             session.BrowserMissionBriefingDecoder = message =>
@@ -103,7 +141,7 @@ public partial class Menu
                     reply.EnsureSuccessStatusCode();
                     return (await reply.Content.ReadFromJsonAsync(IdentityJsonContext.Default.JoinTokenResponse, ct))!.Token;
                 }, cancellationToken: _lifetime.Token);
-            if (generation != _onlineGeneration) return;
+            if (generation != _onlineGeneration) throw new OperationCanceledException("The join was retired.");
             if (refusal is not null) throw new InvalidOperationException("The server refused this mission join.");
             if (session.World.JoinError is { } error) throw new InvalidOperationException(error);
             _onlineName = mission?.Name ?? server.MissionName;
@@ -118,7 +156,7 @@ public partial class Menu
             }
             if (ownedSession is not null) { await ownedSession.LeaveBrowserAsync(); await ownedSession.DisposeAsync(); }
         }
-        finally { if (generation == _onlineGeneration) { _onlineBusy = false; StateHasChanged(); } }
+        finally { --_pendingJoins; if (generation == _onlineGeneration) { _onlineBusy = false; StateHasChanged(); } }
     }
     private void ToggleContactView() => _game?.ToggleContactView();
     private void DockHome() => _game?.DockHome();

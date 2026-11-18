@@ -14,6 +14,10 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         internal int Waiters;
     }
     public string[]? RetainedHashes { get; set; }
+    // A menu-only stage may preserve the previous complete join residency;
+    // the user-triggered complete join owns obsolete-file cleanup. Per-file
+    // verification and the cache's byte/entry limits still apply on every path.
+    public bool CommitCacheManifest { get; set; } = true;
     public StagedAssetSource? Current { get; private set; }
 
     public async Task<StagedManifest> ReadManifestAsync(CancellationToken cancellationToken, string manifestPath = "starter-manifest.json")
@@ -48,18 +52,28 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         var assets = manifest.Assets.DistinctBy(a => StagedManifest.Canonical(a.Source)).ToArray();
         long total = assets.Sum(a => a.ByteSize), completed = 0;
         var elapsed = System.Diagnostics.Stopwatch.StartNew();
-        foreach (var asset in assets)
+        // Bounded async batches overlap cache/network waits on WASM's event
+        // loop. Every file is verified before atomic resident publication;
+        // failed batches drain fully so Retry cannot race an earlier download.
+        foreach (var batch in assets.Chunk(4))
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            double secondsLeft = completed == 0 ? double.NaN : elapsed.Elapsed.TotalSeconds * (total - completed) / completed;
-            string eta = double.IsFinite(secondsLeft) ? $"{Math.Ceiling(secondsLeft)}s" : "estimating";
-            progress?.Invoke((int)(completed * 100 / total), $"{asset.Source} · {completed / 1048576d:F2}/{total / 1048576d:F2} MB · ETA {eta}");
-            var bytes = await GetAsync(asset, cancellationToken);
-            staged.Add(StagedManifest.Canonical(asset.Source), bytes);
-            completed += bytes.Length;
+            var downloads = batch.Select(async asset =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                double secondsLeft = completed == 0 ? double.NaN : elapsed.Elapsed.TotalSeconds * (total - completed) / completed;
+                string eta = double.IsFinite(secondsLeft) ? $"{Math.Ceiling(secondsLeft)}s" : "estimating";
+                progress?.Invoke((int)(completed * 100 / total), $"{asset.Source} · {completed / 1048576d:F2}/{total / 1048576d:F2} MB · ETA {eta}");
+                return (asset, bytes: await GetAsync(asset, cancellationToken));
+            }).ToArray();
+            foreach (var (asset, bytes) in await Task.WhenAll(downloads))
+            {
+                staged.Add(StagedManifest.Canonical(asset.Source), bytes);
+                completed += bytes.Length;
+            }
         }
         cancellationToken.ThrowIfCancellationRequested();
-        await cache.CommitManifestAsync(manifest.Identity, RetainedHashes ?? assets.Select(a => a.Sha256).Distinct().ToArray(), cancellationToken);
+        if (CommitCacheManifest)
+            await cache.CommitManifestAsync(manifest.Identity, RetainedHashes ?? assets.Select(a => a.Sha256).Distinct().ToArray(), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var resident = new StagedAssetSource(staged);
         lock (_gate) { if (generation == _generation) Current = resident; }

@@ -1,0 +1,106 @@
+{
+  "failures": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "outcome": "Failed",
+      "seconds": 4.6966776,
+      "message": "B never saw A's death (IsDead never latched on B) after 2500 ticks"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "outcome": "Failed",
+      "seconds": 1.8799945,
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (14.94 - 15.06)\nActual: 14.900000000054206"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "outcome": "Failed",
+      "seconds": 1.3939452,
+      "message": "Assert.Empty() Failure: Collection was not empty\nCollection: [AsteroidMined { AsteroidId = 249, BpOreFraction = 228, ClusterId = 1061 }]"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "outcome": "Failed",
+      "seconds": 0.133093,
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (4.9000000000000004 - 5)\nActual: 5.0000000000000009"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "outcome": "Failed",
+      "seconds": 0.1811157,
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.14999962"
+    }
+  ],
+  "skips": [
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "outcome": "NotExecuted",
+      "seconds": 0.0002724,
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "outcome": "NotExecuted",
+      "seconds": 0.000256,
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "outcome": "NotExecuted",
+      "seconds": 0.0053616,
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus",
+      "method": "Allegiance.Core.Tests.PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus",
+      "outcome": "NotExecuted",
+      "seconds": 0.0110462,
+      "message": "Supplied artwork corpus is not a Git checkout of packaging pin 4a60aa636405de66bca6bf48bff99c25a16a2ca3; existing packaging qualification skipped."
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+      "method": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+      "outcome": "NotExecuted",
+      "seconds": 0.0382016,
+      "message": "map has no enemy station in the same sector"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+      "method": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+      "outcome": "NotExecuted",
+      "seconds": 0.0218962,
+      "message": "map has no enemy station in the same sector"
+    }
+  ],
+  "timingOffenders": [],
+  "trxSha256": {
+    "Allegiance.ClientCore.Browser.Tests-main.trx": "f69c0241bc89f0fb66ea66aae47df42542cb9a2e241cb52b43239d0545f31cfb",
+    "Allegiance.ClientCore.Game.Browser.Tests-main.trx": "a729bd56210b915bb65a138ea7c439f9091429e697d484d21c42957a0d283bfc",
+    "Allegiance.ClientCore.MonoGame.Tests-main.trx": "11482bba0355aad4c3f36fca0b0cfc57d0782213f7ec191fb89491a0b013b722",
+    "Allegiance.ClientCore.Tests-main.trx": "a638cae9e8c9f1558872dee1cb9a1121a764cbb6a25a8f37eb4ef5391715bcb1",
+    "Allegiance.ClientCore.Tests-quarantine.trx": "66fafc54ebc30bcd176129b2f1a5812bea0aafd6308288686bb41af4c3565d4a",
+    "Allegiance.Core.Tests-main.trx": "19a93a40088ff5d0f0058eedce72e338103adf3a0c29b15594f1806366244663",
+    "Allegiance.Core.Tests-quarantine.trx": "7a898101efb62c0897f8b4978a2427a2048e9ffccf2ecacb4b28250f4b4150a0",
+    "Allegiance.Lobby.Tests-main.trx": "48a9e75819bd6e41a7479eb5207621e02944dc59496cf65081b4693b13500cd9",
+    "Allegiance.Update.Tests-main.trx": "7f98064de883cb52fc76048866b4d50832397841c04c7e1cd8db083c400f5638"
+  }
+}

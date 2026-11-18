@@ -2,19 +2,34 @@
 (() => {
   'use strict';
   const app = document.getElementById('app');
+  const assets = JSON.parse(document.currentScript?.dataset.assets || '{}');
+  const asset = name => { const mapped = assets[name.replace(/^\.\//, '')]; return mapped ? (name.startsWith('./') ? './' : '') + mapped : name; };
   const measurements = { firstFrameMs: null, cpu: [], interval: [] };
   let frameId = 0;
   let startupTimer;
+  const pacing = window.FramePacing ? new window.FramePacing() : null;
   window.preview = {
     measurements,
+    asset,
+    pacing: () => ({...pacing?.snapshot(), bufferWidth:document.getElementById('theCanvas')?.width,bufferHeight:document.getElementById('theCanvas')?.height,dpr:Math.min(window.devicePixelRatio||1,2)}),
     startFrames(instance) {
       cancelAnimationFrame(frameId);
+      pacing?.reset();
       const canvas = document.getElementById('theCanvas');
       let previous;
       const tick = now => {
-        if (canvas.width !== innerWidth || canvas.height !== innerHeight) {
-          canvas.width = innerWidth;
-          canvas.height = innerHeight;
+        pacing?.sample(now, document.hidden);
+        window.gameFlight?.pacing(pacing?.slow ?? false);
+        window.gameFlight?.frame();
+        const note = document.getElementById('pacing-note');
+        if (note) note.hidden = !pacing?.slow;
+        window.menuLayout?.();
+        const box = document.fullscreenElement === canvas ? {width:innerWidth,height:innerHeight} : canvas.parentElement.getBoundingClientRect();
+        const ratio = window.menuLayout ? Math.min(window.devicePixelRatio || 1, 2) * (pacing?.scale ?? 1) : 1;
+        const width = Math.max(1, Math.round(box.width * ratio)), height = Math.max(1, Math.round(box.height * ratio));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width; canvas.height = height;
+          if (window.menuLayout) instance.invokeMethod('PresentationSize', width, height);
         }
         const start = performance.now();
         let drawn;
@@ -59,9 +74,11 @@
     fail('This browser needs WebAssembly and WebGL to show the scout. Try a supported browser or use the desktop client.', true);
     return;
   }
+  const preloads = document.getElementById('boot-preloads');
+  if (preloads) document.head.append(preloads.content.cloneNode(true));
   function script(path, before) {
     return new Promise((resolve, reject) => {
-      const node = document.createElement('script'); node.src = path;
+      const node = document.createElement('script'); node.src = asset(path);
       if (before) before(node);
       node.onload = resolve; node.onerror = () => reject(new Error('Could not download ' + path));
       document.body.append(node);
@@ -74,6 +91,12 @@
     // KNI interop is self-hosted. Explicit order preserves its global registrations.
     const interop = ['JSInterop/js/JSObject', 'Dom/js/Window', 'Dom/js/Document', 'Dom/js/Navigator', 'Dom/js/Gamepad', 'Dom/js/Media', 'XHR/js/XHR', 'Canvas/js/Canvas', 'Canvas/js/CanvasGLContext', 'Audio/js/Audio', 'XR/js/XR'];
     let done = 0;
+    // Fetch independent scripts together, evaluate in their required order.
+    for (const file of interop) {
+      const [pkg, ...rest] = file.split('/'), link = document.createElement('link');
+      link.rel = 'preload'; link.as = 'script'; link.href = asset('_content/nkast.Wasm.' + pkg + '/' + rest.join('/') + '.10.0.3.js');
+      document.head.append(link);
+    }
     for (const file of interop) {
       const [pkg, ...rest] = file.split('/');
       await script('_content/nkast.Wasm.' + pkg + '/' + rest.join('/') + '.10.0.3.js');
@@ -81,11 +104,12 @@
     await script('_framework/blazor.webassembly.js', node => node.setAttribute('autostart', 'false'));
     await Blazor.start({
       loadBootResource(type, name, uri, integrity) {
-        if (type === 'dotnetjs') return uri;
-        return fetch(uri, { integrity, cache: 'default', credentials: 'same-origin' }).then(response => {
+        if (type === 'dotnetjs') return asset(uri);
+        return fetch(asset(uri), { integrity, cache: 'default', credentials: 'same-origin' }).then(response => {
           if (!response.ok) throw new Error('Could not download ' + name);
           done++;
-          document.getElementById('runtime-progress').value = Math.min(95, done);
+          const progress = document.getElementById('runtime-progress');
+          if (progress) progress.value = Math.min(95, done);
           status.textContent = 'Loading runtime components (' + done + ')…';
           return response;
         });

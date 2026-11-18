@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "headlessGpuRepresentative": false,
+  "results": [
+    {
+      "phase": "before",
+      "cache": "cold",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 128,
+      "menuMs": 1286.1000000238419,
+      "flightMs": 13649.800000071526
+    },
+    {
+      "phase": "before",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 40,
+      "menuMs": 988.3000000715256,
+      "flightMs": 48669.200000047684
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "before-exact": {
+    "all": {
+      "files": 693,
+      "rawBytes": 51187517,
+      "gzipBytes": 14087882
+    },
+    "application": {
+      "files": 120,
+      "rawBytes": 18280973,
+      "gzipBytes": 6359305
+    },
+    "packs": {
+      "files": 573,
+      "rawBytes": 32906544,
+      "gzipBytes": 7728577
+    },
+    "joinSources": 596
+  },
+  "final-owned": {
+    "all": {
+      "files": 695,
+      "rawBytes": 51212898,
+      "gzipBytes": 14098255
+    },
+    "application": {
+      "files": 122,
+      "rawBytes": 18306354,
+      "gzipBytes": 6369678
+    },
+    "packs": {
+      "files": 573,
+      "rawBytes": 32906544,
+      "gzipBytes": 7728577
+    },
+    "joinSources": 596
+  }
+}
