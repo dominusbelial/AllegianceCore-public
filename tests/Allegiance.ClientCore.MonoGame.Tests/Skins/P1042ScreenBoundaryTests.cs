@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Screens;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -320,6 +321,10 @@ public sealed class P1042ScreenBoundaryTests
         public void DrawLoadout(in LoadoutScreenFrame frame) { }
         public void DrawIntroView(in IntroViewFrame frame) { }
         public void DrawCareer(in CareerScreenFrame frame) { }
+        public void DrawPanel(in ScreenPanelFrame frame) { }
+        public void DrawScoreboard(in ScoreboardFrame frame) { }
+        public void DrawStarmap(in StarmapScreenFrame frame) { }
+        public void DrawGameOver(in GameOverScreenFrame frame) { }
         public void Dispose() { }
     }
 

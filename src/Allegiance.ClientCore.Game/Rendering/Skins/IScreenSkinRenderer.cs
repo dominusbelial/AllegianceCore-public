@@ -2,6 +2,7 @@ using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Allegiance.ClientCore.MonoGame.Rendering.Screens;
 namespace Allegiance.ClientCore.MonoGame.Rendering.Skins;
 
 /// <summary>
@@ -55,6 +56,31 @@ public interface IScreenSkinRenderer : IDisposable
     /// P808c composition forwards to <see cref="CareerScreenRenderer"/>; a vector skin
     /// re-inks it through a palette and frames its tabs/panel.</summary>
     void DrawCareer(in CareerScreenFrame frame);
+
+    /// <summary>
+    /// P1042c — draw a panel-style in-game overlay (side select, ready check, mission
+    /// briefing, team pane, quick chat, key bindings, connection lost). The frame carries the
+    /// panel rectangle, every fill in the pre-boundary order and every text run at its
+    /// resolved anchor; a skin paints only what the frame already resolved.
+    /// </summary>
+    void DrawPanel(in ScreenPanelFrame frame);
+
+    /// <summary>P1042c — draw the in-mission leaderboard. The roster cells are CONTENT
+    /// (drawn by <see cref="ScoreboardOverlayRenderer"/>); a vector skin re-inks them through
+    /// the frame's palette and frames the panel and the row bands.</summary>
+    void DrawScoreboard(in ScoreboardFrame frame);
+
+    /// <summary>P1042c — draw the starmap and its sector info pane. The MAP (sectors,
+    /// alephs, icons, warp edges) is native content and is drawn unchanged; only the panel
+    /// frames and the info-pane chrome may change.</summary>
+    void DrawStarmap(in StarmapScreenFrame frame);
+
+#if !BROWSER
+    /// <summary>P1042c — draw the game-over result screen. The two result tables are
+    /// content (drawn by <see cref="GameOverScreenRenderer"/>); a vector skin frames the panel
+    /// and the table header bands it reports.</summary>
+    void DrawGameOver(in GameOverScreenFrame frame);
+#endif
 }
 
 /// <summary>
@@ -65,7 +91,7 @@ public interface IScreenSkinRenderer : IDisposable
 /// </summary>
 public interface IScreenContentRenderer
 {
-    void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette);
+    void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette, bool drawTitle = true);
 }
 
 /// <summary>
@@ -132,6 +158,42 @@ public static class ScreenActions
     public static string ViewRow(int index) =>
         index >= 0 && index < ViewRowIds.Length ? ViewRowIds[index] : "view.row.none";
 
+    /// <summary>P1042c — the audit ids of the panel-style in-game screens' control rows,
+    /// precomputed per family so the draw path never formats a string.</summary>
+    public const string PanelSideSelect = "sideselect";
+    public const string PanelReadyCheck = "readycheck";
+    public const string PanelQuickChat = "quickchat";
+    public const string PanelKeyBind = "keybind";
+    /// <summary>P1042c — the quick-chat column legend (port chrome, not a command row).</summary>
+    public const string QuickChatLegend = "quickchat.legend";
+    /// <summary>P1042c — a non-control text run of a panel frame (its own audit element, so a
+    /// legend/hint run can never be attributed to the last control row's plate).</summary>
+    public const string PanelLine = "panel.line";
+
+    private static readonly string[] PanSideSelectIds = BuildPanelIds("sideselect.row.");
+    private static readonly string[] PanReadyCheckIds = BuildPanelIds("readycheck.row.");
+    private static readonly string[] PanQuickChatIds = BuildPanelIds("quickchat.row.");
+    private static readonly string[] PanKeyBindIds = BuildPanelIds("keybind.row.");
+
+    private static string[] BuildPanelIds(string prefix)
+    {
+        // 128: the key-binding popup's visible window can exceed 40 action rows at 1080p/4K.
+        var ids = new string[128];
+        for (int i = 0; i < ids.Length; i++) ids[i] = prefix + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return ids;
+    }
+
+    /// <summary>The audit id of a panel row (a constant); <paramref name="family"/> is one
+    /// of the pre-boundary panel family ids.</summary>
+    public static string PanelRow(string family, int index)
+    {
+        string[] ids = family == PanelSideSelect ? PanSideSelectIds
+            : family == PanelReadyCheck ? PanReadyCheckIds
+            : family == PanelQuickChat ? PanQuickChatIds
+            : PanKeyBindIds;
+        return index >= 0 && index < ids.Length ? ids[index] : "panel.row.none";
+    }
+
     private static readonly string[] CareerTabIds =
         ["career.tab.0", "career.tab.1", "career.tab.2", "career.tab.3", "career.tab.4"];
 
@@ -148,6 +210,32 @@ public static class ScreenActions
     public const string IntroHint = "intro.hint";
     /// <summary>The hangar's native hover string element.</summary>
     public const string HangarHover = "hangar.hover";
+
+    /// <summary>P1042c — the in-game families' audit families.</summary>
+    public const string Scoreboard = "scoreboard";
+    public const string Starmap = "starmap";
+    public const string GameOver = "gameover";
+
+    /// <summary>P1042c — the leaderboard's non-row chrome ids.</summary>
+    public const string ScoreboardHeader = "scoreboard.header";
+    public const string StarmapInfo = "starmap.info";
+    public const string StarmapExpand = "starmap.expand";
+
+    private static readonly string[] ScoreboardRowIds = BuildPanelIds("scoreboard.row.");
+    private static readonly string[] GameOverSideHeaderIds = BuildPanelIds("gameover.side.");
+    private static readonly string[] GameOverPlayerHeaderIds = BuildPanelIds("gameover.player.");
+
+    /// <summary>The audit id of a leaderboard row band (a constant).</summary>
+    public static string ScoreboardRow(int index) =>
+        index >= 0 && index < ScoreboardRowIds.Length ? ScoreboardRowIds[index] : "scoreboard.row.none";
+
+    /// <summary>The audit id of a game-over side-table header (a constant).</summary>
+    public static string GameOverSideHeader(int index) =>
+        index >= 0 && index < GameOverSideHeaderIds.Length ? GameOverSideHeaderIds[index] : "gameover.side.none";
+
+    /// <summary>The audit id of a game-over player-table header (a constant).</summary>
+    public static string GameOverPlayerHeader(int index) =>
+        index >= 0 && index < GameOverPlayerHeaderIds.Length ? GameOverPlayerHeaderIds[index] : "gameover.player.none";
 
     private static readonly string[] IntroNames =
     [

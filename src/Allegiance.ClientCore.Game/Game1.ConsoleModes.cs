@@ -266,7 +266,8 @@ public sealed partial class Game1
         var lines = new List<TeamPaneLayout.Line>();
         if (_playerPingsVisible)
         {
-            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, PlayerPingPage());
+            ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
+                PlayerPingPage(), GraphicsDevice.Viewport, _hudSmall, _hudBig));
             return;
         }
         if (_consolePanes.GameState)
@@ -290,7 +291,8 @@ public sealed partial class Game1
         // only the native bottom-right equipment pane (the native mask
         // ofInventory, dialog.mdl:5237). The old list duplicated the pane and
         // covered the gauges, so it is no longer drawn here.
-        if (lines.Count > 0) _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
+        if (lines.Count > 0) ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
+            lines, GraphicsDevice.Viewport, _hudSmall, _hudBig));
     }
     private void DrawMainMenu()
     {
@@ -299,6 +301,7 @@ public sealed partial class Game1
         for (int i = 0; i < CurrentMainMenuItems.Length; i++) lines.Add(new(TeamPaneLayout.LineKind.Pilot,
             (i == _mainMenuCursor ? "> " : "  ") + CurrentMainMenuItems[i], i == _mainMenuCursor));
         lines.Add(new(TeamPaneLayout.LineKind.Hint, $"{KeyOf("MenuUp").Label}/{KeyOf("MenuDown").Label} select | {KeyOf("MenuConfirm").Label} open | {KeyOf("MainMenu").Label} resume"));
-        _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
+        ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
+            lines, GraphicsDevice.Viewport, _hudSmall, _hudBig));
     }
 }

@@ -3,6 +3,7 @@ using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Allegiance.Core.Wire;
 namespace Allegiance.ClientCore.MonoGame.Rendering.Skins;
 
 /// <summary>
@@ -192,3 +193,88 @@ public readonly record struct LoadoutScreenFrame(
     public int Width => Viewport.Width;
     public int Height => Viewport.Height;
 }
+
+/// <summary>
+/// P1042c — the inks the in-mission leaderboard paints with. Null = the P639 Classic/Modern
+/// constants exactly as they were; Jet supplies its palette so the roster cells are re-inked
+/// without touching the panel/row geometry.
+/// </summary>
+public readonly record struct ScoreboardPalette(
+    Color Panel, Color Border, Color Title, Color Name, Color Stat, Color Self, Color Rank);
+
+/// <summary>
+/// P1042c — the leaderboard as a read-only frame: the already-ordered rows (P639/P774b), the
+/// self name the renderer highlights, and the resolved panel/header/row bands that the
+/// renderer's own <see cref="ScoreboardLayout.Geometry"/> produces. The bands are the single
+/// rectangle source the Jet chrome frames.
+/// </summary>
+public readonly record struct ScoreboardFrame(
+    Viewport Viewport,
+    IReadOnlyList<ScoreboardLayout.Row> Rows,
+    string? SelfName,
+    RectangleF Panel,
+    RectangleF HeaderBand,
+    IReadOnlyList<RectangleF> RowBands,
+    ScoreboardPalette? Palette,
+    ScreenInks Inks)
+{
+    public int Width => Viewport.Width;
+    public int Height => Viewport.Height;
+}
+
+/// <summary>
+/// P1042c — the starmap screen as a read-only frame. <paramref name="Sites"/>,
+/// <paramref name="Edges"/> and the owner/colour maps are the exact data
+/// <see cref="StarmapRenderer"/> already draws (the map itself stays native content); the two
+/// lookups are pure read-only queries, exactly the ones the renderer takes. The panel and
+/// info-pane rectangles are resolved by the same arithmetic the renderers use, so a skin can
+/// frame them.
+/// </summary>
+public readonly record struct StarmapScreenFrame(
+    Viewport Viewport,
+    IReadOnlyList<StarmapLayout.ClusterSite> Sites,
+    IReadOnlyList<ClusterInfo.WarpEdge> Edges,
+    short? CurrentSector,
+    short? SelectedSector,
+    Func<short, short>? Warnings,
+    bool FlashOn,
+    float PanelW,
+    float PanelH,
+    IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? Owners,
+    Func<short, Color?>? SideColor,
+    IReadOnlyDictionary<short, int>? KnownEnemySectors,
+    IReadOnlySet<short>? HighlightedClusters,
+    short? ChatCluster,
+    SectorInfoPaneLayout.Data? InfoPane,
+    Color? OwnSideColor,
+    bool Expanded,
+    RectangleF Panel,
+    RectangleF InfoBox,
+    RectangleF InfoExpandButton,
+    ScreenInks Inks)
+{
+    public int Width => Viewport.Width;
+    public int Height => Viewport.Height;
+}
+
+#if !BROWSER
+/// <summary>
+/// P1042c — the game-over result screen as a read-only frame: the resolved panel text
+/// (<see cref="GameOverPanelInfo"/>) and the two result tables the unchanged
+/// <see cref="GameOverScreenRenderer"/> paints. The renderer owns the table geometry (its
+/// header hit rectangles are exactly what the pointer sorts on), so the chrome frames the
+/// rectangles it reports rather than duplicating them.
+/// </summary>
+public readonly record struct GameOverScreenFrame(
+    Viewport Viewport,
+    GameOverPanelInfo Info,
+    GameOverScreenRenderer.Tables Tables,
+    int? NextMatchSeconds,
+    GameOverPerfPanel? Perf,
+    RectangleF Panel,
+    ScreenInks Inks)
+{
+    public int Width => Viewport.Width;
+    public int Height => Viewport.Height;
+}
+#endif

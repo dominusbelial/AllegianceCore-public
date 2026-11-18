@@ -77,17 +77,27 @@ public sealed partial class Game1
         _hangarScreenRenderer ??= BuildHangarScreenRenderer();
         _loadoutV2Renderer ??= new Rendering.LoadoutV2Renderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         var introPainter = new Rendering.Screens.IntroScreenPainter(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P1042c — the in-game families' shared content renderers (borrowed, not owned) and
+        // the Classic panel painter; all preloaded here so no path loads during Draw.
+        var screenRenderers = new ScreenRenderers
+        {
+            Panel = new Rendering.Screens.PanelScreenPainter(_spriteBatch, _whitePixel, _hudSmall, _hudBig),
+            Scoreboard = _scoreboardRenderer,
+            Starmap = _starmapRenderer,
+            SectorInfo = _sectorInfoPaneRenderer,
+            GameOver = _gameOverScreenRenderer,
+        };
         var classicScreen = new ClassicScreenSkinRenderer(HudSkinIds.Classic, introPainter,
-            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer);
+            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer, screenRenderers);
         var modernScreen = new ClassicScreenSkinRenderer(HudSkinIds.Modern, introPainter,
-            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer);
+            _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer, screenRenderers);
         IScreenSkinRenderer? jetScreen = null;
         if (jet is not null && _jetPalettes is not null)
         {
             jetScreen = new Rendering.Jet.JetScreenSkinRenderer(
                 new Rendering.Jet.JetSpriteBatchSurface(_spriteBatch, _whitePixel, _hudSmall, _hudBig),
                 _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer,
-                _hudSettings, _jetPalettes, careerContent: introPainter);
+                _hudSettings, _jetPalettes, careerContent: introPainter, extra: screenRenderers);
         }
         InstallScreenSkins(new ScreenSkinRegistry(classicScreen, modernScreen, jetScreen));
         _screenSkins!.Publish(_hudSkins.Active.Renderer.Id, JetSkinEnabled());

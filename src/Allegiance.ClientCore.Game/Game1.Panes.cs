@@ -1623,7 +1623,10 @@ public sealed partial class Game1
                 .Concat(Rendering.LobbyStatusLayout.Build(world)
                 .Select(text => new Rendering.SideSelectLayout.Row(Rendering.SideSelectLayout.Kind.Info, text))).ToArray();
         }
-        _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
+        // P1042c — the side-select panel goes through the screen-chrome boundary; the
+        // frame carries the resolved panel/row boxes and every run at its own anchor.
+        ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.SideSelectFrame(
+            rows, GraphicsDevice.Viewport, _hudSmall, _hudBig));
     }
 
     /// <summary>P802 — a side's civilization name for the side-select roster
@@ -2254,7 +2257,10 @@ public sealed partial class Game1
             }
             civIconStem = State.TeamCivPicker.IconStem(world);
         }
-        _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows, CivIconFor(civIconStem));
+        // P1042c — the ready-check panel (roster, civ picker, team-name edit, chat hint all
+        // arrive as rows) goes through the boundary with its native civ icon as content.
+        ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.ReadyCheckFrame(
+            rows, GraphicsDevice.Viewport, _hudSmall, _hudBig, CivIconFor(civIconStem)));
         DrawReadyCheckChat();
     }
 

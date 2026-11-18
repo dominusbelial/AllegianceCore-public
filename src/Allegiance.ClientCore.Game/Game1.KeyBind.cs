@@ -71,7 +71,12 @@ public partial class Game1
     private void DrawKeyBindingOverlay()
     {
         if (_keyBindVisible)
-            _keyBindRenderer.Draw(GraphicsDevice.Viewport);
+        {
+            // P1042c — the rebind popup's chrome goes through the boundary; the capture /
+            // conflict / reset flow is the controller's and is untouched.
+            ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.KeyBindFrame(
+                _keyBindController, GraphicsDevice.Viewport, _hudSmall));
+        }
     }
 
     /// <summary>Toggle the Controls (rebind) popup. Opening it hides the help

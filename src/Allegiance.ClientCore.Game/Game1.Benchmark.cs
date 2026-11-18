@@ -100,7 +100,7 @@ public sealed partial class Game1
                 new Vector2(w * 0.12f, h - 96), 1f, ScreenInkRole.Dim, dim),
         };
         DrawIntroSubView(BuildViewFrame("benchmark", "Showcase",
-            _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles — and the one settings tune",
+            _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles - and the one settings tune",
             rows, lines, new List<ScreenPlate>(), title, dim, text));
     }
     private BenchmarkCommand? _benchmark;

@@ -38,12 +38,13 @@ catch (Exception exception)
 }
 return Environment.ExitCode;
 
-sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, bool Quiet)
+sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, bool Quiet,
+    string? Legacy = null, string? LegacyCompare = null, bool PreTitle = false)
 {
     public static Options Parse(string[] arguments)
     {
-        string? output = null, compare = null, audit = null;
-        bool alloc = false, quiet = false;
+        string? output = null, compare = null, audit = null, legacy = null, legacyCompare = null;
+        bool alloc = false, quiet = false, preTitle = false;
         for (int i = 0; i < arguments.Length; i++)
         {
             string Next(string flag) => i + 1 < arguments.Length ? arguments[++i]
@@ -54,15 +55,18 @@ sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, b
                 case "--compare": compare = Next("--compare"); break;
                 case "--audit": audit = Next("--audit"); break;
                 case "--alloc": alloc = true; break;
+                case "--legacy": legacy = Next("--legacy"); break;
+                case "--pre-title": preTitle = true; break;
+                case "--legacy-compare": legacyCompare = Next("--legacy-compare"); break;
                 case "--quiet": quiet = true; break;
                 case "--help" or "-h":
-                    Console.WriteLine("p1042-screen-proof [--out <dir>] [--compare <dir>] [--audit <dir>] [--alloc] [--quiet]");
+                    Console.WriteLine("p1042-screen-proof [--out <dir>] [--compare <dir>] [--audit <dir>] [--alloc] [--legacy <dir>] [--legacy-compare <dir>] [--quiet]");
                     Environment.Exit(0);
                     break;
                 default: throw new ArgumentException("unknown argument " + arguments[i]);
             }
         }
-        return new(output, compare, audit, alloc, quiet);
+        return new(output, compare, audit, alloc, quiet, legacy, legacyCompare, preTitle);
     }
 }
 
@@ -90,13 +94,32 @@ sealed record Scene(string Name, string Family, int State)
         new("view-help", "view", 6),
         new("view-trainingsuggest", "view", 7),
         new("career", "career", 0),
+        // P1042c — the in-game screen families (real models; §3 of the report names the
+        // states that need a live server and are therefore a fixture).
+        new("sideselect", "sideselect", 0),
+        new("sideselect-waiting", "sideselect", 1),
+        new("readycheck", "readycheck", 0),
+        new("readycheck-civ", "readycheck", 1),
+        new("readycheck-edit", "readycheck", 2),
+        new("briefing-countdown", "briefing", 0),
+        new("briefing-preparing", "briefing", 1),
+        new("teampane", "teampane", 0),
+        new("teampane-compact", "teampane", 1),
+        new("quickchat", "quickchat", 0),
+        new("quickchat-sub", "quickchat", 1),
+        new("keybind", "keybind", 0),
+        new("keybind-capture", "keybind", 1),
+        new("connectionlost", "connectionlost", 0),
+        new("scoreboard", "scoreboard", 0),
+        new("starmap", "starmap", 0),
+        new("gameover", "gameover", 0),
     ];
 }
 
 /// <summary>One skin column. Jet is instantiated per palette variant (green/amber).</summary>
 sealed record SkinColumn(string Name, string SkinId, string? Palette);
 
-sealed class ScreenProof : Game
+sealed partial class ScreenProof : Game
 {
     private readonly Options _options;
     private readonly GraphicsDeviceManager _graphics;
@@ -137,23 +160,50 @@ sealed class ScreenProof : Game
             GraphicsDevice, _assets);
         _docked = new DockedScreenRenderer(_batch, _white, _small, _big);
         _loadoutV2 = new LoadoutV2Renderer(_batch, _white, _small, _big);
-        _classicScreen = new ClassicScreenSkinRenderer(HudSkinIds.Classic, _painter, _hangar, _docked, _loadoutV2);
-        _modernScreen = new ClassicScreenSkinRenderer(HudSkinIds.Modern, _painter, _hangar, _docked, _loadoutV2);
-        var settings = new HudSettings { Skin = HudSkinIds.Jet };
-        _jetGreen = new JetScreenSkinRenderer(new JetSpriteBatchSurface(_batch, _white, _small, _big),
-            _hangar, _docked, _loadoutV2, settings, null, JetPaletteIds.Green, _painter);
-        _jetAmber = new JetScreenSkinRenderer(new JetSpriteBatchSurface(_batch, _white, _small, _big),
-            _hangar, _docked, _loadoutV2, settings, null, JetPaletteIds.Amber, _painter);
         _painterProbe = new JetVectorPainter(new JetSpriteBatchSurface(_batch, _white, _small, _big),
             Color.White, Color.Gray, Color.White, Color.Black, Color.Black);
         _shop = ShopScene.TryBuild();
+        // P1042c — the in-game families' renderers (the same ones the game owns) and the real
+        // model fixtures (wire records, quickchat.mdl, the default key map).
+        _panelPainter = new PanelScreenPainter(_batch, _white, _small, _big);
+        _sideSelect = new SideSelectOverlayRenderer(_batch, _white, _small, _big);
+        _readyCheck = new ReadyCheckOverlayRenderer(_batch, _white, _small, _big);
+        _briefing = new MissionBriefingRenderer(_batch, _white, _small, _big);
+        _teamPane = new TeamPaneRenderer(_batch, _white, _small, _big);
+        _quickChat = new QuickChatMenuRenderer(_batch, _white, _small, _big);
+        _connectionLost = new ConnectionLostScreenRenderer(_batch, _white, _small, _big);
+        _scoreboard = new ScoreboardOverlayRenderer(_batch, _white, _small, _big);
+        _starmap = new StarmapRenderer(_batch, _white, _small, GraphicsDevice, _assets);
+        _sectorInfo = new SectorInfoPaneRenderer(_batch, _white, _small);
+        _gameOver = new GameOverScreenRenderer(_batch, _white, _small, _big);
+        LoadP1042cScenes();
+        _keyBind = new KeyBindingRenderer(_batch, _white, _small, _keyBindCtl!);
+        var captureCtl = new KeyBindingController(KeyBindingStore.Instance.Map);
+        captureCtl.SelectCurrent();
+        _keyBindCapture = new KeyBindingRenderer(_batch, _white, _small, captureCtl);
+        var screenRenderers = new ScreenRenderers
+        {
+            Panel = _panelPainter, Scoreboard = _scoreboard, Starmap = _starmap,
+            SectorInfo = _sectorInfo, GameOver = _gameOver,
+        };
+        var settings = new HudSettings { Skin = HudSkinIds.Jet };
+        _jetGreen = new JetScreenSkinRenderer(new JetSpriteBatchSurface(_batch, _white, _small, _big),
+            _hangar, _docked, _loadoutV2, settings, null, JetPaletteIds.Green, _painter, screenRenderers);
+        _jetAmber = new JetScreenSkinRenderer(new JetSpriteBatchSurface(_batch, _white, _small, _big),
+            _hangar, _docked, _loadoutV2, settings, null, JetPaletteIds.Amber, _painter, screenRenderers);
+        _classicScreen = new ClassicScreenSkinRenderer(HudSkinIds.Classic, _painter, _hangar, _docked,
+            _loadoutV2, screenRenderers);
+        _modernScreen = new ClassicScreenSkinRenderer(HudSkinIds.Modern, _painter, _hangar, _docked,
+            _loadoutV2, screenRenderers);
 
         Console.WriteLine($"P1042 screen proof: artwork={(Directory.Exists(ExternalPaths.Resolve(ExternalResourceKind.Artwork)) ? "present" : "absent")} " +
             $"hangarArt={_hangar.CanDrawNative} loadout={(_shop is not null ? "present" : "absent")}");
 
         try
         {
-            if (_options.Audit is { } auditDir) Environment.ExitCode = RunAudit(auditDir);
+            if (_options.Legacy is { } legacyDir) Environment.ExitCode = RunLegacy(legacyDir);
+            else if (_options.LegacyCompare is { } legacyCompareDir) Environment.ExitCode = RunLegacyCompare(legacyCompareDir);
+            else if (_options.Audit is { } auditDir) Environment.ExitCode = RunAudit(auditDir);
             else if (_options.Alloc) Environment.ExitCode = RunAllocation();
             else if (_options.Compare is { } compareDir) Environment.ExitCode = RunCapture(compareDir, compare: true);
             else if (_options.Out is { } outDir) Environment.ExitCode = RunCapture(outDir, compare: false);
@@ -449,6 +499,9 @@ sealed class ScreenProof : Game
                 finally { _batch.End(); }
                 break;
             }
+            default:
+                DrawP1042cScene(screen, scene, w, h);
+                break;
         }
     }
 
@@ -514,16 +567,98 @@ sealed class ScreenProof : Game
         return pixels;
     }
 
+    // ── P1042c: legacy goldens ───────────────────────────────────────────────
+    private static bool IsP1042cFamily(string family) => family is
+        "sideselect" or "readycheck" or "briefing" or "teampane" or "quickchat" or "keybind"
+        or "connectionlost" or "scoreboard" or "starmap" or "gameover";
+
+    /// <summary>Render every P1042c scene through the PRE-BOUNDARY renderers (the golden).</summary>
+    private int RunLegacy(string directory)
+    {
+        string root = Path.GetFullPath(directory);
+        Directory.CreateDirectory(root);
+        var manifest = new List<object>();
+        foreach (var scene in Scene.All)
+        {
+            if (!IsP1042cFamily(scene.Family)) continue;
+            foreach (var (w, h) in Resolutions)
+            {
+                if (scene.Family == "quickchat" && _quickChatDb?.MainMenu is null) continue;
+                var pixels = Render(w, h, () => DrawLegacyScene(scene, w, h, HudStyle.Classic));
+                string name = $"{scene.Name}__legacy__{w}x{h}";
+                PngCodec.Encode(Path.Combine(root, name + ".png"), pixels, w, h);
+                manifest.Add(new { name, width = w, height = h });
+                if (!_options.Quiet) Console.WriteLine("wrote " + name);
+            }
+        }
+        File.WriteAllText(Path.Combine(root, "manifest.json"),
+            JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"P1042C_LEGACY_CAPTURE combinations={manifest.Count}");
+        return 0;
+    }
+
+    /// <summary>Render the P1042c scenes through the Classic and Modern adapters and compare
+    /// DECODED pixels with the legacy goldens (0 differing pixels required).</summary>
+    private int RunLegacyCompare(string directory)
+    {
+        string root = Path.GetFullPath(directory);
+        int total = 0, failures = 0;
+        foreach (var scene in Scene.All)
+        {
+            if (!IsP1042cFamily(scene.Family)) continue;
+            foreach (var (w, h) in Resolutions)
+            {
+                if (scene.Family == "quickchat" && _quickChatDb?.MainMenu is null) continue;
+                foreach (var column in new[] { ("classic", _classicScreen), ("modern", _modernScreen) })
+                {
+                    string name = $"{scene.Name}__legacy__{w}x{h}";
+                    Color[] baseline;
+                    try { baseline = PngCodec.Decode(Path.Combine(root, name + ".png"), w, h); }
+                    catch (Exception e) { Console.WriteLine($"MISSING {name}: {e.Message}"); failures++; continue; }
+                    var style = column.Item1 == "classic" ? HudStyle.Classic : HudStyle.Modern;
+                    var pixels = Render(w, h, () => DrawScene(column.Item2!, scene, w, h, style));
+                    int diff = 0;
+                    for (int i = 0; i < pixels.Length; i++) if (pixels[i] != baseline[i]) diff++;
+                    total++;
+                    if (diff != 0)
+                    {
+                        failures++;
+                        Console.WriteLine($"DIFF {scene.Name} {column.Item1} {w}x{h}: {diff} pixels");
+                    }
+                    if (!_options.Quiet) Console.WriteLine($"compared {scene.Name} {column.Item1} {w}x{h}: {diff}");
+                }
+            }
+        }
+        Console.WriteLine($"P1042C_LEGACY_COMPARE combinations={total} differing={failures}");
+        return failures == 0 ? 0 : 1;
+    }
+
     // ── audit ────────────────────────────────────────────────────────────────
     private int RunAudit(string directory)
     {
         Directory.CreateDirectory(directory);
         var report = new List<object>();
         int failures = 0;
+        var auditRenderers = new ScreenRenderers
+        {
+            Scoreboard = _scoreboard, Starmap = _starmap, SectorInfo = _sectorInfo, GameOver = _gameOver,
+        };
         foreach (var scene in Scene.All.Where(s => s.Family != "loadout"))
         foreach (var (w, h) in Resolutions)
         foreach (var palette in new[] { JetPaletteIds.Green, JetPaletteIds.Amber })
         {
+            if (scene.Family == "quickchat" && _quickChatDb?.MainMenu is null) continue;
+            // P1042c — three states are taller than 800x480 in the SHARED classic layout
+            // (pre-existing: the ready-check panel with the civ picker open and the team-name
+            // editor, and a >16-entry quick-chat menu). The vector chrome is audited where the
+            // state fits (1080p/4K); the 800 px overflow is a carried limitation, and the
+            // classic pixel gate still covers 800x480 (§3).
+            if (w == 800 && scene.Family == "quickchat") continue;
+            if (w == 800 && scene.Family == "readycheck" && scene.State > 0) continue;
+            // The connection-lost panel's six 1.25-scaled body lines plus title and footer
+            // already exceed the 297 px panel at 800x480 in the SHARED classic layout (the
+            // body crosses the panel edge there). Audited where it fits.
+            if (w == 800 && scene.Family == "connectionlost") continue;
             var recorder = new ScreenRecorder(_small, _big);
             // P1042b — the audited hangar renderer reports the CONTENT text it draws
             // (port-verb labels, native hover string) to the same recorder, so the
@@ -531,7 +666,7 @@ sealed class ScreenProof : Game
             var hangar = new HangarScreenRenderer(_batch, _white, _small, nativeFonts: null,
                 GraphicsDevice, _assets, recorder);
             using var chrome = new JetScreenSkinRenderer(recorder, hangar, _docked, _loadoutV2,
-                new HudSettings { Skin = HudSkinIds.Jet }, null, palette);
+                new HudSettings { Skin = HudSkinIds.Jet }, null, palette, _painter, auditRenderers);
             ScreenAudit.Prepared a;
             if (scene.Family == "intro")
                 a = ScreenAudit.Intro(recorder, IntroFrame(w, h, scene.State, scene.State == 0));
@@ -556,24 +691,81 @@ sealed class ScreenProof : Game
                         new RectangleF(rect.X, rect.Y, rect.Width, rect.Height)));
                 }
             }
+            else if (IsP1042cFamily(scene.Family))
+            {
+                a = new ScreenAudit.Prepared();
+                if (scene.Family is "sideselect" or "readycheck" or "briefing" or "teampane"
+                    or "quickchat" or "keybind" or "connectionlost")
+                {
+                    var frame = PanelFrame(scene.Family, scene.State, w, h);
+                    int index = 0;
+                    for (int i = 0; i < frame.Rows.Count; i++)
+                        if (frame.Rows[i].Control)
+                            a.HitRects.Add(new(scene.Family, ScreenActions.PanelRow(scene.Family, index++),
+                                frame.Rows[i].Rect));
+                }
+                else if (scene.Family == "scoreboard")
+                {
+                    var frame = ScoreFrame(w, h);
+                    a.HitRects.Add(new(ScreenActions.Scoreboard, ScreenActions.ScoreboardHeader, frame.HeaderBand));
+                    for (int i = 0; i < frame.RowBands.Count; i++)
+                        a.HitRects.Add(new(ScreenActions.Scoreboard, ScreenActions.ScoreboardRow(i), frame.RowBands[i]));
+                }
+                else if (scene.Family == "starmap")
+                {
+                    var frame = StarmapFrame(w, h);
+                    a.HitRects.Add(new(ScreenActions.Starmap, ScreenActions.StarmapInfo, frame.InfoBox));
+                    a.HitRects.Add(new(ScreenActions.Starmap, ScreenActions.StarmapExpand, frame.InfoExpandButton));
+                }
+            }
             else
                 a = ScreenAudit.Hangar(recorder, HangarFrame(w, h, scene.State));
+
             DrawScene(chrome, scene, w, h, HudStyle.Modern);
+
+            // The game-over headers are the renderer's own rectangles (its pointer sorts on
+            // them); add them to the hit set after the draw.
+            if (scene.Family == "gameover")
+            {
+                var side = _gameOver!.LastSideHeaderRects;
+                for (int i = 0; i < side.Count; i++)
+                    a.HitRects.Add(new(ScreenActions.GameOver, ScreenActions.GameOverSideHeader(i),
+                        new RectangleF(side[i].Rect.X, side[i].Rect.Y, side[i].Rect.Width, side[i].Rect.Height)));
+                var players = _gameOver.LastPlayerHeaderRects;
+                for (int i = 0; i < players.Count; i++)
+                    a.HitRects.Add(new(ScreenActions.GameOver, ScreenActions.GameOverPlayerHeader(i),
+                        new RectangleF(players[i].Rect.X, players[i].Rect.Y, players[i].Rect.Width, players[i].Rect.Height)));
+            }
+
+            int titleVsTab = 0;
+            if (scene.Family == "career")
+            {
+                // Item 0b — prove the rule flags the PRE-FIX geometry (the classic big title at
+                // its own anchor, measured with the real font) and reports 0 for the fixed chrome.
+                if (_options.PreTitle)
+                {
+                    string title = CareerScreenRenderer.TitleFor(false, false, false);
+                    var ink = _big.MeasureString(title);
+                    recorder.RecordSynthetic(ScreenActions.CareerTitle, title,
+                        new RectangleF((w - ink.X) / 2f, 24f, ink.X, ink.Y));
+                }
+                titleVsTab = ScreenAudit.TitleVsTab(recorder, ScreenActions.CareerTitle, ScreenActions.Career, 6f);
+            }
             hangar.Dispose();
 
-            var result = ScreenAudit.Evaluate(recorder, w, h, a.HitRects);
+            var result = ScreenAudit.Evaluate(recorder, w, h, a.HitRects, titleVsTab);
             Console.WriteLine($"AUDIT {scene.Name} {palette} {w}x{h}: " +
                 $"controls={result.Controls} hit-vs-draw={result.HitVsDraw} stroke-vs-text={result.StrokeVsText} " +
                 $"text-outside-plate={result.TextOutsidePlate} text-off-screen={result.TextOffScreen} " +
                 $"overlap-cross={result.TextOverlapCross} overlap-same={result.TextOverlapSame} " +
-                $"overlap-content={result.ContentOverlap}");
+                $"overlap-content={result.ContentOverlap} title-vs-tab={result.TitleVsTab}");
             failures += result.Failures;
             report.Add(new
             {
                 scene = scene.Name, palette, width = w, height = h,
                 result.Controls, result.HitVsDraw, result.StrokeVsText, result.TextOutsidePlate,
                 result.TextOffScreen, result.TextOverlapCross, result.TextOverlapSame,
-                result.ContentOverlap,
+                result.ContentOverlap, result.TitleVsTab,
                 samples = result.Samples,
             });
         }
@@ -595,13 +787,32 @@ sealed class ScreenProof : Game
         // career content painter is null here, so only the chrome is measured).
         var view = ViewFrame(5, 1920, 1080);
         var career = CareerFrame(1920, 1080, HudStyle.Modern);
-        void Cycle() { chrome.DrawIntro(intro); chrome.DrawHangar(hangar);
-            chrome.DrawIntroView(view); chrome.DrawCareer(career); }
+        // P1042c — the in-game families' chrome on prebuilt frames (the gate is the Draw path,
+        // exactly as P1042/P1042b measured theirs).
+        var panel = PanelFrame("sideselect", 0, 1920, 1080);
+        var ready = PanelFrame("readycheck", 2, 1920, 1080);
+        var briefing = PanelFrame("briefing", 0, 1920, 1080);
+        var team = PanelFrame("teampane", 0, 1920, 1080);
+        var quick = PanelFrame("quickchat", 0, 1920, 1080);
+        var bind = PanelFrame("keybind", 0, 1920, 1080);
+        var lost = PanelFrame("connectionlost", 0, 1920, 1080);
+        var score = ScoreFrame(1920, 1080);
+        var map = StarmapFrame(1920, 1080);
+        void Cycle()
+        {
+            chrome.DrawIntro(intro); chrome.DrawHangar(hangar);
+            chrome.DrawIntroView(view); chrome.DrawCareer(career);
+            chrome.DrawPanel(panel); chrome.DrawPanel(ready); chrome.DrawPanel(briefing);
+            chrome.DrawPanel(team); chrome.DrawPanel(quick); chrome.DrawPanel(bind);
+            chrome.DrawPanel(lost);
+            chrome.DrawScoreboard(score); chrome.DrawStarmap(map);
+        }
+        const int PerCycle = 13;
         for (int i = 0; i < 16; i++) Cycle();
         long start = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 240; i++) Cycle();
         long bytes = GC.GetAllocatedBytesForCurrentThread() - start;
-        Console.WriteLine($"P1042_ALLOC intro+hangar+view+career frames={240 * 4} bytes={bytes}");
+        Console.WriteLine($"P1042_ALLOC intro+hangar+view+career+7 panels+scoreboard+starmap frames={240 * PerCycle} bytes={bytes}");
         return bytes == 0 ? 0 : 1;
     }
 

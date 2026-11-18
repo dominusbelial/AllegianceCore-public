@@ -29,6 +29,7 @@ using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
 using NumericsVec2 = System.Numerics.Vector2;
 using SimVec = Allegiance.Core.Collision.Vector3;
 
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
@@ -1957,7 +1958,8 @@ public sealed partial class Game1
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
             if (_qcMenuOpen && _qcMenuNode is { } qn && _qcMenuPath.Count > 0)
-                _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
+                ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.QuickChatFrame(
+                    qn, _qcMenuPath, GraphicsDevice.Viewport, _hudSmall));
         }
 
         // The hangar is the backdrop; console panes and popups belong above
@@ -1982,7 +1984,23 @@ public sealed partial class Game1
                 _session.World.ScoreRoster, _session.World.RankTable, _session.World.IsSideActive);
             string? self = _session.World.Ships.TryGetValue(
                 _session.World.MyShipId ?? -1, out var se) ? se.CharacterName : null;
-            _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
+            // P1042c — the leaderboard goes through the boundary: the frame carries the
+            // renderer's own panel/column/row geometry, so the Jet chrome frames exactly the
+            // bands the roster paints (draw == hit).
+            var vp = GraphicsDevice.Viewport;
+            var geo = Rendering.ScoreboardLayout.Layout(rows, s => _hudSmall.MeasureString(s).X,
+                vp.Width, vp.Height);
+            var rowBands = new RectangleF[rows.Count];
+            float bandY = geo.HeaderY + geo.RowHeight;
+            for (int i = 0; i < rowBands.Length; i++)
+            {
+                rowBands[i] = new RectangleF(geo.Panel.X + 8f, bandY, geo.Panel.Width - 16f, geo.RowHeight);
+                bandY += geo.RowHeight;
+            }
+            ActiveScreen.DrawScoreboard(new ScoreboardFrame(vp, rows, self,
+                new RectangleF(geo.Panel.X, geo.Panel.Y, geo.Panel.Width, geo.Panel.Height),
+                new RectangleF(geo.Panel.X + 8f, geo.HeaderY, geo.Panel.Width - 16f, geo.RowHeight),
+                rowBands, null, new ScreenInks(Color.White, Color.White, Color.Gray, Color.Orange)));
         }
 
         // P275 — P Pilot Info overlay: the local player's OWN live stats (rank,
@@ -2037,19 +2055,22 @@ public sealed partial class Game1
                         _builtBriefingFor = briefing;
                     }
                     var (title, objective, body) = _builtBriefing;
-                    _briefingRenderer.Draw(GraphicsDevice.Viewport, title, body, brRemaining, objective);
+                    ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.BriefingFrame(
+                        title, body, brRemaining, objective, GraphicsDevice.Viewport, _hudSmall, _hudBig));
                 }
                 catch (Exception ex) when (ex is ExternalResourceUnavailableException or IOException
                     or InvalidDataException or KeyNotFoundException)
                 {
                     string briefText = _session.World.BriefingText;
-                    _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+                    ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.BriefingFrame(
+                        briefText, briefText, brRemaining, "", GraphicsDevice.Viewport, _hudSmall, _hudBig));
                 }
             }
             else
             {
                 string briefText = _session.World.BriefingText;
-                _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+                ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.BriefingFrame(
+                    briefText, briefText, brRemaining, "", GraphicsDevice.Viewport, _hudSmall, _hudBig));
             }
         }
 
@@ -2181,7 +2202,11 @@ public sealed partial class Game1
                 if (_consolePanes.Team == TeamConsoleSize.Mini)
                     lines = TeamPaneLayout.Compact(lines, TeamPaneLayout.Entries(_session.World), _session.World.MySideId);
             }
-            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines, _consolePanes.Team == TeamConsoleSize.Mini);
+            // P1042c — the full-roster team pane goes through the boundary (its Fit rule is
+            // applied by the frame builder, so the drawn strings stay identical).
+            ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
+                lines, GraphicsDevice.Viewport, _hudSmall, _hudBig,
+                _consolePanes.Team == TeamConsoleSize.Mini));
         }
 
 
@@ -2251,9 +2276,17 @@ public sealed partial class Game1
                     PlayerSort: _gameOverPlayerSort,
                     SideColors: sideColors);
             }
-            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, tables,
+            // P1042c — the game-over screen goes through the boundary; the two result
+            // tables stay content and Jet frames the panel + the header bands the renderer
+            // itself reports (the same rects its pointer sorts on).
+            var govp = GraphicsDevice.Viewport;
+            ActiveScreen.DrawGameOver(new GameOverScreenFrame(govp, info, tables,
                 _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null,
-                _perfPanelShown ? _perfPanel : null);
+                _perfPanelShown ? _perfPanel : null,
+                new RectangleF((govp.Width - MathF.Min(govp.Width * 0.94f, 1240f)) / 2f,
+                    (govp.Height - MathF.Min(govp.Height * 0.94f, 760f)) / 2f,
+                    MathF.Min(govp.Width * 0.94f, 1240f), MathF.Min(govp.Height * 0.94f, 760f)),
+                new ScreenInks(Color.White, Color.White, Color.Gray, Color.Orange)));
         }
 
         // P306 — end of frame: if this render was a capture frame, restore the
@@ -4120,23 +4153,31 @@ public sealed partial class Game1
             float panelH = MathF.Min(vp.Height * 0.66f, 640f);
             float panelX = (vp.Width - panelW) / 2f;
             float panelY = (vp.Height - panelH) / 2f;
-            _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
-                id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights, chatCluster);
+            // P1042c — the starmap and its sector info pane go through the boundary. The
+            // MAP (sectors, alephs, warp edges, icons) and the pane's text stay native
+            // content; the frame resolves the panel + info-pane boxes the chrome frames.
+            Color? ownSide = world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc)
+                ? mc : (Color?)null;
+            RectangleF infoBox = default, infoExpand = default;
             if (pane is { } p)
             {
-                _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
-                    world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null,
-                    expanded: _sectorInfoExpanded);
-                // P752 — the renderer records its own drawn box; the expand
-                // button is hit-tested against that exact rect (native checks
-                // the button before the map, sectormap.cpp:186-201).
-                _sectorInfoPaneBox = _sectorInfoPaneRenderer.LastBox;
+                var geo = Rendering.SectorInfoPaneRenderer.Box(p, panelX, panelY, panelW, panelH,
+                    _hudSmall.LineSpacing, s => _hudSmall.MeasureString(s).X);
+                infoBox = geo.Box;
+                var btn = Rendering.SectorInfoPaneRenderer.ExpandButtonRect(
+                    geo.Box.X, geo.Box.Y, geo.Box.Width, geo.Box.Height);
+                infoExpand = new RectangleF(btn.X, btn.Y, btn.Width, btn.Height);
             }
-            else
-            {
-                _sectorInfoPaneBox = null;
-            }
+            ActiveScreen.DrawStarmap(new StarmapScreenFrame(vp, sites, edges, current, _selectedSectorId,
+                id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
+                flashOn, panelW, panelH, owners, SideColor, knownEnemySectors, highlights, chatCluster,
+                pane ?? default, ownSide, _sectorInfoExpanded,
+                new RectangleF(panelX, panelY, panelW, panelH), infoBox, infoExpand,
+                new ScreenInks(Color.White, Color.White, Color.Gray, Color.Orange)));
+            // P752 — the renderer records its own drawn box; the expand button is
+            // hit-tested against that exact rect (native checks the button before the
+            // map, sectormap.cpp:186-201).
+            _sectorInfoPaneBox = pane is null ? null : _sectorInfoPaneRenderer.LastBox;
         }
         else
         {

@@ -182,14 +182,16 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
     public void DrawCareer(in CareerScreenFrame frame)
         => DrawCareer(frame, null);
 
-    /// <summary>P1042b — the Jet path's palette overload (null = P808c constants).</summary>
-    public void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette)
+    /// <summary>P1042b — the Jet path's palette overload (null = P808c constants).
+    /// P1042c — <paramref name="drawTitle"/> false lets the Jet chrome own the title (it
+    /// fits it into the band above the tab row; Classic/Modern keep the default).</summary>
+    public void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette, bool drawTitle = true)
     {
         CareerScreenRenderer.Draw(_batch, _small, _big, _white,
             frame.Style == HudStyle.Modern ? _careerModern : _careerClassic,
             frame.Info, frame.Board, frame.Squads, frame.Events,
             frame.BoardMode, frame.SquadsMode, frame.EventsMode, frame.Cursor,
             frame.EditingDescription, frame.DescriptionBuffer, frame.Status,
-            frame.ViewedAccountId, frame.Width, frame.Height, palette);
+            frame.ViewedAccountId, frame.Width, frame.Height, palette, drawTitle);
     }
 }
