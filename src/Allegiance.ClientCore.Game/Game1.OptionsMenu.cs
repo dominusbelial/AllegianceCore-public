@@ -1,3 +1,5 @@
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -317,29 +319,35 @@ public sealed partial class Game1
             OptionsMenuModel.Page.Visuals => "Visuals (enhancements, default off)",
             _ => "Graphics / Sound / Game / Controls",
         };
-        DrawIntroTitle(width, "Options", subtitle, title, dim);
         var (firstY, rowStep) = OptionsMenuModel.LayoutRows(height, rows.Count);
+        var frameRows = new List<ScreenRow>();
+        var plates = new List<ScreenPlate>();
         float y = firstY;
         for (int i = 0; i < rows.Count; i++)
         {
             bool sel = i == _optionsMenu.Row0;
+            var band = new RectangleF(60, y - 4, width - 120, 30);
             if (sel)
-                _spriteBatch.Draw(_whitePixel, new Rectangle(60, (int)y - 4, (int)width - 120, 30),
-                    new Color(0.08f, 0.35f, 0.33f, 0.55f));
+                plates.Add(new(band, ScreenPlateRole.Selection, new Color(0.08f, 0.35f, 0.33f, 0.55f)));
             string hot = rows[i].Hotkey == '\0' ? "" : $"  ({rows[i].Hotkey})";
-            _spriteBatch.DrawString(_hudSmall, (sel ? "> " : "  ") + rows[i].Label + hot,
-                new Vector2(72, y), sel ? title : Color.White);
+            frameRows.Add(BandedRow(rows[i].Label, (sel ? "> " : "  ") + rows[i].Label + hot, 72, y, band,
+                sel, sel ? ScreenInkRole.Title : ScreenInkRole.Plain, sel ? title : Color.White));
             y += rowStep;
         }
         string hint = _optionsMenu.Current == OptionsMenuModel.Page.Root
             ? "UP/DOWN select   ENTER open   ESC back"
             : "UP/DOWN select   ENTER toggle   ESC back";
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2(72, y + 18f), dim);
+        var lines = new List<ScreenTextRun>
+        {
+            new(hint, new Vector2(72, y + 18f), 1f, ScreenInkRole.Dim, dim),
+        };
 #if !BROWSER
         if (_benchmarkSharing?.Available == true)
-            _spriteBatch.DrawString(_hudSmall, "B: Anonymous benchmark sharing\n" + _benchmarkSharing.Status,
-                new Vector2(72, y + 60f), Color.White);
+            lines.Add(new("B: Anonymous benchmark sharing\n" + _benchmarkSharing.Status,
+                new Vector2(72, y + 60f), 1f, ScreenInkRole.Plain, Color.White));
 #endif
+        DrawIntroSubView(BuildViewFrame("options", "Options", subtitle, frameRows, lines, plates,
+            title, dim, Color.White));
     }
 
     partial void HandlePlatformOptionsCommand(OptionsMenuModel.OptionsCommand command, ref bool handled);

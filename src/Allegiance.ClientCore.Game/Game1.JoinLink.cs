@@ -1,5 +1,7 @@
 using Allegiance.ClientCore.Session;
 using System.Collections.Generic;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -138,7 +140,7 @@ public sealed partial class Game1
     {
         var confirmation = _joinLinkConfirmation;
         bool ready = _joinLinkResolution?.IsCompleted ?? true;
-        DrawIntroTitle(w, "Join game from a web link", "Review the lobby and server before connecting", title, dim);
+        var runs = new List<ScreenTextRun>();
         string[] lines =
         [
             "Lobby: " + confirmation?.LobbyDescription,
@@ -146,7 +148,15 @@ public sealed partial class Game1
             ready ? confirmation?.Message ?? "Invalid Join link." : "Looking up the current lobby listing...",
         ];
         float y = h * .27f;
-        foreach (var line in lines) DrawJoinLinkLine(line, w, ref y, text);
+        foreach (var line in lines)
+        {
+            foreach (var chunk in JoinLinkChunks(line, w))
+            {
+                runs.Add(new(chunk, new Vector2(50, y), 1f, ScreenInkRole.Body, text));
+                y += 34;
+            }
+            if (line.Length == 0) y += 34;
+        }
         if (ready && confirmation?.Listing is { } listing)
         {
             var details = new List<string>
@@ -161,7 +171,15 @@ public sealed partial class Game1
             if (listing.PasswordRequired) details.Add(Rendering.JoinPasswordPrompt.RequirementLine(true));
             details.Add(Rendering.JoinPasswordPrompt.EditLine(listing.PasswordRequired,
                 _editingLanPassword ? "Password" : "TAB password", _lanJoinPassword.Length, _editingLanPassword));
-            foreach (var line in details) DrawJoinLinkLine(line, w, ref y, text);
+            foreach (var line in details)
+            {
+                foreach (var chunk in JoinLinkChunks(line, w))
+                {
+                    runs.Add(new(chunk, new Vector2(50, y), 1f, ScreenInkRole.Body, text));
+                    y += 34;
+                }
+                if (line.Length == 0) y += 34;
+            }
         }
         // The opt-in checkbox and the key help share the footer line: at 800x480 the
         // detail block already reaches the bottom band, so an extra row would collide.
@@ -174,21 +192,21 @@ public sealed partial class Game1
             : "ESC return to the intro";
         var footerSize = _hudSmall.MeasureString(footer);
         float footerScale = Math.Min(1f, (w - 100f) / Math.Max(1f, footerSize.X));
-        _spriteBatch.DrawString(_hudSmall, footer, new Vector2(50, h - 58), dim, 0f, Vector2.Zero, footerScale,
-            Microsoft.Xna.Framework.Graphics.SpriteEffects.None, 0f);
+        runs.Add(new(footer, new Vector2(50, h - 58), footerScale, ScreenInkRole.Dim, dim));
+        DrawIntroSubView(BuildViewFrame("joinlink", "Join game from a web link",
+            "Review the lobby and server before connecting",
+            new List<ScreenRow>(), runs, new List<ScreenPlate>(), title, dim, text));
     }
 
-    private void DrawJoinLinkLine(string line, float width, ref float y, Color color)
+    /// <summary>Show the entire ASCII/IDN host in fixed-column chunks (truncating it
+    /// could hide an attacker's actual domain behind a trusted-looking prefix).</summary>
+    private List<string> JoinLinkChunks(string line, float width)
     {
-        // Show the entire ASCII/IDN host. Truncating it could hide an attacker's
-        // actual domain behind a long trusted-looking prefix.
         int columns = Math.Max(12, (int)((width - 100) / _hudSmall.MeasureString("M").X));
+        var chunks = new List<string>();
         for (int start = 0; start < line.Length; start += columns)
-        {
-            _spriteBatch.DrawString(_hudSmall, line.Substring(start, Math.Min(columns, line.Length - start)), new Vector2(50, y), color);
-            y += 34;
-        }
-        if (line.Length == 0) y += 34;
+            chunks.Add(line.Substring(start, Math.Min(columns, line.Length - start)));
+        return chunks;
     }
 
 }

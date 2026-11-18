@@ -5,6 +5,14 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
+/// P1042b — the inks the career screen paints with. Null = the P808c Classic/Modern
+/// constants exactly as they were; Jet supplies its five-role palette so the screen is
+/// re-inked without touching its geometry or models.
+/// </summary>
+public readonly record struct CareerScreenPalette(
+    Color Accent, Color Text, Color Dim, Color Panel, Color SelectionFill, Color Status);
+
+/// <summary>
 /// P808c — draws the career screens (character info + leaderboard) in the
 /// MonoGame client from the shared P808b screen models, in BOTH HUD styles.
 /// The behaviour lives entirely in the shared models
@@ -18,6 +26,26 @@ public static class CareerScreenRenderer
 {
     private const float RowH = 20f;
     private const float HeaderY = 118f;
+
+    /// <summary>P1042b — the mode tabs' labels and order (drawn by <see cref="DrawTab"/>,
+    /// framed by the Jet chrome at <see cref="TabRect"/>).</summary>
+    public static readonly string[] TabLabels = ["Career Info", "Leaderboard", "Squads", "Events", "Back"];
+
+    /// <summary>P1042b — the one rectangle of a career mode tab (draw == hit source).</summary>
+    public static Rectangle TabRect(Vector2 ink, int index, float width)
+    {
+        var sz = ink;
+        float x = width / 2f + (index - 1) * 150f - sz.X / 2f;
+        return new Rectangle((int)x - 6, (int)66f - 3, (int)sz.X + 12, (int)sz.Y + 6);
+    }
+
+    /// <summary>P1042b — the table panel's rectangle (a region frame, not a control).</summary>
+    public static Rectangle PanelRect(float width, float height)
+    {
+        int panelW = (int)Math.Min(width - 60f, 990f);
+        return new Rectangle((int)((width - panelW) / 2f), (int)HeaderY - 26, panelW,
+            (int)(height - HeaderY - 76f));
+    }
 
     /// <summary>Leaderboard column headings shown in the pane (native
     /// <c>leaderboardscreen.cpp:59-76</c>; a legible 10-column set — the model
@@ -34,14 +62,15 @@ public static class CareerScreenRenderer
         HudSettings hud, CharacterInfoModel? info, LeaderboardModel? board, SquadScreenModel? squads,
         EventsScreenModel? events,
         bool boardMode, bool squadsMode, bool eventsMode, int cursor, bool editingDesc, string descBuffer, string status,
-        string viewedAccountId, float w, float h)
+        string viewedAccountId, float w, float h, CareerScreenPalette? palette = null)
     {
         bool modern = hud.Style == HudStyle.Modern;
-        Color accent = new(0.25f, 0.75f, 0.72f);
-        Color text = new(0.88f, 0.96f, 0.95f);
-        Color dim = new(0.55f, 0.70f, 0.68f);
-        Color panel = modern ? new Color(0.055f, 0.085f, 0.095f) : new Color(0.045f, 0.065f, 0.07f);
-        Color selFill = modern ? new Color(0.12f, 0.42f, 0.40f, 0.75f) : new Color(0.075f, 0.30f, 0.28f, 0.6f);
+        Color accent = palette?.Accent ?? new(0.25f, 0.75f, 0.72f);
+        Color text = palette?.Text ?? new(0.88f, 0.96f, 0.95f);
+        Color dim = palette?.Dim ?? new(0.55f, 0.70f, 0.68f);
+        Color panel = palette?.Panel ?? (modern ? new Color(0.055f, 0.085f, 0.095f) : new Color(0.045f, 0.065f, 0.07f));
+        Color selFill = palette?.SelectionFill ?? (modern ? new Color(0.12f, 0.42f, 0.40f, 0.75f) : new Color(0.075f, 0.30f, 0.28f, 0.6f));
+        Color statusInk = palette?.Status ?? new Color(1f, 0.62f, 0.45f);
 
         // Title.
         string title = squadsMode ? "[ SQUADS ]" : eventsMode ? "[ ZONE EVENTS ]" : boardMode ? "[ LEADERBOARD ]" : "[ CHARACTER INFO ]";
@@ -49,15 +78,14 @@ public static class CareerScreenRenderer
         sb.DrawString(hudBig, title, new Vector2((w - tsz.X) / 2f, 24f), accent);
 
         // Mode tabs + Back.
-        DrawTab(sb, hudSmall, whitePixel, "Career Info", 0, !boardMode && !squadsMode && !eventsMode, modern, accent, selFill, dim, w);
-        DrawTab(sb, hudSmall, whitePixel, "Leaderboard", 1, boardMode, modern, accent, selFill, dim, w);
-        DrawTab(sb, hudSmall, whitePixel, "Squads", 2, squadsMode, modern, accent, selFill, dim, w);
-        DrawTab(sb, hudSmall, whitePixel, "Events", 3, eventsMode, modern, accent, selFill, dim, w);
-        DrawTab(sb, hudSmall, whitePixel, "Back", 4, false, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, TabLabels[0], 0, !boardMode && !squadsMode && !eventsMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, TabLabels[1], 1, boardMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, TabLabels[2], 2, squadsMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, TabLabels[3], 3, eventsMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, TabLabels[4], 4, false, modern, accent, selFill, dim, w);
 
-        // Panel behind the table.
-        int panelW = (int)Math.Min(w - 60f, 990f);
-        sb.Draw(whitePixel, new Rectangle((int)((w - panelW) / 2f), (int)HeaderY - 26, panelW, (int)(h - HeaderY - 76f)), panel);
+        // Panel behind the table (P1042b: one rectangle source, shared with the chrome).
+        sb.Draw(whitePixel, PanelRect(w, h), panel);
 
         if (squadsMode)
             DrawSquads(sb, hudSmall, whitePixel, squads, modern, accent, text, dim, selFill, w, h);
@@ -81,7 +109,7 @@ public static class CareerScreenRenderer
         if (status.Length > 0)
         {
             var ss = hudSmall.MeasureString(status);
-            sb.DrawString(hudSmall, status, new Vector2((w - ss.X) / 2f, h - 56f), new Color(1f, 0.62f, 0.45f));
+            sb.DrawString(hudSmall, status, new Vector2((w - ss.X) / 2f, h - 56f), statusInk);
         }
     }
 

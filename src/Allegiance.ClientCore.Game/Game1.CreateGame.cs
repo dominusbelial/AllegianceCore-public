@@ -1,4 +1,6 @@
 using Allegiance.ClientCore.MonoGame.Games;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
@@ -103,10 +105,9 @@ public sealed partial class Game1
 
     private void DrawCreateGame(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Create Game", "Server, core, map and game name  -  the lobby creates the mission", titleCol, dimCol);
         CreateGameWizard.Catalog options;
         lock (_createGameLock) options = _createGame.Options;
-        var rows = new (string Label, CreateGameWizard.Field Field)[]
+        var entries = new (string Label, CreateGameWizard.Field Field)[]
         {
             ("SERVER: " + (_createGame.SelectedServer?.DisplayName ?? (_createGameLoading ? "loading…" : "none")), CreateGameWizard.Field.Server),
             ("CORE:   " + (_createGame.SelectedCore ?? "-"), CreateGameWizard.Field.Core),
@@ -114,22 +115,29 @@ public sealed partial class Game1
             ("GAME NAME: " + (_createGame.GameName.Length > 0 ? _createGame.GameName : "<type a name>"), CreateGameWizard.Field.Name),
             ("CREATE GAME", CreateGameWizard.Field.Create),
         };
+        var rows = new List<ScreenRow>();
+        var plates = new List<ScreenPlate>();
         float y = h * 0.32f;
-        foreach (var (label, field) in rows)
+        foreach (var (label, field) in entries)
         {
             bool selected = _createGame.Cursor == field;
+            var band = new RectangleF(50, y - 4, w - 100f, 30);
             if (selected)
-                _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y - 4, (int)(w - 100f), 30),
-                    new Color(0.08f, 0.35f, 0.33f, 0.55f));
-            _spriteBatch.DrawString(_hudSmall, (selected ? "> " : "  ") + label,
-                new Vector2(64f, y), selected ? titleCol : textCol);
+                plates.Add(new(band, ScreenPlateRole.Selection, new Color(0.08f, 0.35f, 0.33f, 0.55f)));
+            rows.Add(BandedRow(label, (selected ? "> " : "  ") + label, 64f, y, band, selected,
+                selected ? ScreenInkRole.Title : ScreenInkRole.Body, selected ? titleCol : textCol));
             y += 36f;
         }
+        var lines = new List<ScreenTextRun>();
         string status = _createGameError.Length > 0 ? _createGameError : _createGame.Status;
         if (status.Length > 0)
-            _spriteBatch.DrawString(_hudSmall, status, new Vector2(64f, y + 12f), new Color(1f, 0.72f, 0.35f));
-        var hint = _hudSmall.MeasureString("UP/DOWN row   LEFT/RIGHT choose   TYPE name   ENTER create   ESC back");
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN row   LEFT/RIGHT choose   TYPE name   ENTER create   ESC back",
-            new Vector2((w - hint.X) / 2f, h - 40f), dimCol);
+            lines.Add(new(status, new Vector2(64f, y + 12f), 1f, ScreenInkRole.Warning,
+                new Color(1f, 0.72f, 0.35f)));
+        const string hintText = "UP/DOWN row   LEFT/RIGHT choose   TYPE name   ENTER create   ESC back";
+        var hint = _hudSmall.MeasureString(hintText);
+        lines.Add(new(hintText, new Vector2((w - hint.X) / 2f, h - 40f), 1f, ScreenInkRole.Dim, dimCol));
+        DrawIntroSubView(BuildViewFrame("creategame", "Create Game",
+            "Server, core, map and game name  -  the lobby creates the mission",
+            rows, lines, plates, titleCol, dimCol, textCol));
     }
 }

@@ -1,3 +1,6 @@
+using Allegiance.ClientCore.MonoGame;
+using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -16,12 +19,16 @@ namespace Allegiance.ClientCore.MonoGame.Rendering.Screens;
 /// the native label from <see cref="IntroScreenModel.MainLabels"/> — nothing is
 /// formatted, reordered or re-measured for a skin.</para>
 /// </summary>
-public sealed class IntroScreenPainter
+public sealed class IntroScreenPainter : IScreenContentRenderer
 {
     private readonly SpriteBatch _batch;
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
+    /// <summary>P1042b — the career renderer reads only <see cref="HudSettings.Style"/>;
+    /// both instances are built once so the draw path allocates nothing.</summary>
+    private readonly HudSettings _careerClassic = new() { Style = HudStyle.Classic };
+    private readonly HudSettings _careerModern = new() { Style = HudStyle.Modern };
 
     /// <summary>Native's selection fill (the teal plate the port has always used).</summary>
     private static readonly Color SelectionPlate = new(0.08f, 0.35f, 0.33f, 0.55f);
@@ -114,5 +121,75 @@ public sealed class IntroScreenPainter
         float hintScale = frame.HintScale;
         _batch.DrawString(_small, frame.Hint, new Vector2((w - fsz.X * hintScale) / 2f, lay.FooterY),
             dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
+    }
+
+    /// <summary>
+    /// P1042b — draw one pre-game intro sub-view, moved verbatim behind the boundary. The
+    /// frame carries the exact runs the pre-boundary methods drew (strings, anchors,
+    /// scales, plates), so Classic/Modern stay byte-identical and Jet can paint vector
+    /// chrome over the same <see cref="ScreenRow.Rect"/> bands.
+    /// </summary>
+    public void DrawView(in IntroViewFrame frame)
+    {
+        var inks = frame.Inks;
+        if (frame.Title.Length > 0)
+        {
+            var tsz = _big.MeasureString(frame.Title);
+            _batch.DrawString(_big, frame.Title, new Vector2((frame.Width - tsz.X) / 2f, 28f), inks.Title);
+        }
+        if (frame.Subtitle.Length > 0)
+        {
+            var ssz = _small.MeasureString(frame.Subtitle);
+            _batch.DrawString(_small, frame.Subtitle, new Vector2((frame.Width - ssz.X) / 2f, 82f), inks.Dim);
+        }
+
+        // Fill plates first: each one only backs its own row/field. The field UNDERLINE
+        // plates are painted after the text (the pre-boundary order: the rule is drawn
+        // across the field, over any glyph that reaches it).
+        for (int i = 0; i < frame.Plates.Count; i++)
+        {
+            if (IsUnderline(frame.Plates[i].Role)) continue;
+            _batch.Draw(_white, ToRect(frame.Plates[i].Rect), frame.Plates[i].ClassicFill);
+        }
+        for (int i = 0; i < frame.Rows.Count; i++)
+        {
+            var row = frame.Rows[i];
+            _batch.DrawString(_small, row.Text, row.Position, row.ClassicInk, 0, Vector2.Zero,
+                row.Scale, SpriteEffects.None, 0);
+        }
+        for (int i = 0; i < frame.Lines.Count; i++)
+        {
+            var line = frame.Lines[i];
+            _batch.DrawString(_small, line.Text, line.Position, line.ClassicInk, 0, Vector2.Zero,
+                line.Scale, SpriteEffects.None, 0);
+        }
+        for (int i = 0; i < frame.Plates.Count; i++)
+        {
+            if (!IsUnderline(frame.Plates[i].Role)) continue;
+            _batch.Draw(_white, ToRect(frame.Plates[i].Rect), frame.Plates[i].ClassicFill);
+        }
+    }
+
+    private static bool IsUnderline(ScreenPlateRole role) =>
+        role is ScreenPlateRole.UnderlineActive or ScreenPlateRole.UnderlineIdle;
+
+    private static Rectangle ToRect(RectangleF r) =>
+        new((int)r.X, (int)r.Y, Math.Max(0, (int)r.Width), Math.Max(0, (int)r.Height));
+
+    /// <summary>P1042b — draw the career/squads/events screen through the unchanged
+    /// P808c renderer (Classic/Modern byte-identical; the palette is null = the P808c
+    /// constants).</summary>
+    public void DrawCareer(in CareerScreenFrame frame)
+        => DrawCareer(frame, null);
+
+    /// <summary>P1042b — the Jet path's palette overload (null = P808c constants).</summary>
+    public void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette)
+    {
+        CareerScreenRenderer.Draw(_batch, _small, _big, _white,
+            frame.Style == HudStyle.Modern ? _careerModern : _careerClassic,
+            frame.Info, frame.Board, frame.Squads, frame.Events,
+            frame.BoardMode, frame.SquadsMode, frame.EventsMode, frame.Cursor,
+            frame.EditingDescription, frame.DescriptionBuffer, frame.Status,
+            frame.ViewedAccountId, frame.Width, frame.Height, palette);
     }
 }

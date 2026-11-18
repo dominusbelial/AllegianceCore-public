@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Allegiance.ClientCore.MonoGame.Discovery;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
 
@@ -811,8 +813,6 @@ public sealed partial class Game1
 
     private void DrawIntroFindServer(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Find Server", "LAN / Tailscale / VPN subnet / favorites / lobby  -  select to join", titleCol, dimCol);
-
         bool scanning;
         List<DiscoveredServer> list;
         lock (_introFoundLock)
@@ -825,12 +825,15 @@ public sealed partial class Game1
             if (_introFoundIndex >= list.Count) _introFoundIndex = list.Count > 0 ? list.Count - 1 : 0;
         }
 
+        var rows = new List<ScreenRow>();
+        var lines = new List<ScreenTextRun>();
+        var plates = new List<ScreenPlate>();
         if (list.Count == 0)
         {
             string msg = scanning ? "Searching..." : "No servers found.";
             var sz = _hudSmall.MeasureString(msg);
-            _spriteBatch.DrawString(_hudSmall, msg, new Vector2((w - sz.X) / 2f, h * 0.4f),
-                new Color(1f, 0.6f, 0.4f));
+            lines.Add(new(msg, new Vector2((w - sz.X) / 2f, h * 0.4f), 1f, ScreenInkRole.Warning,
+                new Color(1f, 0.6f, 0.4f)));
         }
         else
         {
@@ -843,19 +846,19 @@ public sealed partial class Game1
                 // P970 — fit the row to the viewport (a long name + the password
                 // marker used to run past the right edge, and a wrapped row would
                 // collide with the next one).
-                string line = Rendering.TeamPaneRenderer.Fit((sel ? "> " : "  ") + s.FormatRow(), _hudSmall, w - 100f);
+                string text = Rendering.TeamPaneRenderer.Fit((sel ? "> " : "  ") + s.FormatRow(), _hudSmall, w - 100f);
+                var band = new RectangleF(40, y - 3, w - 80f, rowH - 6);
+                rows.Add(new(s.FormatRow(), text, new Vector2(50f, y), band, 1f, sel,
+                    sel ? ScreenInkRole.Title : ScreenInkRole.Body, sel ? titleCol : textCol));
                 if (sel)
-                {
-                    _spriteBatch.Draw(_whitePixel, new Rectangle(40, (int)y - 3, (int)(w - 80f), (int)(rowH - 6)),
-                        new Color(0.08f, 0.35f, 0.33f, 0.55f));
-                }
-                _spriteBatch.DrawString(_hudSmall, line, new Vector2(50f, y), sel ? titleCol : textCol);
+                    plates.Add(new(band, ScreenPlateRole.Selection, new Color(0.08f, 0.35f, 0.33f, 0.55f)));
                 y += rowH;
             }
         }
 
         if (_introFindError.Length > 0)
-            _spriteBatch.DrawString(_hudSmall, _introFindError, new Vector2(50f, 96f), new Color(1f, 0.45f, 0.35f));
+            lines.Add(new(_introFindError, new Vector2(50f, 96f), 1f, ScreenInkRole.Warning,
+                new Color(1f, 0.45f, 0.35f)));
 
         // P946 — the password field's focus is visible (highlight + caret) and
         // the hint names it, so neither the list keys nor the typed text is a
@@ -873,55 +876,60 @@ public sealed partial class Game1
             }
             selectedRequiresPassword = selected?.PasswordRequired == true;
             if (selectedRequiresPassword)
-                _spriteBatch.DrawString(_hudSmall, Rendering.JoinPasswordPrompt.RequirementLine(true),
-                    new Vector2(50, h - 104), new Color(1f, 0.62f, 0.35f));
+                lines.Add(new(Rendering.JoinPasswordPrompt.RequirementLine(true),
+                    new Vector2(50, h - 104), 1f, ScreenInkRole.Warning, new Color(1f, 0.62f, 0.35f)));
             string key = selected is null ? "" : SavedGamePasswords.HostKey(selected.Address, selected.Port);
-            _spriteBatch.DrawString(_hudSmall,
-                Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, key.Length > 0 && SavedPasswords.Has(key)),
-                new Vector2(50, h - 52), dimCol);
+            lines.Add(new(Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, key.Length > 0 && SavedPasswords.Has(key)),
+                new Vector2(50, h - 52), 1f, ScreenInkRole.Dim, dimCol));
         }
         string passwordLabel = Rendering.JoinPasswordPrompt.EditLine(selectedRequiresPassword,
             passwordFocused ? "Password" : "TAB password", _lanJoinPassword.Length, passwordFocused);
         var pwSize = _hudSmall.MeasureString(passwordLabel);
         if (passwordFocused)
-            _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h - 74) - 4, (int)pwSize.X + 20, 24),
-                new Color(0.10f, 0.42f, 0.39f, 0.65f));
-        _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h - 74),
-            passwordFocused ? titleCol : dimCol);
+            plates.Add(new(new RectangleF(44, (h - 74) - 4, pwSize.X + 20, 24), ScreenPlateRole.Focus,
+                new Color(0.10f, 0.42f, 0.39f, 0.65f)));
+        lines.Add(new(passwordLabel, new Vector2(50, h - 74), 1f,
+            passwordFocused ? ScreenInkRole.Title : ScreenInkRole.Dim,
+            passwordFocused ? titleCol : dimCol));
 
         string hint = IntroScreenModel.FindServerHint(passwordFocused, selectedRequiresPassword);
         var fsz = _hudSmall.MeasureString(hint);
         float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f),
-            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
+        lines.Add(new(hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f), hintScale, ScreenInkRole.Dim, dimCol));
         if (_joinPasswordError.Length > 0)
-            _spriteBatch.DrawString(_hudSmall, _joinPasswordError, new Vector2(50, h - 132),
-                new Color(1f, 0.45f, 0.35f));
+            lines.Add(new(_joinPasswordError, new Vector2(50, h - 132), 1f, ScreenInkRole.Warning,
+                new Color(1f, 0.45f, 0.35f)));
+
+        DrawIntroSubView(BuildViewFrame("findserver", "Find Server",
+            "LAN / Tailscale / VPN subnet / favorites / lobby  -  select to join",
+            rows, lines, plates, titleCol, dimCol, textCol));
     }
 
     private void DrawIntroDirect(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Direct Connect", "Type an address[:port]  -  a hostname, IPv4/IPv6, or a MagicDNS name", titleCol, dimCol);
-
         // P946 — whichever field owns typed text is highlighted and carries the
         // caret; Tab moves typing between the address and the password.
         var focus = IntroScreenModel.DirectConnectFocus(_introEditingDirect, _editingLanPassword);
         bool addressFocused = focus == IntroScreenModel.TextField.DirectAddress;
         bool passwordFocused = focus == IntroScreenModel.TextField.ServerPassword;
 
+        var lines = new List<ScreenTextRun>();
+        var plates = new List<ScreenPlate>();
+
         var label = "Address: " + _directBuf.ToString() + (addressFocused ? "_" : "");
         var lsz = _hudSmall.MeasureString(label);
         if (addressFocused)
         {
             float boxW = MathF.Min(w - 40f, MathF.Max(340f, lsz.X + 28f));
-            _spriteBatch.Draw(_whitePixel,
-                new Rectangle((int)(w / 2f - boxW / 2f), (int)(h * 0.42f) - 4, (int)boxW, 24),
-                new Color(0.10f, 0.42f, 0.39f, 0.65f));
+            plates.Add(new(new RectangleF(w / 2f - boxW / 2f, h * 0.42f - 4, boxW, 24),
+                ScreenPlateRole.Focus, new Color(0.10f, 0.42f, 0.39f, 0.65f)));
         }
-        _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - lsz.X) / 2f, h * 0.42f),
-            addressFocused ? titleCol : textCol);
-        _spriteBatch.Draw(_whitePixel, new Rectangle((int)(w / 2f - 170), (int)(h * 0.42f) + 14, 340, 2),
-            addressFocused ? titleCol : new Color(0.25f, 0.5f, 0.5f, 0.8f));
+        lines.Add(new(label, new Vector2((w - lsz.X) / 2f, h * 0.42f), 1f,
+            addressFocused ? ScreenInkRole.Title : ScreenInkRole.Body,
+            addressFocused ? titleCol : textCol));
+        plates.Add(new(new RectangleF(w / 2f - 170, h * 0.42f + 14, 340, 2),
+            addressFocused ? ScreenPlateRole.UnderlineActive : ScreenPlateRole.UnderlineIdle,
+            addressFocused ? titleCol : new Color(0.25f, 0.5f, 0.5f, 0.8f)));
 
         // P970 — the counted edit line and the opt-in checkbox (Direct Connect
         // cannot know in advance that the target needs a password: the refusal
@@ -930,71 +938,79 @@ public sealed partial class Game1
             passwordFocused ? "Password" : "TAB password", _lanJoinPassword.Length, passwordFocused);
         var pwSize = _hudSmall.MeasureString(passwordLabel);
         if (passwordFocused)
-            _spriteBatch.Draw(_whitePixel, new Rectangle(44, (int)(h * .53f) - 4, (int)pwSize.X + 20, 24),
-                new Color(0.10f, 0.42f, 0.39f, 0.65f));
-        _spriteBatch.DrawString(_hudSmall, passwordLabel, new Vector2(50, h * .53f),
-            passwordFocused ? titleCol : dimCol);
+            plates.Add(new(new RectangleF(44, h * 0.53f - 4, pwSize.X + 20, 24),
+                ScreenPlateRole.Focus, new Color(0.10f, 0.42f, 0.39f, 0.65f)));
+        lines.Add(new(passwordLabel, new Vector2(50, h * 0.53f), 1f,
+            passwordFocused ? ScreenInkRole.Title : ScreenInkRole.Dim,
+            passwordFocused ? titleCol : dimCol));
 
         string dcKey = IntroScreenModel.TryParseDirect(_directBuf.ToString(), 6073, out var dcHost, out var dcPort)
             ? SavedGamePasswords.HostKey(dcHost, dcPort) : "";
-        _spriteBatch.DrawString(_hudSmall,
-            Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, dcKey.Length > 0 && SavedPasswords.Has(dcKey)),
-            new Vector2(50, h * .53f + 30f), dimCol);
+        lines.Add(new(Rendering.JoinPasswordPrompt.RememberLine(_rememberGamePassword, dcKey.Length > 0 && SavedPasswords.Has(dcKey)),
+            new Vector2(50, h * 0.53f + 30f), 1f, ScreenInkRole.Dim, dimCol));
         if (_joinPasswordError.Length > 0)
-            _spriteBatch.DrawString(_hudSmall, _joinPasswordError, new Vector2(50, h * .53f + 60f),
-                new Color(1f, 0.45f, 0.35f));
+            lines.Add(new(_joinPasswordError, new Vector2(50, h * 0.53f + 60f), 1f,
+                ScreenInkRole.Warning, new Color(1f, 0.45f, 0.35f)));
 
         string hint = IntroScreenModel.DirectConnectHint(passwordFocused);
         var fsz = _hudSmall.MeasureString(hint);
         float hintScale = Math.Min(1f, (w - 40f) / Math.Max(1f, fsz.X));
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f),
-            dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
+        lines.Add(new(hint, new Vector2((w - fsz.X * hintScale) / 2f, h - 26f), hintScale,
+            ScreenInkRole.Dim, dimCol));
+
+        DrawIntroSubView(BuildViewFrame("directconnect", "Direct Connect",
+            "Type an address[:port]  -  a hostname, IPv4/IPv6, or a MagicDNS name",
+            new List<ScreenRow>(), lines, plates, titleCol, dimCol, textCol));
     }
 
     private void DrawIntroSkirmishSetup(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Single Player", "Skirmish", titleCol, dimCol);
-        var rows = _skirmishScreen.Rows;
-        var layout = IntroLayout.Compute(w, h, rows.Length);
-        for (int i = 0; i < rows.Length; i++)
-        {
-            var label = (i == _skirmishScreen.Selected ? "> " : "  ") + rows[i];
-            var size = _hudSmall.MeasureString(label);
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
-                i == _skirmishScreen.Selected ? titleCol : textCol);
-        }
+        var entries = _skirmishScreen.Rows;
+        var layout = IntroLayout.Compute(w, h, entries.Length);
+        var rows = new List<ScreenRow>();
+        for (int i = 0; i < entries.Length; i++)
+            rows.Add(CenteredListRow(w, entries[i], i == _skirmishScreen.Selected, layout, i, 1f,
+                titleCol, textCol));
+
         string message = _skirmishStart is not null ? "Starting local game... ESC cancels" : _skirmishError;
         if (message.Length == 0) message = _skirmishScreen.Options.Warning;
         if (message.Length == 0) message = _skirmishScreen.Options.Commander == Allegiance.SinglePlayer.SkirmishCommander.You
             ? "You command side 0. I: invest. F3: command view. Right-click: orders."
             : "Watch the battle or fly for Alpha. AI commanders manage both teams.";
-        _spriteBatch.DrawString(_hudSmall, message, new Vector2(24, layout.PilotY), Color.Orange);
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back",
-            new Vector2(24, layout.FooterY), dimCol);
+        var lines = new List<ScreenTextRun>
+        {
+            new(message, new Vector2(24, layout.PilotY), 1f, ScreenInkRole.Warning, Color.Orange),
+            new("UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back",
+                new Vector2(24, layout.FooterY), 1f, ScreenInkRole.Dim, dimCol),
+        };
+        DrawIntroSubView(BuildViewFrame("skirmish", "Single Player", "Skirmish",
+            rows, lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     // ── TR-2 — the Single Player chooser (Training | Skirmish) ─────────────
     // ── TR-2 — the training screen (native training mission list) ──────────
     private void DrawIntroTraining(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Training", "Choose a mission", titleCol, dimCol);
-        var rows = _trainingScreen.Rows();
-        var layout = IntroLayout.Compute(w, h, rows.Length);
-        for (int i = 0; i < rows.Length; i++)
-        {
-            var label = (i == _trainingScreen.Index ? "> " : "  ") + rows[i];
-            var size = _hudSmall.MeasureString(label);
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
-                i == _trainingScreen.Index ? titleCol : textCol);
-        }
+        var entries = _trainingScreen.Rows();
+        var layout = IntroLayout.Compute(w, h, entries.Length);
+        var rows = new List<ScreenRow>();
+        for (int i = 0; i < entries.Length; i++)
+            rows.Add(CenteredListRow(w, entries[i], i == _trainingScreen.Index, layout, i, 1f,
+                titleCol, textCol));
         // Show the selected mission's description (native missionInfoImage art; port text).
         string desc = _trainingScreen.Selected.Description;
         var dsz = _hudSmall.MeasureString(desc);
-        _spriteBatch.DrawString(_hudSmall, desc, new Vector2((w - dsz.X) / 2f, layout.PilotY),
-            _trainingScreen.CanStart ? Color.Orange : dimCol);
-        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER start   ESC back");
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER start   ESC back",
-            new Vector2((w - fsz.X) / 2f, layout.FooterY), dimCol);
+        const string hint = "UP/DOWN select   ENTER start   ESC back";
+        var fsz = _hudSmall.MeasureString(hint);
+        var lines = new List<ScreenTextRun>
+        {
+            new(desc, new Vector2((w - dsz.X) / 2f, layout.PilotY), 1f,
+                _trainingScreen.CanStart ? ScreenInkRole.Warning : ScreenInkRole.Dim,
+                _trainingScreen.CanStart ? Color.Orange : dimCol),
+            new(hint, new Vector2((w - fsz.X) / 2f, layout.FooterY), 1f, ScreenInkRole.Dim, dimCol),
+        };
+        DrawIntroSubView(BuildViewFrame("training", "Training", "Choose a mission",
+            rows, lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     // ── P785 — the training slideshow (native Slideshow/TrainingSlideshow/PostTrainingSlideshow).
@@ -1012,16 +1028,26 @@ public sealed partial class Game1
         }
         var hint = $"{_trainingSlideshow?.Title}   {( (_trainingSlideshow?.Index ?? 0) + 1)}/{_trainingSlideshow?.Count ?? 0}   any key: next";
         var hsz = _hudSmall.MeasureString(hint);
-        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hsz.X) / 2f, h * 0.92f), dimCol);
+        var lines = new List<ScreenTextRun>
+        {
+            new(hint, new Vector2((w - hsz.X) / 2f, h * 0.92f), 1f, ScreenInkRole.Dim, dimCol),
+        };
+        DrawIntroSubView(BuildViewFrame("slideshow", "", "", new List<ScreenRow>(), lines,
+            new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     // ── P808c — the career screens (character info + leaderboard) ─────────
     private void DrawCareerScreen(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        CareerScreenRenderer.Draw(_spriteBatch, _hudSmall, _hudBig, _whitePixel, _hudSettings,
-            _characterInfo, _leaderboard, _squads, _events, _careerMode == CareerMode.Leaderboard,
-            _careerMode == CareerMode.Squads, _careerMode == CareerMode.Events, _careerCursor,
-            _careerEditingDesc, _careerDescBuf.ToString(), _careerStatus, _careerViewAccount, w, h);
+        // P1042b — the career/squads/events screen goes through the screen-chrome
+        // boundary: Classic/Modern forward the untouched P808c composition, Jet re-inks
+        // it and frames the tabs/panel. No model, cursor or command is in the frame.
+        ActiveScreen.DrawCareer(new CareerScreenFrame(GraphicsDevice.Viewport,
+            _characterInfo, _leaderboard, _squads, _events,
+            _careerMode == CareerMode.Leaderboard, _careerMode == CareerMode.Squads,
+            _careerMode == CareerMode.Events, _careerCursor, _careerEditingDesc,
+            _careerDescBuf.ToString(), _careerStatus, _careerViewAccount, _hudSettings.Style,
+            new ScreenInks(titleCol, textCol, dimCol, Color.Orange)));
     }
 
     /// <summary>Greedy word wrap to the pixel width (the intro slideshow's caption
@@ -1051,8 +1077,7 @@ public sealed partial class Game1
     // ── TR-2 — the one-shot first-run training suggestion dialog ───────────
     private void DrawIntroTrainingSuggest(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Welcome to Allegiance", "Training is strongly recommended before going online.", titleCol, dimCol);
-        string[] lines =
+        string[] entries =
         {
             "ALLEGIANCE is a team-based massively-multiplayer space combat game,",
             "in which your goal is to conquer the universe.",
@@ -1062,26 +1087,31 @@ public sealed partial class Game1
             "",
             ( _trainingSuggestDontAsk ? "[x]" : "[ ]" ) + " Don't ask me again",
         };
+        var lines = new List<ScreenTextRun>();
         float y = h * 0.36f;
-        foreach (var ln in lines)
+        foreach (var ln in entries)
         {
             var sz = _hudSmall.MeasureString(ln);
-            _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y),
-                ln.Contains("Don't ask") ? ( _trainingSuggestDontAsk ? titleCol : dimCol ) : textCol);
+            bool ask = ln.Contains("Don't ask");
+            lines.Add(new(ln, new Vector2((w - sz.X) / 2f, y), 1f,
+                ask ? ( _trainingSuggestDontAsk ? ScreenInkRole.Title : ScreenInkRole.Dim ) : ScreenInkRole.Body,
+                ask ? ( _trainingSuggestDontAsk ? titleCol : dimCol ) : textCol));
             y += 30f;
         }
-        var fsz = _hudSmall.MeasureString("ENTER begin training   TAB don't-ask-again   ESC dismiss");
-        _spriteBatch.DrawString(_hudSmall, "ENTER begin training   TAB don't-ask-again   ESC dismiss",
-            new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
+        const string hint = "ENTER begin training   TAB don't-ask-again   ESC dismiss";
+        var fsz = _hudSmall.MeasureString(hint);
+        lines.Add(new(hint, new Vector2((w - fsz.X) / 2f, h - 40f), 1f, ScreenInkRole.Dim, dimCol));
+        DrawIntroSubView(BuildViewFrame("trainingsuggest", "Welcome to Allegiance",
+            "Training is strongly recommended before going online.",
+            new List<ScreenRow>(), lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     private void DrawIntroCredits(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Credits", "Allegiance  -  a 20-year labour of love", titleCol, dimCol);
         // P757 — native CreditsPopup scrolls its content over time (the
         // creditsTime number drives the pane's animation, introscreen.cpp:643-653).
         _introCreditsScroll += 0.35f;   // px/frame at 60 fps ≈ 21 px/s — a slow roll
-        string[] lines =
+        string[] entries =
         {
             "Original game: Microsoft Research / Allegiance team.",
             "Community: FreeAllegiance.",
@@ -1089,16 +1119,19 @@ public sealed partial class Game1
             "",
             "Press ESC to return to the main menu.",
         };
-        float y = h * 0.4f - (_introCreditsScroll % (lines.Length * 30f + h * 0.3f));
-        foreach (var ln in lines)
+        var lines = new List<ScreenTextRun>();
+        float y = h * 0.4f - (_introCreditsScroll % (entries.Length * 30f + h * 0.3f));
+        foreach (var ln in entries)
         {
             if (y > h * 0.24f && y < h * 0.9f)
             {
                 var sz = _hudSmall.MeasureString(ln);
-                _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y), textCol);
+                lines.Add(new(ln, new Vector2((w - sz.X) / 2f, y), 1f, ScreenInkRole.Body, textCol));
             }
             y += 30f;
         }
+        DrawIntroSubView(BuildViewFrame("credits", "Credits", "Allegiance  -  a 20-year labour of love",
+            new List<ScreenRow>(), lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     /// <summary>P757 — the intro's Help view: the manual's topic bar + the
@@ -1106,15 +1139,15 @@ public sealed partial class Game1
     /// page scroll — effect/help.cpp:225-296).</summary>
     private void DrawIntroHelp(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Help", "The manual - UP/DOWN topics   BACKSPACE back   PGUP/PGDN scroll   ESC close", titleCol, dimCol);
-
+        var lines = new List<ScreenTextRun>();
         // Topic bar (native nav pane).
         float tx = 40f;
         foreach (var t in Rendering.HelpManualModel.Topics)
         {
             bool cur = t.Id == _helpManual.CurrentTopic;
             var label = (cur ? "[" : " ") + t.Title + (cur ? "]" : " ");
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2(tx, 112f), cur ? titleCol : dimCol);
+            lines.Add(new(label, new Vector2(tx, 112f), 1f,
+                cur ? ScreenInkRole.Title : ScreenInkRole.Dim, cur ? titleCol : dimCol));
             tx += _hudSmall.MeasureString(t.Title).X + 34f;
         }
 
@@ -1126,11 +1159,14 @@ public sealed partial class Game1
         {
             if (i < skip) continue;
             if (y > h - 60f) break;
-            _spriteBatch.DrawString(_hudSmall, topic.Lines[i], new Vector2(60f, y), textCol);
+            lines.Add(new(topic.Lines[i], new Vector2(60f, y), 1f, ScreenInkRole.Body, textCol));
             y += 26f;
         }
         if (_helpManual.HistoryDepth > 1)
-            _spriteBatch.DrawString(_hudSmall, "BACKSPACE: back", new Vector2(60f, h - 46f), dimCol);
+            lines.Add(new("BACKSPACE: back", new Vector2(60f, h - 46f), 1f, ScreenInkRole.Dim, dimCol));
+        DrawIntroSubView(BuildViewFrame("help", "Help",
+            "The manual - UP/DOWN topics   BACKSPACE back   PGUP/PGDN scroll   ESC close",
+            new List<ScreenRow>(), lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
     // Guards the shared lobby list (_servers) between the main thread

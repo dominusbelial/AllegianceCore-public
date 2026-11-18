@@ -1312,6 +1312,24 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/P1042ScreenBoundaryTests.cs`; report:
   `docs/reports/JET_SCREENS_P1042.md`.
 
+- **Pre-game screen families behind the boundary (P1042b, skin story 8/9 part 2)** — the second half of P972
+  slice 1F/3F: `IScreenSkinRenderer.DrawIntroView(in IntroViewFrame)` and `DrawCareer(in CareerScreenFrame)`
+  (`Rendering/Skins/IScreenSkinRenderer.cs`) route the intro sub-views (Find Server, Direct Connect, host LAN /
+  internet, join link, single-player chooser, skirmish setup, training list, training-suggestion, slideshow
+  hint, create game, benchmark, options / privacy, help, credits) and the career / squads / events screen.
+  `IntroViewFrame` (`Rendering/Skins/ScreenFrames.cs`) carries the exact classic runs (string, anchor, scale and
+  `ClassicInk`) plus each selectable row's resolved band, so Classic/Modern forward to
+  `IntroScreenPainter.DrawView` byte-identically and Jet paints plates/brackets/keylined text at the same
+  rectangles. Career is a CONTENT composition: `CareerScreenRenderer` keeps the P808c drawing, takes an optional
+  `CareerScreenPalette`, and exposes `TabRect`/`PanelRect` as the one rectangle source the Jet chrome frames.
+  **Content text inside a chrome control** is reported through `IScreenRectAudit.Content` — the
+  `TextOverlapCross` / `ContentOverlap` rule that catches a chrome label painted over a content label (the
+  doubled Buy/Def defect: `HangarScreenRenderer.Draw(..., drawPortChrome: false)`). Proof:
+  `tools/p1042-screen-proof/` (sub-view fixtures, audit, alloc) and `tools/p1042b-screen-walk/` (real-client
+  before/after goldens through the production intro views); tests:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/P1042bScreenChromeTests.cs`; report:
+  `docs/reports/JET_SCREENS_P1042B.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

@@ -31,6 +31,9 @@ public sealed class ScreenRecorder : IJetVectorSurface, IJetElementAudit, IScree
     public readonly List<(Vector2 A, Vector2 B, float Width)> Lines = new();
     public readonly List<ControlRun> Controls = new();
     public readonly List<ControlRun> Plates = new();
+    /// <summary>P1042b — text the shared CONTENT renderer painted inside a control the
+    /// chrome also draws (port-verb labels, native hover string).</summary>
+    public readonly List<TextRun> ContentRuns = new();
     public readonly List<string> DrawnElements = new();
 
     public ScreenRecorder(SpriteFont small, SpriteFont large)
@@ -82,6 +85,11 @@ public sealed class ScreenRecorder : IJetVectorSurface, IJetElementAudit, IScree
     public void Plate(string family, string id, RectangleF box)
         => Plates.Add(new(family, id, box));
 
+    /// <summary>P1042b — a content text run the shared renderer drew at the same
+    /// control id the chrome uses.</summary>
+    public void Content(string family, string id, RectangleF box, string text)
+        => ContentRuns.Add(new(id, text, box));
+
     private static RectangleF Union(RectangleF a, RectangleF b)
     {
         float x = MathF.Min(a.X, b.X), y = MathF.Min(a.Y, b.Y);
@@ -101,7 +109,8 @@ public static class ScreenAudit
     }
 
     public sealed record Result(int Controls, int HitVsDraw, int StrokeVsText, int TextOutsidePlate,
-        int TextOffScreen, int TextOverlapCross, int TextOverlapSame, int Failures, string[] Samples);
+        int TextOffScreen, int TextOverlapCross, int TextOverlapSame, int ContentOverlap,
+        int Failures, string[] Samples);
 
     public static Prepared Intro(ScreenRecorder recorder, IntroMainFrame frame)
     {
@@ -195,7 +204,7 @@ public static class ScreenAudit
             }
         }
 
-        int cross = 0, same = 0;
+        int cross = 0, same = 0, contentOverlap = 0;
         for (int i = 0; i < recorder.Texts.Count; i++)
         for (int j = i + 1; j < recorder.Texts.Count; j++)
         {
@@ -215,9 +224,27 @@ public static class ScreenAudit
             }
         }
 
+        // P1042b — chrome text crossing CONTENT text of the SAME control: the doubled
+        // Buy/Def class. Counted as a cross overlap (the two labels are different runs of
+        // the same control); ContentOverlap is the subset this rule found.
+        for (int i = 0; i < recorder.Texts.Count; i++)
+        {
+            var text = recorder.Texts[i];
+            for (int j = 0; j < recorder.ContentRuns.Count; j++)
+            {
+                var content = recorder.ContentRuns[j];
+                if (content.Element != text.Element) continue;
+                if (!Intersects(text.Box, content.Box)) continue;
+                cross++;
+                contentOverlap++;
+                if (samples.Count < 42)
+                    samples.Add($"overlap-content: {text.Element} chrome '{text.Text}' over content '{content.Text}'");
+            }
+        }
+
         int failures = hitVsDraw + strokeVsText + outsidePlate + offScreen + cross + same;
         return new(recorder.Controls.Count, hitVsDraw, strokeVsText, outsidePlate, offScreen, cross, same,
-            failures, samples.ToArray());
+            contentOverlap, failures, samples.ToArray());
     }
 
     private static bool Same(RectangleF a, RectangleF b)

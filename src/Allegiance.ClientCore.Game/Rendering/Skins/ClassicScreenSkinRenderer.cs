@@ -39,6 +39,12 @@ public sealed class ClassicScreenSkinRenderer : IScreenSkinRenderer
 
     public void DrawIntro(in IntroMainFrame frame) => _intro.Draw(frame);
 
+    /// <summary>P1042b — the pre-game sub-views forward to the verbatim painter.</summary>
+    public void DrawIntroView(in IntroViewFrame frame) => _intro.DrawView(frame);
+
+    /// <summary>P1042b — career/squads/events forward to the unchanged P808c renderer.</summary>
+    public void DrawCareer(in CareerScreenFrame frame) => _intro.DrawCareer(frame);
+
     public void DrawHangar(in HangarScreenFrame frame)
     {
         if (_hangar is null) return;
