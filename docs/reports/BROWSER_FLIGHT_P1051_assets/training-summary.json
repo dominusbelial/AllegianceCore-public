@@ -1,0 +1,249 @@
+{
+  "command": "tools/run-training-tests.sh --no-build --repeat 3",
+  "artwork": true,
+  "serialProjects": true,
+  "scriptUnchanged": true,
+  "repeat2And3Exclusion": "FullyQualifiedName!~P912TrainingWindowTests (brief-authorized, ignored DOTNET wrapper only)",
+  "children": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "resultLine": "Passed!  - Failed:     0, Passed:   126, Skipped:     0, Total:   126, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+      "trxSha256": "7b768ce20cb89bb1b43d8d322899835b19623ff7f7f1a1c3db481f520938cc10",
+      "p912Outcomes": {},
+      "failures": [],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 297,
+      "failed": 2,
+      "skipped": 2,
+      "total": 301,
+      "resultLine": "Failed!  - Failed:     2, Passed:   297, Skipped:     2, Total:   301, Duration: 3 h 59 m - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+      "trxSha256": "3cb2128d5040a87290241a1ca5a1a78097e2d9b85940e0fd3c3f8bb303186860",
+      "p912Outcomes": {
+        "Passed": 40,
+        "Failed": 2,
+        "NotExecuted": 2
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+          "signature": "M2 9.2: native prompts missing or out of order"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+          "signature": "M2 9.2: native prompts missing or out of order"
+        }
+      ],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 3)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Classic\", policy: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 2)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"loss\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "resultLine": "Passed!  - Failed:     0, Passed:   126, Skipped:     0, Total:   126, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+      "trxSha256": "292889b48d8a174c82f7909108711cef207c52fa4831f20188525f5e487a2c4f",
+      "p912Outcomes": {},
+      "failures": [],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 257,
+      "failed": 0,
+      "skipped": 0,
+      "total": 257,
+      "resultLine": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 9 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+      "trxSha256": "cb45de933f344f157169920d77ed85a3cddceaa40f029a1fad8231f1e8ff4bdc",
+      "p912Outcomes": {},
+      "failures": [],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "total": 126,
+      "resultLine": "Passed!  - Failed:     0, Passed:   126, Skipped:     0, Total:   126, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)",
+      "trxSha256": "69889e7e2abf4d9c468ab3e4fc90e39da6d753a2bb4b36a45fd51fc001163a70",
+      "p912Outcomes": {},
+      "failures": [],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 6)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 8)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P911TrainingArenaTests.Negative_tech_support_mounts_nanite_and_repairs_via_real_shots",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P917TrainingBranchTests.Station_goto_replaces_a_nanite_repair_plan",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P934TrainingSupportTests.Targetless_nanite_wingman_does_not_retreat_and_takes_the_normal_default_order(lesson: 10)",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 257,
+      "failed": 0,
+      "skipped": 0,
+      "total": 257,
+      "resultLine": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 10 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)",
+      "trxSha256": "e35da499daf43ede057a7453dedff2b13a3d3348a312edd752df065d61c7fa1b",
+      "p912Outcomes": {},
+      "failures": [],
+      "naniteResults": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P882aTrainingIntegrationTests.Universe_has_six_native_sides_all_techs_real_equipment_and_commander(nanite: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P910TrainingIntegrationTests.Recommendation_advances_only_recommended_launch_skips_seven_and_caps_at_nanite",
+          "outcome": "Passed"
+        }
+      ]
+    }
+  ],
+  "passed": 1189,
+  "failed": 2,
+  "skipped": 2
+}

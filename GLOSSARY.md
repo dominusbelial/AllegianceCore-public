@@ -62,6 +62,24 @@ list in **reverse**.
   provides loopback identity/list/side/launch with the resident starter core.
   Proof: `tools/p1048b-browser-join.cjs`, `tools/p1048b-browser-host/Program.cs`;
   report: `docs/reports/BROWSER_WS_JOIN_P1048B.md`. No new native game rule.
+- **Browser flight (P1051, loopback Chromium)** — source-shared Game1 manual controls,
+  own/remote prediction, eject targeting and native station bay approach are selected
+  by `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`;
+  the resident LDR scene/input adapter is
+  `src/Allegiance.ClientCore.Game.Browser/Game1.Flight.cs`. Gesture/focus/context-loss
+  handling lives in `src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js`.
+  `tools/p1051-browser-packs.py` derives the verified join closure from actual
+  desktop flight opens, with receipted rock-surface caps; publish locally through
+  `scripts/publish-browser-flight.sh`. The installed runtime's MIT Google Brotli
+  objects are reproducibly adapted by `tools/p1051-brotli-runtime.py` and invoked
+  by `src/Allegiance.ClientCore.Browser/wwwroot/brotli.js` after verified staging.
+  `tools/p1051-browser-flight.cjs` drives identity, cache, controls, two-client
+  visibility, docking and reconnect evidence; `tools/p1051-browser-security.cjs`
+  checks failed admission/retry and actual persistent storage. Detachment releases
+  the world's renderer callbacks before draining LOGOFF. Accepted resume restores
+  normal authenticated transport state in `src/Allegiance.Server/Server.ReconnectGrace.cs`;
+  parity tracking: `docs/parity/p1051-browser-flight.csv`. Report:
+  `docs/reports/BROWSER_FLIGHT_P1051.md`. No new simulation or wire rule.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

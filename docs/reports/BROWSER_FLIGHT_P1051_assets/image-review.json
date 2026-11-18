@@ -1,0 +1,164 @@
+[
+  {
+    "file": "docked-classic-1920x1080.png",
+    "sha256": "24c7e4267b38f8cf5ce4a01a87f08df97338e6de25069716e618262e7fd681ab",
+    "bytes": 55020,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Hangar panel, player callsign, station 1051, briefing and launch/return buttons; Classic selected."
+  },
+  {
+    "file": "briefing-classic-1920x1080.png",
+    "sha256": "a9041203471e3fa16fb10e510be69dba78ea293f2727ebcd8680868a0bafbf59",
+    "bytes": 90345,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Dreghklar / Imperial Decree briefing with readable Ceto objective/body and radar tip; Classic selected."
+  },
+  {
+    "file": "flight-ships-classic-1920x1080.png",
+    "sha256": "e3250c9170e3fad41e023c61b7abbaefe6c77bd99ea36b9c4958e7be583c04e0",
+    "bytes": 111945,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Browser scout and DesktopPilot scout with labels, rocks and Classic HUD gauges; quiet external camera."
+  },
+  {
+    "file": "return-classic-1920x1080.png",
+    "sha256": "2899be01cbb976266469eb310699f12b936167a6fdb837dc3b2994557a19596f",
+    "bytes": 54631,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Hangar panel after docking, station 1051 and money; Classic selected. This precedes the disconnect-to-menu click."
+  },
+  {
+    "file": "docked-modern-1920x1080.png",
+    "sha256": "2a44702bb6afc1edc5b8025fc9b8eae9c4501c1680f150b10c30931a71a5ad28",
+    "bytes": 54597,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Hangar panel, player callsign, station 1051, briefing and launch/return buttons; Modern selected."
+  },
+  {
+    "file": "briefing-modern-1920x1080.png",
+    "sha256": "f6e5ab90796caef1e496d29d2d603a475557401ef1055a3c52329fb3bc859d5a",
+    "bytes": 89919,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Dreghklar / Imperial Decree briefing with readable Ceto body and radar tip; Modern selected."
+  },
+  {
+    "file": "flight-ships-modern-1920x1080.png",
+    "sha256": "b536b4319ce793ad0bc2ad06e8e302e27ea160bc595d4f51b40c30edd242551e",
+    "bytes": 152266,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Browser scout above and DesktopPilot scout below, labels/range, rocks and Modern percentage gauges; external camera."
+  },
+  {
+    "file": "return-modern-1920x1080.png",
+    "sha256": "bc00eb5c7dd773d899c27a403e2c1642ff0b16f277b5d5fbfeb915b78e2a3844",
+    "bytes": 54620,
+    "width": 1920,
+    "height": 1080,
+    "openedAndReviewed": true,
+    "observed": "Hangar panel after docking, station 1051 and money; Modern selected. This precedes the disconnect-to-menu click."
+  },
+  {
+    "file": "docked-classic-800x480.png",
+    "sha256": "d9c3faa5c520fba100e4223334622b1618b8462867231cd28ea586f653ff0a04",
+    "bytes": 41625,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Readable Hangar panel, player callsign and briefing/launch/return buttons; Classic selected. The panel covers much of the underlying native station text."
+  },
+  {
+    "file": "briefing-classic-800x480.png",
+    "sha256": "352b8a2cdd4b56e35a6fc4f64497b33000488cab58fa9ae55fb5d79c961a5179",
+    "bytes": 59447,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Dreghklar title, Imperial Decree and complete Ceto objective/body visible. Tip and lower controls are below the scrollable panel fold."
+  },
+  {
+    "file": "flight-ships-classic-800x480.png",
+    "sha256": "23cc9c9e4dd280e3c9eb8f36a5752a7b1fbde2f25babb7a54a52bc7081b9e953",
+    "bytes": 69718,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Two scout meshes amid rocks, Classic circular gauges and roll display. DesktopPilot label is partly behind the bottom flight toolbar."
+  },
+  {
+    "file": "return-classic-800x480.png",
+    "sha256": "384348109b85e33b943f21be8bfb97ac5983ff0b24597a8cb79109820dffc8f7",
+    "bytes": 41746,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Readable Hangar panel after docking and money at lower left; Classic selected. Underlying station text is largely covered. This precedes disconnect to menu."
+  },
+  {
+    "file": "flight-own-classic-800x480.png",
+    "sha256": "aa768c96e2e147b09ed3692d5b4d061c90b99960d1d31bb6417c292a155e6f16",
+    "bytes": 217559,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Classic chase view: large own scout in front of the circular gauges, desktop scout above, labels/range, and native orange/brown planetary backdrop. Bottom toolbar overlays part of the HUD."
+  },
+  {
+    "file": "docked-modern-800x480.png",
+    "sha256": "379f8db9599aae86be032dd02f1289e4406cd972912d67fbb9714d5e2a68520f",
+    "bytes": 41134,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Readable Hangar panel, player callsign and briefing/launch/return buttons; Modern selected. The underlying native hangar text is not visible in this initial capture."
+  },
+  {
+    "file": "briefing-modern-800x480.png",
+    "sha256": "5c340c1e0515de873d5927e866fe82d5a884f96eaaf267eb1f1d368413d64421",
+    "bytes": 59024,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Dreghklar title, Imperial Decree and complete Ceto objective/body visible. Tip and lower controls are below the scrollable panel fold."
+  },
+  {
+    "file": "flight-ships-modern-800x480.png",
+    "sha256": "07de2c0b8ffba9f56b7f15405b9236e74a7ef24e18c42d6b8725b49338f900f5",
+    "bytes": 66584,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Two scout meshes with Browser and DesktopPilot labels/range amid rocks, with Modern percentage gauges; external camera."
+  },
+  {
+    "file": "flight-own-modern-800x480.png",
+    "sha256": "aacc31717572b74ba0eb380bd0871455e47391edf20084098dba7e16ab90cbc4",
+    "bytes": 127300,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Modern chase view: large own scout over the percentage gauges, native orange/brown planetary backdrop and part of a globe at upper left. Bottom toolbar overlays the lower HUD."
+  },
+  {
+    "file": "return-modern-800x480.png",
+    "sha256": "77c0d52217cc3862e0206173b738bb3847bab2085ae324d352b02e7405c4fdf0",
+    "bytes": 41369,
+    "width": 800,
+    "height": 480,
+    "openedAndReviewed": true,
+    "observed": "Readable Hangar panel after docking and money at lower left; Modern selected. The panel covers much of the native station text. This precedes disconnect to menu."
+  }
+]

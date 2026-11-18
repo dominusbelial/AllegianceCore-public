@@ -10,3 +10,14 @@ footer { padding: 2px 6px; font-size: 9px; }
 .online-server { border-top: 1px solid #385458; padding: 12px 0; }
 #online-pose { overflow-wrap: anywhere; }
 #online-panel { top: 50%; transform: translate(-50%, -50%); }
+.flight-toolbar { position:fixed; bottom:0; left:0; z-index:3; color:#a4c5bc; background:#051014cc; font:11px sans-serif; max-width:100%; }
+.flight-toolbar p,.flight-toolbar h2 { margin:2px 8px; }
+
+#online-panel.flight-toolbar { top:auto; bottom:20px; left:8px; transform:none; width:auto; max-width:calc(100vw - 16px); max-height:38vh; border:0; background:#051014b0; padding:4px; }
+#online-panel.flight-toolbar h2, #online-panel.flight-toolbar .eyebrow { display:none; }
+#online-panel.flight-toolbar button { margin:2px; padding:3px 7px; min-height:24px; font-size:11px; }
+#mission-briefing { max-width:640px; max-height:50vh; overflow:auto; }
+#mission-briefing pre { white-space:pre-wrap; font:inherit; }
+
+#online-panel.flight-toolbar p { display:none; }
+#online-panel.flight-toolbar .flight-help, #online-panel.flight-toolbar p[role="alert"] { display:block; font-size:10px; }

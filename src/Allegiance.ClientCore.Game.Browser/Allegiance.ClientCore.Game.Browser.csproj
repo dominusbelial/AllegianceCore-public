@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Source-compiled KNI presentation library. Game1 selects the shared intro/options
-       partials and a browser lifecycle; the head owns the shared async session.
-       Flight/offline orchestration remains excluded. -->
+  <!-- Source-compiled KNI presentation library. Game1 selects shared menus, controls, prediction, eject and docking
+       partials with a browser lifecycle and native LDR renderers. The head owns
+       the shared async session; desktop offline orchestration stays excluded. -->
   <PropertyGroup>
     <AssemblyName>Allegiance.ClientCore.Game.Browser</AssemblyName>
     <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>
@@ -65,7 +65,7 @@
                ../Allegiance.ClientCore.Game/LobbyUrl.cs;
                ../Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs"
       Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../Allegiance.ClientCore.Game/Game1.IntroMenu.cs;../Allegiance.ClientCore.Game/Game1.OptionsMenu.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.ClientCore.Game/Game1.IntroMenu.cs;../Allegiance.ClientCore.Game/Game1.OptionsMenu.cs;../Allegiance.ClientCore.Game/Game1.Prediction.cs;../Allegiance.ClientCore.Game/Game1.PartLookup.cs;../Allegiance.ClientCore.Game/Game1.ManualFlight.cs;../Allegiance.ClientCore.Game/Game1.DockApproach.cs;../Allegiance.ClientCore.Game/Game1.FlightTargets.cs;../Allegiance.ClientCore.Game/Game1.Eject.cs" Link="Shared/%(Filename)%(Extension)" />
     <Compile Include="../Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="Assets/PreviewAssets.cs" />
     <EmbeddedResource Include="../Allegiance.ClientCore.Game/Rendering/Skins/*.skin.json" Link="Rendering/Skins/%(Filename)%(Extension)" />
   </ItemGroup>

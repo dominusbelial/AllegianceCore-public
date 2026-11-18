@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "file": "brotlicommon-constants.c.o.wasm",
+      "sha256": "7af35a1d486c4fcc0b9c7b87b148a781894d6c2e9b1def1a3ad0a5c69e4ae0d0"
+    },
+    {
+      "file": "brotlicommon-context.c.o.wasm",
+      "sha256": "4448f9479de6f8c4437ed9e3a3b0332cb083250d20c793d5ce551567bb9686be"
+    },
+    {
+      "file": "brotlicommon-dictionary.c.o.wasm",
+      "sha256": "da92f4f716d4f743778ad10f15114293dff4bda4c6ca62c9fd5611e58e1782bc"
+    },
+    {
+      "file": "brotlicommon-platform.c.o.wasm",
+      "sha256": "061b9fd10ff0d1dd10666042266eccc23bfcc2e8cc197664bd8c9a0ba50faa82"
+    },
+    {
+      "file": "brotlicommon-shared_dictionary.c.o.wasm",
+      "sha256": "8803097d62cd7a13822a530b8e2e1f49d9e02d1b2d1a5968329a15c841b2247f"
+    },
+    {
+      "file": "brotlicommon-transform.c.o.wasm",
+      "sha256": "730f2793795b81a7c345333723a735ac4cb49423e29457b1052b6bddfe79b737"
+    },
+    {
+      "file": "brotlidec-bit_reader.c.o.wasm",
+      "sha256": "5fb1a4acb9b3f3fd6646cf198316c367ef8f83c82ef5a0b1324d192798b9d681"
+    },
+    {
+      "file": "brotlidec-decode.c.o.wasm",
+      "sha256": "99c5c6ad2135b40dfeb72c98a196aa10a1be56c625fd90980243cffd438cb09b"
+    },
+    {
+      "file": "brotlidec-huffman.c.o.wasm",
+      "sha256": "9998da185a40cc3b5ef21e623f878675f25762ada3fde1722526d3bb90eee63f"
+    },
+    {
+      "file": "brotlidec-state.c.o.wasm",
+      "sha256": "9cc8c819c95681acfb352ea8448c4ccdce4ffd6a46433325de0c0e23ddd04e95"
+    },
+    {
+      "file": "modules.json",
+      "sha256": "c4950993850d6b9e5e92b72fa9f3b4326647f8f94ab18bc81036c8316deae5df"
+    }
+  ]
+}

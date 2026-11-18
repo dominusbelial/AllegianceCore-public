@@ -1,7 +1,10 @@
 using System.Net;
+using Microsoft.JSInterop;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.Browser.Assets;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Allegiance.Core;
 using Allegiance.Core.Identity;
 using Allegiance.Core.Model;
@@ -12,12 +15,16 @@ namespace Allegiance.ClientCore.Browser.Pages;
 
 public partial class Menu
 {
-    private bool _online, _onlineBusy;
+    private bool _online, _onlineBusy, _onlineClosing;
+    private long _onlineGeneration;
+    private BrowserServer? _pendingServer;
+    private BrowserMission? _pendingMission;
     private string? _onlineError;
     private IdentityAccount? _account;
     private BrowserServer[] _servers = [];
     private ConnectionSession? _session;
     private string _onlineState = "Login", _onlineName = "";
+    private bool _showBriefing;
     private string _pose = "Waiting for authoritative updates";
     private long _lastOnlineRefresh;
     private Uri LobbyUri(string path) => new(new Uri(Http.BaseAddress!, "/"), path);
@@ -54,12 +61,33 @@ public partial class Menu
     {
         if (_onlineBusy || _assets is null || _account is null || !_servers.Contains(server) || Unavailable(server) is not null) return;
         if (mission?.PasswordRequired == true) { _onlineError = "Password games are not available in the browser."; return; }
+        long generation = ++_onlineGeneration;
+        ConnectionSession? ownedSession = null;
+        _pendingServer = server; _pendingMission = mission;
         _onlineBusy = true; _onlineError = null;
         try
         {
+            if (_platform is null) throw new InvalidOperationException("Asset storage is not ready.");
+            _onlineState = "Staging";
+            var stager = new AssetStager(Http, new BrowserAssetCache(_platform, _assetMemoryFallback), request => request.SetBrowserResponseStreamingEnabled(true));
+            var joinManifest = _joinManifest ?? await stager.ReadManifestAsync(_lifetime.Token, "join-manifest.json");
+            var pack = await stager.StageAsync(joinManifest, (percent, status) =>
+            { _progress = percent; _status = status; StateHasChanged(); }, _lifetime.Token);
+            if (generation != _onlineGeneration) return;
+            _assets.Merge(pack);
+            _game?.AttachOnlineSession(null);
             if (_session is not null) await _session.DisposeAsync();
             var core = StaticCore.Load(IgcReader.Parse(Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets, "PCore001.igc")));
-            var session = _session = new ConnectionSession { WebSocketEndpoint = WebSocketEndpoint.FromServerListing(server.WebSocketUrl!) };
+            var session = ownedSession = _session = new ConnectionSession { WebSocketEndpoint = WebSocketEndpoint.FromServerListing(server.WebSocketUrl!) };
+            session.BrowserMissionBriefingDecoder = message =>
+            {
+                var header = FedMessageHeader.Read(message);
+                if (header.Fmid != MissionBriefingInfo.Fmid || header.CbMsg != message.Length) throw new InvalidDataException("Invalid briefing header");
+                byte[] json = _briefingDecoder!.Invoke<byte[]>("decode", message[4..]);
+                return System.Text.Json.JsonSerializer.Deserialize(json, MissionBriefingInfoJsonContext.Default.MissionBriefingInfo)
+                    ?? throw new InvalidDataException("Empty briefing");
+            };
+            session.EnableAutoReconnect();
             session.World.MissionCoreResolver = name => string.Equals(Path.GetFileNameWithoutExtension(name), Path.GetFileNameWithoutExtension(server.CoreFile), StringComparison.OrdinalIgnoreCase) ? core : null;
             // The complete verified starter snapshot already exists. Fetch a fresh
             // ticket now; keep it only inside the owned LOGONREQ, never in storage/URLs.
@@ -73,6 +101,7 @@ public partial class Menu
                     reply.EnsureSuccessStatusCode();
                     return (await reply.Content.ReadFromJsonAsync(IdentityJsonContext.Default.JoinTokenResponse, ct))!.Token;
                 }, cancellationToken: _lifetime.Token);
+            if (generation != _onlineGeneration) return;
             if (refusal is not null) throw new InvalidOperationException("The server refused this mission join.");
             if (session.World.JoinError is { } error) throw new InvalidOperationException(error);
             _onlineName = mission?.Name ?? server.MissionName;
@@ -80,10 +109,24 @@ public partial class Menu
         }
         catch (Exception ex)
         {
-            _onlineError = ex.Message;
-            if (_session is not null) { await _session.DisposeAsync(); _session = null; }
+            if (generation == _onlineGeneration)
+            {
+                _onlineError = ex.Message;
+                if (ReferenceEquals(_session, ownedSession)) _session = null;
+            }
+            if (ownedSession is not null) { await ownedSession.LeaveBrowserAsync(); await ownedSession.DisposeAsync(); }
         }
-        finally { _onlineBusy = false; StateHasChanged(); }
+        finally { if (generation == _onlineGeneration) { _onlineBusy = false; StateHasChanged(); } }
+    }
+    private void ToggleContactView() => _game?.ToggleContactView();
+    private void DockHome() => _game?.DockHome();
+    private Task RetryStagingAsync() => _pendingServer is { } server ? JoinServerAsync(server, _pendingMission) : Task.CompletedTask;
+    private (string Title, string Objective, string Body)? OnlineBriefing()
+    {
+        if (_session?.World.MissionBriefing is not { } info || _assets is null) return null;
+        var bytes = Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets, "missionbrief.mdl");
+        var strings = Allegiance.ClientCore.MonoGame.Rendering.MissionBriefingStrings.Parse(System.Text.Encoding.Latin1.GetString(bytes));
+        return Allegiance.ClientCore.MonoGame.Rendering.MissionBriefingGenerator.Build(info, tipNumber: 1, strings: strings);
     }
     private async Task SelectSideAsync(short side)
     {
@@ -92,49 +135,69 @@ public partial class Menu
         try
         {
             session.SendPositionReq(side);
-            await WaitOnlineAsync(() => session.World.MySideId == side && session.World.MyShipId is not null);
+            await WaitOnlineAsync(session, () => session.World.MySideId == side && session.World.MyShipId is not null);
+            if (!ReferenceEquals(_session, session)) return;
+            session.SendAutoAccept(side, true);
+            _game?.AttachOnlineSession(session);
             _onlineState = "Hangar";
         }
-        catch (Exception ex) { _onlineError = ex.Message; }
-        finally { _onlineBusy = false; StateHasChanged(); }
+        catch (Exception ex) { if (ReferenceEquals(_session, session)) _onlineError = RequestError(ex); }
+        finally { if (ReferenceEquals(_session, session)) { _onlineBusy = false; StateHasChanged(); } }
     }
     private async Task LaunchOnlineAsync()
     {
         if (_session is not { } session || _onlineBusy || session.World.MyShipId is not { } shipId) return;
         // This handler is a fresh user click after staging/join, so audio can be
-        // activated here. Pointer capture and fullscreen remain explicit unsupported paths.
+        // activated here. Page-level DOM handlers own pointer/fullscreen gestures.
         EnableAudio();
         _onlineBusy = true; _onlineError = null;
         try
         {
             session.SendPlayerReady(true, shipId);
-            await WaitOnlineAsync(() => session.World.Mission?.Stage == MissionStageMessage.StageStarted);
+            await WaitOnlineAsync(session, () => session.World.Mission?.Stage == MissionStageMessage.StageStarted, waitForStart: true);
             if (!session.World.Ships.TryGetValue(shipId, out var ship)) throw new InvalidOperationException("No ship was assigned by the server.");
             long sectorGeneration = session.World.SectorGeneration;
-            session.ResetBuyLoadoutAcks();
-            session.SendBuyLoadout(ship.HullId, true);
-            await WaitOnlineAsync(() => session.BuyLoadoutAcks.Any(ack => ack.FLaunch)
-                && session.World.SectorGeneration > sectorGeneration
+            // Same no-purchase undock as desktop U (Game1.Panes.cs). Keep the
+            // actual server-assigned hardware instead of re-buying unoffered parts.
+            _game?.BeginFlight();
+            session.SendDocked();
+            await WaitOnlineAsync(session, () => session.World.SectorGeneration > sectorGeneration
                 && session.World.Ships.TryGetValue(shipId, out var own) && own.StationId < 0);
+            if (!ReferenceEquals(_session, session)) return;
             _onlineState = "Flight";
+            await JsRuntime.InvokeVoidAsync("gameFlight.activate");
         }
-        catch (Exception ex) { _onlineError = ex.Message; }
-        finally { _onlineBusy = false; StateHasChanged(); }
+        catch (Exception ex) { if (ReferenceEquals(_session, session)) _onlineError = RequestError(ex); }
+        finally { if (ReferenceEquals(_session, session)) { _onlineBusy = false; StateHasChanged(); } }
     }
-    private async Task WaitOnlineAsync(Func<bool> condition)
+    private static string RequestError(Exception error) => error is OperationCanceledException
+        ? "The server did not complete this request. Try again or return to the list." : error.Message;
+    private async Task WaitOnlineAsync(ConnectionSession session, Func<bool> condition, bool waitForStart = false)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        // Native readiness/intermission can legitimately outlast a request timeout.
+        // Keep this wait asynchronous and cancellable by leaving the owned session.
+        if (!waitForStart) timeout.CancelAfter(TimeSpan.FromSeconds(10));
         while (!condition())
         {
-            if (_session?.Lost != false) throw new IOException("The server connection was lost.");
+            if (session.Lost || session.IsDisposed) throw new IOException("The server connection was lost.");
             await Task.Delay(10, timeout.Token);
         }
     }
     private async Task CloseOnlineAsync()
     {
-        if (_session is not null) { await _session.DisposeAsync(); _session = null; }
-        _online = false; _onlineState = "Login"; _onlineError = null; _onlineBusy = false;
+        if (_onlineClosing) return;
+        _onlineClosing = true; ++_onlineGeneration;
+        _game?.AttachOnlineSession(null);
+        var session = _session; _session = null;
+        try
+        {
+            if (session is not null) { await session.LeaveBrowserAsync(); await session.DisposeAsync(); }
+        }
+        finally
+        {
+            _online = false; _onlineState = "Login"; _onlineError = null; _onlineBusy = false; _onlineClosing = false;
+        }
     }
     private void RefreshOnline()
     {
@@ -142,6 +205,7 @@ public partial class Menu
         _lastOnlineRefresh = Environment.TickCount64;
         if (_session is { } session)
         {
+            if (_onlineState == "Flight" && session.World.MyShipId is { } ownId && session.World.Ships.TryGetValue(ownId, out var ownShip) && ownShip.StationId >= 0) _onlineState = "Hangar";
             if (session.Lost) _onlineError = "The server connection was lost. Return to the list to request a fresh join.";
             if (session.World.MyShipId is { } id && session.World.Ships.TryGetValue(id, out var ship))
                 _pose = $"Ship {id} · sector {ship.SectorId} · position {ship.Latest?.Position} · {session.DecodedBytes:N0} bytes received";

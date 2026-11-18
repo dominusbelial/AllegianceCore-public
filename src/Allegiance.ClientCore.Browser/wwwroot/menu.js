@@ -2,7 +2,8 @@
 window.menuViewport = () => [innerWidth, innerHeight];
 window.menuText = instance => {
   window.menuDetachText?.();
-  window.gameMenu = { metrics: () => instance.invokeMethod('Metrics') };
+  window.gameMenu = { metrics: () => instance.invokeMethod('Metrics'), probeBrotli: bytes => instance.invokeMethodAsync('ProbeBrotli', bytes), decodeBrotli: bytes => instance.invokeMethodAsync('DecodeBrotli', bytes) };
+  const detachFlight = window.installFlightInput(instance);
   let active = true;
   const ownsKeys = () => document.hasFocus() && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');
   const focus = () => { if (active) instance.invokeMethod('SetKeyboardFocus', ownsKeys()); };
@@ -20,6 +21,7 @@ window.menuText = instance => {
   window.addEventListener('keydown', text);
   for (const [target, event] of events) target.addEventListener(event, queueFocus);
   window.menuDetachText = () => {
+    detachFlight();
     active = false;
     window.removeEventListener('keydown', text);
     for (const [target, event] of events) target.removeEventListener(event, queueFocus);

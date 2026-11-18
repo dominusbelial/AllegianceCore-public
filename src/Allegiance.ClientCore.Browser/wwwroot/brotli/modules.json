@@ -1,0 +1,25 @@
+{
+  "modules": [
+    "brotlicommon-constants.c.o.wasm",
+    "brotlicommon-context.c.o.wasm",
+    "brotlicommon-dictionary.c.o.wasm",
+    "brotlicommon-platform.c.o.wasm",
+    "brotlicommon-shared_dictionary.c.o.wasm",
+    "brotlicommon-transform.c.o.wasm",
+    "brotlidec-bit_reader.c.o.wasm",
+    "brotlidec-decode.c.o.wasm",
+    "brotlidec-huffman.c.o.wasm",
+    "brotlidec-state.c.o.wasm"
+  ],
+  "staticDataEnd": 198448,
+  "table": [
+    {
+      "module": 3,
+      "export": "BrotliDefaultFreeFunc"
+    },
+    {
+      "module": 3,
+      "export": "BrotliDefaultAllocFunc"
+    }
+  ]
+}

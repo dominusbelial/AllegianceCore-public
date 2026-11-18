@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "framework": {
+      "files": 77,
+      "rawBytes": 16997697,
+      "gzipBytes": 6058970
+    },
+    "allNonPack": {
+      "files": 101,
+      "rawBytes": 17456155,
+      "gzipBytes": 6151546
+    }
+  },
+  "final": {
+    "framework": {
+      "files": 77,
+      "rawBytes": 17054017,
+      "gzipBytes": 6084697
+    },
+    "allNonPack": {
+      "files": 115,
+      "rawBytes": 17700329,
+      "gzipBytes": 6261694
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "runtime": [
+    "BrotliDecoder: PlatformNotSupportedException: IOCompressionBrotli_PlatformNotSupported",
+    "BrotliStream: PlatformNotSupportedException: IOCompressionBrotli_PlatformNotSupported"
+  ],
+  "browser": [
+    [
+      "brotli",
+      "Failed to construct 'DecompressionStream': Unsupported compression format: 'brotli'"
+    ],
+    [
+      "br",
+      "Failed to construct 'DecompressionStream': Unsupported compression format: 'br'"
+    ],
+    [
+      "gzip",
+      true
+    ]
+  ]
+}

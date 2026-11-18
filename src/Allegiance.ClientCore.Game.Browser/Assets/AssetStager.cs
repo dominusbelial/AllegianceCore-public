@@ -13,11 +13,12 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         internal readonly TaskCompletionSource<byte[]> Result = new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal int Waiters;
     }
+    public string[]? RetainedHashes { get; set; }
     public StagedAssetSource? Current { get; private set; }
 
-    public async Task<StagedManifest> ReadManifestAsync(CancellationToken cancellationToken)
+    public async Task<StagedManifest> ReadManifestAsync(CancellationToken cancellationToken, string manifestPath = "starter-manifest.json")
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "starter-manifest.json");
+        using var request = new HttpRequestMessage(HttpMethod.Get, manifestPath);
         prepareRequest?.Invoke(request);
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -46,16 +47,19 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         var staged = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var assets = manifest.Assets.DistinctBy(a => StagedManifest.Canonical(a.Source)).ToArray();
         long total = assets.Sum(a => a.ByteSize), completed = 0;
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
         foreach (var asset in assets)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            progress?.Invoke((int)(completed * 100 / total), $"Loading {asset.Source}…");
+            double secondsLeft = completed == 0 ? double.NaN : elapsed.Elapsed.TotalSeconds * (total - completed) / completed;
+            string eta = double.IsFinite(secondsLeft) ? $"{Math.Ceiling(secondsLeft)}s" : "estimating";
+            progress?.Invoke((int)(completed * 100 / total), $"{asset.Source} · {completed / 1048576d:F2}/{total / 1048576d:F2} MB · ETA {eta}");
             var bytes = await GetAsync(asset, cancellationToken);
             staged.Add(StagedManifest.Canonical(asset.Source), bytes);
             completed += bytes.Length;
         }
         cancellationToken.ThrowIfCancellationRequested();
-        await cache.CommitManifestAsync(manifest.Identity, assets.Select(a => a.Sha256).Distinct().ToArray(), cancellationToken);
+        await cache.CommitManifestAsync(manifest.Identity, RetainedHashes ?? assets.Select(a => a.Sha256).Distinct().ToArray(), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var resident = new StagedAssetSource(staged);
         lock (_gate) { if (generation == _generation) Current = resident; }
@@ -125,7 +129,8 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
             throw new InvalidDataException($"Unexpected content type: {asset.Source}");
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var bytes = await PreviewManifest.ReadVerifiedAsync(asset.Source, asset.ByteSize, asset.Sha256, stream, cancellationToken);
-        await cache.PutAsync(asset, bytes, cancellationToken);
+        if (!await cache.PutAsync(asset, bytes, cancellationToken))
+            Console.WriteLine($"[browser] Storage refused {asset.Source}; keeping verified bytes in memory for this visit.");
         return bytes;
     }
 

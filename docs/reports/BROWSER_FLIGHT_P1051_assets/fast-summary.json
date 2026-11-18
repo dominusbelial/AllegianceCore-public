@@ -1,0 +1,72 @@
+{
+  "tier": "fast",
+  "seconds": 861.7535353329731,
+  "projects": {
+    "Allegiance.ClientCore.Browser.Tests": {
+      "count": 12,
+      "outcomes": {
+        "Passed": 12
+      }
+    },
+    "Allegiance.ClientCore.Game.Browser.Tests": {
+      "count": 33,
+      "outcomes": {
+        "Passed": 33
+      }
+    },
+    "Allegiance.Lobby.Tests": {
+      "count": 210,
+      "outcomes": {
+        "Passed": 209,
+        "NotExecuted": 1
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 55,
+      "outcomes": {
+        "Passed": 55
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 5873,
+      "outcomes": {
+        "Passed": 5870,
+        "NotExecuted": 3
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2451,
+      "outcomes": {
+        "Passed": 2450,
+        "Failed": 1
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 6757,
+      "outcomes": {
+        "Passed": 6748,
+        "NotExecuted": 7,
+        "Failed": 2
+      }
+    }
+  },
+  "calibration": {
+    "factor": 1.1526259946949602,
+    "referenceMs": 4.3454,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 11.526259946949601
+  },
+  "timingOffenders": [],
+  "errors": [
+    "Allegiance.ClientCore.Tests: main failed",
+    "Allegiance.Core.Tests: main failed"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.03451416199095547,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

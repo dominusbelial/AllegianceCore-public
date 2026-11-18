@@ -16,6 +16,11 @@ public sealed class StagedAssetSource : IAssetSource
         string prefix = directoryRelativePath.Length == 0 ? "" : StagedManifest.Canonical(directoryRelativePath.TrimEnd('/')) + "/";
         return _files.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal) && !k[prefix.Length..].Contains('/')).ToArray();
     }
+    /// <summary>Promote a completely verified pack on the event loop before joining.</summary>
+    public void Merge(StagedAssetSource additional)
+    {
+        foreach (var (name, bytes) in additional._files) _files[name] = bytes;
+    }
     public long ResidentBytes => _files.Values.Sum(b => (long)b.Length);
 }
 

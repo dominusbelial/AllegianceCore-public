@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Allegiance.ClientCore.MonoGame;
 
-/// <summary>Browser lifecycle for the shared Game1 intro/options partials. The browser head owns the async online session; offline hosting is excluded.</summary>
+/// <summary>Browser lifecycle for shared Game1 menus, input, prediction, docking and LDR flight renderers. The browser head owns the async online session; offline hosting is excluded.</summary>
 public sealed partial class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
@@ -93,6 +93,7 @@ public sealed partial class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
+        if (_flightSession is not null) { UpdateOnlineFlight(gameTime); base.Update(gameTime); return; }
         var keys = _keyboardFocus ? Keyboard.GetState() : default;
         bool up = keys.IsKeyDown(Keys.Up), down = keys.IsKeyDown(Keys.Down);
         bool enter = keys.IsKeyDown(Keys.Enter), tab = keys.IsKeyDown(Keys.Tab);
@@ -116,7 +117,7 @@ public sealed partial class Game1 : Game
 
     public void InputText(string text)
     {
-        if (!_keyboardFocus || _introView != IntroView.Main || !_introEditingPilot) return;
+        if (_flightSession is not null || !_keyboardFocus || _introView != IntroView.Main || !_introEditingPilot) return;
         if (text == "Backspace") { if (_pilotBuf.Length > 0) _pilotBuf.Length--; }
         else if (text.Length == 1 && IntroScreenModel.TypesPilotName(text[0], _introEditingPilot) && _pilotBuf.Length < 24) _pilotBuf.Append(text);
         var prefs = IntroPreferences.Load(); prefs.Pilot = _pilotBuf.ToString(); prefs.Save();
@@ -192,13 +193,18 @@ public sealed partial class Game1 : Game
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _menuAudio?.Dispose();
+        if (disposing)
+        {
+            _menuAudio?.Dispose(); _modernFlightHud?.Dispose();
+            _flightShips?.Dispose(); _flightStations?.Dispose(); _flightRocks?.Dispose(); _flightSky?.Dispose(); _flightBolts?.Dispose(); _flightWarps?.Dispose();
+        }
         base.Dispose(disposing);
     }
 
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(new Color(5, 12, 20));
+        if (_flightSession is not null) { DrawOnlineFlight(); base.Draw(gameTime); return; }
         var vp = GraphicsDevice.Viewport;
         var title = new Color(HudColor.TealAccent.R, HudColor.TealAccent.G, HudColor.TealAccent.B);
         var dim = new Color(.48f, .64f, .62f);

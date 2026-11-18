@@ -135,6 +135,8 @@ export class BoundedCache {
   }); }
   commit(identity, hashes) { return this.serial(async () => {
     await this.recover();
+    const retained = new Set(hashes);
+    for (const entry of await this.metadata.all()) if (!retained.has(entry.hash)) await this.removeEntry(entry);
     const available = new Set((await this.metadata.all()).map(e => e.hash));
     await this.metadata.manifest({ identity, hashes: hashes.filter(h => available.has(h)), updated: Date.now() });
   }); }

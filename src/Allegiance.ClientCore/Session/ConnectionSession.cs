@@ -54,6 +54,11 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
     internal Action<UdpTransport>? ConfigureTraversalForTesting { get; set; }
 #endif
     internal Func<ITransportSite, ITransport>? TransportFactoryForTesting { get; set; }
+#if BROWSER
+    /// <summary>Resident runtime decoder, prepared asynchronously before JoinAsync.
+    /// Invocation is synchronous computation, preserving owner and packet order.</summary>
+    public Func<byte[], MissionBriefingInfo>? BrowserMissionBriefingDecoder { get; set; }
+#endif
 
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
 #if !BROWSER
@@ -1633,8 +1638,16 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
                     // parked seat under the name the server knows.
                     if (_ack.FValidated && _ack.CharNameOrFailureReason is { Length: > 0 } accepted)
                     {
-                        _resumeName = accepted;
-                        if (_resumeRequest is { } pending) pending.CharacterName = accepted;
+#if BROWSER
+                        // The resume ACK carries a greeting (Server.ReconnectGrace.cs),
+                        // not a new canonical callsign. Keep the verified initial name
+                        // across successive WS resumes; native appmsg.cpp:39-40.
+                        if (!_reconnecting)
+#endif
+                        {
+                            _resumeName = accepted;
+                            if (_resumeRequest is { } pending) pending.CharacterName = accepted;
+                        }
                     }
                     break;
                 case RankInfo.Fmid:
@@ -1856,7 +1869,11 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
                     _world.Apply(ResearchBriefing.Decode(m));
                     break;
                 case MissionBriefingInfo.Fmid:
+#if BROWSER
+                    _world.Apply((BrowserMissionBriefingDecoder ?? throw new InvalidOperationException("Briefing decoder is not staged"))(m));
+#else
                     _world.Apply(MissionBriefingInfo.Decode(m));
+#endif
                     break;
                 case Payday.Fmid:
                     _world.Apply(Payday.Decode(m));
