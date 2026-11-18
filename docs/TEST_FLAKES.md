@@ -4,6 +4,18 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+
+## Merge sweep P1050 + P1042b + P1049b — 2026-11-18 UTC (workstation)
+
+One Fast run on the merged tree: **15,399 cases, 668.3 s**, P744 factor 0.942 (limit 10.000 s). Four failures:
+`P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards` was a real merge defect (an unquoted
+comma in `training-matrix.csv` row TRN-0232 from Claude's P1050 review edit; fixed, 15/15 after). The other three are
+ledgered load flakes, each **3/3 alone**: `NpcPilotTypeGateLiveTests.Non_miner_idle_npc_stands_by_despite_minable_asteroid`
+(travelled 205.5), `LiveCombatWireTests.Real_Bot_class_observes_its_own_kill_over_the_wire` (31.7 s, kill credit not
+decoded), `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (IsDead never latched).
+Timing offenders: that LiveCombat row plus the chronic `P999CivStrategyTests(civ: 5)` 15.1 s and
+`P942ResearchOrderingTests(civ: 201)` 12.8 s rows already recorded above.
+
 ## P1049b — fixed-model windows and shared-input isolation — 2026-11-18 UTC
 
 The remaining Jet/P968 Fast timing families are resolved on the requested CI
