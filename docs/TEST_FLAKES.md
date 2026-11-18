@@ -5,6 +5,24 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## Merge sweeps P1051 + P1042c — 2026-11-18
+
+**P1051 merge (ec268c2a):** Fast **15,483 cases, 646 s, 4 failed**; each passed **3/3 alone**:
+`GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` (8.5 s outside [4, 8]),
+`P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` (skirmish/native aim drift),
+`DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` (death latch never arrived),
+`P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` (1,472 B; first sighting — passes
+alone, likely shared-process allocation counting like the Jet pair above). Training gate
+(`--repeat 3 --window-proofs-once`, artwork): **green** — run 1 ClientCore 131/131, MonoGame 299 passed / 2 opt-in
+M4 hunt skips (4 h 5 m); runs 2–3 131/131 and 257/257.
+
+**P1042c merge (229b5796):** Fast **15,525 cases, 649 s, 1 failed**:
+`LivePositionRequestTests.Empty_side_request_auto_accepts` (SetTeamLeader present, auto-accept missing) —
+**3/3 alone**, existing family. Timing offenders: P750 asteroid types 11.3 s, P777 NPC exit 10.1 s (chronic).
+P1042c's lane fast tier also aborted `Allegiance.Core.Tests` with `InvalidOperationException: The collection has been
+marked as complete with regards to additions` — root cause (ConsoleLog `TryAdd` on a generation completed by
+`ResetForTest`/`Shutdown`) assigned to P1055.
+
 ## Merge sweep after P1052 — 2026-11-18
 
 Fast tier on merged master (a0a8c4c7): **15,483 cases, 653.7 s, 6 failed / 3 not executed**; infrastructure 9/9.
