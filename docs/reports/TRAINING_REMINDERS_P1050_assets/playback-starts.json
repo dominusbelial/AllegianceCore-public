@@ -1,0 +1,314 @@
+[
+  {
+    "style": "Classic",
+    "run": 1,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  },
+  {
+    "style": "Classic",
+    "run": 2,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  },
+  {
+    "style": "Classic",
+    "run": 3,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  },
+  {
+    "style": "Modern",
+    "run": 1,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  },
+  {
+    "style": "Modern",
+    "run": 2,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  },
+  {
+    "style": "Modern",
+    "run": 3,
+    "policy": "reminders",
+    "voiceStarts": [
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_11r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_16r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_18r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_24r",
+        "started": true,
+        "policy": "normal"
+      },
+      {
+        "stem": "tm_2_33",
+        "started": true,
+        "policy": "normal"
+      }
+    ]
+  }
+]

@@ -4,6 +4,67 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1050 — deterministic Basic Flight reminder mismatch (resolved)
+
+The Classic and Modern `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
+children with policy `reminders` are **not load flakes**. P941 replaced native M2
+goal 7.13's audio-only `tm_2_33` reminder with a repeated text prompt. After the
+pilot's 32-second wait this creates a sixth message, so P912's exact five-prompt
+snapshot fails after successful docking. It also omits the native reminder voice.
+The historical P945/P974/P988/P1012/P1047 observations below describe this same
+deterministic port mismatch; their baseline failures do not establish a load cause.
+
+P1050 restores `CreateTooLongCondition(30, Tm2_33)` in `Mission2.cs`, preserving
+native `training/mission2.cpp:746-748` (including its wrong-key recording bug).
+The five-prompt assertion remains exact. Five headless cases pin all goals'
+voice identities, initial suppression, strict 30/60/90-second boundaries,
+unlimited periodic behavior and absence of repeated text; the window observer
+also checks exact goal/voice/count and first-frame reminder timing.
+Validation results and complete prompt timelines are maintained in
+`docs/reports/TRAINING_REMINDERS_P1050.md`. Both reminders children pass in the full P912 class (Classic 8m56.196s; Modern 8m53.388s) and two further fresh one-case processes each: **Classic 3/3, Modern 3/3**, zero skips. The five new headless cases pass 3/3; all eight Basic Flight children pass. Complete result lines and durations are in the report.
+
+### P1050 training qualification — unrelated M8 branch failure retained
+
+The first full P912 class reports `Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: "Classic")`
+failed at `M8 3.22: did not exercise the combined bomber/outpost loss branch`.
+Actual ending: bomber destroyed, outpost alive. The sacrifice pilot ceased repair
+at bomber hull 0.1155 while outpost shield/armor were 0.0466/1.0000. Native's
+bomber-loss announcement appeared. The M8 input controller and simulation are
+unchanged; P1050 changes M2's reminder action only. Three one-case replays passed **3/3** (5m50.118s / 5m50.033s / 5m49.339s),
+zero skips. A retained pre-fix-binary control also passed (352.414 s wall time).
+The original failed child took 5m48.772s; this does not establish a load cause
+or prove universal branch reliability. All three artwork selections completed:
+ClientCore **131/0/0 ×3**; MonoGame **297/1/3**, **256/0/1**, **256/0/1**
+(passed/failed/skipped). Repeats 2–3 exclude only the permitted P912 windows;
+their remaining case sets exactly match pass 1.
+The failure is preserved; no M8 branch assertion is weakened. Details and final
+results are in `docs/reports/TRAINING_REMINDERS_P1050.md`.
+
+### P1050 Fast qualification — 2026-11-17 UTC
+
+One complete Fast sweep: **15,382 cases, 746.587 s; 15,372 passed / 4 failed / 6 skipped**.
+Infrastructure **9/9 passed**; calibrated limit **13.653316 s** (the runner's generic
+error still says 10 s). Eighteen passing cases exceeded the limit. Every one ran
+three more times as an exact one-case process: **54/0/0**, all below the same limit.
+The timing families were Jet draw allocation loops, loadout/strategy sweeps and
+native asteroid geometry; none of that code changes in P1050.
+
+| Exact assertion failure | Sweep signature | Exact-case ×3 |
+|---|---|---|
+| `P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live` | expected `Muted`, actual `Worse`, 2.791 s | pass / pass / pass (3.118 / 3.212 / 3.217 s) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)` | `7.0000000000000009` above 7 s, 0.212 s | fail / pass / pass (0.613 / 0.708 / 0.735 s); failed retry has the same one-ULP signature |
+| `LivePositionRequestTests.Empty_side_request_auto_accepts` | expected receipt absent; only `SetTeamLeader`, 0.087 s | pass / pass / pass (0.454 / 0.489 / 0.456 s) |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | `8.04999924` outside [4, 8], 0.220 s | pass / pass / pass (exact durations in the bounded receipt) |
+
+All four signatures are previously ledgered. Simulation, side selection, career
+roster clocks and buy flow are unchanged; these repetitions do not establish a
+load root cause or turn the failed sweep green. The six skips are three optional
+Meshy pack cases, two ChangeStation fixtures without a same-sector enemy station,
+and the artwork-manifest check when its pinned-corpus precondition is not met.
+All five new reminder cases and the updated P941 audit passed in the sweep.
+Evidence: `docs/reports/TRAINING_REMINDERS_P1050.md` and its bounded
+`TRAINING_REMINDERS_P1050_assets/` JSON receipts.
+
 ## P1048B gate observations — 2026-11-17 UTC
 
 One complete Fast run on the final P1048B transport/browser-join tree covered
@@ -170,7 +231,8 @@ Each additional run reports the same two reminder failures and no new signature.
 The failures are
 `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
 (`Classic`/`Modern`, policy `reminders`): **M2 9.2: native prompts missing or out
-of order**. Mission-finished and station-1010 dock checks pass before the prompt
+of order**. **P1050 correction: deterministic port mismatch, not a load flake;
+see the resolution above.** Mission-finished and station-1010 dock checks pass before the prompt
 assertion. Each exact case also **fails 3/3 alone**, about 8 m 53 s, with artwork
 and null OpenAL. The historical P1012 entry records this signature on its untouched
 base checkout; that is prior evidence, not a fresh P1047 base-control run. No
@@ -1248,7 +1310,7 @@ The supplementary training-window attempt reproduced the already-recorded P945
 failure. It then reproduced **0/3/0 alone**, about nine minutes each: the actual
 lesson docks and completes, but the proof's five-entry prompt snapshot rejects a
 repeated booster prompt. Training scripts, host, input and proof source are
-unchanged. This is a known pre-existing reminder-proof mismatch; no complete
+unchanged. P1050 identifies this as the deterministic P941 M2 port mismatch (extra text instead of native audio), not load. No complete
 training-window gate is claimed for P974. The client-core training filter passed
 126/0/0. Raw training follow-ups are in `.scratch/p974/evidence/training-flakes/`.
 
@@ -2065,7 +2127,7 @@ ledger entries plus one new host condition:
 | `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | failed | **pass / pass / pass** | Already ledged ballot-receipt family. |
 | `MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire` | failed (38.8 s) | known open failure | Persistent ledger entry (P933/P935/P938 cohorts); no lock/tip code changed. **Resolved by P1020** (test race, not load or product: see the P1020 section at the top). |
 | `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | failed | known baseline failure | Persistent null-target assertion, fails on the unmodified base too. |
-| `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(Classic, reminders)` | failed (9 m 3 s) | not re-run (20 min budget) | M2 prompt-sequence snapshot ("native prompts missing or out of order") taken from `ClientTrainingSite.Messages` — instructor messages posted by the training host; P945 changed only client presentation (docked view flag, HUD draw path). Same full-gate-only real-window family already ledged above. |
+| `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(Classic, reminders)` | failed (9 m 3 s) | not re-run (20 min budget) | M2 prompt-sequence snapshot ("native prompts missing or out of order") taken from `ClientTrainingSite.Messages` — instructor messages posted by the training host; P945 changed only client presentation (docked view flag, HUD draw path). P1050: deterministic P941 M2 text-reminder substitution, reproduced alone; restored to native audio-only behavior. |
 | `P800HullProofGpuTests`, `SC2NaniteSupportTests`, `P814GunnerTests`, `P777WarpExitWobbleTests`, `P750NativeAsteroidTypesTests`, `WarpTransitServerTests`, `P942ResearchOrderingTests` | 8 executions over the calibrated 10 s Fast limit (10.5–38.8 s) | n/a | Host load average 11–14 on 24 CPUs (other lanes running); the same executions were 8–17 s in the earlier sweep. |
 
 Two real P945 regressions were found by the first sweep and fixed before the
@@ -9536,7 +9598,9 @@ lane's 2-hour background limit during repeat 1. Headless half: 126/126. Real-win
 before the stop, `P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
 (`Classic` and `Modern`, policy `reminders`), both `M2 9.2: native prompts missing or out of order`. They
 fail the same way alone (2/2, 8 m 51 s each) **and on an untouched checkout of the base commit** (1/1,
-same message), so this is a lane/base condition, not P1012. Not retried further.
+same message), so it predates P1012. P1050 identifies the deterministic P941
+M2 reminder substitution and restores native audio-only behavior; it is not a
+lane/load flake. Not retried further during P1012.
 
 
 ### 2026-11-14 — Claude Fast qualification after merging P1020 + P1016 + P1015 (57a9d7e8)

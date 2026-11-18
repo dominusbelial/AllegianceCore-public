@@ -91,10 +91,11 @@ using var game = new Game1(new Game1.LaunchOptions
         ? Allegiance.ClientCore.State.EffectsQuality.Native : null,
 });
 game.Content.RootDirectory = Path.GetFullPath(args[0]);
+using var flightTrace = mission == 2 ? new BasicFlightTrace(game, Path.GetFullPath(args[1])) : null;
 int lastLesson = args.Length == 6 ? int.Parse(args[5]) : 0;
 if (lastLesson < 0 || lastLesson > (mission switch { 2 => 9, 3 => 13, 4 => 10, 5 => 5, 8 => 3, _ => 0 }))
     throw new ArgumentException("Invalid last lesson.");
-var proof = new LessonObserver(game, Path.GetFullPath(args[1]), mission, style, args.Length >= 5 ? args[4] : null, lastLesson);
+var proof = new LessonObserver(game, Path.GetFullPath(args[1]), mission, style, args.Length >= 5 ? args[4] : null, lastLesson, flightTrace);
 game.Components.Add(proof);
 if (args.Length >= 5 && args[4].StartsWith("lesson=", StringComparison.Ordinal))
 {
@@ -131,7 +132,7 @@ if (lastLesson > 0 || args.Length >= 5 && args[4].StartsWith("lesson=", StringCo
     Console.WriteLine($"P912_LESSON_PASS M{mission} {style} {args[4]}");
 else Console.WriteLine($"P912_WINDOW_PASS M{mission} {style} lessons={string.Join(',', proof.Lessons.Order())}");
 
-sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle style, string? policy, int lastLesson = 0) : GameComponent(game)
+sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle style, string? policy, int lastLesson = 0, BasicFlightTrace? flightTrace = null) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch _watch = Stopwatch.StartNew();
@@ -474,6 +475,7 @@ sealed class LessonObserver(Game1 game, string output, int missionId, HudStyle s
                     "Use your scroll wheel or joystick throttle to adjust thrust.",
                     "Press the SPACEBAR when you are ready to proceed.",
                     "Press and hold the SPACE key to fire the booster." }), "native prompts missing or out of order");
+                flightTrace!.Validate(policy);
                 var voices = Get<HashSet<string>>("_proofM2Voices");
                 if (policy != "missing-audio")
                     Check(new[] { "tm_2_01", "tm_2_08", "tm_2_20", "tm_2_23", "tm_2_26", "tm_2_38" }.All(voices.Contains), "installed narration never played through real audio");

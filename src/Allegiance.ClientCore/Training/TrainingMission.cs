@@ -283,13 +283,14 @@ public abstract class TrainingMission
     /// <summary>
     /// P941 — the corrected too-long reminder for a prompt whose voice-over
     /// native MUTED because it named the wrong key (the <c>PlaySoundAction</c>
-    /// is commented out at, e.g., training/mission2.cpp:746, mission3.cpp:451,
+    /// is commented out at, e.g., training/mission3.cpp:451,
     /// :643, :942) but whose <c>CreateTooLongCondition(30.0f, &lt;muted sound&gt;)</c>
     /// still passed that recording to the periodic reminder. Native's own
     /// <c>CreateTooLongCondition</c> only knows a sound id (trainingmission.cpp:
     /// 927-932), so a hesitating player heard the old, wrong key 30 s later.
     /// This repeats the ON-SCREEN message instead — the text the player is
-    /// already reading — and never plays the muted recording.
+    /// already reading — and never plays the muted recording. Mission 2 instead
+    /// preserves native's sound reminder, including its wrong-key bug (P1050).
     /// </summary>
     protected Condition CreateTooLongMessageCondition(float delay, MessageAction message)
     {
@@ -298,7 +299,9 @@ public abstract class TrainingMission
 
     /// <summary>The periodic trigger native builds inside
     /// <c>CreateTooLongCondition</c> (<c>trainingmission.cpp:927-932</c>): after
-    /// <paramref name="delay"/> seconds, on every pass, for two times.</summary>
+    /// <paramref name="delay"/> seconds, then at every period indefinitely.
+    /// NTimes starts at one and stays sticky at two after the first period;
+    /// two is its activation threshold, not a limit on reminders.</summary>
     private Condition TooLongPeriodic(float delay)
         => new PeriodicCondition(new NTimesCondition(new TrueCondition(), 2, sticky: true), delay, Site);
 

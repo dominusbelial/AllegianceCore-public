@@ -54,9 +54,9 @@ public sealed record TrainingPrompt(
 /// <b>Native bug:</b> the same muted sound ids are still passed to
 /// <c>CreateTooLongCondition(30.0f, &lt;sound&gt;)</c> (:645, :944, mission2.cpp:747,
 /// mission3.cpp:453), so a hesitating player heard the wrong key 30 s later;
-/// <see cref="MutedReminderStems"/> is exactly the set that must never play as a
-/// reminder (P941 repeats the on-screen text instead, see
-/// <c>TrainingMission.CreateTooLongMessageCondition</c>).</para>
+/// P941 replaced these reminders with text. P1050 restores native Mission 2
+/// behavior, including its wrong-key reminder; Mission 3 retains the P941
+/// correction (see <c>TrainingMission.CreateTooLongMessageCondition</c>).</para>
 /// </summary>
 public static class TrainingPromptAudit
 {
@@ -103,8 +103,8 @@ public static class TrainingPromptAudit
             "", PromptInput.Joystick, "", ["button #3"], "tm_2_32"),
         Key(Mission2Id, "2.7", "mission2.cpp:746-748",
             "Press and hold the SPACE key to fire the booster.",
-            "FireBooster", "Space", ["SPACE key"], "tm_2_33", muted: true, fixedReminder: true,
-            reminder: "native muted tm_2_33 (:746) but reminded with it (:747) - P941 repeats the text"),
+            "FireBooster", "Space", ["SPACE key"], "tm_2_33", muted: true,
+            reminder: "native mutes initial tm_2_33 (:746), then plays it every >30 seconds (:747); preserved by P1050"),
 
         // ── Mission 3, Weapons and Targeting ─────────────────────────────────
         Mouse(Mission3Id, "3.3", "mission3.cpp:450-453",

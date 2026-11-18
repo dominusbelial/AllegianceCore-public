@@ -22,7 +22,8 @@ namespace Allegiance.ClientCore.Tests;
 /// FreeAllegiance muted a voice-over that named the old key, the same muted sound
 /// id was still passed to <c>CreateTooLongCondition</c> (mission2.cpp:747,
 /// mission3.cpp:453/:645/:944), so a hesitating player heard the wrong key 30 s
-/// later.</para>
+/// later. P1050 preserves native Mission 2 behavior; the three Mission 3
+/// corrections remain unchanged.</para>
 /// </summary>
 public sealed class P941PromptAuditTests
 {
@@ -162,18 +163,21 @@ public sealed class P941PromptAuditTests
     }
 
     [Fact]
-    public void No_too_long_reminder_replays_a_muted_voice_line()
+    public void Muted_reminder_corrections_retain_the_explicit_native_Mission2_exception()
     {
         // THE reminder bug: native muted the wrong-key recordings but kept passing
         // them to CreateTooLongCondition (mission2.cpp:747, mission3.cpp:453,
-        // :645, :944). A reminder must never play one of them — it repeats the
-        // on-screen message instead (P941).
+        // :645, :944). M3 repeats the on-screen message instead (P941).
+        // M2 explicitly preserves native behavior (P1050).
         var graphs = BuildAll();
         foreach (var (missionId, joystick, graph) in graphs)
             foreach (var (_, inner) in Reminders(graph))
             {
                 if (inner is not PlaySoundAction play) continue;
                 var stem = TrainingSoundCatalog.Stem(missionId, SoundOf(play));
+                // P1050 requires exact native M2 behavior, including :747's
+                // wrong-key voice. Its timing/count/text are pinned separately.
+                if (missionId == 2 && !joystick && stem == "tm_2_33") continue;
                 Assert.False(stem is not null
                              && TrainingPromptAudit.MutedReminderStems.Contains(stem),
                     $"mission {missionId} (joystick={joystick}): a too-long reminder still plays the muted recording {stem}");
@@ -208,8 +212,8 @@ public sealed class P941PromptAuditTests
             if (p.Input is PromptInput.Keyboard or PromptInput.MouseButton or PromptInput.Wheel)
                 Assert.False(string.IsNullOrWhiteSpace(p.Action));
         });
-        // The four muted-voice prompts are the ones the reminder fix covers.
-        Assert.Equal(4, TrainingPromptAudit.All.Count(p => p.ReminderFixed));
+        // M2 preserves native's reminder bug (P1050); M3 keeps its three fixes.
+        Assert.Equal(3, TrainingPromptAudit.All.Count(p => p.ReminderFixed));
         Assert.Equal(4, TrainingPromptAudit.MutedVoiceStems.Length);
     }
 }

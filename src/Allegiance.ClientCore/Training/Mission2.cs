@@ -412,12 +412,11 @@ public class Mission2 : TrainingMission
             }
             else
             {
-                var prompt = new MessageAction(Site, "Press and hold the SPACE key to fire the booster.");
-                goal.AddStartAction(prompt);
-                // P941 — native muted tm_2_33 here ("tab key" does not match the
-                // keymap, training/mission2.cpp:746) but still passed it to the
-                // 30-second reminder (:747). Repeat the on-screen text instead.
-                goal.AddConstraintCondition(CreateTooLongMessageCondition(30.0f, prompt));
+                goal.AddStartAction(new MessageAction(Site, "Press and hold the SPACE key to fire the booster."));
+                // Native mutes the initial wrong-key recording (:746), but its
+                // reminder still plays tm_2_33 (:747). Preserve that native bug;
+                // do not turn the audio reminder into an extra text prompt.
+                goal.AddConstraintCondition(CreateTooLongCondition(30.0f, Tm2_33));
             }
             list.AddGoal(goal);
         }

@@ -2183,6 +2183,12 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/P912TrainingWindowTests.cs`.
   Native: `training/mission2.cpp:157-163,298-301,391-396,516-521,585-613,725-765`,
   `training/playsoundaction.cpp:35-43`. Report: `docs/reports/P940_REPORT.md`.
+  P1050 pins native waiting-player reminder timing/count without a window in
+  `tests/Allegiance.ClientCore.Tests/TrainingMission2Tests.cs`; emission-time
+  prompt/voice/goal receipts and the strict window oracle live in
+  `tools/p912-training-proof/BasicFlightTrace.cs`. Native M2's keyboard booster
+  reminder plays its initially muted wrong-key voice (`mission2.cpp:746-748`),
+  without repeating text. Report: `docs/reports/TRAINING_REMINDERS_P1050.md`.
 - **Lesson universes and window completion (P912)** — M2 bounds use a private
   constants copy through `src/Allegiance.Core/Model/Mission.cs`; M8 cargo/tech
   and native M5 drone placement live in

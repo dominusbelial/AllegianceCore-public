@@ -485,6 +485,11 @@ Notes:
 
 ## 3. The too-long reminder bug (deliberate, documented native-bug fix)
 
+P1050 follow-up: Mission 2 now preserves the native `tm_2_33` audio reminder,
+including the wrong-key bug, as required by exact behavior parity. The M2 text
+substitution described below is historical. Mission 3 remains unchanged. See
+[the P1050 report](TRAINING_REMINDERS_P1050.md) for timelines and regression evidence.
+
 Native muted four voice-overs because they name the old keymap but kept passing the same sound id to
 `CreateTooLongCondition` (`trainingmission.cpp:927-932`), so a hesitating player heard the wrong key 30 s later:
 

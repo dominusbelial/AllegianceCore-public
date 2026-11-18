@@ -5,12 +5,14 @@ cd "$(dirname "$0")/.."
 repeat=1
 build=1
 results=
+window_proofs_once=0
 while (( $# )); do
   case "$1" in
     --no-build) build=0; shift ;;
     --repeat) repeat="${2:?--repeat requires a positive integer}"; shift 2 ;;
     --results-dir) results="${2:?--results-dir requires a directory}"; shift 2 ;;
-    *) echo "Usage: tools/run-training-tests.sh [--no-build] [--repeat N] [--results-dir DIR]" >&2; exit 2 ;;
+    --window-proofs-once) window_proofs_once=1; shift ;;
+    *) echo "Usage: tools/run-training-tests.sh [--no-build] [--repeat N] [--results-dir DIR] [--window-proofs-once]" >&2; exit 2 ;;
   esac
 done
 [[ $repeat =~ ^[1-9][0-9]*$ ]] || { echo "--repeat requires a positive integer" >&2; exit 2; }
@@ -43,7 +45,13 @@ for (( run=1; run<=repeat; run++ )); do
   for project in Allegiance.ClientCore.Tests Allegiance.ClientCore.MonoGame.Tests; do
     directory="$results/$run/$project"
     mkdir -p "$directory"
-    if "$DOTNET" test "tests/$project" --no-build --filter "$filter" \
+    selection="$filter"
+    # P1050 permits the long P912 windows once, retaining every other Fast/Live
+    # lesson (including Nanite) on all passes. Default behavior remains unchanged.
+    if (( window_proofs_once && run > 1 )); then
+      selection="($filter)&FullyQualifiedName!~P912TrainingWindowTests"
+    fi
+    if "$DOTNET" test "tests/$project" --no-build --filter "$selection" \
       --settings tools/test-tiers/sequential.runsettings \
       --logger 'trx;LogFileName=training.trx' --results-directory "$directory" \
       > "$directory/output.log" 2>&1; then
