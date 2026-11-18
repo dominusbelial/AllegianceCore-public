@@ -46,7 +46,14 @@ public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint en
         deadline.CancelAfter(TimeSpan.FromSeconds(10));
         try
         {
+#if BROWSER
+            // The browser WebSocket API uses redirect mode "error" for its
+            // opening handshake; it never follows HTTP redirects.
             await socket.ConnectAsync(endpoint.Uri, deadline.Token).ConfigureAwait(false);
+#else
+            using var invoker = new HttpMessageInvoker(new SocketsHttpHandler { AllowAutoRedirect = false });
+            await socket.ConnectAsync(endpoint.Uri, invoker, deadline.Token).ConfigureAwait(false);
+#endif
             lock (_gate)
             {
                 deadline.Token.ThrowIfCancellationRequested();

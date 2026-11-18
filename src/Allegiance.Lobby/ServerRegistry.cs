@@ -147,7 +147,7 @@ public sealed class ServerRegistry
                 // listing hides on, and the host's stated lobby protocol version.
                 Sanitize(req.Location, LocationMax), req.Paused, req.LobbyProtocolVersion, NormalizeUdpPort(req.UdpPort), req.PlayerHosted,
                 // P970 — the advertised password-required fact (never the password).
-                req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false), NormalizeWebSocketUrl(req.WebSocketUrl));
+                req.PasswordRequired || (req.Missions?.Any(m => m.PasswordRequired) ?? false), NormalizeWebSocketUrl(req));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -172,7 +172,7 @@ public sealed class ServerRegistry
             Address = Sanitize(req.Address, AddressMax),
             Port = NormalizePort(req.Port),
             UdpPort = NormalizeUdpPort(req.UdpPort),
-            WebSocketUrl = NormalizeWebSocketUrl(req.WebSocketUrl),
+            WebSocketUrl = NormalizeWebSocketUrl(req),
             PlayerCount = ClampCount(req.PlayerCount, MaxPlayerCount),
             MaxPlayers = ClampCount(req.MaxPlayers, MaxPlayersCap),
             MissionName = Sanitize(req.MissionName, NameMax),
@@ -436,10 +436,21 @@ public sealed class ServerRegistry
     /// <summary>P810 — an absent optional field stays null (never an empty
     /// string) so the DTO shape matches the pre-P810 wire for hosts that do not
     /// declare a minimum client version.</summary>
-    private static string? NormalizeWebSocketUrl(string? route)
+    private static string? NormalizeWebSocketUrl(RegisterRequest req)
     {
-        if (route is null) return null;
-        try { return Allegiance.Core.Transport.WebSocketEndpoint.FromServerListing(route).Uri.AbsoluteUri; }
+        if (!req.Verified || req.WebSocketUrl is not { } route) return null;
+        try
+        {
+            // Address is pinned to the authenticated request's source by the
+            // HTTP endpoint. Only a loopback registrant gets the local-dev host
+            // exception; even that registration must advertise wss.
+            bool local = System.Net.IPAddress.TryParse(req.Address, out var source)
+                && System.Net.IPAddress.IsLoopback(source.IsIPv4MappedToIPv6 ? source.MapToIPv4() : source);
+            var endpoint = local
+                ? Allegiance.Core.Transport.WebSocketEndpoint.FromConfiguration(route)
+                : Allegiance.Core.Transport.WebSocketEndpoint.FromServerListing(route);
+            return endpoint.Uri.Scheme == "wss" ? endpoint.Uri.AbsoluteUri : null;
+        }
         catch (ArgumentException) { return null; }
     }
 

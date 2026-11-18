@@ -11,12 +11,12 @@ No way was found for a WebSocket peer to forge its source address, claim loopbac
 skip CRC/logon/identity checks, or collide with or reuse another peer's ID. The findings are two admission
 (denial-of-service) flaws in the listener and two latent route-trust gaps on the lobby and desktop-client side.
 
-| # | Severity | Confidence | Finding |
-|---|---|---|---|
-| F1 | Medium | Confirmed by test | Behind the trusted proxy, one remote address can lock every other player out of the WS route |
-| F2 | Medium | Confirmed by test | Admission is keyed per full IPv6 address, so one /64 exhausts the global handshake budget and every slot |
-| F3 | Low | Confirmed by test | The lobby publishes a `webSocketUrl` the registrant does not own (unverified host, player's loopback, third-party host) |
-| F4 | Low | Confirmed by test | The desktop WS client follows HTTP redirects to a URL that was never validated |
+| # | Severity | Confidence | Finding | Fixed in P1052 (file:line) |
+|---|---|---|---|---|
+| F1 | Medium | Confirmed by test | Behind the trusted proxy, one remote address can lock every other player out of the WS route | `src/Allegiance.Server/Transport/WebSocketServerTransport.cs:44`, `src/Allegiance.Server/Transport/WebSocketAdmission.cs:33,55` |
+| F2 | Medium | Confirmed by test | Admission is keyed per full IPv6 address, so one /64 exhausts the global handshake budget and every slot | `src/Allegiance.Core/Transport/SourceAddressBudget.cs:11`, `src/Allegiance.Server/Server.CredentialLimits.cs:82` |
+| F3 | Low | Confirmed by test | The lobby publishes a `webSocketUrl` the registrant does not own (unverified host, player's loopback, third-party host) | `src/Allegiance.Lobby/ServerRegistry.cs:439`, `src/Allegiance.Core/Transport/WebSocketEndpoint.cs:14` |
+| F4 | Low | Confirmed by test | The desktop WS client follows HTTP redirects to a URL that was never validated | `src/Allegiance.Core/Transport/WebSocketTransport.cs:54` |
 
 Nothing rated High or Critical. F1 is the one to fix before the flag is turned on publicly: it applies to the only
 supported production topology, with default limits, from a single address at about two connections per second.

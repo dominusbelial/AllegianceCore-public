@@ -1,20 +1,25 @@
 using System.Net;
+using Allegiance.Core.Transport;
 
 namespace Allegiance.Server;
 
 /// <summary>Bounded, fail-closed source table. Attempt windows survive disconnects;
 /// live sources never expire. Used separately for physical connections and upgrade sources.</summary>
-internal sealed class WebSocketAdmission(WebSocketConfig settings)
+internal sealed class WebSocketAdmission(WebSocketConfig settings, IEnumerable<IPAddress>? perIpExemptions = null)
 {
     private readonly object _gate = new();
     internal sealed class Source { public int Live, Attempts; public long Since; }
     private readonly Dictionary<IPAddress, Source> _sources = [];
+    // Only the physical guard receives exact known proxy addresses. Never mask
+    // trust to /64: another socket in the proxy's subnet is not a trusted proxy.
+    private readonly HashSet<IPAddress> _perIpExemptions = (perIpExemptions ?? []).Select(Canonical).ToHashSet();
     private int _live, _pending, _attempts;
     private long _since;
     internal static IPAddress Canonical(IPAddress address) => address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
     internal bool TryAttempt(IPAddress address, long now)
     {
-        address = Canonical(address);
+        bool exempt = _perIpExemptions.Contains(Canonical(address));
+        address = SourceAddressBudget.Key(address);
         lock (_gate)
         {
             long window = (long)(settings.HandshakeWindowSeconds * 1000);
@@ -25,7 +30,7 @@ internal sealed class WebSocketAdmission(WebSocketConfig settings)
                 if (now - source.Since >= window) { source.Since = now; source.Attempts = 0; }
                 // A source already denied by its own quota must not exhaust the
                 // global quota for unrelated clients (the same R1 F11 principle).
-                if (source.Attempts >= settings.HandshakeAttemptsPerIpPerWindow) return false;
+                if (!exempt && source.Attempts >= settings.HandshakeAttemptsPerIpPerWindow) return false;
             }
             if (_attempts >= settings.HandshakeAttemptsPerWindow) return false;
             if (source is null)
@@ -43,11 +48,12 @@ internal sealed class WebSocketAdmission(WebSocketConfig settings)
     }
     internal Lease? TryEnter(IPAddress address)
     {
-        address = Canonical(address);
+        bool exempt = _perIpExemptions.Contains(Canonical(address));
+        address = SourceAddressBudget.Key(address);
         lock (_gate)
         {
             if (!_sources.TryGetValue(address, out var source) || _live >= settings.MaxConnections
-                || source.Live >= settings.MaxConnectionsPerIp || _pending >= settings.MaxPendingHandshakes) return null;
+                || !exempt && source.Live >= settings.MaxConnectionsPerIp || _pending >= settings.MaxPendingHandshakes) return null;
             source.Live++; _live++; _pending++;
             return new Lease(this, source);
         }

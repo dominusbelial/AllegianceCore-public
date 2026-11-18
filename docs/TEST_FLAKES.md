@@ -72,6 +72,54 @@ completion, passes **126/126 ×3**. Complete evidence and the slowest 15 cases o
 both pinned Fast runs: `docs/reports/CI_FAST_TIMING_P1049.md`, P1049b section.
 
 
+## P1052 WebSocket security gate observations — 2026-11-18 UTC
+
+The broad Core server/transport/identity/credential/R1/reconnect selection reported
+**820 passed / 1 failed / 2 existing skips** (823 total), including on final source.
+The sole failure was
+`ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout`:
+“peers must keep receiving per-tick updates while stdout is stalled.” This existing
+Perf/shared-console case passed **3/3 alone**. The broad run is not claimed green.
+No assertion, timeout, tier or limit changed.
+
+All **89 P1052 security cases** (seven original RWS proofs plus 82 new cases)
+passed **3× alone**, in 54 fresh method-isolated processes (theory rows retained).
+P1048 **135/135**, P1048B **49/49**, P897 **774/774**, connecting UI **12/12**,
+ClientCore ownership/containment **20/20**, and browser seam **33/33** passed.
+The full lobby suite passed **262**, with **3** optional PostgreSQL skips.
+
+The pre-IDN-fix Fast sweep covered **15,451 cases in 865.7 s**: **15,441 passed /
+3 failed / 7 skipped**, no timing offenders, 9/9 infrastructure checks. All 76
+then-existing security cases passed. A malformed-IDN conversion finding prompted
+13 further cases and the final-source sweep recorded below. First-sweep failures were
+repeated three times alone on the corrected source:
+
+| Case | Sweep observation | Isolated outcomes (seconds for the observed row) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Observer never latched death after 2,500 ticks | pass / pass / pass (1.345 / 1.321 / 1.338) |
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")` | 14.900 outside [14.94, 15.06] | pass / **fail / fail** (1.876 / 1.851 / 1.897); all four theory rows selected per process |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 9.05 s roster time outside [4, 8] | pass / pass / pass (0.519 / 0.542 / 0.556) |
+
+P660 is the existing clock-observation boundary family, including prior isolated
+failures; **it remains unresolved**. No countdown, simulation-clock or gameplay
+rule changed. The final-source Fast sweep covered **15,464 cases in 870.1 s**: **15,453 passed /
+4 failed / 7 skipped**, no timing offenders (11.540 s limit), 9/9 infrastructure
+checks. All **89 security cases passed**. Every failed method was repeated three
+times alone, retaining theory rows:
+
+| Case | Final Fast failure | Isolated outcomes (seconds for the observed row) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | No death latch after 2,500 ticks | pass / pass / pass (1.350 / 1.351 / 1.323) |
+| `P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod` | Moving pod not intercepted after 800 ticks | pass / pass / pass (0.387 / 0.480 / 0.413) |
+| `NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge` | Return distance 229.7 → 217.9 outside fixture bound | pass / pass / pass (1.430 / 1.450 / 1.395) |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | 5.0000000000000009 outside [4.9000000000000004, 5] | **fail / fail / pass** (0.187 / 0.146 / 0.207); all three theory rows selected |
+
+P739 is the existing one-ULP timer boundary family; **it remains unresolved**,
+including isolated failures. The failed broad/Fast sweeps are not claimed green,
+and isolated passes do not change their outcome. No game rule, assertion, timing
+bound, quarantine or tier was changed.
+Report: [WS_SECURITY_FIXES_P1052.md](reports/WS_SECURITY_FIXES_P1052.md).
+
 ## P1049 CI stabilisation — 2026-11-17 UTC
 
 **P808 and P941 are RESOLVED** (root causes found, not re-labelled as load flakes).

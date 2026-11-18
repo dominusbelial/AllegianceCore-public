@@ -62,6 +62,18 @@ list in **reverse**.
   provides loopback identity/list/side/launch with the resident starter core.
   Proof: `tools/p1048b-browser-join.cjs`, `tools/p1048b-browser-host/Program.cs`;
   report: `docs/reports/BROWSER_WS_JOIN_P1048B.md`. No new native game rule.
+- **WebSocket route trust / source budgets (P1052)** — listing input accepts public
+  WSS only in `src/Allegiance.Core/Transport/WebSocketEndpoint.cs`; trusted
+  configuration retains loopback WS. Converted IDN/DNS labels are validated and
+  malformed optional routes are dropped. Browser discovery DTO/JSON ingestion lives in
+  `src/Allegiance.ClientCore.Browser/Pages/BrowserServer.cs`; desktop ingestion is
+  in `src/Allegiance.ClientCore.Game/ServerListing.cs`. `src/Allegiance.Lobby/ServerRegistry.cs`
+  publishes routes only for verified registrants (local WSS hosts only from a
+  loopback registrant). `src/Allegiance.Core/Transport/SourceAddressBudget.cs`
+  keys IPv6 admission and credential guesses by /64 without changing peer addresses
+  or exact proxy trust. Known proxies bypass only physical per-IP caps; all global
+  and pending caps remain. Desktop handshakes and reconnects refuse redirects.
+  Report: `docs/reports/WS_SECURITY_FIXES_P1052.md`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

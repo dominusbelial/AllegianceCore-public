@@ -76,6 +76,15 @@ public sealed record ServerListing(
     bool PasswordRequired = false,
     string? WebSocketUrl = null)
 {
+    // Directory input always uses the listing rule, including JSON ingestion
+    // and mission expansion. Invalid optional routes never reject the listing.
+    private string? _webSocketUrl = Allegiance.Core.Transport.WebSocketEndpoint.NormalizeServerListing(WebSocketUrl);
+    public string? WebSocketUrl
+    {
+        get => _webSocketUrl;
+        init => _webSocketUrl = Allegiance.Core.Transport.WebSocketEndpoint.NormalizeServerListing(value);
+    }
+
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
     /// launching <c>dotnet run --project src/Allegiance.Lobby</c> (it has no

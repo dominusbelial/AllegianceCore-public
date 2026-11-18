@@ -79,7 +79,7 @@ public sealed partial class Server
     private IPAddress? ResolvePeerAddress(ConnectionId peer) => _host.Transport?.PeerAddress(peer);
 
     private static string Canonical(IPAddress address)
-        => (address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address).ToString();
+        => SourceAddressBudget.Key(address).ToString();
 
     /// <summary>True when this connection (or its source address) is inside a
     /// credential back-off: the caller drops the frame without evaluating the

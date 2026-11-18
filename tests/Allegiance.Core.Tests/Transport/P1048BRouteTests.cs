@@ -1,6 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Allegiance.Core.Identity;
 using Allegiance.Lobby;
+using Allegiance.Lobby.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using Allegiance.Server;
 
 namespace Allegiance.Core.Tests.Transport;
@@ -34,8 +37,16 @@ public sealed class P1048BRouteTests
     {
         using var app = new LobbyHarness();
         using var http = new HttpClient(app.Server.CreateHandler()) { BaseAddress = app.ClientOptions.BaseAddress };
+        var identities = app.Services.GetRequiredService<IdentityStore>();
+        var account = identities.CreateAccount("P1048B-" + Guid.NewGuid().ToString("N")[..16]);
+        string serverId = Guid.NewGuid().ToString("N"), secret = IdentityStore.Secret();
+        identities.Execute("INSERT INTO enrolled_servers(id,secret_hash,operator_id,name) VALUES(@p0,@p1,@p2,@p3)", serverId, IdentityStore.Hash(secret), account.Id, "P1048B");
         using var heartbeat = new LobbyHeartbeat(http, new LobbyConfig
         { Url = http.BaseAddress!.AbsoluteUri, PublicAddress = "127.0.0.1", DisplayName = "P1048B" }, () => 0, "Mission", "PCore001.igc", "1", 6073);
+        // In-memory enrollment keeps the real heartbeat/HTTP path without
+        // writing a bearer credential to disk.
+        typeof(LobbyHeartbeat).GetField("_enrollment", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(heartbeat, new ServerEnrollment(serverId, secret));
         await heartbeat.PumpAsync();
         string json = await http.GetStringAsync("/api/servers");
         Assert.DoesNotContain("webSocketUrl", json);
