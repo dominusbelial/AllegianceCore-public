@@ -34,12 +34,12 @@ public class TrainingMission2Tests
 
     /// <summary>Advance frames (pointing the player at the commander, as goal 2's demo requires) until
     /// <paramref name="until"/> becomes true or <paramref name="maxSteps"/> frames elapse.</summary>
-    private static void StepUntil(FakeTrainingSite site, Mission2 mission, Func<bool> until, int maxSteps)
+    private static void StepUntil(FakeTrainingSite site, Mission2 mission, Func<bool> until, int maxSteps, float seconds = .016f)
     {
         var playerObj = (FakeObject)site.PlayerShip;
         for (int i = 0; i < maxSteps && !until(); i++)
         {
-            site.Advance(0.016f);
+            site.Advance(seconds);
             playerObj.Forward = Vector3.Normalize(CommanderHome - playerObj.Position);
             mission.Frame();
         }
@@ -47,6 +47,84 @@ public class TrainingMission2Tests
 
     private static int CountMessages(FakeTrainingSite site, string fragment)
         => site.Messages.Count(m => m.Contains(fragment, StringComparison.Ordinal));
+
+    [Theory]
+    [InlineData("3.6", Tm2_11r, true)]
+    [InlineData("4.7", Tm2_16r, true)]
+    [InlineData("5.3", Tm2_18r, true)]
+    [InlineData("6.16", Tm2_24r, true)]
+    [InlineData("7.13", Tm2_33, false)]
+    public void Waiting_player_gets_the_reminder_every_thirty_seconds_on_the_native_timer(
+        string target, int reminder, bool voiceReminder)
+    {
+        // mission2.cpp:350-355,436-441,475-481,629-634,741-748.
+        // trainingmission.cpp:927-932 + periodiccondition.cpp:52-65 and
+        // ntimescondition.cpp:36-57: strict >30, drift-free, sticky/unlimited.
+        // Four goals repeat their native voice and never reissue text. The keyboard
+        // booster (7.13): native reminds with the muted wrong-key tm_2_33 (:747, a
+        // native bug); the port keeps P941's correction and repeats the on-screen
+        // text instead, so tm_2_33 never plays (P1050 review decision).
+        var site = BuildSite();
+        var mission = new Mission2(site);
+        TrainingController.BeginMission();
+        mission.Start();
+        foreach (string path in new[] { "3.6", "4.7", "5.3", "6.16", "7.13" })
+        {
+            // Integral timestamps make the strict boundary exactly representable.
+            StepUntil(site, mission, () => mission.ActiveGoalPath == path, 4000, seconds: 1);
+            Assert.Equal(path, mission.ActiveGoalPath);
+            if (path == target) break;
+            AnswerPrompt(path);
+        }
+
+        float start = site.TimeSeconds;
+        string[] messages = site.Messages.ToArray();
+        string prompt = messages[^1];
+        int sounds = site.PlayedSounds.Count;
+        Assert.Equal(voiceReminder ? 1 : 0, site.PlayedSounds.Count(id => id == reminder));
+        for (int period = 1; period <= 3; period++)
+        {
+            site.TimeSeconds = start + period * 30;
+            mission.Frame();
+            int before = period - 1;
+            Assert.Equal(voiceReminder ? before : 0, site.PlayedSounds.Count - sounds);
+            Assert.Equal(messages.Length + (voiceReminder ? 0 : before), site.Messages.Count);
+            site.TimeSeconds = MathF.BitIncrement(site.TimeSeconds);
+            mission.Frame();
+            if (voiceReminder)
+            {
+                Assert.Equal(Enumerable.Repeat(reminder, period), site.PlayedSounds.Skip(sounds));
+                Assert.Equal(messages, site.Messages); // native never reissues MessageAction
+            }
+            else
+            {
+                Assert.Equal(sounds, site.PlayedSounds.Count); // wrong-key tm_2_33 never plays
+                Assert.Equal(messages.Concat(Enumerable.Repeat(prompt, period)), site.Messages);
+            }
+            Assert.Equal(target, mission.ActiveGoalPath);
+        }
+        AnswerPrompt(target);
+        site.Advance(.016f);
+        mission.Frame();
+        Assert.NotEqual(target, mission.ActiveGoalPath);
+        int total = site.PlayedSounds.Count(id => id == reminder);
+        int promptCount = site.Messages.Count(m => m == prompt);
+        site.Advance(31);
+        mission.Frame();
+        Assert.Equal(total, site.PlayedSounds.Count(id => id == reminder));
+        Assert.Equal(promptCount, site.Messages.Count(m => m == prompt));
+
+        void AnswerPrompt(string path)
+        {
+            switch (path)
+            {
+                case "3.6": case "6.16": site.PressKey(KeyFireBooster); break;
+                case "4.7": site.SetShipControls(1, new ControlData(0, 0, 0, 1)); break;
+                case "5.3": site.SetShipControls(1, new ControlData(0, 0, 0, .3f)); break;
+                case "7.13": site.SetStateBit(1, AfterburnerButton); break;
+            }
+        }
+    }
 
     [Fact]
     public void Mission2_RunsToCompletion_WithExpectedMilestonesInOrder()

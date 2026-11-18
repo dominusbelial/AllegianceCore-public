@@ -1,0 +1,884 @@
+{
+  "baseline": [
+    {
+      "style": "Classic",
+      "policy": "reminders",
+      "outcome": "Failed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.53329309999934,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 51,
+          "Clock": 157.80251329999976,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 62,
+          "Clock": 195.09326939999903,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 90,
+          "Clock": 292.0970961999984,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 116,
+          "Clock": 354.51259439999836,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        },
+        {
+          "Sequence": 118,
+          "Clock": 384.52251289999936,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.53329309999934,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 36,
+          "Clock": 131.53365920000016,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 52,
+          "Clock": 157.80251329999976,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 54,
+          "Clock": 187.80636799999886,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 63,
+          "Clock": 195.09326939999903,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 65,
+          "Clock": 225.09390349999921,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 91,
+          "Clock": 292.0970961999984,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 93,
+          "Clock": 322.09974099999965,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "56651aceebb67ce5f0ad0d18c3a2cc47999301908e1b5dd27539d3838c7832c4",
+      "durationSeconds": 531.832,
+      "exitCode": -6
+    },
+    {
+      "style": "Modern",
+      "policy": "reminders",
+      "outcome": "Failed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 102.94720080000084,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 51,
+          "Clock": 159.21121870000138,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 62,
+          "Clock": 196.4940762000024,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 90,
+          "Clock": 293.6180157000027,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 116,
+          "Clock": 356.0724634000035,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        },
+        {
+          "Sequence": 118,
+          "Clock": 386.0800232000051,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 102.94720080000084,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 36,
+          "Clock": 132.94848860000073,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 52,
+          "Clock": 159.21121870000138,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 54,
+          "Clock": 189.21155080000236,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 63,
+          "Clock": 196.4940762000024,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 65,
+          "Clock": 226.49436530000338,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 91,
+          "Clock": 293.6180157000027,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 93,
+          "Clock": 323.6212886000024,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "3d55ac41bbf585d1496c007ca50ab251a14428ba33e5c41dcfe501efdd9dc44e",
+      "durationSeconds": 537.101,
+      "exitCode": -6
+    },
+    {
+      "style": "Classic",
+      "policy": "default",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.51089079999998,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 50,
+          "Clock": 125.80544839999993,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 60,
+          "Clock": 131.07134190000002,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 87,
+          "Clock": 196.09329780000007,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 112,
+          "Clock": 226.5489992999996,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.51089079999998,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 51,
+          "Clock": 125.80544839999993,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 61,
+          "Clock": 131.07134190000002,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 88,
+          "Clock": 196.09329780000007,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "5b980db6572726255daa4123e6542fb475176f6b377958fac6cbe51e37d837d1",
+      "durationSeconds": 350.438,
+      "exitCode": 0
+    },
+    {
+      "style": "Modern",
+      "policy": "default",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.58429039999908,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 50,
+          "Clock": 125.86069969999755,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 60,
+          "Clock": 131.11588989999788,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 87,
+          "Clock": 196.09818819999805,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 112,
+          "Clock": 226.4754502999974,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.58429039999908,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 51,
+          "Clock": 125.86069969999755,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 61,
+          "Clock": 131.11588989999788,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 88,
+          "Clock": 196.09818819999805,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "3b1b5b00a6a2da9ff6766a8d251716f53f78c4c25ed78d13a62269a71e35f48d",
+      "durationSeconds": 350.285,
+      "exitCode": 0
+    }
+  ],
+  "fixed": [
+    {
+      "style": "Classic",
+      "policy": "reminders",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 102.1233630999998,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 51,
+          "Clock": 158.40464899999944,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 62,
+          "Clock": 195.67197640000055,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 90,
+          "Clock": 292.793007399999,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 116,
+          "Clock": 355.25213089999994,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 102.1233630999998,
+          "FrameDelta": 0.0032574,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 36,
+          "Clock": 132.1239124999998,
+          "FrameDelta": 0.0021492,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 52,
+          "Clock": 158.40464899999944,
+          "FrameDelta": 0.0045681,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 54,
+          "Clock": 188.4082593000002,
+          "FrameDelta": 0.0076382,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 63,
+          "Clock": 195.67197640000055,
+          "FrameDelta": 0.0039291,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 65,
+          "Clock": 225.67376849999914,
+          "FrameDelta": 0.0053602,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 91,
+          "Clock": 292.793007399999,
+          "FrameDelta": 0.0141962,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 93,
+          "Clock": 322.79386569999855,
+          "FrameDelta": 0.0034572,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 118,
+          "Clock": 385.2560767999998,
+          "FrameDelta": 0.0054433,
+          "Goal": "7.13",
+          "Kind": "voice",
+          "Text": "tm_2_33"
+        }
+      ],
+      "rawTraceSha256": "b28ca0c21d2ffb2e2f8cb474c105854bfb39ce44dc3dff4780622775c9638f1c",
+      "realizedVoiceStems": [
+        "tm_2_01",
+        "tm_2_02",
+        "tm_2_03",
+        "tm_2_04",
+        "tm_2_05",
+        "tm_2_06",
+        "tm_2_07",
+        "tm_2_08",
+        "tm_2_11",
+        "tm_2_11r",
+        "tm_2_12",
+        "tm_2_13",
+        "tm_2_15",
+        "tm_2_16",
+        "tm_2_16r",
+        "tm_2_17",
+        "tm_2_18",
+        "tm_2_18r",
+        "tm_2_19",
+        "tm_2_20",
+        "tm_2_21",
+        "tm_2_22",
+        "tm_2_23",
+        "tm_2_24",
+        "tm_2_24r",
+        "tm_2_25",
+        "tm_2_26",
+        "tm_2_27",
+        "tm_2_28",
+        "tm_2_29",
+        "tm_2_30",
+        "tm_2_31",
+        "tm_2_33",
+        "tm_2_34",
+        "tm_2_35",
+        "tm_2_36",
+        "tm_2_37",
+        "tm_2_38",
+        "vo_sal_commencescan"
+      ]
+    },
+    {
+      "style": "Modern",
+      "policy": "reminders",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.56072820000087,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 51,
+          "Clock": 157.7973525000009,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 62,
+          "Clock": 195.06244260000065,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 90,
+          "Clock": 292.09749280000045,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 116,
+          "Clock": 354.4783888999982,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.56072820000087,
+          "FrameDelta": 0.0022139,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 36,
+          "Clock": 131.56099030000107,
+          "FrameDelta": 0.002079,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 52,
+          "Clock": 157.7973525000009,
+          "FrameDelta": 0.0023762,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 54,
+          "Clock": 187.79780920000061,
+          "FrameDelta": 0.0025046,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 63,
+          "Clock": 195.06244260000065,
+          "FrameDelta": 0.0026593,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 65,
+          "Clock": 225.06260870000048,
+          "FrameDelta": 0.0020583,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 91,
+          "Clock": 292.09749280000045,
+          "FrameDelta": 0.0022406,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 93,
+          "Clock": 322.0985238999999,
+          "FrameDelta": 0.0014658,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        },
+        {
+          "Sequence": 118,
+          "Clock": 384.4790086999975,
+          "FrameDelta": 0.0017263,
+          "Goal": "7.13",
+          "Kind": "voice",
+          "Text": "tm_2_33"
+        }
+      ],
+      "rawTraceSha256": "810b66e035ca9ab15458a9cad393878ae9db361ad919d9c41e781f2bacf5754f",
+      "realizedVoiceStems": [
+        "tm_2_01",
+        "tm_2_02",
+        "tm_2_03",
+        "tm_2_04",
+        "tm_2_05",
+        "tm_2_06",
+        "tm_2_07",
+        "tm_2_08",
+        "tm_2_11",
+        "tm_2_11r",
+        "tm_2_12",
+        "tm_2_13",
+        "tm_2_15",
+        "tm_2_16",
+        "tm_2_16r",
+        "tm_2_17",
+        "tm_2_18",
+        "tm_2_18r",
+        "tm_2_19",
+        "tm_2_20",
+        "tm_2_21",
+        "tm_2_22",
+        "tm_2_23",
+        "tm_2_24",
+        "tm_2_24r",
+        "tm_2_25",
+        "tm_2_26",
+        "tm_2_27",
+        "tm_2_28",
+        "tm_2_29",
+        "tm_2_30",
+        "tm_2_31",
+        "tm_2_33",
+        "tm_2_34",
+        "tm_2_35",
+        "tm_2_36",
+        "tm_2_37",
+        "tm_2_38",
+        "vo_sal_commencescan"
+      ]
+    },
+    {
+      "style": "Classic",
+      "policy": "default",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.46140750000063,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 50,
+          "Clock": 125.73133830000047,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 60,
+          "Clock": 130.98371600000058,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 87,
+          "Clock": 195.9443552999983,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 112,
+          "Clock": 226.33101439999848,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.46140750000063,
+          "FrameDelta": 0.0014469,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 51,
+          "Clock": 125.73133830000047,
+          "FrameDelta": 0.0014256,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 61,
+          "Clock": 130.98371600000058,
+          "FrameDelta": 0.0014498,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 88,
+          "Clock": 195.9443552999983,
+          "FrameDelta": 0.0013818,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "01be84a81bd2c565e8e8012339959b876dc47b89c767f197b9c7a7be6b992b2c",
+      "realizedVoiceStems": [
+        "tm_2_01",
+        "tm_2_02",
+        "tm_2_03",
+        "tm_2_04",
+        "tm_2_05",
+        "tm_2_06",
+        "tm_2_07",
+        "tm_2_08",
+        "tm_2_11",
+        "tm_2_11r",
+        "tm_2_12",
+        "tm_2_13",
+        "tm_2_15",
+        "tm_2_16",
+        "tm_2_16r",
+        "tm_2_17",
+        "tm_2_18",
+        "tm_2_18r",
+        "tm_2_19",
+        "tm_2_20",
+        "tm_2_21",
+        "tm_2_22",
+        "tm_2_23",
+        "tm_2_24",
+        "tm_2_24r",
+        "tm_2_25",
+        "tm_2_26",
+        "tm_2_27",
+        "tm_2_28",
+        "tm_2_29",
+        "tm_2_30",
+        "tm_2_31",
+        "tm_2_34",
+        "tm_2_35",
+        "tm_2_36",
+        "tm_2_37",
+        "tm_2_38",
+        "vo_sal_commencescan"
+      ]
+    },
+    {
+      "style": "Modern",
+      "policy": "default",
+      "outcome": "Passed",
+      "prompts": [
+        {
+          "Sequence": 33,
+          "Clock": 101.47860399999921,
+          "Goal": "3.6",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 50,
+          "Clock": 125.74838459999856,
+          "Goal": "4.7",
+          "Text": "Press BACKSLASH (\\) or set your joystick throttle to maximum for full thrust."
+        },
+        {
+          "Sequence": 60,
+          "Clock": 130.99974999999876,
+          "Goal": "5.3",
+          "Text": "Use your scroll wheel or joystick throttle to adjust thrust."
+        },
+        {
+          "Sequence": 87,
+          "Clock": 195.96580659999987,
+          "Goal": "6.16",
+          "Text": "Press the SPACEBAR when you are ready to proceed."
+        },
+        {
+          "Sequence": 112,
+          "Clock": 226.40303189999915,
+          "Goal": "7.13",
+          "Text": "Press and hold the SPACE key to fire the booster."
+        }
+      ],
+      "promptGoalVoices": [
+        {
+          "Sequence": 34,
+          "Clock": 101.47860399999921,
+          "FrameDelta": 0.00156,
+          "Goal": "3.6",
+          "Kind": "voice",
+          "Text": "tm_2_11r"
+        },
+        {
+          "Sequence": 51,
+          "Clock": 125.74838459999856,
+          "FrameDelta": 0.0015353,
+          "Goal": "4.7",
+          "Kind": "voice",
+          "Text": "tm_2_16r"
+        },
+        {
+          "Sequence": 61,
+          "Clock": 130.99974999999876,
+          "FrameDelta": 0.0016669,
+          "Goal": "5.3",
+          "Kind": "voice",
+          "Text": "tm_2_18r"
+        },
+        {
+          "Sequence": 88,
+          "Clock": 195.96580659999987,
+          "FrameDelta": 0.004013,
+          "Goal": "6.16",
+          "Kind": "voice",
+          "Text": "tm_2_24r"
+        }
+      ],
+      "rawTraceSha256": "d20a6a379647bdea5caa36bdc81226a57c56fbd723f403976c3bef28685c0246",
+      "realizedVoiceStems": [
+        "tm_2_01",
+        "tm_2_02",
+        "tm_2_03",
+        "tm_2_04",
+        "tm_2_05",
+        "tm_2_06",
+        "tm_2_07",
+        "tm_2_08",
+        "tm_2_11",
+        "tm_2_11r",
+        "tm_2_12",
+        "tm_2_13",
+        "tm_2_15",
+        "tm_2_16",
+        "tm_2_16r",
+        "tm_2_17",
+        "tm_2_18",
+        "tm_2_18r",
+        "tm_2_19",
+        "tm_2_20",
+        "tm_2_21",
+        "tm_2_22",
+        "tm_2_23",
+        "tm_2_24",
+        "tm_2_24r",
+        "tm_2_25",
+        "tm_2_26",
+        "tm_2_27",
+        "tm_2_28",
+        "tm_2_29",
+        "tm_2_30",
+        "tm_2_31",
+        "tm_2_34",
+        "tm_2_35",
+        "tm_2_36",
+        "tm_2_37",
+        "tm_2_38",
+        "vo_sal_commencescan"
+      ]
+    }
+  ]
+}

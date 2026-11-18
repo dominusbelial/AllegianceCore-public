@@ -130,8 +130,12 @@ public sealed class P912TrainingWindowTests(ITestOutputHelper output)
             Assert.Contains("[p940] M2_NATIVE_END docked=1010 completed=True prompts=5 stages=9", log);
             if (policy == "reminders")
             {
-                foreach (string voice in new[] { "tm_2_11r", "tm_2_16r", "tm_2_18r", "tm_2_24r", "tm_2_33" })
-                    Assert.True(log.Split($"[training] voice {voice} (mission 2)").Length - 1 >= (voice == "tm_2_33" ? 1 : 2), $"Missing 30-second reminder: {voice}");
+                foreach (string voice in new[] { "tm_2_11r", "tm_2_16r", "tm_2_18r", "tm_2_24r" })
+                    Assert.True(log.Split($"[training] voice {voice} (mission 2)").Length - 1 >= 2, $"Missing 30-second reminder: {voice}");
+                // Native reminds the keyboard booster with the muted wrong-key tm_2_33
+                // (mission2.cpp:747); the port keeps P941's text repeat instead (P1050 review).
+                Assert.DoesNotContain("[training] voice tm_2_33 (mission 2)", log);
+                Assert.Contains("[p1050] REMINDERS_PASS policy=reminders prompts=6 repeats=5", log);
             }
         }
         if (mission == 4 && policy != "lesson=1") Assert.Matches(@"quick-chat >> .* \(Everyone\)", log);

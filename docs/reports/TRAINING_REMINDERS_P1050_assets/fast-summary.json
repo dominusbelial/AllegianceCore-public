@@ -1,0 +1,211 @@
+{
+  "tier": "fast",
+  "seconds": 746.5869559280109,
+  "projects": {
+    "Allegiance.ClientCore.Browser.Tests": {
+      "count": 12,
+      "outcomes": {
+        "Passed": 12
+      }
+    },
+    "Allegiance.ClientCore.Game.Browser.Tests": {
+      "count": 23,
+      "outcomes": {
+        "Passed": 23
+      }
+    },
+    "Allegiance.Lobby.Tests": {
+      "count": 209,
+      "outcomes": {
+        "Passed": 209
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 55,
+      "outcomes": {
+        "Passed": 55
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 5871,
+      "outcomes": {
+        "Passed": 5867,
+        "NotExecuted": 3,
+        "Failed": 1
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2456,
+      "outcomes": {
+        "Passed": 2456
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 6756,
+      "outcomes": {
+        "Passed": 6750,
+        "Failed": 3,
+        "NotExecuted": 3
+      }
+    }
+  },
+  "calibration": {
+    "factor": 1.3653315649867375,
+    "referenceMs": 5.1473,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 13.653315649867375
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetFlightSymbologyTests.Jet_draw_allocates_zero_bytes_per_frame_with_the_full_symbology",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetFlightSymbologyTests.Jet_draw_allocates_zero_bytes_per_frame_with_the_full_symbology",
+      "outcome": "Passed",
+      "seconds": 17.3681633
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetSkinScaffoldTests.Jet_draw_allocates_zero_bytes_per_frame_on_a_fixed_model",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetSkinScaffoldTests.Jet_draw_allocates_zero_bytes_per_frame_on_a_fixed_model",
+      "outcome": "Passed",
+      "seconds": 15.42733
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetAmberPaletteTests.Amber_draw_allocates_zero_bytes_per_frame",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetAmberPaletteTests.Amber_draw_allocates_zero_bytes_per_frame",
+      "outcome": "Passed",
+      "seconds": 19.4691839
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetTargetLockTests.Draw_with_a_locked_leading_ordered_target_allocates_nothing",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetTargetLockTests.Draw_with_a_locked_leading_ordered_target_allocates_nothing",
+      "outcome": "Passed",
+      "seconds": 18.3065767
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.Skins.JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing",
+      "outcome": "Passed",
+      "seconds": 14.868058
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production(civ: 5)",
+      "method": "Allegiance.ClientCore.Tests.P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production",
+      "outcome": "Passed",
+      "seconds": 14.6961664
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "outcome": "Passed",
+      "seconds": 13.970033
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "outcome": "Passed",
+      "seconds": 25.0624276
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "method": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "outcome": "Passed",
+      "seconds": 14.3338562
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "outcome": "Passed",
+      "seconds": 18.3815141
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 27.7659844
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+      "method": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+      "outcome": "Passed",
+      "seconds": 14.5772316
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 26.2631702
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 19.6813147
+    },
+    {
+      "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "outcome": "Passed",
+      "seconds": 32.8231632
+    },
+    {
+      "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "outcome": "Passed",
+      "seconds": 25.5742939
+    },
+    {
+      "name": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable(civ: 201)",
+      "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+      "outcome": "Passed",
+      "seconds": 16.7492165
+    },
+    {
+      "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+      "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+      "outcome": "Passed",
+      "seconds": 19.2123387
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.MonoGame.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "18 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.0602830889984034,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  },
+  "failures": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live",
+      "duration": "00:00:02.7909302",
+      "message": "Assert.Equal() Failure: Values differ\nExpected: Muted\nActual:   Worse"
+    },
+    {
+      "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "duration": "00:00:00.2204499",
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.04999924"
+    },
+    {
+      "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+      "duration": "00:00:00.2117023",
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (6.9000000000000004 - 7)\nActual: 7.0000000000000009"
+    },
+    {
+      "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+      "duration": "00:00:00.0867841",
+      "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: [SetTeamLeader { ShipId = 8098, SideId = 0 }]"
+    }
+  ],
+  "skips": [
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+    "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+    "Allegiance.Core.Tests.PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus",
+    "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks"
+  ]
+}

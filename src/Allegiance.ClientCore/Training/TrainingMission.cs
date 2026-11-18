@@ -298,7 +298,9 @@ public abstract class TrainingMission
 
     /// <summary>The periodic trigger native builds inside
     /// <c>CreateTooLongCondition</c> (<c>trainingmission.cpp:927-932</c>): after
-    /// <paramref name="delay"/> seconds, on every pass, for two times.</summary>
+    /// <paramref name="delay"/> seconds, then at every period indefinitely.
+    /// NTimes starts at one and stays sticky at two after the first period;
+    /// two is its activation threshold, not a limit on reminders.</summary>
     private Condition TooLongPeriodic(float delay)
         => new PeriodicCondition(new NTimesCondition(new TrueCondition(), 2, sticky: true), delay, Site);
 

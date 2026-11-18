@@ -1,0 +1,36 @@
+[
+  {
+    "style": "Classic",
+    "run": 1,
+    "exit": 0,
+    "wallSeconds": 351.473,
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+    "outcome": "Passed",
+    "duration": "00:05:50.1182837"
+  },
+  {
+    "style": "Classic",
+    "run": 2,
+    "exit": 0,
+    "wallSeconds": 351.415,
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+    "outcome": "Passed",
+    "duration": "00:05:50.0328714"
+  },
+  {
+    "style": "Classic",
+    "run": 3,
+    "exit": 0,
+    "wallSeconds": 350.729,
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+    "outcome": "Passed",
+    "duration": "00:05:49.3387111"
+  },
+  {
+    "style": "Classic",
+    "run": "pre-fix control",
+    "exit": 0,
+    "wallSeconds": 352.414,
+    "outcome": "Passed"
+  }
+]

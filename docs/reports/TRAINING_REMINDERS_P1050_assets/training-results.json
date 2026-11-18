@@ -1,0 +1,630 @@
+{
+  "allRequiredResultsAvailable": true,
+  "trainingRuns": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "count": 131,
+      "outcomes": {
+        "Passed": 131
+      },
+      "caseSetSha256": "b4eab000970d3545fa5bef872dcb476c2e30bba1b1b99098328893cee5fc2eff",
+      "failedCases": [],
+      "skippedCases": []
+    },
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "count": 301,
+      "outcomes": {
+        "Passed": 297,
+        "NotExecuted": 3,
+        "Failed": 1
+      },
+      "caseSetSha256": "17afa4807653247f39f7477ecdbbd7bca3e6c4160e1ad7781145761836f98628",
+      "failedCases": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")"
+      ],
+      "skippedCases": [
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+        "Allegiance.ClientCore.MonoGame.Tests.P940BasicFlightInputTests.Installed_training_voice_plays_through_the_production_sound_loader"
+      ]
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "count": 131,
+      "outcomes": {
+        "Passed": 131
+      },
+      "caseSetSha256": "b4eab000970d3545fa5bef872dcb476c2e30bba1b1b99098328893cee5fc2eff",
+      "failedCases": [],
+      "skippedCases": []
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "count": 257,
+      "outcomes": {
+        "Passed": 256,
+        "NotExecuted": 1
+      },
+      "caseSetSha256": "546632d5589888eadd8330655ddb46155a7840e831c35afa48541d8c1f1cc1a9",
+      "failedCases": [],
+      "skippedCases": [
+        "Allegiance.ClientCore.MonoGame.Tests.P940BasicFlightInputTests.Installed_training_voice_plays_through_the_production_sound_loader"
+      ]
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "count": 131,
+      "outcomes": {
+        "Passed": 131
+      },
+      "caseSetSha256": "b4eab000970d3545fa5bef872dcb476c2e30bba1b1b99098328893cee5fc2eff",
+      "failedCases": [],
+      "skippedCases": []
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "count": 257,
+      "outcomes": {
+        "Passed": 256,
+        "NotExecuted": 1
+      },
+      "caseSetSha256": "546632d5589888eadd8330655ddb46155a7840e831c35afa48541d8c1f1cc1a9",
+      "failedCases": [],
+      "skippedCases": [
+        "Allegiance.ClientCore.MonoGame.Tests.P940BasicFlightInputTests.Installed_training_voice_plays_through_the_production_sound_loader"
+      ]
+    }
+  ],
+  "repeatCoverage": [
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "exactExpectedCaseSet": true,
+      "missingCount": 0,
+      "unexpectedCount": 0
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "exactExpectedCaseSet": true,
+      "missingCount": 0,
+      "unexpectedCount": 0
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "exactExpectedCaseSet": true,
+      "missingCount": 0,
+      "unexpectedCount": 0
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "exactExpectedCaseSet": true,
+      "missingCount": 0,
+      "unexpectedCount": 0
+    }
+  ],
+  "p912ClassOutcomes": {
+    "Passed": 41,
+    "NotExecuted": 2,
+    "Failed": 1
+  },
+  "p912ClassCases": [
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:07:53.7802379",
+      "startTime": "2026-11-18T00:25:29.6154983+00:00",
+      "endTime": "2026-11-18T00:33:23.3963038+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0006290",
+      "startTime": "2026-11-18T02:23:55.0328849+00:00",
+      "endTime": "2026-11-18T02:23:55.0348383+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+      "outcome": "Passed",
+      "duration": "00:05:23.4828569",
+      "startTime": "2026-11-18T02:41:00.6042058+00:00",
+      "endTime": "2026-11-18T02:46:24.0874460+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:48.4974497",
+      "startTime": "2026-11-18T00:50:29.3676126+00:00",
+      "endTime": "2026-11-18T00:56:17.8655014+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:56.1957821",
+      "startTime": "2026-11-17T23:00:55.1200727+00:00",
+      "endTime": "2026-11-17T23:09:51.3165606+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"muted\")",
+      "outcome": "Passed",
+      "duration": "00:05:48.9116163",
+      "startTime": "2026-11-17T23:24:35.8761998+00:00",
+      "endTime": "2026-11-17T23:30:24.7881855+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:11:16.1957003",
+      "startTime": "2026-11-18T00:01:09.3896063+00:00",
+      "endTime": "2026-11-18T00:12:25.5858836+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 5)",
+      "outcome": "Passed",
+      "duration": "00:03:32.1385740",
+      "startTime": "2026-11-18T01:20:44.8785063+00:00",
+      "endTime": "2026-11-18T01:24:17.0174856+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 1)",
+      "outcome": "Passed",
+      "duration": "00:00:23.0366095",
+      "startTime": "2026-11-18T01:37:24.4782556+00:00",
+      "endTime": "2026-11-18T01:37:47.5153435+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0001086",
+      "startTime": "2026-11-18T02:23:55.0352455+00:00",
+      "endTime": "2026-11-18T02:23:55.0354768+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "duration": "00:01:17.9825362",
+      "startTime": "2026-11-17T22:59:37.1358719+00:00",
+      "endTime": "2026-11-17T23:00:55.1192983+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 8)",
+      "outcome": "Passed",
+      "duration": "00:07:37.4191075",
+      "startTime": "2026-11-18T00:56:17.8660762+00:00",
+      "endTime": "2026-11-18T01:03:55.2856342+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:53.3875991",
+      "startTime": "2026-11-17T23:15:42.4876562+00:00",
+      "endTime": "2026-11-17T23:24:35.8757824+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:07:55.8237351",
+      "startTime": "2026-11-17T23:30:24.7886651+00:00",
+      "endTime": "2026-11-17T23:38:20.6129217+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+      "outcome": "Passed",
+      "duration": "00:05:26.3076823",
+      "startTime": "2026-11-18T02:35:34.2953126+00:00",
+      "endTime": "2026-11-18T02:41:00.6039140+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+      "outcome": "Failed",
+      "duration": "00:05:48.7718965",
+      "startTime": "2026-11-18T02:23:55.0355971+00:00",
+      "endTime": "2026-11-18T02:29:43.8089610+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:52.0020848",
+      "startTime": "2026-11-18T00:44:37.3646980+00:00",
+      "endTime": "2026-11-18T00:50:29.3671138+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 2)",
+      "outcome": "Passed",
+      "duration": "00:02:03.9093518",
+      "startTime": "2026-11-18T01:46:00.2734114+00:00",
+      "endTime": "2026-11-18T01:48:04.1831333+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "duration": "00:01:17.9250022",
+      "startTime": "2026-11-17T22:58:19.2098593+00:00",
+      "endTime": "2026-11-17T22:59:37.1353994+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: \"departure\")",
+      "outcome": "Passed",
+      "duration": "00:11:13.9669143",
+      "startTime": "2026-11-18T00:33:23.3968103+00:00",
+      "endTime": "2026-11-18T00:44:37.3642825+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 5)",
+      "outcome": "Passed",
+      "duration": "00:03:27.7286557",
+      "startTime": "2026-11-18T01:40:42.2089738+00:00",
+      "endTime": "2026-11-18T01:44:09.9379613+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 11)",
+      "outcome": "Passed",
+      "duration": "00:06:55.1665851",
+      "startTime": "2026-11-18T02:06:00.5307516+00:00",
+      "endTime": "2026-11-18T02:12:55.6978042+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 4)",
+      "outcome": "Passed",
+      "duration": "00:02:54.6925165",
+      "startTime": "2026-11-18T01:37:47.5156265+00:00",
+      "endTime": "2026-11-18T01:40:42.2086665+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 9)",
+      "outcome": "Passed",
+      "duration": "00:05:58.0166051",
+      "startTime": "2026-11-18T02:17:57.0155778+00:00",
+      "endTime": "2026-11-18T02:23:55.0325809+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"loss\")",
+      "outcome": "Passed",
+      "duration": "00:05:44.5499033",
+      "startTime": "2026-11-17T23:38:20.6132598+00:00",
+      "endTime": "2026-11-17T23:44:05.1635462+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 9)",
+      "outcome": "Passed",
+      "duration": "00:10:27.8663380",
+      "startTime": "2026-11-18T01:26:56.6111664+00:00",
+      "endTime": "2026-11-18T01:37:24.4779597+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 3)",
+      "outcome": "Passed",
+      "duration": "00:05:55.9896097",
+      "startTime": "2026-11-18T01:11:33.8846967+00:00",
+      "endTime": "2026-11-18T01:17:29.8748367+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:49.5299471",
+      "startTime": "2026-11-17T23:44:05.1639917+00:00",
+      "endTime": "2026-11-17T23:49:54.6943372+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 2)",
+      "outcome": "Passed",
+      "duration": "00:03:15.0025260",
+      "startTime": "2026-11-18T01:17:29.8753159+00:00",
+      "endTime": "2026-11-18T01:20:44.8782293+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"muted\")",
+      "outcome": "Passed",
+      "duration": "00:05:51.1695639",
+      "startTime": "2026-11-17T23:09:51.3169995+00:00",
+      "endTime": "2026-11-17T23:15:42.4872168+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 1)",
+      "outcome": "Passed",
+      "duration": "00:01:50.3346130",
+      "startTime": "2026-11-18T01:44:09.9382306+00:00",
+      "endTime": "2026-11-18T01:46:00.2731370+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:11:14.6940094",
+      "startTime": "2026-11-17T23:49:54.6946732+00:00",
+      "endTime": "2026-11-18T00:01:09.3892416+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 3)",
+      "outcome": "Passed",
+      "duration": "00:02:39.5904119",
+      "startTime": "2026-11-18T01:24:17.0177722+00:00",
+      "endTime": "2026-11-18T01:26:56.6107762+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:53.3126118",
+      "startTime": "2026-11-18T00:15:58.4207823+00:00",
+      "endTime": "2026-11-18T00:21:51.7338739+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 4)",
+      "outcome": "Passed",
+      "duration": "00:02:34.7832559",
+      "startTime": "2026-11-18T02:15:22.2316087+00:00",
+      "endTime": "2026-11-18T02:17:57.0153262+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 10)",
+      "outcome": "Passed",
+      "duration": "00:11:14.3941337",
+      "startTime": "2026-11-18T01:48:04.1834321+00:00",
+      "endTime": "2026-11-18T01:59:18.5779499+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:03:37.8801779",
+      "startTime": "2026-11-18T00:21:51.7341865+00:00",
+      "endTime": "2026-11-18T00:25:29.6150356+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 3)",
+      "outcome": "Passed",
+      "duration": "00:01:34.9074839",
+      "startTime": "2026-11-18T02:13:47.3233184+00:00",
+      "endTime": "2026-11-18T02:15:22.2312734+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 1)",
+      "outcome": "Passed",
+      "duration": "00:00:51.6246518",
+      "startTime": "2026-11-18T02:12:55.6980809+00:00",
+      "endTime": "2026-11-18T02:13:47.3230314+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+      "outcome": "Passed",
+      "duration": "00:05:50.4820635",
+      "startTime": "2026-11-18T02:29:43.8124020+00:00",
+      "endTime": "2026-11-18T02:35:34.2949664+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:03:32.8337417",
+      "startTime": "2026-11-18T00:12:25.5862655+00:00",
+      "endTime": "2026-11-18T00:15:58.4203851+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 10)",
+      "outcome": "Passed",
+      "duration": "00:06:37.9693507",
+      "startTime": "2026-11-18T01:04:55.9144941+00:00",
+      "endTime": "2026-11-18T01:11:33.8841736+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 2)",
+      "outcome": "Passed",
+      "duration": "00:01:00.6276197",
+      "startTime": "2026-11-18T01:03:55.2859913+00:00",
+      "endTime": "2026-11-18T01:04:55.9141938+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 7)",
+      "outcome": "Passed",
+      "duration": "00:06:41.9515013",
+      "startTime": "2026-11-18T01:59:18.5782727+00:00",
+      "endTime": "2026-11-18T02:06:00.5304535+00:00"
+    }
+  ],
+  "basicFlightChildren": [
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:48.4974497",
+      "startTime": "2026-11-18T00:50:29.3676126+00:00",
+      "endTime": "2026-11-18T00:56:17.8655014+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:56.1957821",
+      "startTime": "2026-11-17T23:00:55.1200727+00:00",
+      "endTime": "2026-11-17T23:09:51.3165606+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"muted\")",
+      "outcome": "Passed",
+      "duration": "00:05:48.9116163",
+      "startTime": "2026-11-17T23:24:35.8761998+00:00",
+      "endTime": "2026-11-17T23:30:24.7881855+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "duration": "00:01:17.9825362",
+      "startTime": "2026-11-17T22:59:37.1358719+00:00",
+      "endTime": "2026-11-17T23:00:55.1192983+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:53.3875991",
+      "startTime": "2026-11-17T23:15:42.4876562+00:00",
+      "endTime": "2026-11-17T23:24:35.8757824+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "duration": "00:01:17.9250022",
+      "startTime": "2026-11-17T22:58:19.2098593+00:00",
+      "endTime": "2026-11-17T22:59:37.1353994+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "duration": "00:05:49.5299471",
+      "startTime": "2026-11-17T23:44:05.1639917+00:00",
+      "endTime": "2026-11-17T23:49:54.6943372+00:00"
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"muted\")",
+      "outcome": "Passed",
+      "duration": "00:05:51.1695639",
+      "startTime": "2026-11-17T23:09:51.3169995+00:00",
+      "endTime": "2026-11-17T23:15:42.4872168+00:00"
+    }
+  ],
+  "remindersChildren": [
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:56.1957821",
+      "startTime": "2026-11-17T23:00:55.1200727+00:00",
+      "endTime": "2026-11-17T23:09:51.3165606+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "training-1-Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:53.3875991",
+      "startTime": "2026-11-17T23:15:42.4876562+00:00",
+      "endTime": "2026-11-17T23:24:35.8757824+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "isolated-Classic-1",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:52.6966647",
+      "startTime": "2026-11-18T02:57:21.1735179+00:00",
+      "endTime": "2026-11-18T03:06:13.8780689+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "isolated-Modern-1",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:52.9466536",
+      "startTime": "2026-11-18T03:06:15.2049706+00:00",
+      "endTime": "2026-11-18T03:15:08.1600891+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "isolated-Classic-2",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:52.6190705",
+      "startTime": "2026-11-18T03:15:09.5094695+00:00",
+      "endTime": "2026-11-18T03:24:02.1372338+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    },
+    {
+      "source": "isolated-Modern-2",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "duration": "00:08:47.1572770",
+      "startTime": "2026-11-18T03:24:03.5632144+00:00",
+      "endTime": "2026-11-18T03:32:50.7283657+00:00",
+      "windowResultLines": [
+        "[p1050] NATIVE_REMINDERS_PASS policy=reminders prompts=5 repeats=5",
+        "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9"
+      ]
+    }
+  ]
+}

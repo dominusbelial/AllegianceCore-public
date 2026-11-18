@@ -1,0 +1,74 @@
+[
+  {
+    "run": "buy-flow-1",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live",
+    "outcome": "Passed",
+    "duration": "00:00:03.1181245"
+  },
+  {
+    "run": "buy-flow-2",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live",
+    "outcome": "Passed",
+    "duration": "00:00:03.2122624"
+  },
+  {
+    "run": "buy-flow-3",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live",
+    "outcome": "Passed",
+    "duration": "00:00:03.2171648"
+  },
+  {
+    "run": "roster-1",
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "outcome": "Passed",
+    "duration": "00:00:00.7495314"
+  },
+  {
+    "run": "roster-2",
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "outcome": "Passed",
+    "duration": "00:00:00.7666499"
+  },
+  {
+    "run": "roster-3",
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "outcome": "Passed",
+    "duration": "00:00:00.6728653"
+  },
+  {
+    "run": "side-request-1",
+    "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "outcome": "Passed",
+    "duration": "00:00:00.4541810"
+  },
+  {
+    "run": "side-request-2",
+    "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "outcome": "Passed",
+    "duration": "00:00:00.4888237"
+  },
+  {
+    "run": "side-request-3",
+    "name": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "outcome": "Passed",
+    "duration": "00:00:00.4561004"
+  },
+  {
+    "run": "timer-1",
+    "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+    "outcome": "Failed",
+    "duration": "00:00:00.6132857"
+  },
+  {
+    "run": "timer-2",
+    "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+    "outcome": "Passed",
+    "duration": "00:00:00.7083007"
+  },
+  {
+    "run": "timer-3",
+    "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+    "outcome": "Passed",
+    "duration": "00:00:00.7352831"
+  }
+]
