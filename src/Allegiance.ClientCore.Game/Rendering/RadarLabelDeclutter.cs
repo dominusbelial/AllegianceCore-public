@@ -269,15 +269,18 @@ public sealed class RadarLabelDeclutter
     public static string CountTag(int count)
     {
         if (count <= 0) return "x0";
-        if (_countTags.TryGetValue(count, out var cached)) return cached;
+        // P1049 — [ThreadStatic], the same discipline as RadarLabelModel.RangeText:
+        // an unsynchronised static Dictionary corrupted under parallel test threads.
+        var cache = _countTags ??= new Dictionary<int, string>();
+        if (cache.TryGetValue(count, out var cached)) return cached;
         var text = "x" + count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (_countTags.Count >= CountTagCacheLimit) _countTags.Clear();
-        _countTags[count] = text;
+        if (cache.Count >= CountTagCacheLimit) cache.Clear();
+        cache[count] = text;
         return text;
     }
 
     private const int CountTagCacheLimit = 512;
-    private static readonly Dictionary<int, string> _countTags = new();
+    [ThreadStatic] private static Dictionary<int, string>? _countTags;
 
     /// <summary>Run the selection for one frame. <paramref name="cache"/> is the
     /// renderer's per-contact label cache; when supplied the "does native allow

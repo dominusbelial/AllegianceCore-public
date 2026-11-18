@@ -690,12 +690,16 @@ public sealed class JetStoresCautionTests(ITestOutputHelper output)
             inventory: InventoryPane(), inventoryVisible: true, inventorySlide: 1f);
         var frame = Frame();
         void Draw(int count) { for (int i = 0; i < count; i++) jet.Draw(model, frame); }
-        Draw(10_000);
+        // P1049 — window sized by the caches (table in JetFlightSymbologyTests):
+        // 4,096 warm-up = one full cycle of the largest bounded cache in the draw
+        // path, 8,192 measured = two cycles (the stores/int caches here are 24/40
+        // slots, JetHudRenderer.StoresCaution.cs:36-41). Assertion unchanged: 0 B.
+        Draw(4_096);
         Assert.True(surface.Texts > 0 && surface.Lines > 0);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(100_000);
+        Draw(8_192);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1038 JetHudRenderer.Draw (stores+caution+inventory): {bytes} B / 100000 frames = {bytes / 100000d} B/frame");
+        output.WriteLine($"P1038 JetHudRenderer.Draw (stores+caution+inventory): {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
         Assert.Equal(0, bytes);
     }
 

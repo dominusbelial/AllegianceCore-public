@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Allegiance.ClientCore.MonoGame.Platform;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.Training;
 using Microsoft.Xna.Framework.Input;
@@ -329,13 +330,17 @@ public sealed class P941InputLayoutTests
         string dir = Path.Combine(Path.GetTempPath(), "p941-keymap-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, "keymap.json");
-        string? previous = Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP");
-        Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", path);
         try
         {
+            // P1049 — an EXPLICIT store path instead of the process-wide
+            // ALLEGIANCE_KEYMAP variable: P949's two persistence tests set the same
+            // variable, and xUnit runs those classes in parallel collections, so the
+            // reload below could read another test's file (expected Native, got
+            // Port). The explicit-path constructor (Rendering/KeyBindingStore.cs:58)
+            // is immune to that and keeps this test's file private.
             // 1. Fresh profile (no file): Port defaults, and nothing is written —
             //    the fallback stays unsaved until the player changes something.
-            var fresh = new KeyBindingStore();
+            var fresh = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.Equal(InputLayout.Port, fresh.Map.Layout);
             Assert.True(fresh.FreshProfile);
             Assert.False(fresh.HasKeymap);
@@ -346,7 +351,7 @@ public sealed class P941InputLayoutTests
             //    existing file is NOT rewritten by the load.
             File.WriteAllText(path, "{\"FireWeapon\":[71,0]}");    // G, a user rebind
             string before = File.ReadAllText(path);
-            var legacy = new KeyBindingStore();
+            var legacy = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.Equal(InputLayout.Port, legacy.Map.Layout);
             Assert.Equal(new KeyBinding(Keys.G, InputModifiers.None), legacy.Map.BindingOf("FireWeapon"));
             Assert.Equal(new KeyBinding(Keys.A, InputModifiers.None), legacy.Map.BindingOf("RollLeft"));
@@ -356,13 +361,12 @@ public sealed class P941InputLayoutTests
             // 3. A P941 file keeps whatever preset it records.
             legacy.CycleLayout();                                  // Port -> Native, persisted
             Assert.Equal(InputLayout.Native, legacy.Map.Layout);
-            var reloaded = new KeyBindingStore();
+            var reloaded = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.Equal(InputLayout.Native, reloaded.Map.Layout);
             Assert.Equal(new KeyBinding(Keys.Q, InputModifiers.None), reloaded.Map.BindingOf("RollLeft"));
         }
         finally
         {
-            Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", previous);
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
     }
@@ -374,7 +378,9 @@ public sealed class P941InputLayoutTests
         Directory.CreateDirectory(dir);
         try
         {
-            var store = new KeyBindingStore();
+            // P1049 — explicit path: this test must not read or inherit the shared
+            // default keymap path (P949's tests set ALLEGIANCE_KEYMAP concurrently).
+            var store = new KeyBindingStore(ProfileStorage.Default, Path.Combine(dir, "keymap.json"));
             string missing = Path.Combine(dir, "absent.json");
             store.Map.SetBinding("RollLeft", new KeyBinding(Keys.F15, InputModifiers.None), force: true);
             store.ReloadFrom(missing);

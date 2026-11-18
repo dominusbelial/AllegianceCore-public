@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Allegiance.ClientCore.MonoGame.Platform;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework.Input;
 using Xunit;
@@ -69,11 +70,12 @@ public sealed class P949FreshProfileDefaultsTests
         string dir = Path.Combine(Path.GetTempPath(), "p949-fresh-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, "keymap.json");
-        string? previous = Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP");
-        Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", path);
         try
         {
-            var store = new KeyBindingStore();
+            // P1049 — explicit store path (Rendering/KeyBindingStore.cs:58): the
+            // process-wide ALLEGIANCE_KEYMAP variable was shared with P941's
+            // persistence test in a parallel xUnit collection.
+            var store = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.True(store.FreshProfile);
             Assert.False(store.HasKeymap);
             Assert.Equal(InputLayout.Port, store.Map.Layout);
@@ -89,7 +91,6 @@ public sealed class P949FreshProfileDefaultsTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", previous);
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
     }
@@ -100,15 +101,14 @@ public sealed class P949FreshProfileDefaultsTests
         string dir = Path.Combine(Path.GetTempPath(), "p949-existing-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, "keymap.json");
-        string? previous = Environment.GetEnvironmentVariable("ALLEGIANCE_KEYMAP");
-        Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", path);
         try
         {
+            // P1049 — explicit store path, isolated from the shared default.
             // A P941 file that chose the native preset: a saved profile does not
             // move under the player (still the stock map, not the P949 default).
             const string saved = "{\"layout\":\"native\",\"bindings\":{\"RollLeft\":[70,0]}}";
             File.WriteAllText(path, saved);
-            var store = new KeyBindingStore();
+            var store = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.Equal(InputLayout.Native, store.Map.Layout);
             Assert.Equal(new KeyBinding(Keys.F, InputModifiers.None), store.Map.BindingOf("RollLeft"));
             Assert.Equal(saved, File.ReadAllText(path));
@@ -118,14 +118,13 @@ public sealed class P949FreshProfileDefaultsTests
             // untouched chords it was written from.
             const string legacy = "{\"FireWeapon\":[71,0]}";
             File.WriteAllText(path, legacy);
-            var legacyStore = new KeyBindingStore();
+            var legacyStore = new KeyBindingStore(ProfileStorage.Default, path);
             Assert.Equal(InputLayout.Port, legacyStore.Map.Layout);
             Assert.Equal(new KeyBinding(Keys.G, InputModifiers.None), legacyStore.Map.BindingOf("FireWeapon"));
             Assert.Equal(legacy, File.ReadAllText(path));
         }
         finally
         {
-            Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", previous);
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
     }

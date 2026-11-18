@@ -301,12 +301,15 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         {
             for (int i = 0; i < count; i++) jet.Draw(model, frame);
         }
-        Draw(10_000);                       // warm the text caches and the surface
+        // P1049 — window sized by the caches (table in JetFlightSymbologyTests):
+        // 4,096 warm-up = one full cycle of the largest bounded cache in the draw
+        // path, 8,192 measured = two cycles. Assertion unchanged: exactly 0 B.
+        Draw(4_096);
         Assert.True(surface.Lines > 0);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(100_000);
+        Draw(8_192);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1035 JetHudRenderer.Draw: {bytes} B / 100000 frames = {bytes / 100000d} B/frame");
+        output.WriteLine($"P1035 JetHudRenderer.Draw: {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
         Assert.Equal(0, bytes);
     }
 

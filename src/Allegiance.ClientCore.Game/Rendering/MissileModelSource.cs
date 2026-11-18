@@ -134,7 +134,10 @@ public static class MissileModelSource
     public static float NativeMdlRadius(IAssetSource assets, string assetName)
     {
         if (string.IsNullOrWhiteSpace(assetName)) return 0f;
-        if (_nativeRadiusCache.TryGetValue(assetName, out var cached)) return cached;
+        // P1049 — per-thread ([ThreadStatic]): parallel test threads measured
+        // different assets through one unsynchronised static Dictionary.
+        var cache = _nativeRadiusCache ??= new Dictionary<string, float>(StringComparer.Ordinal);
+        if (cache.TryGetValue(assetName, out var cached)) return cached;
 
         float radius = 0f;
         try
@@ -160,7 +163,7 @@ public static class MissileModelSource
         {
             radius = 0f; // degrade-not-crash: caller leaves the model unscaled
         }
-        _nativeRadiusCache[assetName] = radius;
+        cache[assetName] = radius;
         return radius;
     }
 
@@ -181,5 +184,5 @@ public static class MissileModelSource
     /// <summary>Native-<c>.mdl</c> merged-radius cache keyed by asset stem — each
     /// imported asset maps to exactly one <c>.mdl</c>, so the stem is a stable
     /// key.</summary>
-    private static readonly Dictionary<string, float> _nativeRadiusCache = new(StringComparer.Ordinal);
+    [ThreadStatic] private static Dictionary<string, float>? _nativeRadiusCache;
 }

@@ -46,6 +46,14 @@ public sealed class P808ServerEnrollmentTests
             Assert.Equal(serverId, saved.ServerId); Assert.Equal(serverId, store.VerifyServer(saved.ServerId, saved.ServerSecret));
             if (!OperatingSystem.IsWindows()) Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(config.EnrollmentFile));
         }
+        // P1049 — Dispose sends the deregister best-effort with a 5 s bound, so on
+        // a loaded runner the DELETE can still be in flight when Dispose returns
+        // (the flake: this Assert.Empty saw the listing). Wait, bounded by the same
+        // 5 s, for the directory to drop it, then assert it is gone: the listing
+        // must disappear after a clean shutdown, and a DELETE that is rejected or
+        // never answered still fails here.
+        for (int poll = 0; poll < 100 && app.Services.GetRequiredService<ServerRegistry>().List().Count > 0; poll++)
+            await Task.Delay(50);
         Assert.Empty(app.Services.GetRequiredService<ServerRegistry>().List());
         using var restarted = new LobbyHeartbeat(http, config, () => 0, "Test", "Core", "version", 6073, clock);
         await restarted.PumpAsync();

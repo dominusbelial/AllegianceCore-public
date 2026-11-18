@@ -455,7 +455,12 @@ public sealed class LobbyHeartbeat : IDisposable
             try
             {
                 string path = $"/api/servers/{Uri.EscapeDataString(_id)}?token={Uri.EscapeDataString(_token)}";
-                _http.DeleteAsync(path).Wait(TimeSpan.FromSeconds(5));
+                // P1049 — the wait stays bounded (a clean shutdown must never wedge
+                // on a slow directory), but a timeout is now reported instead of
+                // silently leaving the listing to expire: a caller that asserts the
+                // listing is gone needs to know the deregister was not answered.
+                if (!_http.DeleteAsync(path).Wait(TimeSpan.FromSeconds(5)))
+                    Console.WriteLine("[lobby] deregister not answered within 5 s; the listing expires on the directory's sweep");
             }
             catch (Exception e)
             {

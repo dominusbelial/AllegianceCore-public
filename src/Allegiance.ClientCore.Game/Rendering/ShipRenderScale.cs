@@ -55,7 +55,11 @@ public static class ShipRenderScale
     public static float RenderRadius(Model? m)
     {
         if (m is null) return 0f;
-        if (_renderRadiusCache.TryGetValue(m, out var cached)) return cached;
+        // P1049 — per-thread ([ThreadStatic]): a shared static Dictionary corrupted
+        // when parallel test threads measured different models at once. The cache
+        // body below never touches the dictionary, so a steady read is unchanged.
+        var cache = _renderRadiusCache ??= new Dictionary<Model, float>();
+        if (cache.TryGetValue(m, out var cached)) return cached;
 
         BoundingSphere? acc = null;
         foreach (var mesh in m.Meshes)
@@ -71,7 +75,7 @@ public static class ShipRenderScale
             acc = acc is null ? sph : BoundingSphere.CreateMerged(acc.Value, sph);
         }
         float radius = acc is null ? 0f : acc.Value.Radius;
-        _renderRadiusCache[m] = radius;
+        cache[m] = radius;
         return radius;
     }
 
@@ -104,5 +108,5 @@ public static class ShipRenderScale
     /// <summary>Render-radius cache keyed by <c>Model</c> instance — models are
     /// singletons cached by Game1's <c>_shipModels</c> (one instance per asset)
     /// plus the fallback singleton, so the reference is a stable, cheap key.</summary>
-    private static readonly Dictionary<Model, float> _renderRadiusCache = new();
+    [ThreadStatic] private static Dictionary<Model, float>? _renderRadiusCache;
 }
