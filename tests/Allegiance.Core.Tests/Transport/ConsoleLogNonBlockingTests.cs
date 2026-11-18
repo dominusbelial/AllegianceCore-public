@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using Allegiance.Core;
 
@@ -277,6 +278,127 @@ public sealed class ConsoleLogNonBlockingTests
             ConsoleLog.Uninstall();
             ConsoleLog.ResetForTest();
         }
+    }
+
+    /// <summary>
+    /// P1055 — a writer that races <c>ResetForTest</c>'s completion of the OLD generation.
+    /// ResetForTest completes the queue at its first line and only swaps <see cref="ConsoleLog"/>
+    /// to the fresh generation after the join, so a line written between the two lands on a
+    /// COMPLETED <c>BlockingCollection</c>. <c>TryAdd</c> throws there
+    /// (<c>InvalidOperationException: The collection has been marked as complete with regards
+    /// to additions</c>); the P1042c fast tier aborted the Core test host ~5,000 tests in.
+    /// Ordered steps, no busy loop: a gated sink holds the drain inside ResetForTest's join
+    /// (the window is the join's own wait, seconds wide), then this test writes once.
+    /// </summary>
+    [Fact]
+    public async Task Write_hitting_a_generation_completed_by_ResetForTest_drops_instead_of_throwing()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var gate = new GatedWriter();
+        string marker = $"[p1055-race] {Guid.NewGuid():N}";
+        try
+        {
+            ConsoleLog.ResetForTest();
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(gate);
+            ConsoleLog.Verbose = true;
+            // Step 1: one line reaches the drain, which blocks inside the gated sink.
+            ConsoleLog.Write(marker + " blocked");
+            Assert.True(gate.Entered.Wait(5000), "the drain never reached the gated sink");
+            // Step 2: ResetForTest completes the OLD queue, then blocks in its join. Capture
+            // the generation object first so the "completed" signal is that exact queue.
+            var oldGen = CurrentGenerationForTest();
+            var reset = Task.Run(() => ConsoleLog.ResetForTest(joinMs: 3000));
+            // Step 3: wait (bounded, no busy spin) until ResetForTest has completed the old
+            // queue; the swap cannot have happened yet because its join is still waiting.
+            var completedBy = Stopwatch.StartNew();
+            while (!QueueForTest(oldGen).IsAddingCompleted && completedBy.ElapsedMilliseconds < 2000)
+                await Task.Delay(5);
+            Assert.True(QueueForTest(oldGen).IsAddingCompleted,
+                "ResetForTest did not complete the old generation within 2 s");
+            Assert.Same(oldGen, CurrentGenerationForTest());   // still the current one
+            // ResetForTest's first line closes the verbose gate; reopen it so the racing
+            // write really reaches the (already completed) generation.
+            ConsoleLog.Verbose = true;
+            long droppedBefore = ConsoleLog.DroppedWrites;
+            // Step 4: the writer hits the completed generation. Before P1055 this THREW.
+            ConsoleLog.Write(marker + " race");
+            Assert.Equal(droppedBefore + 1, ConsoleLog.DroppedWrites);
+            // Step 5: release the drain and let the reset finish; the next line lands on the
+            // fresh generation (a retry that lands, not only a drop).
+            gate.Release.Set();
+            await reset.WaitAsync(TimeSpan.FromSeconds(8));
+            var sink = new LockedStringWriter();
+            ConsoleLog.PointSinkForTest(sink);
+            ConsoleLog.Verbose = true;
+            ConsoleLog.Write(marker + " after");
+            ConsoleLog.Flush();
+            Assert.Contains(MarkedLines(sink, marker), l => l.EndsWith(" after", StringComparison.Ordinal));
+        }
+        finally
+        {
+            gate.Release.Set();
+            ConsoleLog.Uninstall();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+            ConsoleLog.ResetForTest();
+        }
+    }
+
+    /// <summary>
+    /// P1055 — the same class in the production shape: <c>Shutdown</c> completes the live
+    /// generation and leaves it installed (the process is exiting), so any line written
+    /// afterwards hits a COMPLETED collection. Ordered steps only: no threads, no loop.
+    /// Before P1055 the <c>Write</c> threw <c>InvalidOperationException</c>.
+    /// </summary>
+    [Fact]
+    public void Write_after_Shutdown_completed_the_generation_is_dropped_and_counted()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        try
+        {
+            ConsoleLog.ResetForTest();
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(new LockedStringWriter());
+            ConsoleLog.Verbose = true;
+            ConsoleLog.Shutdown();                    // completes the live queue, joins the drain
+            long droppedBefore = ConsoleLog.DroppedWrites;
+            long emittedBefore = ConsoleLog.EmittedWrites;
+            ConsoleLog.Write("[p1055-shutdown] after shutdown");
+            Assert.Equal(droppedBefore + 1, ConsoleLog.DroppedWrites);
+            Assert.Equal(emittedBefore, ConsoleLog.EmittedWrites);   // nothing enqueued anywhere
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+            ConsoleLog.ResetForTest();                // must tolerate the completed generation
+        }
+    }
+
+    /// <summary>P1055 — the private sink generation object, read through reflection so the
+    /// test can wait on the exact queue ResetForTest completes (instead of sleeping and hoping).</summary>
+    private static object CurrentGenerationForTest()
+        => typeof(ConsoleLog).GetField("_gen", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+
+    /// <summary>The <c>Queue</c> (a <see cref="System.Collections.Concurrent.BlockingCollection{T}"/>)
+    /// of a captured generation object.</summary>
+    private static System.Collections.Concurrent.BlockingCollection<string> QueueForTest(object gen)
+        => (System.Collections.Concurrent.BlockingCollection<string>)gen.GetType()
+            .GetField("Queue", BindingFlags.Public | BindingFlags.Instance)!.GetValue(gen)!;
+
+    /// <summary>A sink that blocks its first write until <see cref="Release"/> is set, so a
+    /// test can hold the drain (and therefore ResetForTest's join) in a known state.</summary>
+    private sealed class GatedWriter : TextWriter
+    {
+        public readonly ManualResetEventSlim Entered = new();
+        public readonly ManualResetEventSlim Release = new();
+        public override Encoding Encoding => Encoding.UTF8;
+        public override void WriteLine(string? value) { Entered.Set(); Release.Wait(8000); }
+        public override void Write(string? value) { Entered.Set(); Release.Wait(8000); }
     }
 
     /// <summary>P964 — the lines in <paramref name="sink"/> that carry this run's marker.

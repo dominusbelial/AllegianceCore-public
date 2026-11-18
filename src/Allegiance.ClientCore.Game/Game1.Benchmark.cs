@@ -22,12 +22,7 @@ public sealed partial class Game1
     // big AI battle (the size picker lands in the skirmish setup screen with
     // Showcase speed pre-selected) plus the fixed-seed settings tune (the old
     // benchmark, now ranked) and replay verification for CI/headless users.
-    private static readonly string[] BenchmarkMenuLabels =
-    [
-        "Watch a battle: Small (5v5)", "Medium (15v15)", "Large (30v30)", "Epic (60v60)", "Grand (200v200)",
-        "Settings tune (fixed, ranked)", "Replay recorded battle",
-        "Calibrate this machine (bounded)", "Skip / Back"
-    ];
+    private static readonly string[] BenchmarkMenuLabels = BenchmarkMenuLayout.Labels;
     private const int ShowcaseTuneRow = 5, ShowcaseReplayRow = 6, CalibrateRow = 7;
     private void UpdateBenchmarkMenu(bool up, bool down, bool enter, bool esc)
     {
@@ -84,21 +79,30 @@ public sealed partial class Game1
     }
     private void DrawBenchmarkMenu(float w, float h, Color title, Color dim, Color text)
     {
+        // P1055 — one geometry source (BenchmarkMenuLayout): at sizes where the classic
+        // constants fit this resolves to them verbatim (1080p is pixel-identical); at 800×480
+        // it compresses the list and wraps the paragraph to the usable width, so the
+        // description no longer draws over the size rows and nothing leaves the viewport.
+        var geometry = BenchmarkMenuLayout.Compute(BenchmarkMenuLabels.Length, w, h,
+            BenchmarkMenuLayout.Description, s => _hudSmall.MeasureString(s).X, _hudSmall.LineSpacing);
         var rows = new List<ScreenRow>();
         for (int i = 0; i < BenchmarkMenuLabels.Length; i++)
         {
             bool selected = i == _benchMenuIndex;
-            var band = new RectangleF(w * 0.2f, 210 + i * 38, w * 0.6f, 34);
+            var (bx, by, bw, bh) = geometry.Band(i, w);
+            var band = new RectangleF(bx, by, bw, bh);
             rows.Add(BandedRow(BenchmarkMenuLabels[i],
-                (selected ? "> " : "  ") + BenchmarkMenuLabels[i], w * 0.2f, 210 + i * 38, band,
+                (selected ? "> " : "  ") + BenchmarkMenuLabels[i], bx, by, band,
                 selected, selected ? ScreenInkRole.Highlight : ScreenInkRole.Plain,
                 selected ? Color.Yellow : Color.White));
         }
-        var lines = new List<ScreenTextRun>
-        {
-            new("A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s x3) is the only RANKED score. Calibration tries a few worker sizings\nat the selected skirmish size and saves the fastest for this machine. Arrows / Enter; Escape skips.",
-                new Vector2(w * 0.12f, h - 96), 1f, ScreenInkRole.Dim, dim),
-        };
+        var lines = new List<ScreenTextRun>();
+        var wrapped = BenchmarkMenuLayout.Wrap(BenchmarkMenuLayout.Description, geometry.DescWidth,
+            s => _hudSmall.MeasureString(s).X);
+        for (int i = 0; i < wrapped.Count; i++)
+            lines.Add(new(wrapped[i],
+                new Vector2(geometry.DescX, geometry.DescTop + i * _hudSmall.LineSpacing * geometry.DescScale),
+                geometry.DescScale, ScreenInkRole.Dim, dim));
         DrawIntroSubView(BuildViewFrame("benchmark", "Showcase",
             _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles - and the one settings tune",
             rows, lines, new List<ScreenPlate>(), title, dim, text));

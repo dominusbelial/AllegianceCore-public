@@ -5,6 +5,33 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1055 — ConsoleLog completed-generation crash (Core test-host abort) — 2026-11-18
+
+**Root cause (confirmed).** `ConsoleLog.Write` and `QueuedConsoleWriter.Emit` read the current sink generation and
+called `BlockingCollection.TryAdd` on it. `TryAdd` does **not** return false on a completed collection — it throws
+`InvalidOperationException: The collection has been marked as complete with regards to additions`. `ResetForTest`
+completes the OLD queue *before* it swaps `_gen` (after a join that can wait seconds), and `Shutdown` completes the live
+queue and leaves it installed, so any writer hitting that window (a server sim/broadcast/bot thread, or a test host's
+leftover background writer) threw on a background thread and killed the process. This is the abort the P1042c fast tier
+recorded after ~5,000 `Allegiance.Core.Tests` cases (1,769 cases unexecuted, coverage mismatch).
+
+**Fix.** One enqueue helper (`ConsoleLog.TryEnqueue` → `TryAddTo`): a line that hits a completed generation is retried
+once on the current generation, and dropped-and-counted (`DroppedWrites`) when that one is complete too — never thrown,
+never blocking. P619c/P829/P964 behaviour (bounded drop, counters, shared writer lock, one drain per generation) is
+unchanged. Regressions in `tests/Allegiance.Core.Tests/Transport/ConsoleLogNonBlockingTests.cs`:
+`Write_after_Shutdown_completed_the_generation_is_dropped_and_counted` (ordered steps) and
+`Write_hitting_a_generation_completed_by_ResetForTest_drops_instead_of_throwing` (gated sink holds the reset join open;
+no busy loop) — both threw the exact production exception before the fix and pass 3/3 alone after.
+
+
+
+## P1055 training repeats — 2026-11-18
+
+Repeat-3 `Allegiance.ClientCore.MonoGame.Tests` (training filters, P912 windows excluded) had **1 failure / 255
+passed / 1 skipped**: `P910TrainingWireTests.Self_chat_cannot_send_an_order_past_the_training_receive_guard(style:
+Classic)` (159 ms, in the suite that ran beside a concurrent P912 window sweep). Alone: **pass / pass / pass** (2/2
+cases each, ~0.56 s). Load flake in the training-wire chat-guard family; no training code is touched by P1055.
+
 ## Merge sweep after P1052 — 2026-11-18
 
 Fast tier on merged master (a0a8c4c7): **15,483 cases, 653.7 s, 6 failed / 3 not executed**; infrastructure 9/9.

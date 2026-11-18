@@ -39,12 +39,13 @@ catch (Exception exception)
 return Environment.ExitCode;
 
 sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, bool Quiet,
-    string? Legacy = null, string? LegacyCompare = null, bool PreTitle = false)
+    string? Legacy = null, string? LegacyCompare = null, bool PreTitle = false,
+    bool PreBenchmark = false, bool PreStarmap = false)
 {
     public static Options Parse(string[] arguments)
     {
         string? output = null, compare = null, audit = null, legacy = null, legacyCompare = null;
-        bool alloc = false, quiet = false, preTitle = false;
+        bool alloc = false, quiet = false, preTitle = false, preBenchmark = false, preStarmap = false;
         for (int i = 0; i < arguments.Length; i++)
         {
             string Next(string flag) => i + 1 < arguments.Length ? arguments[++i]
@@ -57,6 +58,8 @@ sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, b
                 case "--alloc": alloc = true; break;
                 case "--legacy": legacy = Next("--legacy"); break;
                 case "--pre-title": preTitle = true; break;
+                case "--pre-benchmark": preBenchmark = true; break;
+                case "--pre-starmap": preStarmap = true; break;
                 case "--legacy-compare": legacyCompare = Next("--legacy-compare"); break;
                 case "--quiet": quiet = true; break;
                 case "--help" or "-h":
@@ -66,7 +69,7 @@ sealed record Options(string? Out, string? Compare, string? Audit, bool Alloc, b
                 default: throw new ArgumentException("unknown argument " + arguments[i]);
             }
         }
-        return new(output, compare, audit, alloc, quiet, legacy, legacyCompare, preTitle);
+        return new(output, compare, audit, alloc, quiet, legacy, legacyCompare, preTitle, preBenchmark, preStarmap);
     }
 }
 
@@ -93,6 +96,10 @@ sealed record Scene(string Name, string Family, int State)
         new("view-options", "view", 5),
         new("view-help", "view", 6),
         new("view-trainingsuggest", "view", 7),
+        // P1055 — the Benchmark/Showcase sub-view (the port-only screen with the description
+        // that used to draw over its own size rows at 800x480). Built from the production
+        // BenchmarkMenuLayout, so the audit sees exactly what Game1 draws.
+        new("view-benchmark", "view", 8),
         new("career", "career", 0),
         // P1042c — the in-game screen families (real models; §3 of the report names the
         // states that need a live server and are therefore a fixture).
@@ -420,6 +427,8 @@ sealed partial class ScreenProof : Game
                             new Vector2(60, 160 + i * 26), 1f, ScreenInkRole.Body, ViewText));
                 }
                 break;
+            case 8:
+                return BenchmarkFrame(w, h);
             default:
                 title = "Welcome to Allegiance";
                 subtitle = "Training is strongly recommended before going online.";
@@ -449,6 +458,55 @@ sealed partial class ScreenProof : Game
                 break;
         }
         return new IntroViewFrame(new Viewport(0, 0, w, h), "view", title, subtitle, rows, lines, plates,
+            new ScreenInks(ViewTitle, ViewText, ViewDim, Color.Orange));
+    }
+
+    /// <summary>P1055 — the Benchmark/Showcase sub-view as the production builder resolves it
+    /// (rows at BenchmarkMenuLayout's bands, the paragraph wrapped to the resolved width).
+    /// <c>--pre-benchmark</c> rebuilds the PRE-FIX geometry (fixed 210/38 rows, one unwrapped
+    /// 3-line run at 0.12w / h-96) so the audit can be shown to flag the class before the fix.
+    /// </summary>
+    private IntroViewFrame BenchmarkFrame(int w, int h)
+    {
+        var labels = BenchmarkMenuLayout.Labels;
+        var rows = new List<ScreenRow>();
+        var lines = new List<ScreenTextRun>();
+        if (_options.PreBenchmark)
+        {
+            for (int i = 0; i < labels.Length; i++)
+            {
+                bool sel = i == 0;
+                string text = (sel ? "> " : "  ") + labels[i];
+                rows.Add(new(labels[i], text, new Vector2(w * 0.2f, 210 + i * 38),
+                    new RectangleF(w * 0.2f, 210 + i * 38, w * 0.6f, 34),
+                    1f, sel, sel ? ScreenInkRole.Highlight : ScreenInkRole.Plain,
+                    sel ? Color.Yellow : Color.White));
+            }
+            lines.Add(new(BenchmarkMenuLayout.Description, new Vector2(w * 0.12f, h - 96), 1f,
+                ScreenInkRole.Dim, ViewDim));
+        }
+        else
+        {
+            var geometry = BenchmarkMenuLayout.Compute(labels.Length, w, h,
+                BenchmarkMenuLayout.Description, s => _small.MeasureString(s).X, _small.LineSpacing);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                bool sel = i == 0;
+                var (bx, by, bw, bh) = geometry.Band(i, w);
+                string text = (sel ? "> " : "  ") + labels[i];
+                rows.Add(new(labels[i], text, new Vector2(bx, by), new RectangleF(bx, by, bw, bh),
+                    1f, sel, sel ? ScreenInkRole.Highlight : ScreenInkRole.Plain,
+                    sel ? Color.Yellow : Color.White));
+            }
+            var wrapped = BenchmarkMenuLayout.Wrap(BenchmarkMenuLayout.Description, geometry.DescWidth,
+                s => _small.MeasureString(s).X);
+            for (int i = 0; i < wrapped.Count; i++)
+                lines.Add(new(wrapped[i],
+                    new Vector2(geometry.DescX, geometry.DescTop + i * _small.LineSpacing * geometry.DescScale),
+                    geometry.DescScale, ScreenInkRole.Dim, ViewDim));
+        }
+        return new IntroViewFrame(new Viewport(0, 0, w, h), "view", "Showcase",
+            "Big AI battles - and the one settings tune", rows, lines, new List<ScreenPlate>(),
             new ScreenInks(ViewTitle, ViewText, ViewDim, Color.Orange));
     }
 
@@ -634,11 +692,18 @@ sealed partial class ScreenProof : Game
     }
 
     // ── audit ────────────────────────────────────────────────────────────────
+    /// <summary>P1055 — the four skin columns the content class is reported for. Content is
+    /// skin-independent (the frames are the same objects every adapter paints), so the measured
+    /// runs are evaluated once and attributed to each column.</summary>
+    private static readonly string[] ContentSkinColumns = ["classic", "modern", "jet-green", "jet-amber"];
+
     private int RunAudit(string directory)
     {
         Directory.CreateDirectory(directory);
         var report = new List<object>();
-        int failures = 0;
+        var contentReport = new List<object>();
+        var contentFindings = new List<string>();
+        int failures = 0, contentFailures = 0;
         var auditRenderers = new ScreenRenderers
         {
             Scoreboard = _scoreboard, Starmap = _starmap, SectorInfo = _sectorInfo, GameOver = _gameOver,
@@ -721,6 +786,12 @@ sealed partial class ScreenProof : Game
             else
                 a = ScreenAudit.Hangar(recorder, HangarFrame(w, h, scene.State));
 
+            // P1055 — the CONTENT side of the audit: every run the content renderers paint
+            // (frames resolved by the production builders) plus the hangar's own reports,
+            // then the content-vs-content classes. Content geometry is skin-independent (all
+            // four skin columns paint the same frame objects), so the same measured runs are
+            // evaluated for each skin column below.
+            CollectContent(recorder, scene, w, h);
             DrawScene(chrome, scene, w, h, HudStyle.Modern);
 
             // The game-over headers are the renderer's own rectangles (its pointer sorts on
@@ -754,6 +825,23 @@ sealed partial class ScreenProof : Game
             hangar.Dispose();
 
             var result = ScreenAudit.Evaluate(recorder, w, h, a.HitRects, titleVsTab);
+            var findings = new List<string>();
+            var content = ScreenAudit.EvaluateContent(recorder, w, h, findings, tolerance: 1f,
+                screen: $"{scene.Name} {palette} {w}x{h}");
+            foreach (string skin in ContentSkinColumns)
+            {
+                Console.WriteLine($"CONTENT {scene.Name} {skin} {w}x{h}: runs={content.Runs} boxes={content.Boxes} " +
+                    $"overlap-text={content.TextText} overlap-panel={content.TextBox} off-screen={content.OffScreen} " +
+                    $"failures={content.Failures}");
+                contentReport.Add(new
+                {
+                    scene = scene.Name, skin, width = w, height = h,
+                    content.Runs, content.Boxes, content.TextText, content.TextBox,
+                    content.OffScreen, content.Failures, samples = content.Samples,
+                });
+            }
+            contentFailures += content.Failures;
+            contentFindings.AddRange(findings);
             Console.WriteLine($"AUDIT {scene.Name} {palette} {w}x{h}: " +
                 $"controls={result.Controls} hit-vs-draw={result.HitVsDraw} stroke-vs-text={result.StrokeVsText} " +
                 $"text-outside-plate={result.TextOutsidePlate} text-off-screen={result.TextOffScreen} " +
@@ -771,8 +859,13 @@ sealed partial class ScreenProof : Game
         }
         File.WriteAllText(Path.Combine(directory, "audit.json"),
             JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(Path.Combine(directory, "content-audit.json"),
+            JsonSerializer.Serialize(contentReport, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllLines(Path.Combine(directory, "content-findings.txt"), contentFindings);
         Console.WriteLine($"P1042_AUDIT failures={failures}");
-        return failures == 0 ? 0 : 1;
+        Console.WriteLine($"P1055_CONTENT_AUDIT failures={contentFailures} findings={contentFindings.Count} " +
+            $"combinations={contentReport.Count}");
+        return failures == 0 && contentFailures == 0 ? 0 : 1;
     }
 
     // ── allocation ───────────────────────────────────────────────────────────

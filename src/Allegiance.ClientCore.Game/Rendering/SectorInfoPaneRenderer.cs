@@ -121,8 +121,12 @@ public sealed class SectorInfoPaneRenderer
                 int pr = origins.Count - 1;
                 Color pc = ownSideColor ?? AccentColor;
                 DrawProbeGlyph(origins[pr].X + ProbeGlyphWidth / 2f, origins[pr].Y + lineHeight / 2f, pc);
+                // P1055 — native's count sits the probe icon's own width + 4 px right of the
+                // icon (sectormap.cpp:338-344: DrawString at ptNext + Point(iconW + 4, 0)).
+                // The port used icon box + 6 px; 4 px is the native spacing, and the glyph's
+                // diamond is already inside the reserved 12 px box (centred at 6, r 4.5).
                 _sb.DrawString(_small, probeLabel,
-                    new Vector2(origins[pr].X + ProbeGlyphWidth + 6f, origins[pr].Y), AccentColor);
+                    new Vector2(origins[pr].X + ProbeGlyphWidth + ProbeLabelGap, origins[pr].Y), AccentColor);
             }
 
             // P752 — native's expand button (m_pimageExpand) at the pane's
@@ -159,7 +163,7 @@ public sealed class SectorInfoPaneRenderer
         // The probe glyph row's text contributes to the width too.
         string probeLabel = $"PROBES  {pane.OwnProbeCount}";
         if (pane.ShowsOwnProbes)
-            maxW = MathF.Max(maxW, ProbeGlyphWidth + 6f + measure(probeLabel));
+            maxW = MathF.Max(maxW, ProbeGlyphWidth + ProbeLabelGap + measure(probeLabel));
         // P752 — the hover warning line (drawn first, native pane origin).
         bool warn = !string.IsNullOrEmpty(pane.WarningText);
         if (warn) maxW = MathF.Max(maxW, measure(pane.WarningText!));
@@ -198,6 +202,9 @@ public sealed class SectorInfoPaneRenderer
 
     /// <summary>The horizontal span reserved for the probe glyph row's icon.</summary>
     private const float ProbeGlyphWidth = 12f;
+    /// <summary>P1055 — the gap between that icon box and the count (native: the icon's own
+    /// width + 4 px, sectormap.cpp:338-344).</summary>
+    private const float ProbeLabelGap = 4f;
 
     /// <summary>P752 — the pane box drawn by the most recent <see cref="Draw"/>
     /// (null when nothing was drawn). Game1's click routing reads this so the

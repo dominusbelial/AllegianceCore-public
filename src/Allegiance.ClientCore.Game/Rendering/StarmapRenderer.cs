@@ -125,30 +125,18 @@ public sealed class StarmapRenderer
                 && layout.TryGetName(cur, out var cn) && cn.Length > 0
                 ? cn : "?";
             string title = $"STARMAP  |  YOU: {currentName}  |  TAB TOGGLE";
-            var tsz = _small.MeasureString(title);
             _sb.DrawString(_small, title, new Vector2(panelX + border, panelY + 10f), TitleDim);
 
-            // P374 — the warning text for the SELECTED sector, surfaced on the
-            // starmap's info area (the port's keyboard-only client has no mouse
-            // hover, so the selected sector is the hover-equivalent; native
-            // draws GetClusterWarningText on hover, sectormap.cpp:523-534).
-            if (selectedSectorId is { } sel && warnings is not null
-                && layout.TryGetName(sel, out var selName) && selName.Length > 0)
-            {
-                short cw = warnings(sel);
-                string wtxt = StarmapThreatPresentation.WarningText(cw);
-                if (wtxt.Length > 0)
-                {
-                    var wsz = _small.MeasureString(wtxt);
-                    _sb.DrawString(_small, wtxt,
-                        new Vector2(panelX + border, panelY + 10f + tsz.Y + 3f), ThreatRed);
-                    // Flashing highlight label so the eye finds the warned sector.
-                    var hsz = _small.MeasureString(selName);
-                    _sb.DrawString(_small, selName,
-                        new Vector2(panelX + border + wsz.X + 10f, panelY + 10f + tsz.Y + 3f),
-                        flashOn ? ThreatRed : TitleDim);
-                }
-            }
+            // P1055 — the selected sector's warning is NOT drawn here any more. Native draws
+            // it inside the sector-info pane at the pane's own origin, after the pane's
+            // background (GetClusterWarningText at Point(0,0), WinTrek/sectormap.cpp:517-534,
+            // in SectorInfoPane::Render which paints its background first at :398). Drawing it
+            // under the port's "STARMAP | YOU: …" header put it exactly where the pane box is
+            // anchored (panelY + 40), so the pane's translucent backing painted over it —
+            // the half-covered red line in the P1042c 1920x1080 capture. The port feeds the
+            // selected sector's warning into the pane's warning slot instead (the Keyboard-only
+            // client has no hover, so the selection IS the native mouse-over cluster,
+            // sectormap.cpp:1413-1461).
 
             // Warp edges: a line between the two endpoint sectors for every edge.
             foreach (var e in edges)
