@@ -5,6 +5,26 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## Merge sweep after P1052 — 2026-11-18
+
+Fast tier on merged master (a0a8c4c7): **15,483 cases, 653.7 s, 6 failed / 3 not executed**; infrastructure 9/9.
+Each failure was rerun alone in fresh processes; no assertion, bound or tier was changed.
+
+| Case | Sweep failure | Alone |
+|---|---|---|
+| `JetFlightSymbologyTests.Jet_draw_allocates_zero_bytes_per_frame_with_the_full_symbology` | 4,816 B/frame | pass / pass / pass |
+| `JetSkinScaffoldTests.Jet_draw_allocates_zero_bytes_per_frame_on_a_fixed_model` | 6,368 B/frame | pass / pass / pass |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | live fixture | pass / pass / pass |
+| `AsteroidCombatLiveTests.Cross_side_missile_hits_asteroid_with_exact_computed_damage_and_it_survives` | live fixture, 11.4 s | pass / pass / pass |
+| `CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors` | live fixture | pass / pass / pass |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | death latch never arrived | **fail / fail / pass**, then 9/10 → **11/14 alone** |
+
+The Jet allocation pair passed under P1049b's sized window alone but still saw allocations in the full parallel
+MonoGame run (likely a cross-test GC/allocation-counter leak in the shared process, not the draw path); kept open.
+DeadLatchRespawn now fails alone at ~20 % (previously 3/3 alone); P1052 changes no gameplay code (IPv6-only credential
+key change; the test uses IPv4 loopback). Candidate for a dedicated root-cause story.
+Timing offenders over the 10 s limit: P777 NPC exit touch rate 10.1 s, AsteroidCombat 11.4 s, P1000 civ 3 11.8 s (chronic).
+
 ## Merge sweep P1050 + P1042b + P1049b — 2026-11-18 UTC (workstation)
 
 One Fast run on the merged tree: **15,399 cases, 668.3 s**, P744 factor 0.942 (limit 10.000 s). Four failures:
