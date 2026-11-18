@@ -30,8 +30,10 @@ SOFTWARE.
 ----------------------------------------------------------------------------
 
 Some original Allegiance game files (sounds and two data files, listed in
-CREDITS.md) are included from the FreeAllegiance Artwork repository
-(https://github.com/FreeAllegiance/Artwork), which carries this notice:
+CREDITS.md) are included in this repository, and release downloads and the
+browser build redistribute the full original game art, from the FreeAllegiance
+Artwork repository (https://github.com/FreeAllegiance/Artwork), which carries
+this notice:
 
 ----------------------------------------------------------------------------
 MIT License

@@ -387,7 +387,12 @@ and left off are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 - **[Security](SECURITY.md)** — reporting and the server's known non-hardened
   areas (it is a LAN/demo-grade server).
 - **[Licence](LICENSE)** — MIT. Original-game logic derived from Microsoft's
-  Allegiance (MIT); see **[`NOTICE`](NOTICE)** for the required attribution.
+  Allegiance (MIT, relicensed by Microsoft in 2017). The original game art comes from the
+  [FreeAllegiance Artwork](https://github.com/FreeAllegiance/Artwork) repository, also MIT
+  (Copyright (c) 2017 FreeAllegiance); release downloads and the browser build redistribute it
+  under that licence. See **[`NOTICE`](NOTICE)** for both required notices, which ship with
+  every download. The optional Meshy HD texture pack is not covered by MIT (Meshy's own terms)
+  and is never bundled; it stays a separate optional download.
 - **[Credits](CREDITS.md)** — third-party imagery and effect art attributions.
 
 Optional art packs (e.g. alternative ship models) are **not** included in this
