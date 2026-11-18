@@ -31,6 +31,8 @@
     <Compile Include="../../src/Allegiance.ClientCore.MonoGame/MacJoinLinkEvents.cs" Link="P944/MacJoinLinkEvents.cs" />
     <Compile Include="../_shared/JsonDefaultsGuard.cs" Link="_shared/JsonDefaultsGuard.cs" />
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
+    <!-- P1049b: collection names alone do not serialize process-global training/input state. -->
+    <Compile Include="../Allegiance.ClientCore.Tests/TrainingTestCollection.cs" Link="_shared/TrainingTestCollection.cs" />
     <Compile Include="../_shared/P911ArenaFiringRange.cs" Link="_shared/P911ArenaFiringRange.cs" />
     <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
     <Compile Include="../_shared/DockTestPlacement.cs" Link="_shared/DockTestPlacement.cs" />

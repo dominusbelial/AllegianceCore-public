@@ -228,7 +228,10 @@ public sealed class P889PoolSizingTests
         Assert.Equal(1, config.Broadcast.MaxDegreeOfParallelism);
         Assert.Equal("pool", config.Transport!.Mode);
         Assert.Equal(3, config.Transport.PoolWorkers);
-        var budget = SkirmishBudget.ForOptions(options, Environment.ProcessorCount);
+        // P1049b — an explicit override needs enough declared cores to fit its
+        // two workers. Keep this input deterministic on two-core CI hosts too;
+        // ForOptions correctly clamps it to one worker when given two cores.
+        var budget = SkirmishBudget.ForOptions(options, 16);
         Assert.Equal(2, budget.Workers);
         Assert.Equal(5, budget.CoresPerWorker);
         // No override: the resolver's shared budget sizes the bots.

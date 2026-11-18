@@ -301,15 +301,14 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         {
             for (int i = 0; i < count; i++) jet.Draw(model, frame);
         }
-        // P1049 — window sized by the caches (table in JetFlightSymbologyTests):
-        // 4,096 warm-up = one full cycle of the largest bounded cache in the draw
-        // path, 8,192 measured = two cycles. Assertion unchanged: exactly 0 B.
-        Draw(4_096);
+        // P1049b — fixed inputs repeat a one-frame steady state; cache capacity
+        // is not a frame cycle. Shared window and source audit: JetAllocationWindow.
+        Draw(JetAllocationWindow.WarmupFrames);
         Assert.True(surface.Lines > 0);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(8_192);
+        Draw(JetAllocationWindow.MeasuredFrames);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1035 JetHudRenderer.Draw: {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
+        output.WriteLine($"P1035 JetHudRenderer.Draw: {bytes} B / {JetAllocationWindow.MeasuredFrames} frames = {bytes / (double)JetAllocationWindow.MeasuredFrames} B/frame");
         Assert.Equal(0, bytes);
     }
 

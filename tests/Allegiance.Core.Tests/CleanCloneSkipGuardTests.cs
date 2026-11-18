@@ -32,7 +32,8 @@ namespace Allegiance.Core.Tests;
 /// the authoritative check; this catches the common in-test-file cases fast.
 ///
 /// CI-2 — this is a Fast test, so its own runtime counts against the tier's 10 s
-/// limit. It parses every test file in parallel, walks each member once for both
+/// limit. It reads every test file, bypasses parsing only when no resource fact
+/// can be present, and parses candidates in parallel. It walks each member once for both
 /// the direct facts and the names it references, and computes the referenced-member
 /// transitive closure once per type instead of running a BFS per test method
 /// (see docs/reports/CI2_SKIPGUARD_SPEED.md). The verdicts are unchanged.
@@ -57,6 +58,7 @@ public sealed class CleanCloneSkipGuardTests
         // file, so run it in parallel. The violations are collected into a bag and sorted
         // afterwards, so the failure message is deterministic.
         var violations = new ConcurrentBag<string>();
+        Assert.True(files.Count > 100, $"found only {files.Count} test source files — wrong root?");
         int scanned = 0;
         Parallel.ForEach(files, entry =>
         {
@@ -73,6 +75,50 @@ public sealed class CleanCloneSkipGuardTests
             string.Join("\n  ", ordered));
     }
 
+    [Fact]
+    public void Resource_free_types_and_indirect_resource_violations_keep_their_verdicts()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, """
+                class Pure
+                {
+                    static int Helper() => 1;
+                    [Fact] void Safe() { Assert.Equal(1, Helper()); }
+                }
+                class Indirect
+                {
+                    static string Art() => TestArtRoot.Value;
+                    static string Root = Art();
+                    static void NeedsArt() { Require.Artwork(); }
+                    static void NeedsArt(int unused) { }
+                    static void Device() { new GraphicsDevice(); }
+                    [SkippableFact] void MissingArtGuard() { Use(Root); }
+                    [Fact] void PlainFactCallsSkip() { NeedsArt(); }
+                    [Fact] void PlainFactCreatesGpu() { Device(); }
+                    [SkippableFact] void CorrectArtGuard() { Require.Artwork(); Use(Root); }
+                }
+                class EscapedGpu
+                {
+                    [Fact] void EscapedMarker() { Use("\u0053DL_VIDEODRIVER"); }
+                }
+                """);
+            var (types, violations) = ScanFile("probe.cs", path);
+            Assert.Equal(3, types);
+            Assert.Equal(new[]
+            {
+                "probe.cs: Indirect.MissingArtGuard reads the artwork corpus (TestArtRoot) but never calls Require.Artwork()",
+                "probe.cs: Indirect.PlainFactCallsSkip calls Require.*()/Skip.If*() from a plain [Fact]/[Theory] — use [SkippableFact]/[SkippableTheory]",
+                "probe.cs: Indirect.PlainFactCreatesGpu creates a real GL device but is a plain [Fact]/[Theory]",
+                "probe.cs: EscapedGpu.EscapedMarker creates a real GL device but is a plain [Fact]/[Theory]",
+            }, violations);
+            File.WriteAllText(path, "class Ordinary { [Fact] void Safe() { Assert.Equal(1, Helper()); } int Helper() => 1; }");
+            Assert.Empty(ScanFile("ordinary.cs", path).Violations);
+        }
+        finally { File.Delete(path); }
+    }
+
     /// <summary>Known-safe tests the name-based scan cannot prove safe: they touch
     /// the corpus root but never read from it (key: "Class.Method", value: why).</summary>
     private static readonly Dictionary<string, string> Allowed = new()
@@ -81,18 +127,28 @@ public sealed class CleanCloneSkipGuardTests
             "Boot rejects the invalid MinUpdateHz before the corpus path is opened",
     };
 
-    private sealed record Facts(bool Artwork, bool Gpu, bool RequireArtwork, bool RequireGpu, bool Skips)
+    private readonly record struct Facts(bool Artwork, bool Gpu, bool RequireArtwork, bool RequireGpu, bool Skips)
     {
         public static readonly Facts None = new(false, false, false, false, false);
         public Facts Or(Facts o) => new(Artwork || o.Artwork, Gpu || o.Gpu,
             RequireArtwork || o.RequireArtwork, RequireGpu || o.RequireGpu, Skips || o.Skips);
     }
 
-    /// <summary>Reads + parses one file and checks its top-level types. Runs on a worker
+    /// <summary>Reads one file, parses possible resource facts and checks its top-level types. Runs on a worker
     /// thread: no shared state.</summary>
     private static (int Types, List<string> Violations) ScanFile(string file, string path)
     {
-        var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetCompilationUnitRoot();
+        string source = File.ReadAllText(path);
+        // P1049b — none of Walk's facts can arise without these spellings.
+        // A backslash always falls back to Roslyn: an escaped string literal
+        // such as "\u0053DL_VIDEODRIVER" must still be decoded and checked.
+        if (!source.Contains('\\') && !source.Contains("TestArtRoot", StringComparison.Ordinal)
+            && !source.Contains("Require", StringComparison.Ordinal)
+            && !source.Contains("Skip", StringComparison.Ordinal)
+            && !source.Contains("SDL_VIDEODRIVER", StringComparison.Ordinal)
+            && !source.Contains("GraphicsDevice", StringComparison.Ordinal))
+            return (0, []);
+        var root = CSharpSyntaxTree.ParseText(source).GetCompilationUnitRoot();
         var violations = new List<string>();
         int types = 0;
         foreach (var type in root.DescendantNodes().OfType<TypeDeclarationSyntax>()
@@ -137,6 +193,11 @@ public sealed class CleanCloneSkipGuardTests
                 case PropertyDeclarationSyntax prop: Add(prop.Identifier.Text, prop); break;
             }
         }
+
+        // P1049b — every member has still been scanned. A graph whose direct
+        // facts are all empty has an empty closure, regardless of its edges;
+        // avoid resolving ordinary assertion/helper names in resource-free types.
+        if (ctorFacts == Facts.None && members.Values.All(m => m.Direct == Facts.None)) return;
 
         // Transitive closure of the per-member facts over the reference graph, once per type:
         // the least fixed point of `facts[n] = direct[n] | facts[refs[n]]`. The old code ran a

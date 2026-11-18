@@ -19,19 +19,18 @@ public sealed class P968PublisherStreamIndexTests(ITestOutputHelper output)
         long Lookups, long IndexEntries, long IndexVisits, long GateAcquisitions, double FreshnessGateMs,
         double SubmitGateMs, double PublishLagMs, long Packets);
 
-    /// <summary>P1049 — the exact counting rules stay in Fast on the 100-peer
-    /// rows: comparisons, lookups, index entries/visits, gate acquisitions and
-    /// packets are asserted exactly as before, nine runs per arm like the
-    /// original theory. The 400-peer rows are the measurement (P968's JSON
-    /// timings), so they moved to the Perf tier below — a measurement is not a
-    /// unit rule (docs/testing/TIERS.md). No assertion was weakened or removed.</summary>
+    /// <summary>P1049b — one execution per instrumentation arm suffices for the
+    /// deterministic counting rules: every counter, packet count, drop count and
+    /// published-snapshot count is asserted on a fresh publisher. Use its own
+    /// coordinator for encoding, as production does on <= 2 cores. Four-worker
+    /// scheduling and nine repetitions per arm remain on the Perf rows below.</summary>
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
     public void Reliable_backlog_counting_rules_hold_at_100_peers(bool indexed, bool coalesced)
-        => RunMeasurements(100, indexed, coalesced);
+        => RunMeasurements(100, indexed, coalesced, runs: 1, workers: 1);
 
     /// <summary>P1049 — the 400-peer measuring rows (nine runs × instrumented and
     /// uninstrumented, JSON logged) are Perf: a crowded-pipeline measurement, not
@@ -43,18 +42,18 @@ public sealed class P968PublisherStreamIndexTests(ITestOutputHelper output)
     [InlineData(false, true)]
     [InlineData(true, true)]
     public void Reliable_backlog_measures_pending_scan_work_at_400_peers(bool indexed, bool coalesced)
-        => RunMeasurements(400, indexed, coalesced);
+        => RunMeasurements(400, indexed, coalesced, runs: 9, workers: 4);
 
-    private void RunMeasurements(int peers, bool indexed, bool coalesced)
+    private void RunMeasurements(int peers, bool indexed, bool coalesced, int runs, int workers)
     {
-        output.WriteLine($"{peers} peers, ServerGC={System.Runtime.GCSettings.IsServerGC}; workers=4; pre-encoded immutable packets");
+        output.WriteLine($"{peers} peers, ServerGC={System.Runtime.GCSettings.IsServerGC}; workers={workers}; pre-encoded immutable packets");
         // Isolate the publisher, after immutable/encode-once capture. No sim,
         // projection, transport or interest-tier substitute is timed here.
         foreach (bool instrumented in new[] { true, false })
         {
-            for (int run = 0; run < 9; run++)
+            for (int run = 0; run < runs; run++)
             {
-                var measurement = Measure(peers, indexed, coalesced, instrumented);
+                var measurement = Measure(peers, indexed, coalesced, instrumented, workers);
                 if (instrumented)
                 {
                     Assert.Equal(indexed ? 0 : ((coalesced ? 89L : 81L) * peers * peers - (coalesced ? 39L : 47L) * peers) / 2, measurement.Comparisons);
@@ -69,13 +68,13 @@ public sealed class P968PublisherStreamIndexTests(ITestOutputHelper output)
         }
     }
 
-    private static Measurement Measure(int peers, bool indexed, bool coalesced, bool instrumented)
+    private static Measurement Measure(int peers, bool indexed, bool coalesced, bool instrumented, int workers)
     {
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var errors = new ConcurrentQueue<Exception>();
         long packets = 0;
-        using var publisher = new BroadcastPublisher((_, _) => packets++, 4, memorySink: true, pendingStreamIndex: indexed);
+        using var publisher = new BroadcastPublisher((_, _) => packets++, workers, memorySink: true, pendingStreamIndex: indexed);
         var diagnostics = instrumented ? new BroadcastPublisherDiagnostics() : null;
         publisher.Diagnostics = diagnostics;
         publisher.OnError = errors.Enqueue;

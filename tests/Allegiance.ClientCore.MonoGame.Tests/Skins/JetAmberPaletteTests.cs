@@ -31,6 +31,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests.Skins;
 /// graphics device is needed; the alarms/layout classes are the proof tool's job
 /// (<c>tools/hud2-proof --jet</c>).</para>
 /// </summary>
+[Collection("Training")]
 public sealed class JetAmberPaletteTests(ITestOutputHelper output)
 {
     private static readonly HudSkinDefinition GreenDefinition =
@@ -290,6 +291,20 @@ public sealed class JetAmberPaletteTests(ITestOutputHelper output)
     [Fact]
     public void Amber_draw_allocates_zero_bytes_per_frame()
     {
+        long bytes = MeasureAmberDraw();
+        Assert.Equal(0, bytes);
+    }
+
+    [Theory]
+    [InlineData(JetAllocationWindow.LargestCycle)]
+    [InlineData(JetAllocationWindow.MeasuredFrames - 1)]
+    public void Amber_window_catches_a_periodic_allocation(int period)
+        => Assert.True(MeasureAmberDraw(period) > 0);
+
+    private static object? _probeSink;
+
+    private long MeasureAmberDraw(int allocationPeriod = 0)
+    {
         var surface = new Silent();
         using var jet = Jet(surface, AmberDefinition);
         HudModel model = HudModelAdapter.Create(Frame(), CameraMode.Cockpit,
@@ -302,6 +317,7 @@ public sealed class JetAmberPaletteTests(ITestOutputHelper output)
             lead: new LeadIndicatorView(new(1200, 380), new(1160, 362), true, .8f, 1.0, Granted: true),
             targetPane: Pane("Enemy fighter"), selectionBracket: true);
         var frame = new HudDrawFrame(new Viewport(0, 0, 1920, 1080), null, false);
+        int frameNumber = 0;
         void Draw(int count)
         {
             for (int i = 0; i < count; i++)
@@ -309,17 +325,19 @@ public sealed class JetAmberPaletteTests(ITestOutputHelper output)
                 jet.Draw(model, frame);
                 jet.DrawCommand(model);
                 jet.DrawConsole(model);
+                frameNumber++;
+                if (allocationPeriod > 0 && frameNumber % allocationPeriod == 0)
+                    _probeSink = new byte[16];
             }
         }
-        // P1049 — the window is sized by the draw path's cache cycles (table in
-        // JetFlightSymbologyTests): 4,096 warm-up = one full cycle of the largest
-        // bounded cache, 8,192 measured = two cycles. Assertion unchanged: 0 B.
-        Draw(4_096);
+        // P1049b — fixed inputs repeat a one-frame steady state; cache capacity
+        // is not a frame cycle. Shared window and source audit: JetAllocationWindow.
+        Draw(JetAllocationWindow.WarmupFrames);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(8_192);
+        Draw(JetAllocationWindow.MeasuredFrames);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1041 Jet amber: {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
-        Assert.Equal(0, bytes);
+        output.WriteLine($"P1041 Jet amber: {bytes} B / {JetAllocationWindow.MeasuredFrames} frames = {bytes / (double)JetAllocationWindow.MeasuredFrames} B/frame");
+        return bytes;
     }
 
     // ── training preference restore ───────────────────────────────────────
