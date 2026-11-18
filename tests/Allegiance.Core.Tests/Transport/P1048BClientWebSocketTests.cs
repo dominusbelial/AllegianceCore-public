@@ -44,7 +44,8 @@ public sealed class P1048BClientWebSocketTests
     {
         foreach (var parse in new Func<string, WebSocketEndpoint>[] { WebSocketEndpoint.FromServerListing, WebSocketEndpoint.FromConfiguration })
         {
-            if (!accepted) Assert.Throws<ArgumentException>(() => parse(input));
+            if (!accepted || parse == WebSocketEndpoint.FromServerListing && input.StartsWith("ws:", StringComparison.Ordinal))
+                Assert.Throws<ArgumentException>(() => parse(input));
             else
             {
                 var endpoint = parse(input);
@@ -125,13 +126,13 @@ public sealed class P1048BClientWebSocketTests
     {
         var serverSite = new P1048WebSocketTests.Site();
         using var host = new WebSocketServerTransport(serverSite, P1048WebSocketTests.Settings()); host.Host(0, IPAddress.Loopback);
-        var first = WebSocketEndpoint.FromServerListing($"ws://127.0.0.1:{host.BoundPort}/game");
+        var first = WebSocketEndpoint.FromConfiguration($"ws://127.0.0.1:{host.BoundPort}/game");
         serverSite.Receive = (id, _) => host.Send(id, FedPacket.Pack(new LogonAck { FValidated = true, ShipID = 1 }.Encode()), true);
         await using var session = new Allegiance.ClientCore.Session.ConnectionSession { WebSocketEndpoint = first, WebSocketOrigin = "http://localhost" };
         session.EnableAutoReconnect(5);
         await session.ConnectAsync(host.BoundPort, "P1048B-resume");
         await P1048WebSocketTests.Until(() => serverSite.Joins.Count == 1);
-        session.WebSocketEndpoint = WebSocketEndpoint.FromServerListing("ws://127.0.0.1:1/changed");
+        session.WebSocketEndpoint = WebSocketEndpoint.FromConfiguration("ws://127.0.0.1:1/changed");
         session.WebSocketOrigin = "http://wrong.invalid";
         host.ClosePeer(serverSite.Joins.Single());
         await P1048WebSocketTests.Until(() => session.ResumeSuccesses == 1 && !session.Reconnecting);

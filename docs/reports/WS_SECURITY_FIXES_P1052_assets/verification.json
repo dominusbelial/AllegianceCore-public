@@ -1,0 +1,608 @@
+{
+  "task": "P1052",
+  "sdk": "10.0.404",
+  "solution": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "tools": {
+    "projects": 145,
+    "warnings": 0,
+    "errors": 0
+  },
+  "security": {
+    "originalRwsCases": 7,
+    "newCases": 82,
+    "total": 89,
+    "repeats": 3,
+    "passedExecutions": 267,
+    "methodProcesses": 54,
+    "skipped": 0,
+    "failed": 0,
+    "fastPassed": 89,
+    "byProject": {
+      "Core": 19,
+      "Lobby": 50,
+      "Desktop": 10,
+      "Browser": 10
+    }
+  },
+  "regressions": [
+    {
+      "suite": "p1048",
+      "project": "Core",
+      "filter": "FullyQualifiedName~P1048&FullyQualifiedName!~P1048BClientWebSocketTests&FullyQualifiedName!~P1048BJoinTests&FullyQualifiedName!~P1048BRouteTests&FullyQualifiedName!~P1048BReceiveTests",
+      "exit": 0,
+      "counts": {
+        "Passed": 135
+      }
+    },
+    {
+      "suite": "p1048b",
+      "project": "Core",
+      "filter": "FullyQualifiedName~P1048BClientWebSocketTests|FullyQualifiedName~P1048BJoinTests|FullyQualifiedName~P1048BRouteTests|FullyQualifiedName~P1048BReceiveTests",
+      "exit": 0,
+      "counts": {
+        "Passed": 49
+      }
+    },
+    {
+      "suite": "core-regression",
+      "project": "Core",
+      "filter": "FullyQualifiedName~Server|FullyQualifiedName~Transport|FullyQualifiedName~Identity|FullyQualifiedName~Credential|FullyQualifiedName~P808|FullyQualifiedName~P813c|FullyQualifiedName~P1022|FullyQualifiedName~P1023|FullyQualifiedName~P1030|FullyQualifiedName~P1031|FullyQualifiedName~P1032|FullyQualifiedName~P1033|FullyQualifiedName~P1034|FullyQualifiedName~P1029|FullyQualifiedName~P1026|FullyQualifiedName~P1048",
+      "exit": 1,
+      "counts": {
+        "Passed": 820,
+        "NotExecuted": 2,
+        "Failed": 1
+      }
+    },
+    {
+      "suite": "p897-ownership",
+      "project": "ClientCore.MonoGame",
+      "filter": "FullyQualifiedName~P897|FullyQualifiedName~P974|FullyQualifiedName~P975",
+      "exit": 0,
+      "counts": {
+        "Passed": 786
+      }
+    },
+    {
+      "suite": "session-ownership",
+      "project": "ClientCore",
+      "filter": "FullyQualifiedName~P974SessionOwnershipTests|FullyQualifiedName~P975",
+      "exit": 0,
+      "counts": {
+        "Passed": 20
+      }
+    },
+    {
+      "suite": "lobby-regression",
+      "project": "Lobby",
+      "filter": null,
+      "exit": 0,
+      "counts": {
+        "Passed": 262,
+        "NotExecuted": 3
+      }
+    },
+    {
+      "suite": "browser-regression",
+      "project": "ClientCore.Game.Browser",
+      "filter": null,
+      "exit": 0,
+      "counts": {
+        "Passed": 33
+      }
+    }
+  ],
+  "consoleIsolation": [
+    {
+      "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "outcome": "Passed",
+      "seconds": 0.4470581
+    },
+    {
+      "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "outcome": "Passed",
+      "seconds": 0.4624985
+    },
+    {
+      "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "outcome": "Passed",
+      "seconds": 0.4612172
+    }
+  ],
+  "nativeAot": {
+    "configuration": "Release",
+    "rid": "linux-x64",
+    "warnings": 0,
+    "trimWarnings": 0,
+    "aotWarnings": 0,
+    "sha256": "c3da23732af4a3fd02d168c9ff8a55091c0fe033cf863a424dc5bb4926bfba4a",
+    "bytes": 26860400,
+    "proof": {
+      "passed": true,
+      "nativeAot": true,
+      "canonicalLogon": "AotPilot",
+      "sideSelect": true,
+      "pingEcho": true,
+      "replayRefused": true,
+      "listenerSubprotocol": "allegiance-fed-v1",
+      "shipId": 8098
+    },
+    "cleanShutdown": true
+  },
+  "preIdnFast": {
+    "tier": "fast",
+    "seconds": 865.7107475829544,
+    "projects": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "count": 12,
+        "outcomes": {
+          "Passed": 12
+        }
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "count": 31,
+        "outcomes": {
+          "Passed": 31
+        }
+      },
+      "Allegiance.Lobby.Tests": {
+        "count": 250,
+        "outcomes": {
+          "Passed": 250
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5881,
+        "outcomes": {
+          "Passed": 5877,
+          "NotExecuted": 4
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2451,
+        "outcomes": {
+          "Passed": 2449,
+          "Failed": 2
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6771,
+        "outcomes": {
+          "Passed": 6767,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1521750663129973,
+      "referenceMs": 4.3437,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.521750663129973
+    },
+    "timingOffenders": [],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03531002998352051,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "preIdnFastIsolations": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.3454879
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 2,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.3209273
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.3377543
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 4,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+          "outcome": "Passed",
+          "seconds": 1.8764623
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "repeat": 2,
+      "exit": 1,
+      "selectedCount": 4,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+          "outcome": "Failed",
+          "seconds": 1.8506497
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+      "repeat": 3,
+      "exit": 1,
+      "selectedCount": 4,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+          "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+          "outcome": "Failed",
+          "seconds": 1.8972274
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5194355
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "repeat": 2,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5418851
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+          "outcome": "Passed",
+          "seconds": 0.5560503
+        }
+      ]
+    }
+  ],
+  "finalFast": {
+    "tier": "fast",
+    "seconds": 870.1358296989929,
+    "projects": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "count": 12,
+        "outcomes": {
+          "Passed": 12
+        }
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "count": 33,
+        "outcomes": {
+          "Passed": 33
+        }
+      },
+      "Allegiance.Lobby.Tests": {
+        "count": 259,
+        "outcomes": {
+          "Passed": 259
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 5883,
+        "outcomes": {
+          "Passed": 5879,
+          "NotExecuted": 4
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2451,
+        "outcomes": {
+          "Passed": 2450,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6771,
+        "outcomes": {
+          "Passed": 6765,
+          "Failed": 3,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.153978779840849,
+      "referenceMs": 4.3505,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.53978779840849
+    },
+    "timingOffenders": [],
+    "errors": [
+      "Allegiance.ClientCore.Tests: main failed",
+      "Allegiance.Core.Tests: main failed"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.031658092979341745,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "finalFastIsolations": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.3499016
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 2,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.351312
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.3229629
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.4302384
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 2,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.450194
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_disengages_when_chased_enemy_flees_and_returns_to_charge",
+          "outcome": "Passed",
+          "seconds": 1.3946715
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+      "repeat": 1,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "outcome": "Passed",
+          "seconds": 0.3871459
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+      "repeat": 2,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "outcome": "Passed",
+          "seconds": 0.4800054
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 1,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "method": "Allegiance.Core.Tests.P590PodRescueTests.Diverter_intercepts_and_rescues_a_moving_pod",
+          "outcome": "Passed",
+          "seconds": 0.4134201
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "repeat": 1,
+      "exit": 1,
+      "selectedCount": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.1866693
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "repeat": 2,
+      "exit": 1,
+      "selectedCount": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Failed",
+          "seconds": 0.1462916
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+      "repeat": 3,
+      "exit": 0,
+      "selectedCount": 3,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+          "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+          "outcome": "Passed",
+          "seconds": 0.2066499
+        }
+      ]
+    }
+  ],
+  "glossary": {
+    "paths": 964,
+    "passed": true
+  },
+  "parityPassed": true,
+  "whitespacePassed": true,
+  "compose": "not run: Docker unavailable",
+  "commits": 0,
+  "pushes": 0
+}

@@ -9,15 +9,10 @@ using Allegiance.Server;
 namespace Allegiance.Core.Tests;
 
 /// <summary>RWS — adversarial review of the game-server WebSocket transport (P1048 / P1048b).
-/// Each test states the behaviour the code SHOULD have. Every one was run unskipped and
-/// failed before being marked pending; RWS_REPORT.md records how.</summary>
+/// Original regression proofs, enabled by P1052; see WS_SECURITY_REVIEW_RWS.md.</summary>
 [Collection("LiveNetwork")]
 public sealed class RwsReviewTests
 {
-    private const string F1 = "RWS finding F1 — pending fix";
-    private const string F2 = "RWS finding F2 — pending fix";
-    private const string F4 = "RWS finding F4 — pending fix";
-
     /// <summary>The documented production topology: one trusted TLS proxy on loopback,
     /// every other limit left at its default.</summary>
     private static WebSocketConfig Proxied()
@@ -31,7 +26,7 @@ public sealed class RwsReviewTests
     private static Dictionary<string, string> Forwarded(string source) => new()
     { ["X-Forwarded-For"] = source, ["X-Forwarded-Proto"] = "https" };
 
-    [Fact(Skip = F1)]
+    [Fact]
     public async Task F1_one_remote_source_cannot_spend_the_proxys_handshake_budget_for_everyone()
     {
         var settings = Proxied();
@@ -48,7 +43,7 @@ public sealed class RwsReviewTests
         Assert.Equal(IPAddress.Parse("198.51.100.2"), host.PeerAddress(site.Joins.Single()));
     }
 
-    [Fact(Skip = F1)]
+    [Fact]
     public async Task F1_one_remote_source_cannot_hold_every_connection_slot_of_the_proxy()
     {
         var settings = Proxied();
@@ -68,7 +63,7 @@ public sealed class RwsReviewTests
         finally { foreach (var socket in held) socket.Dispose(); }
     }
 
-    [Fact(Skip = F2)]
+    [Fact]
     public void F2_one_IPv6_subscriber_prefix_cannot_spend_the_global_handshake_budget()
     {
         // A single IPv6 subscriber controls a whole /64. Defaults unchanged.
@@ -85,7 +80,7 @@ public sealed class RwsReviewTests
         Assert.True(guard.TryAttempt(IPAddress.Parse("203.0.113.9"), 2));
     }
 
-    [Fact(Skip = F4)]
+    [Fact]
     public async Task F4_client_does_not_follow_a_handshake_redirect_away_from_the_validated_route()
     {
         var site = new P1048WebSocketTests.Site();
@@ -103,7 +98,7 @@ public sealed class RwsReviewTests
         });
         // The only route that was validated is the advertised one.
         using var client = new WebSocketTransport(new P1048WebSocketTests.Site(),
-            WebSocketEndpoint.FromServerListing($"ws://127.0.0.1:{port}/advertised"), "http://localhost");
+            WebSocketEndpoint.FromConfiguration($"ws://127.0.0.1:{port}/advertised"), "http://localhost");
         await Assert.ThrowsAnyAsync<Exception>(() => client.JoinAsync("", 0, ""));
         await redirect;
         Assert.False(client.IsConnected);

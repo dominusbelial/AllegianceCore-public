@@ -3,14 +3,13 @@ using System.Net.Http.Json;
 namespace Allegiance.Lobby.Tests;
 
 /// <summary>RWS — adversarial review of the advertised WebSocket route (P1048b).
-/// Each test states the behaviour the directory SHOULD have; all were run unskipped
-/// and failed before being marked pending. See RWS_REPORT.md.</summary>
+/// Original regression proofs, enabled by P1052; see WS_SECURITY_REVIEW_RWS.md.</summary>
 public class RwsReviewTests
 {
     // The directory pins a listing's Address to the registrant's socket source, but the
     // browser route is free text: an anonymous, unverified registrant on a public address
     // can publish a route to the PLAYER'S OWN loopback or to an unrelated third-party host.
-    [Theory(Skip = "RWS finding F3 — pending fix")]
+    [Theory]
     [InlineData("ws://127.0.0.1:6080/game")]
     [InlineData("ws://localhost:9229/json")]
     [InlineData("wss://third-party.invalid/anything?x=1")]

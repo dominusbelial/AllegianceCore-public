@@ -41,7 +41,7 @@ public sealed class WebSocketServerTransport : IServerTransport, IDisposable
     {
         if (!settings.Enabled) throw new InvalidOperationException("WebSocket listener is disabled");
         settings.Validate(); _site = site; _settings = settings;
-        _physical = new(settings); _sources = new(settings);
+        _physical = new(settings, settings.KnownProxies.Select(IPAddress.Parse)); _sources = new(settings);
     }
     public string ProtocolName => "websocket";
     public bool IsConnected => _running;
