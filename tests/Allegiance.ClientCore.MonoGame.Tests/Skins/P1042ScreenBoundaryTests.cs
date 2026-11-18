@@ -318,6 +318,8 @@ public sealed class P1042ScreenBoundaryTests
         public void DrawIntro(in IntroMainFrame frame) { }
         public void DrawHangar(in HangarScreenFrame frame) { }
         public void DrawLoadout(in LoadoutScreenFrame frame) { }
+        public void DrawIntroView(in IntroViewFrame frame) { }
+        public void DrawCareer(in CareerScreenFrame frame) { }
         public void Dispose() { }
     }
 
@@ -330,6 +332,8 @@ public sealed class P1042ScreenBoundaryTests
         public void Control(string family, string id, RectangleF drawn)
             => Controls.Add((family, id, drawn.X, drawn.Y, drawn.Width, drawn.Height));
         public void Plate(string family, string id, RectangleF box) { }
+        public void Content(string family, string id, RectangleF box, string text) => Contents.Add((id, text, box));
+        public readonly List<(string Id, string Text, RectangleF Box)> Contents = new();
         public void Begin() { }
         public void End() { }
         public void Line(Vector2 a, Vector2 b, float width, Color color) { }

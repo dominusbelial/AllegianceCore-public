@@ -43,6 +43,29 @@ public interface IScreenSkinRenderer : IDisposable
     /// <see cref="LoadoutScreenFrame.V2Layout"/> is present, else the native-layout
     /// docked shop.</summary>
     void DrawLoadout(in LoadoutScreenFrame frame);
+
+    /// <summary>P1042b — draw one pre-game intro sub-view (Find Server, server browser
+    /// joins, host, join link, single-player chooser, skirmish setup, training list,
+    /// training suggest, slideshow hint, create game, benchmark, options/settings, help,
+    /// credits). The caller already opened its SpriteBatch session; the slideshow's
+    /// native slide art is content and is drawn by the caller, never by a skin.</summary>
+    void DrawIntroView(in IntroViewFrame frame);
+
+    /// <summary>P1042b — draw the career/squads/events screen. A skin that keeps the
+    /// P808c composition forwards to <see cref="CareerScreenRenderer"/>; a vector skin
+    /// re-inks it through a palette and frames its tabs/panel.</summary>
+    void DrawCareer(in CareerScreenFrame frame);
+}
+
+/// <summary>
+/// P1042b — the CONTENT painter a vector skin borrows for a family whose composition is
+/// owned by a shared renderer (the career/squads/events screen, whose P808c renderer needs
+/// the SpriteBatch and fonts). The skin passes a palette and frames the result; it cannot
+/// reach a model action from here.
+/// </summary>
+public interface IScreenContentRenderer
+{
+    void DrawCareer(in CareerScreenFrame frame, CareerScreenPalette? palette);
 }
 
 /// <summary>
@@ -61,6 +84,17 @@ public interface IScreenRectAudit
     /// <summary>One plate/frame the chrome drew around a control (its own box, so the
     /// proof can check a label plate really backs the text it carries).</summary>
     void Plate(string family, string id, RectangleF box);
+
+    /// <summary>
+    /// P1042b — a text run drawn by the shared CONTENT renderer inside a control the
+    /// screen chrome also draws (the hangar's port-only Buy/Def cells and the native
+    /// hover string). <paramref name="id"/> is the same control id the chrome reports,
+    /// so the audit can flag chrome text that crosses a content label of the SAME
+    /// control: that is the doubled-Buy/Def defect class (<c>TextOverlapCross</c>).
+    /// The proof surface implements this; production surfaces do not, so the cost is
+    /// one type test per run and no allocation.
+    /// </summary>
+    void Content(string family, string id, RectangleF box, string text);
 }
 
 /// <summary>P1042 — the semantic action ids of the intro main menu, in
@@ -72,6 +106,38 @@ public static class ScreenActions
     public const string Intro = "intro";
     public const string Hangar = "hangar";
     public const string Loadout = "loadout";
+
+    /// <summary>P1042b — the intro sub-view chrome elements.</summary>
+    public const string ViewTitle = "view.title";
+    public const string ViewSubtitle = "view.subtitle";
+    public const string ViewBody = "view.body";
+    public const string ViewHint = "view.hint";
+
+    /// <summary>P1042b — the career screen's chrome elements.</summary>
+    public const string Career = "career";
+    public const string CareerPanel = "career.panel";
+    public const string CareerTitle = "career.title";
+
+    /// <summary>P1042b — precomputed row ids (never formatted during Draw).</summary>
+    private static readonly string[] ViewRowIds = BuildViewRowIds();
+
+    private static string[] BuildViewRowIds()
+    {
+        var ids = new string[32];
+        for (int i = 0; i < ids.Length; i++) ids[i] = "view.row." + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return ids;
+    }
+
+    /// <summary>The audit id of a sub-view row (a constant).</summary>
+    public static string ViewRow(int index) =>
+        index >= 0 && index < ViewRowIds.Length ? ViewRowIds[index] : "view.row.none";
+
+    private static readonly string[] CareerTabIds =
+        ["career.tab.0", "career.tab.1", "career.tab.2", "career.tab.3", "career.tab.4"];
+
+    /// <summary>The audit id of a career tab (a constant).</summary>
+    public static string CareerTab(int index) =>
+        index >= 0 && index < CareerTabIds.Length ? CareerTabIds[index] : "career.tab.none";
 
     /// <summary>The intro's non-row chrome elements (title, subtitle, pilot field, identity
     /// status line, key hint). Constants: the draw path never formats a string.</summary>

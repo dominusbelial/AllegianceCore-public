@@ -87,7 +87,7 @@ public sealed partial class Game1
             jetScreen = new Rendering.Jet.JetScreenSkinRenderer(
                 new Rendering.Jet.JetSpriteBatchSurface(_spriteBatch, _whitePixel, _hudSmall, _hudBig),
                 _hangarScreenRenderer, _dockedScreenRenderer, _loadoutV2Renderer,
-                _hudSettings, _jetPalettes);
+                _hudSettings, _jetPalettes, careerContent: introPainter);
         }
         InstallScreenSkins(new ScreenSkinRegistry(classicScreen, modernScreen, jetScreen));
         _screenSkins!.Publish(_hudSkins.Active.Renderer.Id, JetSkinEnabled());

@@ -39,6 +39,9 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
     private readonly JetPaletteSwitcher? _palettes;
     private readonly JetVectorPainter _green;
     private readonly JetVectorPainter _amber;
+    /// <summary>P1042b — the borrowed career content painter (the P808c renderer needs
+    /// the SpriteBatch/fonts; Jet supplies its palette and frames the tabs/panel).</summary>
+    private readonly IScreenContentRenderer? _careerContent;
 
     private const float PlateAlpha = JetScreenChrome.PlateAlpha;
     private const float DimPlateAlpha = JetScreenChrome.DimPlateAlpha;
@@ -49,7 +52,8 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
 
     public JetScreenSkinRenderer(IJetVectorSurface surface, HangarScreenRenderer? hangar,
         DockedScreenRenderer? docked, LoadoutV2Renderer? loadoutV2, HudSettings settings,
-        JetPaletteSwitcher? palettes, string? paletteOverride = null)
+        JetPaletteSwitcher? palettes, string? paletteOverride = null,
+        IScreenContentRenderer? careerContent = null)
     {
         ArgumentNullException.ThrowIfNull(surface);
         ArgumentNullException.ThrowIfNull(settings);
@@ -59,6 +63,7 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
         _loadoutV2 = loadoutV2;
         _palettes = palettes;
         _paletteOverride = paletteOverride;
+        _careerContent = careerContent;
         var catalog = HudSkinResolver.Catalog;
         var green = catalog.TryGet(HudSkinIds.Jet) ?? throw new ArgumentException("The Jet skin definition is not installed.");
         var amber = catalog.TryGetVariant(HudSkinIds.Jet, JetPaletteIds.Amber) ?? green;
@@ -178,12 +183,141 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
         painter.Drawn(ScreenActions.IntroHint);
     }
 
+    // ── Intro sub-views ────────────────────────────────────────────────────
+    /// <summary>
+    /// P1042b — Jet chrome for the pre-game sub-views: title/subtitle keylined at the classic
+    /// anchors, every selectable row framed and plated at its own <see cref="ScreenRow.Rect"/>
+    /// (the rectangle the drawing code resolved), the selection marked by shape (full stroke +
+    /// brackets + hot ink), every other run keylined in the five-role palette. Native strings
+    /// and anchors only; no command, key or focus rule is reachable from the frame.
+    /// </summary>
+    public void DrawIntroView(in IntroViewFrame frame)
+    {
+        var painter = Painter;
+        float w = frame.Width, h = frame.Height;
+        // Drawn inside the caller's open SpriteBatch session (like DrawIntro).
+
+        if (frame.Title.Length > 0)
+        {
+            var t = painter.Measure(frame.Title, true, 1f);
+            painter.Element(ScreenActions.ViewTitle);
+            DrawCentered(painter, frame.Title, w, 28f, large: true, FitWidth(t, w, 1f), painter.Primary);
+            painter.Drawn(ScreenActions.ViewTitle);
+        }
+        if (frame.Subtitle.Length > 0)
+        {
+            var s = painter.Measure(frame.Subtitle, false, 1f);
+            painter.Element(ScreenActions.ViewSubtitle);
+            DrawCentered(painter, frame.Subtitle, w, 82f, large: false, FitWidth(s, w, 1f),
+                painter.Dim);
+            painter.Drawn(ScreenActions.ViewSubtitle);
+        }
+
+        // Selection/focus plates that are NOT a row's own band (a focused text field).
+        for (int i = 0; i < frame.Plates.Count; i++)
+        {
+            var plate = frame.Plates[i];
+            bool rowOwns = false;
+            for (int r = 0; r < frame.Rows.Count; r++)
+                if (SameRect(frame.Rows[r].Rect, plate.Rect)) { rowOwns = true; break; }
+            if (rowOwns) continue;
+            // A focused text field: the plate + its keyline only (a corner bracket would
+            // reach into the first glyph — the field keeps the classic 6 px text inset).
+            var box = new RectangleF(plate.Rect.X, plate.Rect.Y, plate.Rect.Width, plate.Rect.Height);
+            painter.FillPlate(box, plate.Role == ScreenPlateRole.Selection ? PlateAlpha : DimPlateAlpha);
+        }
+
+        // Rows: the band is the frame's resolved rectangle (draw == hit).
+        for (int i = 0; i < frame.Rows.Count; i++)
+        {
+            var row = frame.Rows[i];
+            var box = new RectangleF(row.Rect.X, row.Rect.Y, row.Rect.Width, row.Rect.Height);
+            if (box.Width <= 0f || box.Height <= 0f) continue;
+            bool sel = row.Selected;
+            string id = ScreenActions.ViewRow(i);
+            painter.Element(id);
+            painter.FillPlate(box, sel ? PlateAlpha : DimPlateAlpha);
+            painter.CornerBrackets(box, BracketArm, sel ? painter.Stroke : painter.Hairline,
+                sel ? painter.Hot : painter.Dim);
+            float scale = FitInside(row.Label, box, MathF.Min(1f, row.Scale), painter);
+            painter.Text(row.Label, new Vector2(box.X + box.Width / 2f, box.Y + box.Height / 2f),
+                false, scale, sel ? painter.Hot : JetInk(painter, row.Role), centered: true);
+            painter.Drawn(id);
+            Audit?.Control(ScreenActions.ViewBody, id, box);
+            Audit?.Plate(ScreenActions.ViewBody, id, box);
+        }
+
+        // Non-selectable runs keep their classic anchors and strings, keylined.
+        for (int i = 0; i < frame.Lines.Count; i++)
+        {
+            var line = frame.Lines[i];
+            if (line.Text.Length == 0) continue;
+            var ink = painter.Measure(line.Text, false, 1f);
+            float available = MathF.Max(1f, w - line.Position.X - 20f);
+            float scale = ink.X > 0f ? MathF.Min(line.Scale, available / ink.X) : line.Scale;
+            painter.Element(ScreenActions.ViewBody);
+            painter.Text(line.Text, line.Position, false, scale, JetInk(painter, line.Role));
+            painter.Drawn(ScreenActions.ViewBody);
+        }
+    }
+
+    /// <summary>P1042b — career/squads/events: the unchanged P808c composition re-inked
+    /// through the Jet palette, then the five mode tabs and the table panel framed at the
+    /// rectangles <see cref="CareerScreenRenderer.TabRect"/>/<see cref="CareerScreenRenderer.PanelRect"/>
+    /// resolve (the same source the tabs are drawn from).</summary>
+    public void DrawCareer(in CareerScreenFrame frame)
+    {
+        _careerContent?.DrawCareer(frame, JetCareerPalette(Painter));
+        var painter = Painter;
+        var panel = CareerScreenRenderer.PanelRect(frame.Width, frame.Height);
+        painter.Element(ScreenActions.CareerPanel);
+        painter.CornerBrackets(new RectangleF(panel.X, panel.Y, panel.Width, panel.Height),
+            BracketArm, painter.Hairline, painter.Dim);
+        painter.Drawn(ScreenActions.CareerPanel);
+        // The tabs use the renderer's own measured rectangles: one rectangle for the drawn
+        // tab and the chrome that frames it.
+        for (int i = 0; i < CareerScreenRenderer.TabLabels.Length; i++)
+        {
+            var rect = CareerScreenRenderer.TabRect(
+                painter.Measure(CareerScreenRenderer.TabLabels[i], false, 1f), i, frame.Width);
+            var box = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
+            string id = ScreenActions.CareerTab(i);
+            painter.Element(id);
+            painter.CornerBrackets(box, 6f, i == 0 ? painter.Stroke : painter.Hairline,
+                i == 0 ? painter.Hot : painter.Primary);
+            painter.Drawn(id);
+            Audit?.Control(ScreenActions.Career, id, box);
+        }
+    }
+
+    /// <summary>The Jet palette mapped onto the career screen's inks.</summary>
+    private static CareerScreenPalette JetCareerPalette(JetVectorPainter painter) => new(
+        painter.Primary, painter.Primary, painter.Dim, painter.Plate * 0.92f,
+        painter.Plate * 0.75f, painter.Hot);
+
+    /// <summary>The Jet role a classic screen role takes.</summary>
+    private static Color JetInk(JetVectorPainter painter, ScreenInkRole role) => role switch
+    {
+        ScreenInkRole.Dim => painter.Dim,
+        ScreenInkRole.Warning => painter.Hot,
+        ScreenInkRole.Highlight => painter.Hot,
+        _ => painter.Primary,
+    };
+
+    private static bool SameRect(RectangleF a, RectangleF b) =>
+        MathF.Abs(a.X - b.X) < 0.01f && MathF.Abs(a.Y - b.Y) < 0.01f
+        && MathF.Abs(a.Width - b.Width) < 0.01f && MathF.Abs(a.Height - b.Height) < 0.01f;
+
     // ── Hangar ─────────────────────────────────────────────────────────────
     public void DrawHangar(in HangarScreenFrame frame)
     {
         // Content first: the native 800x600 screen, artwork and launch animation are
-        // unchanged (HangarScreenRenderer's own SpriteBatch session).
-        _hangar?.Draw(frame.Viewport, frame.Hover, frame.Launch, frame.BoardState, frame.Developments);
+        // unchanged (HangarScreenRenderer's own SpriteBatch session). P1042b — the
+        // port-verb cells and the native hover string are suppressed there because Jet
+        // paints plate + keylined text at those same rectangles below: exactly one label
+        // is visible (the doubled Buy/Def defect).
+        _hangar?.Draw(frame.Viewport, frame.Hover, frame.Launch, frame.BoardState, frame.Developments,
+            drawPortChrome: false);
 
         var painter = Painter;
         _surface.Begin();

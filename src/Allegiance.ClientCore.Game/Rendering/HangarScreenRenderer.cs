@@ -1,4 +1,6 @@
 using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -32,12 +34,17 @@ public sealed class HangarScreenRenderer : IDisposable
     private readonly NativeFonts? _nativeFonts;
     private readonly GraphicsDevice _graphics;
     private readonly IAssetSource _assets;
+    /// <summary>P1042b — optional content audit (the proof's recording surface). Every
+    /// production caller passes null; when set, each port-chrome text run is reported
+    /// with its measured box so the chrome audit can catch a doubled label.</summary>
+    private readonly IScreenRectAudit? _audit;
     private HangarArt? _art;
     private float? _hoverLineSpacing;
     private bool _disposed;
 
     public HangarScreenRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont fallbackFont,
-        NativeFonts? nativeFonts, GraphicsDevice graphics, IAssetSource assets)
+        NativeFonts? nativeFonts, GraphicsDevice graphics, IAssetSource assets,
+        IScreenRectAudit? audit = null)
     {
         _spriteBatch = spriteBatch;
         _whitePixel = whitePixel;
@@ -45,6 +52,7 @@ public sealed class HangarScreenRenderer : IDisposable
         _nativeFonts = nativeFonts;
         _graphics = graphics;
         _assets = assets;
+        _audit = audit;
     }
 
     /// <summary>Whether the native screen can be drawn (the background resolves
@@ -63,9 +71,16 @@ public sealed class HangarScreenRenderer : IDisposable
     /// <summary>Draw the native hangar screen. <paramref name="hover"/> is the
     /// verb under the pointer, <paramref name="launch"/> the launch pane's frame
     /// animation, <paramref name="boardState"/> the native BoardState
-    /// (<c>WinTrek/console.cpp:797-804</c>; 2 = turret gunner).</summary>
+    /// (<c>WinTrek/console.cpp:797-804</c>; 2 = turret gunner).
+    /// <para>P1042b — <paramref name="drawPortChrome"/> false suppresses the two pieces
+    /// the port draws INSIDE control rectangles the screen chrome also owns: the
+    /// port-only <c>Buy</c>/<c>Def</c> cells and the native hover string. Jet draws
+    /// plate + keylined text at those same rectangles through the boundary, so without
+    /// this the native label and the chrome label paint on top of each other (the
+    /// doubled Buy/Def defect). Classic/Modern keep the default and are unchanged.</para>
+    /// </summary>
     public void Draw(Viewport viewport, HangarAction hover, HangarLaunchAnimation launch,
-        int? boardState, bool developments)
+        int? boardState, bool developments, bool drawPortChrome = true)
     {
         _art ??= new HangarArt(_graphics, _assets);
         int w = viewport.Width, h = viewport.Height;
@@ -83,8 +98,11 @@ public sealed class HangarScreenRenderer : IDisposable
             DrawControl(viewport, control, hover == control.Action, launch);
         }
 
-        DrawPortVerbs(viewport, hover);
-        DrawHoverText(viewport, transform, hover);
+        if (drawPortChrome)
+        {
+            DrawPortVerbs(viewport, hover);
+            DrawHoverText(viewport, transform, hover);
+        }
         if (HangarScreen.ShowsInTurretBadge(boardState) && _art.InTurret is { } badge)
             _spriteBatch.Draw(badge, HangarScreen.InTurretRect(w, h), Color.White);
 
@@ -142,6 +160,10 @@ public sealed class HangarScreenRenderer : IDisposable
             float scale = MathF.Min(1f, (rect.Width - 4) / MathF.Max(1f, _fallbackFont.MeasureString(label).X));
             _spriteBatch.DrawString(_fallbackFont, label, new Vector2(rect.X + 2, rect.Y + 1), Color.LightCyan,
                 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            // P1042b — report the label as CONTENT at the control the chrome also draws.
+            _audit?.Content(ScreenActions.Hangar, ScreenActions.HangarElement(action),
+                new RectangleF(rect.X + 2f, rect.Y + 1f, _fallbackFont.MeasureString(label).X * scale,
+                    _fallbackFont.MeasureString(label).Y * scale), label);
         }
     }
 
@@ -169,6 +191,11 @@ public sealed class HangarScreenRenderer : IDisposable
         }
         _spriteBatch.DrawString(font, text, new Vector2(x, pane.Y), HangarScreen.HoverTextColor,
             0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+        // P1042b — the native hover string is CONTENT drawn inside the same control the
+        // Jet chrome re-draws; report it so a doubled hover line is caught.
+        _audit?.Content(ScreenActions.Hangar, ScreenActions.HangarHover,
+            new RectangleF(x, pane.Y, font.MeasureString(text).X * scale, font.MeasureString(text).Y * scale),
+            text);
     }
 
     /// <summary>The bake and residual scale that put the native <c>hugeFont</c>

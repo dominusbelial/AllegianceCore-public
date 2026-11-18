@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Rendering;
@@ -56,6 +57,35 @@ public sealed partial class Game1
         ActiveScreen.DrawIntro(BuildIntroMainFrame(w, h, titleCol, dimCol, textCol));
     }
 
+    // ── P1042b — the pre-game sub-view boundary ─────────────────────────────
+    /// <summary>The active screen paints one read-only sub-view frame.</summary>
+    private void DrawIntroSubView(in IntroViewFrame frame) => ActiveScreen.DrawIntroView(frame);
+
+    /// <summary>Build one sub-view frame from the caller's already-resolved runs.</summary>
+    private IntroViewFrame BuildViewFrame(string view, string title, string subtitle,
+        List<ScreenRow> rows, List<ScreenTextRun> lines, List<ScreenPlate> plates,
+        Color titleCol, Color dimCol, Color textCol)
+        => new(GraphicsDevice.Viewport, view, title, subtitle, rows, lines, plates,
+            new ScreenInks(titleCol, textCol, dimCol, Color.Orange));
+
+    /// <summary>A centred, IntroLayout-resolved list row (chooser/skirmish/training).</summary>
+    private ScreenRow CenteredListRow(float width, string label, bool selected,
+        IntroLayoutResult layout, int index, float rowScale, Color titleCol, Color textCol)
+    {
+        string text = (selected ? "> " : "  ") + label;
+        var size = _hudSmall.MeasureString(text);
+        var row = layout.Rows[index];
+        return new ScreenRow(label, text, new Vector2((width - size.X) / 2f, row.Y + 4f),
+            new RectangleF(row.X, row.Y, row.Width, row.Height), rowScale, selected,
+            selected ? ScreenInkRole.Title : ScreenInkRole.Body, selected ? titleCol : textCol);
+    }
+
+    /// <summary>A left-anchored banded row (options, create game, host, benchmark, find
+    /// server): the band is the selection plate's own rectangle.</summary>
+    private static ScreenRow BandedRow(string label, string text, float x, float y,
+        RectangleF band, bool selected, ScreenInkRole role, Color ink)
+        => new(label, text, new Vector2(x, y), band, 1f, selected, role, ink);
+
     /// <summary>P1042 — the intro main menu as a read-only screen model. Every value is
     /// the model's own; nothing here can move the selection or issue a command.</summary>
     private IntroMainFrame BuildIntroMainFrame(float w, float h, Color titleCol, Color dimCol, Color textCol)
@@ -81,19 +111,20 @@ public sealed partial class Game1
 
     private void DrawIntroChooser(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
-        DrawIntroTitle(w, "Single Player", "Training or Skirmish", titleCol, dimCol);
-        var rows = _singlePlayerChooser.Rows;
-        var layout = IntroLayout.Compute(w, h, rows.Length);
-        for (int i = 0; i < rows.Length; i++)
+        var entries = _singlePlayerChooser.Rows;
+        var layout = IntroLayout.Compute(w, h, entries.Length);
+        var rows = new List<ScreenRow>();
+        for (int i = 0; i < entries.Length; i++)
+            rows.Add(CenteredListRow(w, entries[i], i == _singlePlayerChooser.Selected, layout, i, 1f,
+                titleCol, textCol));
+        const string hint = "UP/DOWN select   ENTER choose   ESC back";
+        var fsz = _hudSmall.MeasureString(hint);
+        var lines = new List<ScreenTextRun>
         {
-            var label = (i == _singlePlayerChooser.Selected ? "> " : "  ") + rows[i];
-            var size = _hudSmall.MeasureString(label);
-            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
-                i == _singlePlayerChooser.Selected ? titleCol : textCol);
-        }
-        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER choose   ESC back");
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER choose   ESC back",
-            new Vector2((w - fsz.X) / 2f, layout.FooterY), dimCol);
+            new(hint, new Vector2((w - fsz.X) / 2f, layout.FooterY), 1f, ScreenInkRole.Dim, dimCol),
+        };
+        DrawIntroSubView(BuildViewFrame("singleplayer", "Single Player", "Training or Skirmish",
+            rows, lines, new List<ScreenPlate>(), titleCol, dimCol, textCol));
     }
 
 

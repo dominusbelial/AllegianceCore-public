@@ -6,6 +6,8 @@ using Allegiance.SinglePlayer;
 using Allegiance.SinglePlayer.Benchmark;
 using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
@@ -82,10 +84,24 @@ public sealed partial class Game1
     }
     private void DrawBenchmarkMenu(float w, float h, Color title, Color dim, Color text)
     {
-        DrawIntroTitle(w, "Showcase", _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles — and the one settings tune", title, dim);
+        var rows = new List<ScreenRow>();
         for (int i = 0; i < BenchmarkMenuLabels.Length; i++)
-            _spriteBatch.DrawString(_hudSmall, (i == _benchMenuIndex ? "> " : "  ") + BenchmarkMenuLabels[i], new Vector2(w * .2f, 210 + i * 38), i == _benchMenuIndex ? Color.Yellow : Color.White);
-        _spriteBatch.DrawString(_hudSmall, "A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s ×3) is the only RANKED score. Calibration tries a few worker sizings\nat the selected skirmish size and saves the fastest for this machine. Arrows / Enter; Escape skips.", new Vector2(w * .12f, h - 96), dim);
+        {
+            bool selected = i == _benchMenuIndex;
+            var band = new RectangleF(w * 0.2f, 210 + i * 38, w * 0.6f, 34);
+            rows.Add(BandedRow(BenchmarkMenuLabels[i],
+                (selected ? "> " : "  ") + BenchmarkMenuLabels[i], w * 0.2f, 210 + i * 38, band,
+                selected, selected ? ScreenInkRole.Highlight : ScreenInkRole.Plain,
+                selected ? Color.Yellow : Color.White));
+        }
+        var lines = new List<ScreenTextRun>
+        {
+            new("A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s x3) is the only RANKED score. Calibration tries a few worker sizings\nat the selected skirmish size and saves the fastest for this machine. Arrows / Enter; Escape skips.",
+                new Vector2(w * 0.12f, h - 96), 1f, ScreenInkRole.Dim, dim),
+        };
+        DrawIntroSubView(BuildViewFrame("benchmark", "Showcase",
+            _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles — and the one settings tune",
+            rows, lines, new List<ScreenPlate>(), title, dim, text));
     }
     private BenchmarkCommand? _benchmark;
     private BenchmarkResult? _benchResult;

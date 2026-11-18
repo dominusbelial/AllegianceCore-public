@@ -1,5 +1,7 @@
 using Allegiance.ClientCore.MonoGame.Discovery;
 using Allegiance.SinglePlayer;
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -219,12 +221,16 @@ public sealed partial class Game1
     private void DrawIntroHostLan(float w, float h, Color title, Color dim, Color text)
     {
         bool internet = _hostLanScreen.Options.HostInternet;
-        DrawIntroTitle(w, internet ? "Host internet game" : "Host LAN game", internet
-            ? "Friends join through Play Online on the same lobby" : "Friends join through Play LAN / Find Server or Direct Connect", title, dim);
-        var rows = _hostLanScreen.Rows;
-        for (int i = 0; i < rows.Length; i++)
-            _spriteBatch.DrawString(_hudSmall, (i == _hostLanScreen.Selected ? "> " : "  ") + rows[i],
-                new Vector2(48, 150 + i * 32), i == _hostLanScreen.Selected ? title : text);
+        var entries = _hostLanScreen.Rows;
+        var rows = new List<ScreenRow>();
+        for (int i = 0; i < entries.Length; i++)
+        {
+            bool selected = i == _hostLanScreen.Selected;
+            var band = new RectangleF(48, 150 + i * 32, w - 96f, 32);
+            rows.Add(BandedRow(entries[i], (selected ? "> " : "  ") + entries[i], 48, 150 + i * 32, band,
+                selected, selected ? ScreenInkRole.Title : ScreenInkRole.Body,
+                selected ? title : text));
+        }
         string[] help =
         [
             _skirmishStart is not null ? "Starting host... ESC cancels" : _skirmishError,
@@ -234,8 +240,13 @@ public sealed partial class Game1
             internet ? "Direct connection unavailable? Forward TCP/UDP or use Tailscale. Host quitting ends the game." : HostLanScreenModel.InternetHelp,
             "TYPE name / port / password   UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back"
         ];
+        var lines = new List<ScreenTextRun>();
         for (int i = 0; i < help.Length; i++)
-            _spriteBatch.DrawString(_hudSmall, help[i], new Vector2(32, h - 178 + i * 27), i == 0 ? Color.Orange : dim,
-                0, Vector2.Zero, Math.Min(1f, (w - 64) / Math.Max(1, _hudSmall.MeasureString(help[i]).X)), Microsoft.Xna.Framework.Graphics.SpriteEffects.None, 0);
+            lines.Add(new(help[i], new Vector2(32, h - 178 + i * 27),
+                Math.Min(1f, (w - 64) / Math.Max(1, _hudSmall.MeasureString(help[i]).X)),
+                i == 0 ? ScreenInkRole.Warning : ScreenInkRole.Dim, i == 0 ? Color.Orange : dim));
+        DrawIntroSubView(BuildViewFrame("hostlan", internet ? "Host internet game" : "Host LAN game", internet
+                ? "Friends join through Play Online on the same lobby" : "Friends join through Play LAN / Find Server or Direct Connect",
+            rows, lines, new List<ScreenPlate>(), title, dim, text));
     }
 }
