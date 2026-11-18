@@ -8,12 +8,10 @@ public sealed record BrowserServer(string Id, string Name, int Port, string Miss
     bool Verified, string? IdentityServerId, string? WebSocketUrl, bool PasswordRequired = false,
     string? MinClientVersion = null, BrowserMission[]? Missions = null)
 {
-    private string? _webSocketUrl = WebSocketEndpoint.NormalizeServerListing(WebSocketUrl);
-    public string? WebSocketUrl
-    {
-        get => _webSocketUrl;
-        init => _webSocketUrl = WebSocketEndpoint.NormalizeServerListing(value);
-    }
+    // P1052/P1051: the raw optional field is kept; every use goes through Route(),
+    // which applies the directory's rule (strict public WSS, or loopback routes
+    // only when the lobby itself is on loopback). Invalid routes yield null.
+    public string? Route(bool loopbackDirectory) => WebSocketEndpoint.NormalizeServerListing(WebSocketUrl, loopbackDirectory);
 }
 public sealed record BrowserMission(uint Cookie, string Name, bool PasswordRequired = false);
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true)]

@@ -1,0 +1,118 @@
+{
+  "failed": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+      "outcome": "Failed",
+      "duration": "00:00:01.8627054",
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (14.94 - 15.06)\nActual: 14.900000000054206",
+      "trxSha256": "57daf1f1d2cfa2b73c170f2d642f949c41a03aaeffd3d4e3727d9f5fb41f08fc"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+      "outcome": "Failed",
+      "duration": "00:00:00.1351332",
+      "message": "Assert.InRange() Failure: Value not in range\nRange:  (4.9000000000000004 - 5)\nActual: 5.0000000000000009",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy",
+      "outcome": "Failed",
+      "duration": "00:00:00.0835824",
+      "message": "the fire gate must refuse to fire while the Wingman is raw-aligned but not lead-aligned \u2014 the discriminant that fails if lead-solving were removed (a raw gate would have fired there)",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    }
+  ],
+  "skipped": [
+    {
+      "project": "Allegiance.Lobby.Tests",
+      "name": "Allegiance.Lobby.Tests.RwsReviewTests.F3_unverified_public_registrant_cannot_publish_a_route_it_does_not_own",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0010000",
+      "message": "RWS finding F3 \u2014 pending fix",
+      "trxSha256": "5ac73eb96c31875aca6a437cfc070ca5e0b85e44d5d64cb5e3ae4a547afa191b"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.RwsReviewTests.F2_one_IPv6_subscriber_prefix_cannot_spend_the_global_handshake_budget",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0010000",
+      "message": "RWS finding F2 \u2014 pending fix",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_dock_gates_refuse_illegal_docks",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0147185",
+      "message": "map has no enemy station in the same sector",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0196453",
+      "message": "artwork corpus at /srv/corpus/Artwork is not a git checkout of the packaging pin 4a60aa636405de66bca6bf48bff99c25a16a2ca3 (HEAD: fatal: not a git repository (or any parent up to mount point /srv)\nStopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).)",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.P760ServerCallbacksTests.ChangeStation_npc_upgrade_runs_when_the_dock_gates_refuse",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0225140",
+      "message": "map has no enemy station in the same sector",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.RwsReviewTests.F1_one_remote_source_cannot_spend_the_proxys_handshake_budget_for_everyone",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0010000",
+      "message": "RWS finding F1 \u2014 pending fix",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.RwsReviewTests.F1_one_remote_source_cannot_hold_every_connection_slot_of_the_proxy",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0010000",
+      "message": "RWS finding F1 \u2014 pending fix",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "name": "Allegiance.Core.Tests.RwsReviewTests.F4_client_does_not_follow_a_handshake_redirect_away_from_the_validated_route",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0010000",
+      "message": "RWS finding F4 \u2014 pending fix",
+      "trxSha256": "2f42d37e7293f92d56c725115eb588294eee9e408b941f4808ad896b9404eebd"
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0002901",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+      "trxSha256": "d992341547ef609c4e4d72724ae0a1eab8aad828b5efb842a8b4f5fd6d1f40b5"
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0008442",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+      "trxSha256": "d992341547ef609c4e4d72724ae0a1eab8aad828b5efb842a8b4f5fd6d1f40b5"
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "outcome": "NotExecuted",
+      "duration": "00:00:00.0002798",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md.",
+      "trxSha256": "d992341547ef609c4e4d72724ae0a1eab8aad828b5efb842a8b4f5fd6d1f40b5"
+    }
+  ]
+}

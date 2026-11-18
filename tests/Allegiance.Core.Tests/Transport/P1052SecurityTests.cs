@@ -222,4 +222,23 @@ public sealed class P1052SecurityTests
         }
         finally { drop.TrySetResult(); await app.StopAsync(); }
     }
+
+    // P1051 merge: the loopback-directory rule accepts only loopback or public WSS,
+    // and the strict listing rule still refuses every loopback route.
+    [Theory]
+    [InlineData("ws://127.0.0.1:8048/game", true)]
+    [InlineData("ws://localhost:8048/game", true)]
+    [InlineData("wss://[::1]/game", true)]
+    [InlineData("wss://game.invalid/game", true)]
+    [InlineData("ws://10.0.0.1/game", false)]
+    [InlineData("wss://10.0.0.1/game", false)]
+    [InlineData("ws://game.invalid/game", false)]
+    [InlineData("ws://user@127.0.0.1/game", false)]
+    public void Loopback_directory_listing_accepts_only_loopback_or_public_wss(string route, bool accepted)
+    {
+        if (accepted) Assert.NotNull(WebSocketEndpoint.FromLoopbackDirectoryListing(route));
+        else Assert.Throws<ArgumentException>(() => WebSocketEndpoint.FromLoopbackDirectoryListing(route));
+        if (new Uri(route).IsLoopback)
+            Assert.Throws<ArgumentException>(() => WebSocketEndpoint.FromServerListing(route));
+    }
 }

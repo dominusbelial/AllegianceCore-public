@@ -540,7 +540,8 @@ The lobby keeps the route only for an identity-verified registration, on both
 creation and refresh. It requires `wss` and a public host: private, loopback,
 link-local, unspecified and multicast IP literals and local DNS names are dropped.
 Only a registrant whose actual source is loopback may advertise a local/private
-WSS host for development; plaintext `ws` is never listed. DNS names are checked
+WSS host, or a plaintext `ws` route whose host is itself loopback, for local
+development (P1051); no other plaintext route is ever listed. DNS names are checked
 syntactically, including converted internationalized DNS labels, without resolving
 them: verification trusts the enrolled operator
 to control its advertised DNS route, not a domain-ownership or DNS-rebinding proof.
@@ -552,9 +553,11 @@ non-WebSocket schemes are rejected.
 Clients parse directory input with `WebSocketEndpoint.FromServerListing`: public
 `wss` only, including for the browser and desktop. Operator-owned
 `FromConfiguration` additionally permits `ws` loopback; it is used by direct
-local transport tests and is not a bypass for listing input. The earlier P1048B
-plaintext loopback browser-listing proof no longer qualifies under this rule;
-P1052 does not enable public browser joining or introduce a local listing bypass.
+local transport tests and is not a bypass for listing input. One narrow local
+exception: when the lobby the client reads is itself on loopback,
+`FromLoopbackDirectoryListing` also accepts a loopback `ws`/`wss` route (the
+local operator's own server); private/LAN and other plaintext routes are still
+refused. A client of a non-loopback lobby always uses the strict rule.
 Desktop handshakes (including reconnects) refuse HTTP redirects; the native
 browser WebSocket API already fails redirect responses.
 Leaving the key absent preserves the default-off discovery contract. No extra
@@ -562,9 +565,8 @@ Compose mapping or environment variable is introduced; the existing optional
 listener mapping and trusted proxy policy above apply.
 
 The browser menu reads routes only from a selected lobby listing and retains its
-existing loopback-only join gate. With P1052's public-only client listing rule,
-that earlier local directory join is unavailable, including for local WSS routes;
-this change does not bypass listing validation or enable public browser joining.
+existing loopback-only join gate; with a loopback lobby it uses the local
+exception above, so local browser play works. Public browser joining stays off.
 The starter-pack staging, ticket ordering and shared client session remain in
 place. Public hosting, other cores, password prompts, client update qualification,
 pointer capture and flight controls remain outside this slice. The earlier local

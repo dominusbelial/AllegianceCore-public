@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "browserVersion": "153.0.8010.0",
+  "cases": [
+    {
+      "name": "list failure returns and retries",
+      "passed": true
+    },
+    {
+      "name": "wrong-audience",
+      "refused": true,
+      "clearMessage": "invalid or expired lobby join token",
+      "noZombie": true
+    },
+    {
+      "name": "expired",
+      "refused": true,
+      "clearMessage": "invalid or expired lobby join token",
+      "noZombie": true
+    },
+    {
+      "name": "ticket failure retries through real fresh-ticket join",
+      "passed": true
+    },
+    {
+      "name": "replayed unexpired ticket",
+      "refused": true,
+      "clearMessage": "lobby join token already used",
+      "noZombie": true
+    },
+    {
+      "name": "wrong/stale mission cookie",
+      "refused": true,
+      "clearMessage": "The server refused this mission join.",
+      "noZombie": true,
+      "serverShipRegistryUnchanged": true
+    },
+    {
+      "name": "browser back-navigation retires the join",
+      "passed": true
+    }
+  ],
+  "inspection": {
+    "files": 573,
+    "bytes": 32906544,
+    "noSecrets": true
+  },
+  "noSecretsInLogsOrUrls": true
+}

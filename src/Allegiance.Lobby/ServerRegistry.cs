@@ -443,13 +443,15 @@ public sealed class ServerRegistry
         {
             // Address is pinned to the authenticated request's source by the
             // HTTP endpoint. Only a loopback registrant gets the local-dev host
-            // exception; even that registration must advertise wss.
+            // exception: wss, or a plaintext ws route that is itself loopback
+            // (P1051 local browser play; such a route is only honoured by clients
+            // whose lobby is also on loopback).
             bool local = System.Net.IPAddress.TryParse(req.Address, out var source)
                 && System.Net.IPAddress.IsLoopback(source.IsIPv4MappedToIPv6 ? source.MapToIPv4() : source);
             var endpoint = local
                 ? Allegiance.Core.Transport.WebSocketEndpoint.FromConfiguration(route)
                 : Allegiance.Core.Transport.WebSocketEndpoint.FromServerListing(route);
-            return endpoint.Uri.Scheme == "wss" ? endpoint.Uri.AbsoluteUri : null;
+            return endpoint.Uri.Scheme == "wss" || local && endpoint.Uri.IsLoopback ? endpoint.Uri.AbsoluteUri : null;
         }
         catch (ArgumentException) { return null; }
     }

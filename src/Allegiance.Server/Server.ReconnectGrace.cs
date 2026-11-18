@@ -308,6 +308,14 @@ public sealed partial class Server
         // the exact logon-time gate (native keeps the player object and its
         // privileges across a link drop it never had a window for).
         AuthenticatePrivileges(from, req);
+        // A valid parked-seat token completes authentication just as a fresh
+        // validated LOGONREQ does (Server.Dispatch.cs). Retire both pre-logon
+        // deadlines; otherwise an active resumed WS peer is cut after 60 s.
+        // This follows the already validated seat, never the refused-resume path.
+        _preLogonSinceMs.Remove(from);
+        _host.Transport?.MarkPeerAuthenticated(from);
+        if (!name.StartsWith(HarnessPrefix, StringComparison.Ordinal))
+            _host.Transport?.SetPeerHuman(from, true);
         // Native keeps the per-player ready flag across a connection gap (it is
         // per player per mission, fsmission.cpp:3468-3481) — restore what the
         // peer had at drop time instead of resetting it.

@@ -362,4 +362,38 @@ public sealed partial class Game1
         }
         return (stats, abMax);
     }
+    /// <summary>
+    /// P448b — the <see cref="ClientWorld.RemoteShipHullResolver"/> body: effective
+    /// hull stats for a REMOTE ship from the loaded shop-catalogue hull record × that
+    /// ship's side's global-attribute factors (identity when the side is unknown —
+    /// exactly how the server treats a sideless ship, per <c>ShipDeadReckoner.HullStats.FromHull</c>),
+    /// plus the afterburner max thrust. Registered on ClientWorld at construction so
+    /// the dead-reckoner can (re-)seed each remote ship from real hull data.
+    /// Returns null when the hull record isn't in the (possibly absent) catalogue yet
+    /// — the ship is then rendered on its raw pose until a later update resolves it.
+    /// Afterburner is treated as ABSENT (0) for remote ships: the client has no
+    /// reliable per-ship part/loadout table for arbitrary ships (P448a §5), and a null
+    /// afterburner is behaviourally identical to native's no-afterburner branch —
+    /// documented, harmless over ≤1 tick of extrapolation.
+    /// </summary>
+    private (Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)?
+        ResolveRemoteHullStats(short sideId, short hullId)
+    {
+        var cat = _shopCatalog;
+        if (cat is null) return null;
+        DataHullTypeIGC? hull = null;
+        foreach (var h in cat.Hulls)
+            if (h.HullId == hullId) { hull = h; break; }
+        if (hull is null) return null;
+
+        var gas = _session.World.GlobalAttributesFor(sideId);
+        var stats = Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats.FromHull(
+            hull.Value,
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.Thrust),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.MaxSpeed),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnRate),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnTorque));
+        return (stats, 0f);   // afterburner absent for remote ships (see doc above)
+    }
+
 }

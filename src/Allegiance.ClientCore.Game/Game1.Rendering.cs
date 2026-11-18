@@ -5086,32 +5086,6 @@ public sealed partial class Game1
         }
     }
 
-    /// <summary>
-    /// The number of distinct fixed-mount ids the pilot can cycle the weapon
-    /// selection among. The wire never transmits the local hull's hardpoint
-    /// list, and a stock auto-connect flight never populates the own ship's
-    /// loadout (the own-ship EXPORT is the NA(-1) dummy, ClientWorld.cs:215;
-    /// BUY_LOADOUT_ACK only reaches a buyer) — so there is no authoritative
-    /// count without a server/wire change (out of scope for P225). When a
-    /// mounted loadout IS known we use its distinct non-negative mount ids;
-    /// otherwise we fall back to the full 2-bit selection range
-    /// (SelectedWeaponMask+1 = 4) — the largest set of distinct mount ids the
-    /// sim's selection mask can express. Selecting an id that has no weapon
-    /// mounted simply fires nothing (Weapon.IsWeaponSelected), which is
-    /// harmless; group-fire does not consult the selection at all.
-    /// </summary>
-    private int FixedMountCount()
-    {
-        lock (_session.Gate)
-        {
-            if (_session.World.MyShipId is { } id && _session.World.Ships.TryGetValue(id, out var ship)
-                && _shopCatalog is { } catalog)
-                foreach (var hull in catalog.Hulls)
-                    if (hull.HullId == ship.HullId) return hull.MaxFixedWeapons;
-        }
-        return 0;
-    }
-
     /// <summary>Adopt the sim's <c>float[3]</c> wire position as a <see cref="SimVec"/>.</summary>
     private static SimVec Vec(float[] a) => new(a[0], a[1], a[2]);
 
@@ -5150,40 +5124,6 @@ public sealed partial class Game1
     /// </summary>
     private float HullLength(short hullId) =>
         _hullLengthById.TryGetValue(hullId, out var len) ? len : 0f;
-
-    /// <summary>
-    /// P448b — the <see cref="ClientWorld.RemoteShipHullResolver"/> body: effective
-    /// hull stats for a REMOTE ship from the loaded shop-catalogue hull record × that
-    /// ship's side's global-attribute factors (identity when the side is unknown —
-    /// exactly how the server treats a sideless ship, per <c>ShipDeadReckoner.HullStats.FromHull</c>),
-    /// plus the afterburner max thrust. Registered on ClientWorld at construction so
-    /// the dead-reckoner can (re-)seed each remote ship from real hull data.
-    /// Returns null when the hull record isn't in the (possibly absent) catalogue yet
-    /// — the ship is then rendered on its raw pose until a later update resolves it.
-    /// Afterburner is treated as ABSENT (0) for remote ships: the client has no
-    /// reliable per-ship part/loadout table for arbitrary ships (P448a §5), and a null
-    /// afterburner is behaviourally identical to native's no-afterburner branch —
-    /// documented, harmless over ≤1 tick of extrapolation.
-    /// </summary>
-    private (Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)?
-        ResolveRemoteHullStats(short sideId, short hullId)
-    {
-        var cat = _shopCatalog;
-        if (cat is null) return null;
-        DataHullTypeIGC? hull = null;
-        foreach (var h in cat.Hulls)
-            if (h.HullId == hullId) { hull = h; break; }
-        if (hull is null) return null;
-
-        var gas = _session.World.GlobalAttributesFor(sideId);
-        var stats = Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats.FromHull(
-            hull.Value,
-            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.Thrust),
-            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.MaxSpeed),
-            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnRate),
-            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnTorque));
-        return (stats, 0f);   // afterburner absent for remote ships (see doc above)
-    }
 
     /// <summary>
     /// P288 — resolve the real per-faction/class ship content model for a ship

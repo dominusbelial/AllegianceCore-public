@@ -1,0 +1,252 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "logSha256": "9e28857aa1ed4074e23b3237fde11817687e665c3026f898f7793729b8e523c4"
+  },
+  "toolsBuild": {
+    "projects": 147,
+    "warnings": 0,
+    "errors": 0,
+    "logSha256": "5b045ca989331dda951f981ac638cca08bd0f0cf3a1f35c87c8255aee01d2182"
+  },
+  "browserReleasePublish": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "serverNativeAot": {
+    "warnings": 0,
+    "trimAotWarnings": 0
+  },
+  "desktopOutput": {
+    "baselineFiles": 753,
+    "finalFiles": 753,
+    "identical": true
+  },
+  "hud": {
+    "cases": 1848,
+    "pixelDifferences": 0,
+    "semanticDifferences": 0,
+    "animationOnlyMaskedDifferences": 79,
+    "corruptGoldens": 0,
+    "logSha256": "7a918edae7a417ec02d829f767b509186d9c835410eeb7ac1967baa919969920"
+  },
+  "selections": [
+    {
+      "selection": "browser-final-2",
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "total": 33,
+      "logSha256": "fbad4cf03eff45a7a6189b807a3e83f953265655985a341c4d11c2cb4311a134"
+    },
+    {
+      "selection": "p897-final",
+      "passed": 774,
+      "failed": 0,
+      "skipped": 0,
+      "total": 774,
+      "logSha256": "f12154061bdcce1f4cb74b1a6a736eee4e2091b4061adccedbde82e40de312a7"
+    },
+    {
+      "selection": "transports-final",
+      "passed": 201,
+      "failed": 0,
+      "skipped": 0,
+      "total": 201,
+      "logSha256": "a9cb89e5a7e3af06721c125ed1907c867ee65bbbb2e144ae23601c006cfc5010"
+    },
+    {
+      "selection": "staging-tests-1",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "logSha256": "824592795f1b2a6618789727ead41e4d28993d3631770115284e37a2971837f3"
+    },
+    {
+      "selection": "staging-tests-2",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "logSha256": "7fe7d246cb01995a1ccff42a77abf59647dd2382beba32bbfbc27290cccdc637"
+    },
+    {
+      "selection": "staging-tests-3",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "total": 3,
+      "logSha256": "97598031b222f76263ddfd3a861cd042c1e7dae686e092ae15249e838e5c3236"
+    },
+    {
+      "selection": "reconnect-tests-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "c18946e0fb4b6cd385ce1b2b1d578fe9e4a7f54af2cd9e916ba130b4c1daab16"
+    },
+    {
+      "selection": "reconnect-tests-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "db29527dba0df4861708f931d4bf48d36fd3b3d624f8ff4e14842705d4f8952e"
+    },
+    {
+      "selection": "reconnect-tests-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "1b89f5f391dd879a39f868299c7046a3985bb64bddd41186f09bd84fd35aa1ca"
+    },
+    {
+      "selection": "detachment-tests-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "45e326351680efa3bc03c6107cba55edefcdc787b98e4537af8279f18d5506bb"
+    },
+    {
+      "selection": "detachment-tests-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "e3c5a4718601197e068b9051b3e6e9869f4040e8ce208216b11413fa9c45a27d"
+    },
+    {
+      "selection": "detachment-tests-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "0d7b8906225613f55e5902c09892deeb26a6da78d72846434ada4993236207b5"
+    },
+    {
+      "selection": "resume-server-tests-1",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "63a4065bd0560df73504d4923c4a57122c8ddd5e2f4567979f45756c1ceee836"
+    },
+    {
+      "selection": "resume-server-tests-2",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "579043dd1850b02c037d314fbac17115c39ef835177f376f324ac42d2042383e"
+    },
+    {
+      "selection": "resume-server-tests-3",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "total": 1,
+      "logSha256": "674183569a24e7d53520ae4ddd76ab1699dc504ec536dd91f13938dfd791bce4"
+    },
+    {
+      "selection": "flight-key-tests-1",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "total": 5,
+      "logSha256": "08fa4b21e9dd103ca06545a604e1a3fd9da7e3327099d154babd3158a738bba8"
+    },
+    {
+      "selection": "flight-key-tests-2",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "total": 5,
+      "logSha256": "d31b8987500b270f4191a8376279e0f3d047b2f0d5f4556beb86ad150c1a55af"
+    },
+    {
+      "selection": "flight-key-tests-3",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "total": 5,
+      "logSha256": "0db160036b63f5421fc515bfd6ac6eb4328cb605c63bb9dfb0fe7b366ccae47b"
+    }
+  ],
+  "javascript": {
+    "input": {
+      "passed": 5,
+      "failed": 0,
+      "repeats": 3
+    },
+    "cache": {
+      "passed": 8,
+      "failed": 0
+    },
+    "brotli": {
+      "cases": 29,
+      "checks": 35,
+      "repeats": 3
+    }
+  },
+  "proofHostMemoryKeyBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "actualProductionSignerStarted": true
+  },
+  "glossary": {
+    "validPaths": 971
+  },
+  "supplementalParity": {
+    "rows": 5,
+    "additionalCredit": 0
+  },
+  "proofHostAvoidanceBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "browserProof": {
+    "completedProfiles": 4,
+    "cohorts": 2,
+    "hardeningCases": 7,
+    "publishedPngs": 18,
+    "publishedPngBytes": 1428849
+  },
+  "workingTreeHygiene": {
+    "textFiles": 72,
+    "secretOrPersonalPathHits": 0,
+    "traceArchiveChecked": true,
+    "allReviewedImageHashesMatch": true,
+    "proofPortsClosed": [
+      8048,
+      8049
+    ]
+  },
+  "training": {
+    "passed": 1189,
+    "failed": 2,
+    "skipped": 2,
+    "completedChildren": 6,
+    "exitCode": 1,
+    "knownFailure": "M2 9.2 native prompts missing or out of order (Classic/Modern reminders)"
+  },
+  "fast": {
+    "total": 15391,
+    "passed": 15377,
+    "failed": 3,
+    "skipped": 11,
+    "seconds": 861.7535353329731,
+    "timingOffenders": 0,
+    "infrastructurePassed": 9,
+    "exitCode": 1,
+    "isolatedFailureMethods": 3,
+    "isolatedRepeatsPerMethod": 3,
+    "isolatedPassedCases": 24,
+    "isolatedFailedCases": 0
+  },
+  "allOwnedProofAndTestSessionsEnded": true
+}

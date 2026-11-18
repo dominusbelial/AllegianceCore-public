@@ -62,7 +62,9 @@ public sealed class P1052RouteSecurityTests
     [InlineData("127.0.0.1", "wss://127.0.0.1/game", true)]
     [InlineData("::1", "wss://[::1]/game", true)]
     [InlineData("::ffff:127.0.0.1", "wss://10.0.0.1/game", true)]
-    [InlineData("127.0.0.1", "ws://127.0.0.1/game", false)]
+    [InlineData("127.0.0.1", "ws://127.0.0.1/game", true)]
+    [InlineData("127.0.0.1", "ws://10.0.0.1/game", false)]
+    [InlineData("203.0.113.5", "ws://127.0.0.1/game", false)]
     [InlineData("127.0.0.1", "wss://\u200d.invalid/game", false)]
     [InlineData("127.0.0.1", "wss://a\u00a0.invalid/game", false)]
     [InlineData("203.0.113.5", "wss://game.invalid/game?version=1", true)]
@@ -80,7 +82,7 @@ public sealed class P1052RouteSecurityTests
         Assert.True(listing.Verified);
         Assert.Equal(accepted ? new Uri(route).AbsoluteUri : null, listing.WebSocketUrl);
         if (accepted && source == "203.0.113.5") Assert.Equal(new Uri(route), WebSocketEndpoint.FromServerListing(route).Uri);
-        if (route.StartsWith("ws:", StringComparison.Ordinal)) Assert.Equal(new Uri(route), WebSocketEndpoint.FromConfiguration(route).Uri);
+        if (route.StartsWith("ws:", StringComparison.Ordinal) && new Uri(route).IsLoopback) Assert.Equal(new Uri(route), WebSocketEndpoint.FromConfiguration(route).Uri);
     }
 
     [Fact]

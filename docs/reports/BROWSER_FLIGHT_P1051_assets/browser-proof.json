@@ -1,0 +1,593 @@
+{
+  "browserVersion": "153.0.8010.0",
+  "headlessGpuRepresentative": false,
+  "passkeyLogin": true,
+  "staleCookieNoZombie": true,
+  "contextLossReloadMessage": true,
+  "noSecretsInLogsOrUrls": true,
+  "completedScenarios": 4,
+  "globalAssertionsCohort": "storage-isolated",
+  "publishedPngCount": 18,
+  "publishedPngBytes": 1428849,
+  "publishFingerprint": "publish-fingerprint.json",
+  "cohorts": [
+    {
+      "name": "main",
+      "completedResults": 3,
+      "exitCode": 143,
+      "status": "Interrupted after fourth dock capture; partial fourth not counted",
+      "receipt": "browser-flight-cohort.json"
+    },
+    {
+      "name": "storage-isolated",
+      "completedResults": 1,
+      "exitCode": 0,
+      "status": "Complete",
+      "receipt": "browser-storage-cohort.json"
+    }
+  ],
+  "results": [
+    {
+      "style": "Classic",
+      "width": 1920,
+      "height": 1080,
+      "cacheCase": "cold",
+      "httpTransferToFlightBytes": 12699908,
+      "httpRequestsToFlight": 672,
+      "selectedView": 4,
+      "webSocketUrls": [
+        "ws://localhost:8048/game",
+        "ws://localhost:8048/game"
+      ],
+      "cacheInspection": {
+        "files": 573,
+        "bytes": 32906544,
+        "noSecrets": true
+      },
+      "packRequests": 573,
+      "packTransferBytes": 7981028,
+      "runtimeTransferBytes": 4433952,
+      "timeToFlightFromNavigationMs": 16482,
+      "timeFromLaunchMs": 2775.2999999523163,
+      "briefingProof": [
+        {
+          "file": "briefing-Classic-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-Modern-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-opposing-0.bin",
+          "decodedBytes": 343,
+          "sha256": "35b58082a3a29c09e4a76f95c27d3bb924ded6d2381bab2a4d320e394bfd2017",
+          "byteEqual": true
+        }
+      ],
+      "shipId": 8096,
+      "desktopId": 8097,
+      "commanded": {
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8,
+        "stateM": 32
+      },
+      "accepted": {
+        "Id": 8096,
+        "Name": "Browser1051024595",
+        "SideId": 0,
+        "StationId": null,
+        "Ammo": 800,
+        "weaponCount": 1,
+        "parts": [
+          {
+            "PartId": 7,
+            "MountId": 0,
+            "Amount": 32767,
+            "FractionMounted": 240
+          }
+        ],
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8031496,
+        "StateM": 32,
+        "position": "Vector3 { X = 6.168187, Y = 426.0536, Z = 112.30757 }"
+      },
+      "drawnProjectiles": 613,
+      "receivedProjectiles": 0,
+      "crossVisibility": true,
+      "crossShot": true,
+      "fullThrottleKeyAccepted": true,
+      "hullMountCycling": true,
+      "singleWeaponShot": true,
+      "pointerRefusalRetried": true,
+      "relativeMouseEventAccepted": true,
+      "physicalMouseCalibrationQualified": false,
+      "fullscreenGesture": true,
+      "blurServerNeutral": true,
+      "hiddenAudioSuspended": true,
+      "reconnectedSameShip": true,
+      "dockedStation": 1051,
+      "logoffNoZombie": true,
+      "frameSampleMilliseconds": 60014.29999999999,
+      "frames": 2494,
+      "frameP50Ms": 16.70000000001164,
+      "frameP95Ms": 33.40000000002328,
+      "metrics": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 51232856,
+        "residentBytes": 33023470,
+        "settingsPending": false,
+        "style": "Classic",
+        "gameStyle": "Classic",
+        "online": {
+          "state": "Hangar",
+          "shipId": 8096,
+          "resumeSuccesses": 1,
+          "malformed": 0
+        },
+        "flight": {
+          "controls": {
+            "yaw": 0,
+            "pitch": 0,
+            "throttle": 1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = 4.4283476, Y = 444.00082, Z = -111.66887 }",
+          "flying": false,
+          "frames": 14734,
+          "drawnShips": 2,
+          "ships": [
+            "Browser1051024595",
+            "DesktopPilot"
+          ],
+          "appliedResets": 1,
+          "position": "Vector3 { X = 4.4283476, Y = 444.00082, Z = -111.66887 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [
+            8096,
+            8097
+          ],
+          "drawnProjectiles": 613,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      },
+      "proofCohort": "main"
+    },
+    {
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "cacheCase": "warm",
+      "httpTransferToFlightBytes": 4718880,
+      "httpRequestsToFlight": 99,
+      "selectedView": 2,
+      "webSocketUrls": [
+        "ws://localhost:8048/game",
+        "ws://localhost:8048/game"
+      ],
+      "cacheInspection": {
+        "files": 573,
+        "bytes": 32906544,
+        "noSecrets": true
+      },
+      "packRequests": 0,
+      "packTransferBytes": 0,
+      "runtimeTransferBytes": 4433952,
+      "timeToFlightFromNavigationMs": 49396.89999997616,
+      "timeFromLaunchMs": 39799.799999952316,
+      "briefingProof": [
+        {
+          "file": "briefing-Classic-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-Modern-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-opposing-0.bin",
+          "decodedBytes": 343,
+          "sha256": "35b58082a3a29c09e4a76f95c27d3bb924ded6d2381bab2a4d320e394bfd2017",
+          "byteEqual": true
+        }
+      ],
+      "shipId": 8101,
+      "desktopId": 8100,
+      "commanded": {
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8,
+        "stateM": 32
+      },
+      "accepted": {
+        "Id": 8101,
+        "Name": "Browser1051024595",
+        "SideId": 0,
+        "StationId": null,
+        "Ammo": 800,
+        "weaponCount": 1,
+        "parts": [
+          {
+            "PartId": 7,
+            "MountId": 0,
+            "Amount": 32767,
+            "FractionMounted": 240
+          }
+        ],
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8031496,
+        "StateM": 32,
+        "position": "Vector3 { X = 1.5000947, Y = -491.2376, Z = -106.57542 }"
+      },
+      "drawnProjectiles": 660,
+      "receivedProjectiles": 0,
+      "crossVisibility": true,
+      "crossShot": true,
+      "fullThrottleKeyAccepted": true,
+      "hullMountCycling": true,
+      "singleWeaponShot": true,
+      "pointerRefusalRetried": true,
+      "relativeMouseEventAccepted": true,
+      "physicalMouseCalibrationQualified": false,
+      "fullscreenGesture": true,
+      "blurServerNeutral": true,
+      "hiddenAudioSuspended": true,
+      "reconnectedSameShip": true,
+      "dockedStation": 1051,
+      "logoffNoZombie": true,
+      "frameSampleMilliseconds": 60030.899999999994,
+      "frames": 2474,
+      "frameP50Ms": 16.70000000001164,
+      "frameP95Ms": 33.40000000002328,
+      "metrics": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 95967592,
+        "residentBytes": 33023470,
+        "settingsPending": false,
+        "style": "Modern",
+        "gameStyle": "Modern",
+        "online": {
+          "state": "Hangar",
+          "shipId": 8101,
+          "resumeSuccesses": 1,
+          "malformed": 0
+        },
+        "flight": {
+          "controls": {
+            "yaw": 5.9394015e-06,
+            "pitch": 5.9394015e-06,
+            "throttle": 1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = -4.229523, Y = -444.36523, Z = 105.21179 }",
+          "flying": false,
+          "frames": 13250,
+          "drawnShips": 3,
+          "ships": [
+            "Browser1051024595",
+            "DesktopPilot",
+            "Ship 8098"
+          ],
+          "appliedResets": 0,
+          "position": "Vector3 { X = -4.229523, Y = -444.36523, Z = 105.21179 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [
+            8101,
+            8100
+          ],
+          "drawnProjectiles": 660,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      },
+      "proofCohort": "main"
+    },
+    {
+      "style": "Classic",
+      "width": 800,
+      "height": 480,
+      "cacheCase": "stale",
+      "httpTransferToFlightBytes": 4726586,
+      "httpRequestsToFlight": 100,
+      "selectedView": 2,
+      "webSocketUrls": [
+        "ws://localhost:8048/game",
+        "ws://localhost:8048/game"
+      ],
+      "cacheInspection": {
+        "files": 573,
+        "bytes": 32906544,
+        "noSecrets": true
+      },
+      "packRequests": 1,
+      "packTransferBytes": 7706,
+      "runtimeTransferBytes": 4433952,
+      "timeToFlightFromNavigationMs": 49082.300000071526,
+      "timeFromLaunchMs": 40953.800000071526,
+      "briefingProof": [
+        {
+          "file": "briefing-Classic-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-Modern-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-opposing-0.bin",
+          "decodedBytes": 343,
+          "sha256": "35b58082a3a29c09e4a76f95c27d3bb924ded6d2381bab2a4d320e394bfd2017",
+          "byteEqual": true
+        }
+      ],
+      "shipId": 8105,
+      "desktopId": 8104,
+      "commanded": {
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8,
+        "stateM": 32
+      },
+      "accepted": {
+        "Id": 8105,
+        "Name": "Browser1051024595",
+        "SideId": 0,
+        "StationId": null,
+        "Ammo": 800,
+        "weaponCount": 1,
+        "parts": [
+          {
+            "PartId": 7,
+            "MountId": 0,
+            "Amount": 32767,
+            "FractionMounted": 240
+          }
+        ],
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8031496,
+        "StateM": 32,
+        "position": "Vector3 { X = 4.150121, Y = -487.54004, Z = -107.16195 }"
+      },
+      "drawnProjectiles": 812,
+      "receivedProjectiles": 0,
+      "crossVisibility": true,
+      "crossShot": true,
+      "fullThrottleKeyAccepted": true,
+      "hullMountCycling": true,
+      "singleWeaponShot": true,
+      "pointerRefusalRetried": true,
+      "relativeMouseEventAccepted": true,
+      "physicalMouseCalibrationQualified": false,
+      "fullscreenGesture": true,
+      "blurServerNeutral": true,
+      "hiddenAudioSuspended": true,
+      "reconnectedSameShip": true,
+      "dockedStation": 1051,
+      "logoffNoZombie": true,
+      "frameSampleMilliseconds": 60014.20000000001,
+      "frames": 2564,
+      "frameP50Ms": 16.70000000001164,
+      "frameP95Ms": 33.39999999999418,
+      "metrics": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 93661176,
+        "residentBytes": 33023470,
+        "settingsPending": false,
+        "style": "Classic",
+        "gameStyle": "Classic",
+        "online": {
+          "state": "Hangar",
+          "shipId": 8105,
+          "resumeSuccesses": 1,
+          "malformed": 0
+        },
+        "flight": {
+          "controls": {
+            "yaw": -3.747795e-39,
+            "pitch": 5.939293e-06,
+            "throttle": 1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = -3.6815844, Y = -446.39017, Z = 104.16574 }",
+          "flying": false,
+          "frames": 13525,
+          "drawnShips": 3,
+          "ships": [
+            "Browser1051024595",
+            "DesktopPilot",
+            "Ship 8102"
+          ],
+          "appliedResets": 0,
+          "position": "Vector3 { X = -3.6815844, Y = -446.39017, Z = 104.16574 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [
+            8105,
+            8104
+          ],
+          "drawnProjectiles": 812,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      },
+      "proofCohort": "main"
+    },
+    {
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "cacheCase": "storage-refused",
+      "httpTransferToFlightBytes": 12699908,
+      "httpRequestsToFlight": 672,
+      "selectedView": 2,
+      "webSocketUrls": [
+        "ws://localhost:8048/game",
+        "ws://localhost:8048/game"
+      ],
+      "cacheInspection": {
+        "files": 0,
+        "bytes": 0,
+        "noSecrets": true
+      },
+      "packRequests": 574,
+      "packTransferBytes": 7981028,
+      "runtimeTransferBytes": 4433952,
+      "timeToFlightFromNavigationMs": 11952.399999976158,
+      "timeFromLaunchMs": 2547.7000000476837,
+      "briefingProof": [
+        {
+          "file": "briefing-Classic-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-Modern-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-opposing-0.bin",
+          "decodedBytes": 343,
+          "sha256": "35b58082a3a29c09e4a76f95c27d3bb924ded6d2381bab2a4d320e394bfd2017",
+          "byteEqual": true
+        }
+      ],
+      "shipId": 8096,
+      "desktopId": 8097,
+      "commanded": {
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8,
+        "stateM": 32
+      },
+      "accepted": {
+        "Id": 8096,
+        "Name": "Browser1051818517",
+        "SideId": 0,
+        "StationId": null,
+        "Ammo": 800,
+        "weaponCount": 1,
+        "parts": [
+          {
+            "PartId": 7,
+            "MountId": 0,
+            "Amount": 32767,
+            "FractionMounted": 240
+          }
+        ],
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8031496,
+        "StateM": 32,
+        "position": "Vector3 { X = 6.202404, Y = 421.93964, Z = 112.27409 }"
+      },
+      "drawnProjectiles": 746,
+      "receivedProjectiles": 0,
+      "crossVisibility": true,
+      "crossShot": true,
+      "fullThrottleKeyAccepted": true,
+      "hullMountCycling": true,
+      "singleWeaponShot": true,
+      "pointerRefusalRetried": true,
+      "relativeMouseEventAccepted": true,
+      "physicalMouseCalibrationQualified": false,
+      "fullscreenGesture": true,
+      "blurServerNeutral": true,
+      "hiddenAudioSuspended": true,
+      "reconnectedSameShip": true,
+      "dockedStation": 1051,
+      "logoffNoZombie": true,
+      "frameSampleMilliseconds": 60030.90000000002,
+      "frames": 2517,
+      "frameP50Ms": 16.70000000001164,
+      "frameP95Ms": 33.39999999999418,
+      "metrics": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 57741400,
+        "residentBytes": 33023470,
+        "settingsPending": false,
+        "style": "Modern",
+        "gameStyle": "Modern",
+        "online": {
+          "state": "Hangar",
+          "shipId": 8096,
+          "resumeSuccesses": 1,
+          "malformed": 0
+        },
+        "flight": {
+          "controls": {
+            "yaw": 5.464251e-06,
+            "pitch": 0,
+            "throttle": 1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = 3.7457564, Y = 444.28854, Z = -112.167404 }",
+          "flying": false,
+          "frames": 14813,
+          "drawnShips": 2,
+          "ships": [
+            "Browser1051818517",
+            "DesktopPilot"
+          ],
+          "appliedResets": 1,
+          "position": "Vector3 { X = 3.7457564, Y = 444.28854, Z = -112.167404 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [
+            8096,
+            8097
+          ],
+          "drawnProjectiles": 746,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      },
+      "proofCohort": "storage-isolated"
+    }
+  ]
+}

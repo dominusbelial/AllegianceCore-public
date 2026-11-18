@@ -140,6 +140,42 @@ and isolated passes do not change their outcome. No game rule, assertion, timing
 bound, quarantine or tier was changed.
 Report: [WS_SECURITY_FIXES_P1052.md](reports/WS_SECURITY_FIXES_P1052.md).
 
+## P1051 browser-flight qualification — 2026-11-18 UTC
+
+The first full Fast+Live training native child completed **297 passed / 2 failed /
+2 skipped** (301 total, 3 h 59 m), with artwork, offscreen SDL and null OpenAL.
+The two failures are
+`P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration`
+(`Classic` and `Modern`, policy `reminders`), both **M2 9.2: native prompts missing
+or out of order** after mission completion/docking. This is the previously ledgered
+P1012/P1047 signature, including prior isolated and untouched-base evidence; P1051
+does not claim a fresh base-control run. No narration, lesson, assertion or timing
+limit was changed.
+
+All 42 physical P912 windows ran once: 40 passed and the two reminder cases failed.
+The two opt-in M4 hunt cases skipped as designed. Repeat 1’s headless selection
+passed 126/126. The brief permits the long P912 windows only once; repeats 2–3
+exclude only `P912TrainingWindowTests` through an ignored DOTNET wrapper, retaining
+all other selected Fast+Live tests. All three headless children passed **126/126**. Both shortened native repeats
+passed **257/257** (11 m 9 s / 11 m 10 s), with no failures or skips. Overall
+training: **1,189 passed / 2 failed / 2 skipped**; the gate exits 1 and is not
+reported green. The single final Fast sweep then completed **15,377 passed / 3 failed / 11
+skipped** (15,391 total, 861.8 s), with **zero timing offenders** against the
+11.526 s calibrated limit and all nine infrastructure checks passed. The sweep
+remains red. Its three already-ledgered signatures passed three isolated method
+repetitions each:
+
+| Case | Sweep signature | Alone ×3 (passed/failed/skipped) |
+|---|---|---|
+| `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` (`enabled=False`, `dilation=off`) | `14.900000000054206` outside `[14.94,15.06]` | **4/0/0; 4/0/0; 4/0/0**, all four theory rows |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (`delay=5`) | `5.0000000000000009` above inclusive 5 | **3/0/0; 3/0/0; 3/0/0**, delay 5/7/10 rows |
+| `NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy` | raw-aligned/not-lead-aligned refusal discriminant absent | **1/0/0; 1/0/0; 1/0/0** |
+
+Countdown/timer and AI firing code were not changed. No suite, assertion or
+repository test selection was changed. Counts, all six training child result
+lines and bounded TRX-hashed receipts are in
+`docs/reports/BROWSER_FLIGHT_P1051.md` and its assets directory.
+
 ## P1049 CI stabilisation — 2026-11-17 UTC
 
 **P808 and P941 are RESOLVED** (root causes found, not re-labelled as load flakes).

@@ -4,7 +4,7 @@
 @inject HttpClient Http
 
 <nav id="menu-controls" aria-label="Browser menu controls">
-    <span>Menu preview · @_style · @_persistence</span>
+    <span>Local browser game · @_style · @_persistence</span>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern)">Modern</button>
     <button id="online-open" disabled="@(_game is null || _online || _onlineBusy)" @onclick="OpenOnlineAsync">Play on loopback</button>
@@ -26,8 +26,8 @@
 
 @if (_online)
 {
-    <section id="online-panel" class="panel" aria-live="polite" data-state="@_onlineState">
-        <p class="eyebrow">ALLEGIANCE · ONLINE LOOPBACK SLICE · @_style</p>
+    <section id="online-panel" class="@(_onlineState == "Flight" ? "flight-toolbar" : "panel")" aria-live="polite" data-state="@_onlineState">
+        <p class="eyebrow">ALLEGIANCE · LOCAL GAME · @_style</p>
         <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Sign in")</h2>
         @if (_onlineState == "Login")
         {
@@ -38,7 +38,10 @@
         else
         {
             <p>Signed in as @_account?.Callsign</p>
-            @if (_onlineState == "Servers")
+            @if (_onlineState == "Staging")
+            { <progress max="100" value="@_progress"></progress><p>@_status</p>
+              @if (_onlineError is not null) { <button id="join-retry" disabled="@_onlineBusy" @onclick="RetryStagingAsync">Retry</button> } }
+            else if (_onlineState == "Servers")
             {
                 @foreach (var server in _servers)
                 {
@@ -65,19 +68,33 @@
                     <button class="online-side" disabled="@_onlineBusy" @onclick="() => SelectSideAsync(side.SideId)">@side.Name · @side.PlayerCount players</button>
                 }
             }
-            else if (_onlineState == "Hangar")
+            @if (_onlineState is "Hangar" or "Flight")
+            {
+                <button id="online-briefing" @onclick="() => _showBriefing = !_showBriefing">Mission briefing</button>
+                @if (_showBriefing)
+                {
+                    @if (OnlineBriefing() is { } briefing)
+                    { <article id="mission-briefing"><h3>@briefing.Title</h3><p>@briefing.Objective</p><pre>@briefing.Body</pre></article> }
+                    else { <p role="status">Waiting for mission briefing…</p> }
+                }
+            }
+            @if (_onlineState == "Hangar")
             {
                 <p>@_onlineName · side @_session?.World.MySideId</p>
-                <button id="online-launch" disabled="@_onlineBusy" @onclick="LaunchOnlineAsync">Ready and launch · enable audio</button>
+                <button id="online-launch" disabled="@_onlineBusy" @onclick="LaunchOnlineAsync">Ready and launch current ship</button>
             }
             else if (_onlineState == "Flight")
             {
                 <p>@_onlineName · @_session?.ActiveTransportProtocol · server assigned ship</p>
                 <p id="online-pose">@_pose</p>
-                <p>Mission briefings, flight controls, pointer capture, fullscreen and flight rendering parity are not available in the browser.</p>
+                <p class="flight-help">W/S thrust · arrows turn · Space fire · Shift boost · click canvas for mouse steering · Escape releases · Alt+Enter fullscreen</p>
+                <button id="flight-contact" @onclick="ToggleContactView">@(_game?.ViewingContact == true ? "Chase view" : "View nearby ships")</button>
+                @if (_game?.ViewingContact == true) { <button id="flight-angle" @onclick="() => _game?.RotateContactView()">Rotate view</button> }
+                <button id="flight-dock" @onclick="DockHome">Dock at home station</button>
+                <button id="flight-fullscreen" data-flight-fullscreen>Fullscreen</button>
             }
         }
-        @if (_onlineBusy) { <p role="status">Waiting for the server…</p> }
+        @if (_onlineBusy) { <p role="status">@(_onlineState == "Hangar" && _session?.World.CountdownRemainingSeconds() is { } seconds ? $"Next match starts in {seconds} seconds…" : "Waiting for the server…")</p> }
         @if (_onlineError is not null) { <p role="alert">@_onlineError</p> }
         <button id="online-close" @onclick="CloseOnlineAsync">Disconnect and return to menu</button>
     </section>

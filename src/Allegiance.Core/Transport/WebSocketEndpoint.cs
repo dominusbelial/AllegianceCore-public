@@ -19,6 +19,24 @@ public sealed class WebSocketEndpoint
         try { return FromServerListing(route).Uri.AbsoluteUri; }
         catch (ArgumentException) { return null; }
     }
+    /// <summary>Directory input read from a lobby that is itself on loopback (local
+    /// development): a loopback route (ws or wss) is accepted as the local operator's own
+    /// route; every other route still needs the strict public listing rule. Never use this
+    /// for a directory that is not on loopback.</summary>
+    public static WebSocketEndpoint FromLoopbackDirectoryListing(string route)
+    {
+        WebSocketEndpoint? local = null;
+        try { local = FromConfiguration(route); } catch (ArgumentException) { }
+        return local is { Uri.IsLoopback: true } ? local : FromServerListing(route);
+    }
+    /// <summary>Listing route for the given directory, or null (old/invalid routes are omitted).</summary>
+    public static string? NormalizeServerListing(string? route, bool loopbackDirectory)
+    {
+        if (!loopbackDirectory) return NormalizeServerListing(route);
+        if (route is null) return null;
+        try { return FromLoopbackDirectoryListing(route).Uri.AbsoluteUri; }
+        catch (ArgumentException) { return null; }
+    }
     /// <summary>Operator-owned configuration: also permits plaintext loopback development.</summary>
     public static WebSocketEndpoint FromConfiguration(string route) => Parse(route, listing: false);
 

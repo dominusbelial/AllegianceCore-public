@@ -102,7 +102,12 @@ public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint en
                 }
             }
         }
-        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or IOException or ObjectDisposedException) { }
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or IOException or ObjectDisposedException)
+        {
+#if BROWSER
+            if (!_lifetime.IsCancellationRequested) Console.WriteLine($"[browser] WS send stopped: {ex.GetType().Name}: {ex.Message}");
+#endif
+        }
         finally { Abort(); }
     }
     private async Task ReceiveAsync(ClientWebSocket socket)
@@ -133,7 +138,12 @@ public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint en
                 site.OnReceive(ConnectionId.Server, buffer.AsSpan(0, length));
             }
         }
-        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or IOException or ObjectDisposedException or ArgumentException) { }
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or IOException or ObjectDisposedException or ArgumentException)
+        {
+#if BROWSER
+            if (!_lifetime.IsCancellationRequested) Console.WriteLine($"[browser] WS receive stopped: {ex.GetType().Name}: {ex.Message}");
+#endif
+        }
         finally { LoseSession(); }
     }
     private void Abort()
