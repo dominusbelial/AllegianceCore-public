@@ -1,6 +1,8 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Allegiance.ClientCore.MonoGame.Rendering.Jet;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
@@ -67,34 +69,15 @@ public sealed class SectorInfoPaneRenderer
 
         // Measure the widest line for the box width, and one line's height.
         float lineHeight = _small.LineSpacing;
-        float maxW = 0f;
-        foreach (var line in pane.DisplayLines)
-            maxW = MathF.Max(maxW, _small.MeasureString(line).X);
-        // The probe glyph row's text contributes to the width too.
+        var geometry = Box(pane, panelX, panelY, panelW, panelH, lineHeight,
+            s => _small.MeasureString(s).X);
+        float boxW = geometry.Box.Width;
+        float boxH = geometry.Box.Height;
+        int lineCount = geometry.LineCount;
+        int warnLines = geometry.HasWarning ? 1 : 0;
+        float topLeftX = geometry.Box.X;
+        float topLeftY = geometry.Box.Y;
         string probeLabel = $"PROBES  {pane.OwnProbeCount}";
-        if (pane.ShowsOwnProbes)
-            maxW = MathF.Max(maxW, ProbeGlyphWidth + 6f + _small.MeasureString(probeLabel).X);
-        // P752 — the hover warning line (drawn first, native pane origin).
-        int warnLines = 0;
-        if (!string.IsNullOrEmpty(pane.WarningText))
-        {
-            maxW = MathF.Max(maxW, _small.MeasureString(pane.WarningText).X);
-            warnLines = 1;
-        }
-
-        float boxW = maxW + 2f * PadX;
-        int lineCount = pane.DisplayLines.Count + warnLines + (pane.ShowsOwnProbes ? 1 : 0);
-        float boxH = lineCount * lineHeight + 2f * PadY;
-
-        // Anchor below the panel title (panelY + titleBaseline + a gap).
-        float topLeftX = panelX + Border;
-        float topLeftY = panelY + 10f + lineHeight + 10f;
-
-        // Clamp inside the panel so a tiny window can't push it off-screen.
-        if (topLeftX + boxW > panelX + panelW - Border)
-            topLeftX = panelX + panelW - Border - boxW;
-        if (topLeftY + boxH > panelY + panelH - Border)
-            topLeftY = panelY + panelH - Border - boxH;
 
         var origins = SectorInfoPaneLayout.LineOrigins(
             new System.Numerics.Vector2(topLeftX + PadX, topLeftY + PadY), lineHeight, lineCount);
@@ -159,6 +142,42 @@ public sealed class SectorInfoPaneRenderer
         {
             _sb.End();
         }
+    }
+
+    /// <summary>P1042c — the pane box's resolved geometry: the ONE source the renderer
+    /// paints from and the screen frame frames. Same arithmetic the P272 renderer always
+    /// applied (widest line + padding, the probe row's reserved glyph width, the hover warning
+    /// line, the title offset, then the inside-the-panel clamp).</summary>
+    public readonly record struct PaneGeometry(RectangleF Box, float LineHeight, int LineCount, bool HasWarning);
+
+    public static PaneGeometry Box(SectorInfoPaneLayout.Data pane, float panelX, float panelY,
+        float panelW, float panelH, float lineHeight, Func<string, float> measure)
+    {
+        float maxW = 0f;
+        foreach (var line in pane.DisplayLines)
+            maxW = MathF.Max(maxW, measure(line));
+        // The probe glyph row's text contributes to the width too.
+        string probeLabel = $"PROBES  {pane.OwnProbeCount}";
+        if (pane.ShowsOwnProbes)
+            maxW = MathF.Max(maxW, ProbeGlyphWidth + 6f + measure(probeLabel));
+        // P752 — the hover warning line (drawn first, native pane origin).
+        bool warn = !string.IsNullOrEmpty(pane.WarningText);
+        if (warn) maxW = MathF.Max(maxW, measure(pane.WarningText!));
+
+        float boxW = maxW + 2f * PadX;
+        int lineCount = pane.DisplayLines.Count + (warn ? 1 : 0) + (pane.ShowsOwnProbes ? 1 : 0);
+        float boxH = lineCount * lineHeight + 2f * PadY;
+
+        // Anchor below the panel title (panelY + titleBaseline + a gap).
+        float topLeftX = panelX + Border;
+        float topLeftY = panelY + 10f + lineHeight + 10f;
+
+        // Clamp inside the panel so a tiny window can't push it off-screen.
+        if (topLeftX + boxW > panelX + panelW - Border)
+            topLeftX = panelX + panelW - Border - boxW;
+        if (topLeftY + boxH > panelY + panelH - Border)
+            topLeftY = panelY + panelH - Border - boxH;
+        return new(new RectangleF(topLeftX, topLeftY, boxW, boxH), lineHeight, lineCount, warn);
     }
 
     /// <summary>P752 — the expand button's hit rectangle for a pane box at

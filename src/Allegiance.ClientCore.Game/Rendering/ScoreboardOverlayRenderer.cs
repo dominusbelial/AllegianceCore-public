@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Allegiance.ClientCore.MonoGame.Rendering.Skins;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
@@ -52,62 +53,50 @@ public sealed class ScoreboardOverlayRenderer
 
     /// <summary>Draw the leaderboard for the given roster snapshot. <paramref name="rows"/>
     /// is the already-ordered/ASCII-safe output of <see cref="ScoreboardLayout.Build"/>;
-    /// <paramref name="selfName"/> (when provided) highlights the local player's row.</summary>
+    /// <paramref name="selfName"/> (when provided) highlights the local player's row.
+    /// <para>P1042c — <paramref name="palette"/> (null = the P639 constants) lets the Jet
+    /// screen re-ink the panel/cells through its five-role palette without moving a box.</para></summary>
     public void Draw(Viewport viewport, IReadOnlyList<ScoreboardLayout.Row> rows,
-        string? selfName = null)
+        string? selfName = null, ScoreboardPalette? palette = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
 
-        var (cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths) =
-            ScoreboardLayout.ColumnWidths(rows, s => _small.MeasureString(s).X);
+        // P1042c — one geometry source: the renderer paints from ScoreboardLayout.Layout,
+        // the frame resolves the same panel/column/row boxes (draw == hit).
+        var geometry = ScoreboardLayout.Layout(rows, s => _small.MeasureString(s).X, w, h);
+        var panel = geometry.Panel;
+        float[] xs = geometry.ColumnX;
+        float panelX = panel.X, panelY = panel.Y, panelW = panel.Width, panelH = panel.Height;
+        float headY = geometry.HeaderY;
 
-        // Panel width = header/row extent + side margins; height fits header +
-        // rows (cap so many players never overflow past the screen).
-        float[] cw = { cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths };
-        float contentW = 0f;
-        for (int c = 0; c < cw.Length; c++)
-        {
-            contentW += cw[c];
-            if (c < cw.Length - 1) contentW += ScoreboardLayout.ColumnGap;
-        }
-        float panelW = contentW + 2f * ScoreboardLayout.Padding;
-        float panelH = ScoreboardLayout.RowHeight /* header */
-                     + ScoreboardLayout.HeaderGap
-                     + rows.Count * ScoreboardLayout.RowHeight
-                     + 2f * ScoreboardLayout.Padding;
-        panelH = MathF.Min(panelH, h * 0.92f);
-
-        // Centred horizontally so the wider leaderboard stays on screen; slightly
-        // inset from the top so it never covers the centre reticle / bottom bars.
-        float panelX = MathF.Max(12f, (w - panelW) / 2f);
-        float panelY = 40f;
-
-        // Running column origins, aligned with the header array above.
-        float[] xs = new float[cw.Length];
-        xs[0] = panelX + ScoreboardLayout.Padding;
-        for (int c = 1; c < cw.Length; c++) xs[c] = xs[c - 1] + cw[c - 1] + ScoreboardLayout.ColumnGap;
+        Color panelBg = palette?.Panel ?? PanelBg;
+        Color panelBorder = palette?.Border ?? PanelBorder;
+        Color headerColor = palette?.Title ?? HeaderColor;
+        Color nameColor = palette?.Name ?? NameColor;
+        Color statColor = palette?.Stat ?? StatColor;
+        Color selfColor = palette?.Self ?? SelfColor;
+        Color rankColor = palette?.Rank ?? RankColor;
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            FillRect(panelX, panelY, panelW, panelH, PanelBg);
-            OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
-            FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
+            FillRect(panelX, panelY, panelW, panelH, panelBg);
+            OutlineRect(panelX, panelY, panelW, panelH, panelBorder);
+            FillRect(panelX, panelY, panelW, 2f, panelBorder);   // top accent edge
 
             // Header.
-            Draw("LEADERBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
-            float headY = panelY + ScoreboardLayout.Padding + ScoreboardLayout.HeaderGap - 4f;
+            Draw("LEADERBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), headerColor);
             string[] headers = ScoreboardLayout.Row.HeaderCells;
             for (int c = 0; c < headers.Length; c++)
-                Draw(headers[c], new Vector2(xs[c], headY), HeaderColor);
+                Draw(headers[c], new Vector2(xs[c], headY), headerColor);
 
             // Rows.
-            float rowY = headY + ScoreboardLayout.RowHeight;
+            float rowY = headY + geometry.RowHeight;
             foreach (var r in rows)
             {
                 bool self = selfName != null && string.Equals(r.Name, selfName, StringComparison.Ordinal);
-                Color nc = self ? SelfColor : NameColor;
+                Color nc = self ? selfColor : nameColor;
                 string[] cells =
                 {
                     r.Position, r.Name, r.SideLabel, r.RankName, r.Kills, r.Deaths,
@@ -117,12 +106,12 @@ public sealed class ScoreboardOverlayRenderer
                     Color cc = c switch
                     {
                         1 => nc,      // name — self highlighted
-                        3 => RankColor, // rank name
-                        _ => StatColor,
+                        3 => rankColor, // rank name
+                        _ => statColor,
                     };
                     Draw(cells[c], new Vector2(xs[c], rowY), cc);
                 }
-                rowY += ScoreboardLayout.RowHeight;
+                rowY += geometry.RowHeight;
             }
         }
         finally

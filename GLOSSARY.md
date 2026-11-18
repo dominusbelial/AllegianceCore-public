@@ -1348,6 +1348,23 @@ list in **reverse**.
   `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/P1042bScreenChromeTests.cs`; report:
   `docs/reports/JET_SCREENS_P1042B.md`.
 
+- **In-game screen families + legacy docked shop behind the boundary (P1042c, skin story 8/9 part 3, final)** —
+  every remaining non-flight screen now goes through `IScreenSkinRenderer`
+  (`Rendering/Skins/IScreenSkinRenderer.cs`): `DrawPanel(in ScreenPanelFrame)` for the panel-style overlays
+  (side select, ready check incl. the civ picker / team-name edit / roster, mission briefing, team pane, quick
+  chat, key bindings, connection lost), `DrawScoreboard(in ScoreboardFrame)`, `DrawStarmap(in StarmapScreenFrame)`
+  and `DrawGameOver(in GameOverScreenFrame)`. `Rendering/Screens/PanelScreenFrames.cs` is the ONE frame builder:
+  it reproduces each pre-boundary renderer's arithmetic (fills in draw order + every text run at its resolved
+  anchor with its exact classic ink), and `Rendering/Screens/PanelScreenPainter.cs` paints that frame for
+  Classic/Modern; Jet plates/brackets/keylines the same boxes. Content stays content: the leaderboard rows
+  (`ScoreboardOverlayRenderer`, re-inked through `ScoreboardPalette`, geometry from `ScoreboardLayout.Layout`),
+  the starmap map/sector-info text (`StarmapRenderer`, `SectorInfoPaneRenderer.Box`), the game-over tables
+  (`GameOverScreenRenderer`) and the legacy docked shop (`DockedScreenRenderer`). Career gains
+  `CareerScreenRenderer.TitleFor` + `drawTitle` (Jet fits the title into the band above the tab row — the
+  title-vs-tab rule `ScreenAudit.TitleVsTab`, gap 6 px). Proof: `tools/p1042-screen-proof --legacy/--legacy-compare/
+  --audit/--pre-title`; tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/P1042cScreenChromeTests.cs`;
+  report: `docs/reports/JET_SCREENS_P1042C.md`.
+
 - **Per-message receive containment (P975)** — an inbound message whose body a codec
   rejects is dropped (counted, rate-limited `fmid`+length log, never the payload)
   instead of ending the session; every case lives in one contained dispatch,

@@ -4,6 +4,7 @@ using System.Linq;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 
+using Microsoft.Xna.Framework;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
@@ -170,5 +171,39 @@ public static class ScoreboardLayout
             else buf[n++] = ' ';
         }
         return new string(buf[..n]);
+    }
+
+    /// <summary>
+    /// P1042c — the ONE geometry of the leaderboard panel: the panel rectangle, the six
+    /// column origins, the header baseline and the first row's baseline. The renderer paints
+    /// from this and the screen frame resolves the same boxes, so the chrome can never frame
+    /// a band the roster does not use. Same arithmetic (and the same 0.92 height cap) the
+    /// P639 renderer always applied.
+    /// </summary>
+    public readonly record struct Geometry(
+        Rectangle Panel, float[] ColumnX, float HeaderY, float RowHeight);
+
+    public static Geometry Layout(IReadOnlyList<Row> rows, Func<string, float> measure, float w, float h)
+    {
+        var (cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths) = ColumnWidths(rows, measure);
+        float[] cw = { cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths };
+        float contentW = 0f;
+        for (int c = 0; c < cw.Length; c++)
+        {
+            contentW += cw[c];
+            if (c < cw.Length - 1) contentW += ColumnGap;
+        }
+        float panelW = contentW + 2f * Padding;
+        float panelH = RowHeight + HeaderGap + rows.Count * RowHeight + 2f * Padding;
+        panelH = MathF.Min(panelH, h * 0.92f);
+        float panelX = MathF.Max(12f, (w - panelW) / 2f);
+        float panelY = 40f;
+
+        float[] xs = new float[cw.Length];
+        xs[0] = panelX + Padding;
+        for (int c = 1; c < cw.Length; c++) xs[c] = xs[c - 1] + cw[c - 1] + ColumnGap;
+        float headerY = panelY + Padding + HeaderGap - 4f;
+        return new Geometry(new Rectangle((int)MathF.Round(panelX), (int)MathF.Round(panelY),
+            (int)MathF.Round(panelW), (int)MathF.Round(panelH)), xs, headerY, RowHeight);
     }
 }

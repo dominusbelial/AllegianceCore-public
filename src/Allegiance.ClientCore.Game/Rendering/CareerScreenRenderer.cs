@@ -27,6 +27,18 @@ public static class CareerScreenRenderer
     private const float RowH = 20f;
     private const float HeaderY = 118f;
 
+    /// <summary>P1042c — the screen title for the active mode (the same string the P808c
+    /// renderer has always drawn; the Jet chrome re-draws it fitted into the band above the
+    /// tab row, which is the title-vs-tab spacing fix).</summary>
+    public static string TitleFor(bool boardMode, bool squadsMode, bool eventsMode)
+        => squadsMode ? "[ SQUADS ]" : eventsMode ? "[ ZONE EVENTS ]" : boardMode ? "[ LEADERBOARD ]" : "[ CHARACTER INFO ]";
+
+    /// <summary>P1042c — the vertical band the title owns above the tab row: the title's
+    /// classic top anchor (24) up to the first tab's top edge. A vector skin fits the run
+    /// into this band so it can never touch the tab row.</summary>
+    public const float TitleTop = 24f;
+    public const float TabRowTop = 63f;
+
     /// <summary>P1042b — the mode tabs' labels and order (drawn by <see cref="DrawTab"/>,
     /// framed by the Jet chrome at <see cref="TabRect"/>).</summary>
     public static readonly string[] TabLabels = ["Career Info", "Leaderboard", "Squads", "Events", "Back"];
@@ -62,7 +74,8 @@ public static class CareerScreenRenderer
         HudSettings hud, CharacterInfoModel? info, LeaderboardModel? board, SquadScreenModel? squads,
         EventsScreenModel? events,
         bool boardMode, bool squadsMode, bool eventsMode, int cursor, bool editingDesc, string descBuffer, string status,
-        string viewedAccountId, float w, float h, CareerScreenPalette? palette = null)
+        string viewedAccountId, float w, float h, CareerScreenPalette? palette = null,
+        bool drawTitle = true)
     {
         bool modern = hud.Style == HudStyle.Modern;
         Color accent = palette?.Accent ?? new(0.25f, 0.75f, 0.72f);
@@ -72,10 +85,14 @@ public static class CareerScreenRenderer
         Color selFill = palette?.SelectionFill ?? (modern ? new Color(0.12f, 0.42f, 0.40f, 0.75f) : new Color(0.075f, 0.30f, 0.28f, 0.6f));
         Color statusInk = palette?.Status ?? new Color(1f, 0.62f, 0.45f);
 
-        // Title.
-        string title = squadsMode ? "[ SQUADS ]" : eventsMode ? "[ ZONE EVENTS ]" : boardMode ? "[ LEADERBOARD ]" : "[ CHARACTER INFO ]";
-        var tsz = hudBig.MeasureString(title);
-        sb.DrawString(hudBig, title, new Vector2((w - tsz.X) / 2f, 24f), accent);
+        // Title (P1042c: a vector skin may own it so it can shrink the run into the band
+        // above the tab row; Classic/Modern keep drawing it here, byte-identically).
+        string title = TitleFor(boardMode, squadsMode, eventsMode);
+        if (drawTitle)
+        {
+            var tsz = hudBig.MeasureString(title);
+            sb.DrawString(hudBig, title, new Vector2((w - tsz.X) / 2f, 24f), accent);
+        }
 
         // Mode tabs + Back.
         DrawTab(sb, hudSmall, whitePixel, TabLabels[0], 0, !boardMode && !squadsMode && !eventsMode, modern, accent, selFill, dim, w);

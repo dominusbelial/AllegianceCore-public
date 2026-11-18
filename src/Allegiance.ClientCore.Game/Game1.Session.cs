@@ -1173,7 +1173,10 @@ public sealed partial class Game1
     /// old silent frame-identical freeze with an unmistakable state.</summary>
     private void DrawConnectionLost()
     {
-        _connectionLostRenderer.Draw(GraphicsDevice.Viewport);
+        // P1042c — the session-loss screen goes through the boundary (its text and box are
+        // the frame's; the modal Esc-quit handling is untouched).
+        ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.ConnectionLostFrame(
+            GraphicsDevice.Viewport, _hudSmall, _hudBig));
     }
 
     /// <summary>Establish the real wire connection + logon handshake for the

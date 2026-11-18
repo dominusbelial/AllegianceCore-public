@@ -90,6 +90,11 @@ public sealed class ScreenRecorder : IJetVectorSurface, IJetElementAudit, IScree
     public void Content(string family, string id, RectangleF box, string text)
         => ContentRuns.Add(new(id, text, box));
 
+    /// <summary>P1042c — record a MEASURED box that no chrome primitive drew (the pre-fix
+    /// career title geometry, used to prove the title-vs-tab rule flags before the fix).</summary>
+    public void RecordSynthetic(string element, string text, RectangleF box)
+        => Texts.Add(new(element, text, box));
+
     private static RectangleF Union(RectangleF a, RectangleF b)
     {
         float x = MathF.Min(a.X, b.X), y = MathF.Min(a.Y, b.Y);
@@ -110,7 +115,7 @@ public static class ScreenAudit
 
     public sealed record Result(int Controls, int HitVsDraw, int StrokeVsText, int TextOutsidePlate,
         int TextOffScreen, int TextOverlapCross, int TextOverlapSame, int ContentOverlap,
-        int Failures, string[] Samples);
+        int TitleVsTab, int Failures, string[] Samples);
 
     public static Prepared Intro(ScreenRecorder recorder, IntroMainFrame frame)
     {
@@ -141,7 +146,39 @@ public static class ScreenAudit
     /// not exactly the hit rectangle for that action (and a drawn control with no hit
     /// action at all). Text classes use the real measured ink boxes.
     /// </summary>
-    public static Result Evaluate(ScreenRecorder recorder, int width, int height, List<HitRect> hitRects)
+    /// <summary>
+    /// P1042c — item 0b's rule: a screen TITLE box that overlaps, or comes within
+    /// <paramref name="gap"/> px of, a tab-row box. <paramref name="titleId"/> is the
+    /// element the chrome recorded the title under; a tab row is any control whose element
+    /// belongs to <paramref name="tabFamily"/> and whose id names a tab. Counts each violation
+    /// pairing (title, tab) — a title that crowds two tabs counts twice.
+    /// </summary>
+    public static int TitleVsTab(ScreenRecorder recorder, string titleId, string tabFamily, float gap,
+        List<string>? samples = null)
+    {
+        int count = 0;
+        for (int i = 0; i < recorder.Texts.Count; i++)
+        {
+            var title = recorder.Texts[i];
+            if (title.Element != titleId) continue;
+            for (int j = 0; j < recorder.Controls.Count; j++)
+            {
+                var tab = recorder.Controls[j];
+                if (tab.Family != tabFamily) continue;
+                float clearance = tab.Box.Y - (title.Box.Y + title.Box.Height);
+                if (clearance < gap)
+                {
+                    count++;
+                    samples?.Add($"title-vs-tab: '{title.Text}' bottom {title.Box.Y + title.Box.Height:0.#} " +
+                        $"tab '{tab.Id}' top {tab.Box.Y:0.#} gap {clearance:0.#} < {gap}");
+                }
+            }
+        }
+        return count;
+    }
+
+    public static Result Evaluate(ScreenRecorder recorder, int width, int height, List<HitRect> hitRects,
+        int titleVsTab = 0)
     {
         var samples = new List<string>();
         int hitVsDraw = 0;
@@ -168,7 +205,9 @@ public static class ScreenAudit
         foreach (var (a, b, _) in recorder.Lines)
         foreach (var text in recorder.Texts)
         {
-            var box = Shrink(text.Box, 0.5f);
+            // The INK box: a bracket arm on the neighbouring row's edge may legally touch the
+            // run's line box (leading), never its ink.
+            var box = InkBox(text.Box);
             if (Contains(box, a) || Contains(box, b) || Contains(box, new Vector2((a.X + b.X) / 2f, (a.Y + b.Y) / 2f)))
             {
                 strokeVsText++;
@@ -205,12 +244,15 @@ public static class ScreenAudit
         }
 
         int cross = 0, same = 0, contentOverlap = 0;
+        // P1042c — a recorded run's box is the UNION of the ink and its eight 1 px keyline
+        // offsets. The keyline is a dark backing that may legally touch a neighbouring run
+        // (and the plate edge); only INK overlap counts, so each box is shrunk by 1 px.
         for (int i = 0; i < recorder.Texts.Count; i++)
         for (int j = i + 1; j < recorder.Texts.Count; j++)
         {
             var a = recorder.Texts[i];
             var b = recorder.Texts[j];
-            if (!Intersects(a.Box, b.Box)) continue;
+            if (!Intersects(InkBox(a.Box), InkBox(b.Box))) continue;
             if (a.Element == b.Element)
             {
                 if (a.Text == b.Text) continue;   // the same run measured twice
@@ -234,7 +276,7 @@ public static class ScreenAudit
             {
                 var content = recorder.ContentRuns[j];
                 if (content.Element != text.Element) continue;
-                if (!Intersects(text.Box, content.Box)) continue;
+                if (!Intersects(InkBox(text.Box), InkBox(content.Box))) continue;
                 cross++;
                 contentOverlap++;
                 if (samples.Count < 42)
@@ -242,14 +284,21 @@ public static class ScreenAudit
             }
         }
 
-        int failures = hitVsDraw + strokeVsText + outsidePlate + offScreen + cross + same;
+        int failures = hitVsDraw + strokeVsText + outsidePlate + offScreen + cross + same + titleVsTab;
         return new(recorder.Controls.Count, hitVsDraw, strokeVsText, outsidePlate, offScreen, cross, same,
-            contentOverlap, failures, samples.ToArray());
+            contentOverlap, titleVsTab, failures, samples.ToArray());
     }
 
     private static bool Same(RectangleF a, RectangleF b)
         => MathF.Abs(a.X - b.X) <= 0.01f && MathF.Abs(a.Y - b.Y) <= 0.01f
         && MathF.Abs(a.Width - b.Width) <= 0.01f && MathF.Abs(a.Height - b.Height) <= 0.01f;
+
+    /// <summary>P1042c — the INK box of a recorded run: its box carries the 1 px keyline
+    /// under-stroke on every side and SpriteFont's line pitch (leading) in its height. Ink
+    /// overlap therefore compares 1 px narrower and 4 px shorter per side; two runs on a
+    /// 20 px line pitch with a 24 px line box do not overlap, a real collision still does.</summary>
+    private static RectangleF InkBox(RectangleF box)
+        => new(box.X + 1f, box.Y + 4f, MathF.Max(0f, box.Width - 2f), MathF.Max(0f, box.Height - 8f));
 
     private static RectangleF Shrink(RectangleF box, float by)
         => new(box.X + by, box.Y + by, MathF.Max(0f, box.Width - 2f * by), MathF.Max(0f, box.Height - 2f * by));
@@ -262,8 +311,15 @@ public static class ScreenAudit
         && inner.X + inner.Width <= outer.X + outer.Width + 0.01f
         && inner.Y + inner.Height <= outer.Y + outer.Height + 0.01f;
 
+    /// <summary>Do two ink boxes share more than a touching edge? A 0.5 px inset on each
+    /// side keeps a run and its neighbour that abut exactly (the briefing's 20 px line pitch
+    /// against a 20 px line box) from counting as an overlap — only shared ink does.</summary>
     private static bool Intersects(RectangleF a, RectangleF b)
-        => a.X < b.X + b.Width && b.X < a.X + a.Width && a.Y < b.Y + b.Height && b.Y < a.Y + a.Height;
+    {
+        const float Eps = 0.5f;
+        return a.X + Eps < b.X + b.Width - Eps && b.X + Eps < a.X + a.Width - Eps
+            && a.Y + Eps < b.Y + b.Height - Eps && b.Y + Eps < a.Y + a.Height - Eps;
+    }
 
     private static string Fmt(RectangleF r) => $"{r.X:0.#},{r.Y:0.#} {r.Width:0.#}x{r.Height:0.#}";
 }

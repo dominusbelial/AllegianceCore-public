@@ -42,6 +42,17 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
     /// <summary>P1042b — the borrowed career content painter (the P808c renderer needs
     /// the SpriteBatch/fonts; Jet supplies its palette and frames the tabs/panel).</summary>
     private readonly IScreenContentRenderer? _careerContent;
+    /// <summary>P1042c — the borrowed in-game content renderers (leaderboard, starmap, sector
+    /// info, game-over tables). Jet supplies their palettes and frames their rectangles.</summary>
+    private readonly ScreenRenderers? _extra;
+
+    /// <summary>P1042c — the minimum clear gap the Jet career title keeps above the tab row.</summary>
+    private const float CareerScreenTitleGap = 6f;
+    /// <summary>P1042c — a panel control row's corner-bracket arm (short enough that the text
+    /// indent below keeps the run clear of it).</summary>
+    private const float PanelRowBracketArm = 5f;
+    /// <summary>P1042c — the indent of a panel control row's run past its band's left edge.</summary>
+    private const float PanelRowTextIndent = 8f;
 
     private const float PlateAlpha = JetScreenChrome.PlateAlpha;
     private const float DimPlateAlpha = JetScreenChrome.DimPlateAlpha;
@@ -53,7 +64,7 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
     public JetScreenSkinRenderer(IJetVectorSurface surface, HangarScreenRenderer? hangar,
         DockedScreenRenderer? docked, LoadoutV2Renderer? loadoutV2, HudSettings settings,
         JetPaletteSwitcher? palettes, string? paletteOverride = null,
-        IScreenContentRenderer? careerContent = null)
+        IScreenContentRenderer? careerContent = null, ScreenRenderers? extra = null)
     {
         ArgumentNullException.ThrowIfNull(surface);
         ArgumentNullException.ThrowIfNull(settings);
@@ -64,6 +75,7 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
         _palettes = palettes;
         _paletteOverride = paletteOverride;
         _careerContent = careerContent;
+        _extra = extra;
         var catalog = HudSkinResolver.Catalog;
         var green = catalog.TryGet(HudSkinIds.Jet) ?? throw new ArgumentException("The Jet skin definition is not installed.");
         var amber = catalog.TryGetVariant(HudSkinIds.Jet, JetPaletteIds.Amber) ?? green;
@@ -267,8 +279,21 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
     /// resolve (the same source the tabs are drawn from).</summary>
     public void DrawCareer(in CareerScreenFrame frame)
     {
-        _careerContent?.DrawCareer(frame, JetCareerPalette(Painter));
         var painter = Painter;
+        // P1042c — the content composition skips its title; Jet draws it fitted into the
+        // band above the tab row (item 0b: the classic big title touches the tab row in Jet).
+        _careerContent?.DrawCareer(frame, JetCareerPalette(painter), drawTitle: false);
+        string title = CareerScreenRenderer.TitleFor(frame.BoardMode, frame.SquadsMode, frame.EventsMode);
+        var titleInk = painter.Measure(title, true, 1f);
+        float band = CareerScreenRenderer.TabRowTop - CareerScreenTitleGap - 1f - CareerScreenRenderer.TitleTop;
+        float titleScale = titleInk.Y > 0f && band > 0f
+            ? MathF.Min(1f, MathF.Min(band / titleInk.Y, (frame.Width - 40f) / MathF.Max(1f, titleInk.X)))
+            : 1f;
+        painter.Element(ScreenActions.CareerTitle);
+        painter.Text(title, new Vector2(frame.Width / 2f,
+            CareerScreenRenderer.TitleTop + titleInk.Y * titleScale / 2f), true, titleScale,
+            painter.Primary, centered: true);
+        painter.Drawn(ScreenActions.CareerTitle);
         var panel = CareerScreenRenderer.PanelRect(frame.Width, frame.Height);
         painter.Element(ScreenActions.CareerPanel);
         painter.CornerBrackets(new RectangleF(panel.X, panel.Y, panel.Width, panel.Height),
@@ -294,6 +319,239 @@ public sealed class JetScreenSkinRenderer : IScreenSkinRenderer
     private static CareerScreenPalette JetCareerPalette(JetVectorPainter painter) => new(
         painter.Primary, painter.Primary, painter.Dim, painter.Plate * 0.92f,
         painter.Plate * 0.75f, painter.Hot);
+
+    // ── P1042c: the in-game panel families ──────────────────────────────────
+    /// <summary>
+    /// P1042c — Jet chrome for the panel-style in-game screens (side select, ready check,
+    /// mission briefing, team pane, quick chat, key bindings, connection lost). The frame is
+    /// the model's: every fill is the pre-boundary fill and every run sits at its resolved
+    /// anchor. Jet never repaints a fill; it draws corner-bracket frames at the panel and the
+    /// control bands, plates the selectable rows, and re-inks every run with keylined text in
+    /// the five-role palette. Selection carries shape (full stroke bracket + denser plate) AND
+    /// ink (Hot), never hue alone.
+    /// </summary>
+    public void DrawPanel(in ScreenPanelFrame frame)
+    {
+        var painter = Painter;
+        float w = frame.Width, h = frame.Height;
+        var panel = frame.Panel;
+        _surface.Begin();
+        try
+        {
+            // The screen frame: corner brackets OUTSIDE the panel box (a 3 px outset, short
+            // arms), so a bracket arm can never cross the panel's own title/row text.
+            var outer = new RectangleF(panel.X - 3f, panel.Y - 3f, panel.Width + 6f, panel.Height + 6f);
+            painter.CornerBrackets(outer, MathF.Min(BracketArm, MathF.Min(outer.Width, outer.Height) * 0.2f),
+                painter.Hairline, painter.Dim);
+            painter.Line(new Vector2(outer.X, outer.Y), new Vector2(outer.X + outer.Width, outer.Y),
+                painter.Hairline, painter.Dim);
+
+            string family = frame.Family;
+            bool panelFamily = family == ScreenActions.PanelSideSelect
+                || family == ScreenActions.PanelReadyCheck
+                || family == ScreenActions.PanelQuickChat
+                || family == ScreenActions.PanelKeyBind;
+            int controlIndex = 0;
+            var rows = frame.Rows;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                if (row.Text.Length == 0) continue;
+                // The quick-chat column legend is chrome the vector skin owns (its classic
+                // anchor overlaps the first choice's ink at every resolution).
+                if (row.Id == ScreenActions.QuickChatLegend) continue;
+                // A run the classic screen places entirely outside the viewport is invisible
+                // there; the vector chrome does not draw it either (audit: text-off-screen 0).
+                var runInk = painter.Measure(row.Text, row.Large, row.Scale);
+                if (row.Position.Y + runInk.Y < 0f || row.Position.Y > h) continue;
+                var ink = row.Selected ? painter.Hot : JetInk(painter, row.Role);
+                if (row.Control && panelFamily)
+                {
+                    painter.Element(ScreenActions.PanelLine);
+                    // A selectable row: plate + brackets at exactly the frame's band.
+                    var box = row.Rect;
+                    if (box.Width <= 0f || box.Height <= 0f) { controlIndex++; continue; }
+                    string id = ScreenActions.PanelRow(family, controlIndex);
+                    painter.Element(id);
+                    painter.FillPlate(box, row.Selected ? PlateAlpha : DimPlateAlpha);
+                    painter.CornerBrackets(box, PanelRowBracketArm,
+                        row.Selected ? painter.Stroke : painter.Hairline, ink);
+                    // Left-aligned and indented past the corner-bracket arm, vertically centred
+                    // in the band, fitted to the run's own column width and INCLUDING the
+                    // keyline under-stroke the painter adds: the run stays strictly inside its
+                    // plate, clear of the brackets, and never reaches the next column.
+                    var rowInk = painter.Measure(row.Text, row.Large, 1f);
+                    float widthRoom = MathF.Max(1f, (row.MaxWidth > 0f ? row.MaxWidth : box.Width)
+                        - PanelRowTextIndent - 2f * (JetScreenChrome.Band(painter) + painter.KeylineWidth));
+                    float heightRoom = MathF.Max(1f, box.Height
+                        - 2f * (JetScreenChrome.Band(painter) + painter.KeylineWidth));
+                    float scale = MathF.Min(row.Scale, MathF.Min(
+                        rowInk.X > 0f ? widthRoom / rowInk.X : row.Scale,
+                        rowInk.Y > 0f ? heightRoom / rowInk.Y : row.Scale));
+                    scale = MathF.Max(JetScreenChrome.MinimumTextScale, scale);
+                    painter.Text(row.Text,
+                        new Vector2(box.X + PanelRowTextIndent, box.Y + (box.Height - rowInk.Y * scale) / 2f),
+                        row.Large, scale, ink);
+                    painter.Drawn(id);
+                    Audit?.Control(family, ScreenActions.PanelRow(family, controlIndex), box);
+                    Audit?.Plate(family, ScreenActions.PanelRow(family, controlIndex), box);
+                    controlIndex++;
+                    continue;
+                }
+
+                // A non-selectable run: the model's anchor, wide enough for its own line.
+                painter.Element(ScreenActions.PanelLine);
+                float available = row.MaxWidth > 0f
+                    ? row.MaxWidth
+                    : MathF.Max(1f, w - 16f - MathF.Max(0f, row.Position.X));
+                var inkSize = painter.Measure(row.Text, row.Large, 1f);
+                float runScale = inkSize.X > 0f ? MathF.Min(row.Scale, available / inkSize.X) : row.Scale;
+                float runH = inkSize.Y * runScale;
+                if (row.Position.Y + runH < 0f || row.Position.Y > h) continue;
+                // A run the classic screen centres wider than the window (the key-binding
+                // footer at 800x480) is re-centred at a fitted scale so it stays on screen.
+                float runW = inkSize.X * runScale;
+                float runX = row.Position.X;
+                if (runX < 0f || runX + runW > w - 8f) runX = MathF.Max(8f, (w - runW) / 2f);
+                painter.Text(row.Text, new Vector2(runX, row.Position.Y), row.Large, runScale, ink);
+            }
+        }
+        finally { _surface.End(); }
+    }
+
+    /// <summary>
+    /// P1042c — the in-mission leaderboard: the P639 roster cells are CONTENT and are drawn
+    /// unchanged except for the Jet ink palette; Jet frames the panel, the header band and
+    /// every row band the renderer's own geometry resolved.
+    /// </summary>
+    public void DrawScoreboard(in ScoreboardFrame frame)
+    {
+        var painter = Painter;
+        _extra?.Scoreboard?.Draw(frame.Viewport, frame.Rows, frame.SelfName, JetScoreboardPalette(painter));
+        _surface.Begin();
+        try
+        {
+            painter.CornerBrackets(frame.Panel,
+                MathF.Min(BracketArm * 2f, MathF.Min(frame.Panel.Width, frame.Panel.Height) * 0.2f),
+                painter.Hairline, painter.Dim);
+            var header = frame.HeaderBand;
+            if (header.Width > 0f && header.Height > 0f)
+            {
+                painter.Element(ScreenActions.ScoreboardHeader);
+                painter.CornerBrackets(header, BracketArm, painter.Hairline, painter.Primary);
+                painter.Drawn(ScreenActions.ScoreboardHeader);
+                Audit?.Control(ScreenActions.Scoreboard, ScreenActions.ScoreboardHeader, header);
+            }
+            var bands = frame.RowBands;
+            for (int i = 0; i < bands.Count; i++)
+            {
+                var band = bands[i];
+                if (band.Width <= 0f || band.Height <= 0f) continue;
+                string id = ScreenActions.ScoreboardRow(i);
+                painter.Element(id);
+                painter.CornerBrackets(band, BracketArm, painter.Hairline, painter.Dim);
+                painter.Drawn(id);
+                Audit?.Control(ScreenActions.Scoreboard, id, band);
+            }
+        }
+        finally { _surface.End(); }
+    }
+
+    /// <summary>
+    /// P1042c — the starmap: the map itself (sectors, alephs, icons, warp edges) and the info
+    /// pane's text are native CONTENT drawn unchanged; Jet frames the map panel, the sector
+    /// info pane and its expand button at the rectangles the frame resolved.
+    /// </summary>
+    public void DrawStarmap(in StarmapScreenFrame frame)
+    {
+        _extra?.Starmap?.Draw(frame.Sites, frame.Edges, frame.CurrentSector, frame.SelectedSector,
+            frame.Warnings, frame.FlashOn, frame.Viewport, frame.PanelW, frame.PanelH,
+            frame.Owners, frame.SideColor, frame.KnownEnemySectors, frame.HighlightedClusters,
+            frame.ChatCluster);
+        if (frame.InfoPane is { } info)
+            _extra?.SectorInfo?.Draw(info, frame.Viewport,
+                frame.Panel.X, frame.Panel.Y, frame.Panel.Width, frame.Panel.Height,
+                frame.OwnSideColor, frame.Expanded);
+
+        var painter = Painter;
+        _surface.Begin();
+        try
+        {
+            painter.CornerBrackets(frame.Panel,
+                MathF.Min(BracketArm * 2f, MathF.Min(frame.Panel.Width, frame.Panel.Height) * 0.08f),
+                painter.Hairline, painter.Dim);
+            var infoBox = frame.InfoBox;
+            if (infoBox.Width > 0f && infoBox.Height > 0f)
+            {
+                painter.Element(ScreenActions.StarmapInfo);
+                painter.CornerBrackets(infoBox, BracketArm, painter.Hairline, painter.Primary);
+                painter.Drawn(ScreenActions.StarmapInfo);
+                Audit?.Control(ScreenActions.Starmap, ScreenActions.StarmapInfo, infoBox);
+            }
+            var expand = frame.InfoExpandButton;
+            if (expand.Width > 0f && expand.Height > 0f)
+            {
+                painter.Element(ScreenActions.StarmapExpand);
+                painter.CornerBrackets(expand, 4f, painter.Stroke, painter.Hot);
+                painter.Drawn(ScreenActions.StarmapExpand);
+                Audit?.Control(ScreenActions.Starmap, ScreenActions.StarmapExpand, expand);
+            }
+        }
+        finally { _surface.End(); }
+    }
+
+#if !BROWSER
+    /// <summary>
+    /// P1042c — the game-over result screen: the two tables (and the winner/reason panel text)
+    /// are CONTENT drawn by the unchanged P752 renderer; Jet frames the panel and the two
+    /// table header bands at the rectangles the renderer reports (the ones its pointer uses).
+    /// </summary>
+    public void DrawGameOver(in GameOverScreenFrame frame)
+    {
+        if (_extra?.GameOver is not { } gameOver) return;
+        gameOver.Draw(frame.Viewport, frame.Info, frame.Tables, frame.NextMatchSeconds, frame.Perf);
+
+        var painter = Painter;
+        _surface.Begin();
+        try
+        {
+            painter.CornerBrackets(frame.Panel,
+                MathF.Min(BracketArm * 2f, MathF.Min(frame.Panel.Width, frame.Panel.Height) * 0.1f),
+                painter.Hairline, painter.Dim);
+            var side = gameOver.LastSideHeaderRects;
+            for (int i = 0; i < side.Count; i++)
+            {
+                var rect = side[i].Rect;
+                var box = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
+                if (box.Width <= 0f || box.Height <= 0f) continue;
+                string id = ScreenActions.GameOverSideHeader(i);
+                painter.Element(id);
+                painter.CornerBrackets(box, 4f, painter.Hairline, painter.Primary);
+                painter.Drawn(id);
+                Audit?.Control(ScreenActions.GameOver, id, box);
+            }
+            var players = gameOver.LastPlayerHeaderRects;
+            for (int i = 0; i < players.Count; i++)
+            {
+                var rect = players[i].Rect;
+                var box = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
+                if (box.Width <= 0f || box.Height <= 0f) continue;
+                string id = ScreenActions.GameOverPlayerHeader(i);
+                painter.Element(id);
+                painter.CornerBrackets(box, 4f, painter.Hairline, painter.Primary);
+                painter.Drawn(id);
+                Audit?.Control(ScreenActions.GameOver, id, box);
+            }
+        }
+        finally { _surface.End(); }
+    }
+
+#endif
+
+    /// <summary>P1042c — the Jet palette mapped onto the leaderboard's inks.</summary>
+    private static ScoreboardPalette JetScoreboardPalette(JetVectorPainter painter) => new(
+        painter.Plate * 0.92f, painter.Dim, painter.Primary, painter.Primary,
+        painter.Primary, painter.Hot, painter.Dim);
 
     /// <summary>The Jet role a classic screen role takes.</summary>
     private static Color JetInk(JetVectorPainter painter, ScreenInkRole role) => role switch
