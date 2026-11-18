@@ -420,15 +420,58 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
         {
             for (int i = 0; i < count; i++) jet.Draw(model, frame);
         }
-        Draw(10_000);                       // warm the text/tick caches
+        // P1049 — the window is sized by the caches, not by habit. Every bounded
+        // cache in the Jet draw path clears when it reaches its limit, so the
+        // measurement must span at least one fill+clear: the largest is the shared
+        // RadarLabelModel range-text cache at 4,096 entries (RadarLabelModel.cs:169
+        // before P1049); the console fit caches are 512/256 (JetHudRenderer.Console.cs:131-132),
+        // the tip wrap 64 (:514), the compact tag 16 (:449), the stores/inventory
+        // slots 24/40 (JetHudRenderer.StoresCaution.cs:36-41) and the speed-tick ring
+        // 16 (JetHudRenderer.cs:139). The warm-up fills one full cycle and the
+        // measured window covers two, so every "every N frames"/cache-clear path is
+        // exercised instead of being amortised away; 12,288 frames is 11 % of the
+        // old 110,000 and the assertion is still exactly zero.
+        const int WarmupFrames = 4_096;     // one full cycle of the largest cache
+        const int MeasuredFrames = 8_192;   // two cycles; catches any per-N-frame work
+        Draw(WarmupFrames);
         Assert.True(surface.Lines > 0);
         Assert.Contains("HDG 210", surface.Seen);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(100_000);
+        Draw(MeasuredFrames);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1036 JetHudRenderer.Draw (ladder+tapes+FPM): {bytes} B / 100000 frames = {bytes / 100000d} B/frame");
+        output.WriteLine($"P1036 JetHudRenderer.Draw (ladder+tapes+FPM): {bytes} B / {MeasuredFrames} frames = {bytes / (double)MeasuredFrames} B/frame");
         Assert.Equal(0, bytes);
     }
+
+    /// <summary>P1049 — sensitivity proof for the reduced window above: one
+    /// injected allocation every <paramref name="period"/> frames is still caught
+    /// (period = the largest cache cycle, 4,096, and period = measured window − 1,
+    /// 8,191, i.e. a single allocation anywhere in the window). Test-only probe:
+    /// it lives in the allocation test, not in the renderer.</summary>
+    [Theory]
+    [InlineData(4_096)]
+    [InlineData(8_191)]
+    public void The_measured_window_still_catches_a_periodic_allocation(int period)
+    {
+        var surface = new CountingSurface();
+        var noop = new HudSkinResources(_ => { }, (_, _) => { }, _ => { }, (_, _) => { }, _ => { }, _ => { }, _ => { });
+        using var jet = Jet(surface, noop);
+        var model = HudModelAdapter.Create(Frame(260f, .6f), CameraMode.Cockpit,
+            velocityMarker: new(900, 560), flightReference: Reference(18f, -25f, 210f));
+        var frame = new HudDrawFrame(new Viewport(0, 0, 1920, 1080), null, true);
+        for (int i = 0; i < 4_096; i++) jet.Draw(model, frame);   // same warm-up as the gate
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 8_192; i++)
+        {
+            jet.Draw(model, frame);
+            if (i % period == 0) _probeSink = new byte[16];
+        }
+        long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        output.WriteLine($"period {period}: {bytes} B caught in the 8,192-frame window");
+        Assert.True(bytes > 0, $"the {8_192}-frame window missed an allocation every {period} frames");
+    }
+
+    private static object? _probeSink;
 
     public static TheoryData<string> States => new()
     {

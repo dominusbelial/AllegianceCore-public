@@ -531,6 +531,14 @@ list in **reverse**.
 - **The wire-data HUD source** — the native values the HUD needs, read the
   native way (P786). `src/Allegiance.ClientCore.Game/Rendering/HudWireValues.cs`,
   report `docs/reports/P786_HUD_WIRE_DATA.md`.
+- **Per-thread render cache** — a value/formatted-string cache in the HUD draw
+  path that is `[ThreadStatic]` instead of a shared static `Dictionary`, so parallel
+  client windows (and parallel xUnit collections) cannot corrupt each other while a
+  steady frame still returns the same instance and allocates nothing. Sites:
+  `src/Allegiance.ClientCore.Game/Rendering/RadarLabelModel.cs`,
+  `Rendering/HudStringCache.cs`, `Rendering/RadarLabelDeclutter.cs`,
+  `Rendering/ShipRenderScale.cs`, `Rendering/MissileModelSource.cs`,
+  `Rendering/TargetPaneModel.cs`. Report `docs/reports/CI_FAST_TIMING_P1049.md`.
 
 ## 3. Server (`src/Allegiance.Server`)
 

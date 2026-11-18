@@ -216,17 +216,26 @@ public sealed class ServerRegistry
     {
         if (string.IsNullOrWhiteSpace(token))
             return false;
-        if (!_entries.TryGetValue(id, out var current))
-            return false;
-        if (current.Token != token)
-            return false;
-        if (_entries.TryRemove(new KeyValuePair<string, ServerListing>(id, current)))
+        // P1049 — serialise with Register: the heartbeat path reads the listing,
+        // builds the refreshed row and writes it back with the indexer, so a
+        // deregister landing inside that window was undone by the write and the
+        // server stayed listed after a clean shutdown (the P808 flake: List() not
+        // empty after the heartbeat was disposed). The same gate makes the
+        // read-modify-write and the removal mutually exclusive.
+        lock (_registrationGate)
         {
-            // P894 / LOB-0035 — native's LE_ServerDisconnected (lobby/server.cpp:420).
-            Console.WriteLine($"[lobby] server disconnected: {current.Name} @ {current.Address}:{current.Port} ({id})");
-            return true;
+            if (!_entries.TryGetValue(id, out var current))
+                return false;
+            if (current.Token != token)
+                return false;
+            if (_entries.TryRemove(new KeyValuePair<string, ServerListing>(id, current)))
+            {
+                // P894 / LOB-0035 — native's LE_ServerDisconnected (lobby/server.cpp:420).
+                Console.WriteLine($"[lobby] server disconnected: {current.Name} @ {current.Address}:{current.Port} ({id})");
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     /// <summary>
@@ -338,15 +347,21 @@ public sealed class ServerRegistry
     /// </summary>
     public void PruneExpired(TimeSpan maxAge)
     {
-        var cutoff = _time.GetUtcNow() - maxAge;
-        foreach (var kv in _entries)
+        // P1049 — same gate as Register/Deregister: the sweep must not remove a
+        // row in the middle of a heartbeat's read-modify-write. Re-entrant, so
+        // RegisterCore's own prune call is unaffected.
+        lock (_registrationGate)
         {
-            if ((kv.Value.LastSeenUtc < cutoff || _time.GetUtcNow() - kv.Value.LastSeenUtc > EntryMaxAge(kv.Value))
-                && _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value)))
+            var cutoff = _time.GetUtcNow() - maxAge;
+            foreach (var kv in _entries)
             {
-                // P894 / LOB-0035 — a missed roll call is also a lifecycle event
-                // (native's RollCall drop, lobby/lobbyapp.cpp:426-460).
-                Console.WriteLine($"[lobby] server expired (missed roll call): {kv.Value.Name} @ {kv.Value.Address}:{kv.Value.Port} ({kv.Key})");
+                if ((kv.Value.LastSeenUtc < cutoff || _time.GetUtcNow() - kv.Value.LastSeenUtc > EntryMaxAge(kv.Value))
+                    && _entries.TryRemove(new KeyValuePair<string, ServerListing>(kv.Key, kv.Value)))
+                {
+                    // P894 / LOB-0035 — a missed roll call is also a lifecycle event
+                    // (native's RollCall drop, lobby/lobbyapp.cpp:426-460).
+                    Console.WriteLine($"[lobby] server expired (missed roll call): {kv.Value.Name} @ {kv.Value.Address}:{kv.Value.Port} ({kv.Key})");
+                }
             }
         }
     }

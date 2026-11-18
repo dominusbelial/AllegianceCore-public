@@ -958,11 +958,15 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
                 jet.DrawConsole(model);
             }
         }
-        Draw(2_000);                         // warm the fit/mission/endurance caches
+        // P1049 — the window is sized by the draw path's cache cycles (table in
+        // JetFlightSymbologyTests): 4,096 warm-up = one full cycle of the largest
+        // bounded cache (the chat/value fit caches are 512/256 here), 8,192
+        // measured = two cycles. Assertion unchanged: 0 B.
+        Draw(4_096);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(20_000);
+        Draw(8_192);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1040 Jet console: {bytes} B / 20000 frames = {bytes / 20000d} B/frame");
+        output.WriteLine($"P1040 Jet console: {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
         Assert.Equal(0, bytes);
     }
 

@@ -601,12 +601,15 @@ public sealed class JetTargetLockTests(ITestOutputHelper output)
         var frame = DrawFrame();
 
         void Draw(int count) { for (int i = 0; i < count; i++) jet.Draw(model, frame); }
-        Draw(10_000);
+        // P1049 — window sized by the caches (table in JetFlightSymbologyTests):
+        // 4,096 warm-up = one full cycle of the largest bounded cache in the draw
+        // path, 8,192 measured = two cycles. Assertion unchanged: exactly 0 B.
+        Draw(4_096);
         Assert.True(surface.Texts > 0 && surface.Lines > 0);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(100_000);
+        Draw(8_192);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1037 JetHudRenderer.Draw (target+lock+lead+orders+block): {bytes} B / 100000 frames = {bytes / 100000d} B/frame");
+        output.WriteLine($"P1037 JetHudRenderer.Draw (target+lock+lead+orders+block): {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
         Assert.Equal(0, bytes);
     }
 

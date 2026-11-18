@@ -147,10 +147,19 @@ public static class RadarLabelModel
     public static string RangeText(int metres)
     {
         if (metres <= 0) return "0";
-        if (_rangeText.TryGetValue(metres, out var cached)) return cached;
+        // P1049 — the cache is PER THREAD ([ThreadStatic]): the HUD draw path is
+        // single-threaded per client, but xUnit runs independent test collections
+        // (Skins/Jet, Skins/Hud, Core) on several threads at once. A plain static
+        // Dictionary let two concurrent inserters corrupt its bucket array
+        // (IndexOutOfRangeException in Dictionary.TryInsert), after which every
+        // later caller failed. A thread-local cache cannot be shared, and its
+        // steady-state hit path still allocates nothing (the per-thread dictionary
+        // is created once, on that thread's first range).
+        var cache = _rangeText ??= new Dictionary<int, string>();
+        if (cache.TryGetValue(metres, out var cached)) return cached;
         var text = metres.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (_rangeText.Count >= RangeTextCacheLimit) _rangeText.Clear();
-        _rangeText[metres] = text;
+        if (cache.Count >= RangeTextCacheLimit) cache.Clear();
+        cache[metres] = text;
         return text;
     }
 
@@ -159,16 +168,17 @@ public static class RadarLabelModel
     public static string RangeLineText(int metres)
     {
         if (metres <= 0) return "0 m";
-        if (_rangeLineText.TryGetValue(metres, out var cached)) return cached;
+        var cache = _rangeLineText ??= new Dictionary<int, string>();
+        if (cache.TryGetValue(metres, out var cached)) return cached;
         var text = RangeText(metres) + " m";
-        if (_rangeLineText.Count >= RangeTextCacheLimit) _rangeLineText.Clear();
-        _rangeLineText[metres] = text;
+        if (cache.Count >= RangeTextCacheLimit) cache.Clear();
+        cache[metres] = text;
         return text;
     }
 
     private const int RangeTextCacheLimit = 4096;
-    private static readonly Dictionary<int, string> _rangeText = new();
-    private static readonly Dictionary<int, string> _rangeLineText = new();
+    [ThreadStatic] private static Dictionary<int, string>? _rangeText;
+    [ThreadStatic] private static Dictionary<int, string>? _rangeLineText;
 
     /// <summary>Resolve the label block native would draw for
     /// <paramref name="contact"/> in <paramref name="mode"/>. Command camera

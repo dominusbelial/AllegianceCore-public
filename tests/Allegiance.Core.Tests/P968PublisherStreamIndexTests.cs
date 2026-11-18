@@ -19,18 +19,35 @@ public sealed class P968PublisherStreamIndexTests(ITestOutputHelper output)
         long Lookups, long IndexEntries, long IndexVisits, long GateAcquisitions, double FreshnessGateMs,
         double SubmitGateMs, double PublishLagMs, long Packets);
 
+    /// <summary>P1049 — the exact counting rules stay in Fast on the 100-peer
+    /// rows: comparisons, lookups, index entries/visits, gate acquisitions and
+    /// packets are asserted exactly as before, nine runs per arm like the
+    /// original theory. The 400-peer rows are the measurement (P968's JSON
+    /// timings), so they moved to the Perf tier below — a measurement is not a
+    /// unit rule (docs/testing/TIERS.md). No assertion was weakened or removed.</summary>
     [Theory]
-    [InlineData(100, false, false)]
-    [InlineData(400, false, false)]
-    [InlineData(100, true, false)]
-    [InlineData(400, true, false)]
-    [InlineData(100, false, true)]
-    [InlineData(400, false, true)]
-    [InlineData(100, true, true)]
-    [InlineData(400, true, true)]
-    public void Reliable_backlog_measures_pending_scan_work(int peers, bool indexed, bool coalesced)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void Reliable_backlog_counting_rules_hold_at_100_peers(bool indexed, bool coalesced)
+        => RunMeasurements(100, indexed, coalesced);
+
+    /// <summary>P1049 — the 400-peer measuring rows (nine runs × instrumented and
+    /// uninstrumented, JSON logged) are Perf: a crowded-pipeline measurement, not
+    /// a Fast unit rule. The assertions are the same ones as the Fast rows.</summary>
+    [Theory]
+    [Trait("Tier", "Perf")]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void Reliable_backlog_measures_pending_scan_work_at_400_peers(bool indexed, bool coalesced)
+        => RunMeasurements(400, indexed, coalesced);
+
+    private void RunMeasurements(int peers, bool indexed, bool coalesced)
     {
-        output.WriteLine($"ServerGC={System.Runtime.GCSettings.IsServerGC}; workers=4; pre-encoded immutable packets");
+        output.WriteLine($"{peers} peers, ServerGC={System.Runtime.GCSettings.IsServerGC}; workers=4; pre-encoded immutable packets");
         // Isolate the publisher, after immutable/encode-once capture. No sim,
         // projection, transport or interest-tier substitute is timed here.
         foreach (bool instrumented in new[] { true, false })

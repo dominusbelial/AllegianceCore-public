@@ -275,16 +275,21 @@ public static class TargetPaneModel
         return "unknown";
     }
 
-    /// Pooled per-frame occluder list for the scanner gate (the frame path is
-    /// single-threaded under the session gate; cleared per call, never read
-    /// re-entrantly).
-    private static readonly List<VisibilityMath.SightBody> OccluderScratch = new();
+    /// Pooled per-frame occluder list for the scanner gate. P1049 — per thread
+    /// ([ThreadStatic]): xUnit runs independent collections on several threads, and
+    /// a shared scratch list let two concurrent pane builds interleave their
+    /// Clear/Add sequences. The frame path is still single-threaded per client, so
+    /// this adds no work to a frame.
+    [ThreadStatic] private static List<VisibilityMath.SightBody>? _occluderScratch;
 
-    /// Pooled per-frame friendly-scanner list for the SeenBySide leg
+    /// <summary>Pooled per-frame friendly-scanner list for the SeenBySide leg
     /// (trekigc.cpp:2098-2113). <see cref="Build"/> runs once per frame with a
     /// single ship target, so the gather happens once per frame/cluster — not
-    /// per pane row — reusing this list, same conventions as OccluderScratch.
-    private static readonly List<TargetVisibility.SideScanner> ScannerScratch = new();
+    /// per pane row — reusing this list, same conventions as the occluder list.</summary>
+    [ThreadStatic] private static List<TargetVisibility.SideScanner>? _scannerScratch;
+
+    private static List<VisibilityMath.SightBody> OccluderScratch => _occluderScratch ??= new();
+    private static List<TargetVisibility.SideScanner> ScannerScratch => _scannerScratch ??= new();
 
     /// <summary>
     /// P786 — the client-side <c>trekClient.GetShip()-&gt;CanSee(target)</c>

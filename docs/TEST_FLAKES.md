@@ -4,6 +4,56 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1049 CI stabilisation — 2026-11-17 UTC
+
+**P808 and P941 are RESOLVED** (root causes found, not re-labelled as load flakes).
+
+| Case | Family | Cause | Fix |
+| --- | --- | --- | --- |
+| `P808ServerEnrollmentTests.Heartbeat_enrolls_once_saves_private_credential_and_reuses_it_after_restart` | listing survives heartbeat disposal | Two defects: (1) `ServerRegistry.Deregister` did not take the registration gate, so a heartbeat refresh's read-modify-write (`_entries[target.Id] = refreshed`) could re-add a listing that a clean shutdown had just removed; (2) `LobbyHeartbeat.Dispose` sends the DELETE best-effort with a bounded 5 s wait, so on a loaded runner the request can still be in flight when `Dispose` returns and the immediate `Assert.Empty` reads the registry too early. | `Deregister`/`PruneExpired` now run under `_registrationGate` (`src/Allegiance.Lobby/ServerRegistry.cs`), and the test polls up to the same 5 s for the listing to disappear before asserting it is gone (assertion unchanged). `Dispose` logs a deregister timeout instead of silently leaving the listing to expire. |
+| `P941InputLayoutTests.Keymap_store_picks_the_layout_from_the_file` | shared default keymap path | `Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", …)` is process-wide; P941's persistence test and P949's two persistence tests run in parallel xUnit collections and overwrote each other's path. A probe repeating the pre-fix bodies in two parallel classes reproduced `Expected: Native, Actual: Port` exactly. | All three tests use the explicit store path (`new KeyBindingStore(ProfileStorage.Default, path)`, `Rendering/KeyBindingStore.cs:58`); 12 parallel repetitions pass. |
+
+If either fails again it is a new defect, not these families.
+
+Also fixed in the same pass (parallel-test shared state, and the Fast-tier timing offenders):
+
+- The Jet allocation tests drew 10,000 + 100,000 frames; the window is now 4,096 + 8,192
+  (one warm-up cycle + two measured cycles of the largest bounded cache in the draw path —
+  see `docs/reports/CI_FAST_TIMING_P1049.md` §2). The `Assert.Equal(0, bytes)` assertions are
+  unchanged, and a test-only probe proves an allocation every 4,096 and every 8,191 frames is
+  still caught.
+- Un-synchronised static string/number caches used by the HUD draw path
+  (`RadarLabelModel.RangeText`/`RangeLineText`, `HudStringCache`'s 18 dictionaries,
+  `RadarLabelDeclutter.CountTag`, `ShipRenderScale`/`MissileModelSource` radius caches, the
+  `TargetPaneModel` scratch lists) are now `[ThreadStatic]`: the corrupted-bucket family
+  (`IndexOutOfRangeException` in `Dictionary.TryInsert`, 176/455 then 455/455 on the Skins
+  filter) cannot recur. `FullyQualifiedName~Skins` passed **457/457 ten runs in a row**.
+- `P968PublisherStreamIndexTests`' 400-peer measuring rows are now `Tier=Perf`; the exact
+  counting assertions also stay in Fast on the 100-peer rows.
+
+Gate observations (2026-11-18 UTC, three Fast sweeps: one normal, two under `taskset -c 0,1`;
+15,326 cases each, limits 12.19 / 12.64 / 12.65 s):
+
+| Run | Seconds | Failed | NotExecuted | Timing offenders |
+| --- | --- | --- | --- | --- |
+| normal (8 cores) | 651.6 | 2 | 7 | 6 |
+| `taskset -c 0,1` #1 | 758.9 | 9 | 7 | 13 |
+| `taskset -c 0,1` #2 | 794.5 | 10 | 7 | 12 |
+
+No changed test failed in any run (the Skins filter is 457/457 ten times). The failures are the
+ledgered families (`GameOverPlayersWireTests.Rejoined…` pass/pass/pass alone, 0.77-0.79 s;
+`P739TimerLiveTests…(delay: 5)` fail/fail/pass alone — the one-ULP bound; the live receipt
+families listed above) plus two **2-core affinity** classes that are not flakes and not caused by
+P1049: `P889PoolSizingTests` (4 rows; the resolver sizes pools from `Environment.ProcessorCount`,
+which is 2 under the affinity mask — the pristine HEAD tree fails the same 4 rows under
+`taskset -c 0,1` with artwork, and 0/4 on 8 cores) and
+`ParallelBroadcastByteIdentityTests.Parallel_flag_defaults_on_and_config_binds` (serial default on
+2 cores; 7/7 on 8 cores). The timing offenders in every run are the chronic civ/loadout scan rows
+(P999/P1000/SC2/P814/P796/P704/P832b/P942/P750) already recorded above, plus on 2 cores
+`R1LobbyReviewTests.Stale_game_requests…` (27.1 / 18.7 s) and
+`LiveCombatWireTests.Real_two_party_combat…` (32.9 s); each passes alone well below the limit and
+none is on a path P1049 changed. Full numbers: `docs/reports/CI_FAST_TIMING_P1049.md` §8.
+
 ## P1048B gate observations — 2026-11-17 UTC
 
 One complete Fast run on the final P1048B transport/browser-join tree covered
