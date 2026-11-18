@@ -61,7 +61,14 @@ public sealed class R1LobbyReviewTests
     public async Task Stale_game_requests_do_not_block_new_games_forever()
     {
         var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        using var app = new LobbyTestApp(time, s => { s.GameCores = ["PCore001.igc"]; s.GameMaps = ["XXV_simple.igc"]; });
+        using var app = new LobbyTestApp(time, s =>
+        {
+            s.GameCores = ["PCore001.igc"]; s.GameMaps = ["XXV_simple.igc"];
+            // P1049b — the request store prunes on the final Create. Its age
+            // check needs a 24-hour clock jump, not 2,880 unrelated periodic
+            // registry sweeps; registration below still prunes expired listings.
+            s.SweepIntervalSeconds = 48 * 60 * 60;
+        });
         var registry = app.Services.GetRequiredService<ServerRegistry>();
         var settings = app.Services.GetRequiredService<LobbySettings>();
         var games = app.Services.GetRequiredService<GameCreationStore>();
@@ -73,14 +80,19 @@ public sealed class R1LobbyReviewTests
         var catalog = new GameCreationStore.Catalog(settings.GameCores.ToArray(), settings.GameMaps.ToArray());
         int accounts = (GameCreationStore.MaxRequests + GameCreationStore.MaxLiveRequestsPerAccount - 1)
             / GameCreationStore.MaxLiveRequestsPerAccount;
-        var owners = new List<(HttpClient Http, IdentityAccount Account)>();
-        for (int a = 0; a < accounts; a++) owners.Add(SignIn(app, "Spammer" + a));
+        // P1049b — this prefill already calls the store directly, which only
+        // needs owner keys. Do not create 32 unused HTTP clients and persist 32
+        // accounts/sessions just to fill it. The final POST still signs in a real
+        // player and exercises authentication and expiry through the HTTP route.
+        var owners = Enumerable.Range(0, accounts)
+            .Select(a => new IdentityAccount("stale-owner-" + a, "Spammer" + a)).ToArray();
         for (int i = 0; i < GameCreationStore.MaxRequests; i++)
         {
             var owner = owners[i % accounts];
-            Assert.NotNull(games.Create(owner.Account.Id, owner.Account.Callsign, registry.Get(listed.Id)!,
+            Assert.NotNull(games.Create(owner.Id, owner.Callsign, registry.Get(listed.Id)!,
                 "PCore001.igc", "XXV_simple.igc", "junk" + i, ValidParams(), catalog, out _));
         }
+        Assert.Equal(GameCreationStore.MaxRequests, games.QueuedFor(listed.Id).Count);
 
         // A day later nobody has claimed any of them; the listing is refreshed.
         time.Advance(TimeSpan.FromHours(24));

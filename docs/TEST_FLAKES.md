@@ -4,6 +4,62 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1049b — fixed-model windows and shared-input isolation — 2026-11-18 UTC
+
+The remaining Jet/P968 Fast timing families are resolved on the requested CI
+filter: **9,826 cases ×3, 0 failures / 0 timing offenders** (normal, then two
+`taskset -c 0,1` runs; limits 11.844 / 11.536 / 11.535 s). No tier, limit,
+calibration, CI filter, counting or allocation assertion was relaxed.
+
+- The old P1049 capacity-based window explanation below is superseded: fixed
+  Jet inputs repeat a one-frame state, not a 4,096-frame dictionary cycle.
+  The six allocation windows use 32 warm-up + 128 measured frames, retain
+  exactly 0 B, and FlightSymbology/Amber probes catch allocations at periods
+  1 and 127 (5,120 B / 40 B). Final pinned Amber times: 0.030 / 0.031 s.
+- P968's indexed/coalesced 100-peer row reproduced at 9.873 s beside siblings
+  0.478–0.842 s. Queued Parallel.For replicas depend on pool availability;
+  Flush waits on a monitor. Production already clamps encoding to one worker
+  on one/two cores. Fast now uses that coordinator-only path and one fresh run
+  per instrumentation arm, preserving every exact counter/drop/packet/snapshot
+  assertion. Perf retains four workers and nine runs per arm, and passes.
+- **Shared-input race resolved:** MonoGame used the Training collection name
+  without its nonparallel definition, and Jet console/palette training harnesses
+  mutated the singleton keymap outside that collection. A sweep lost P910's
+  saved FireWeapon binding while P757's StartChat was filtered out. MonoGame
+  now links the existing definition; both Jet classes join it. All cases still
+  execute, with identical tiers/assertions; 210/210 Jet class controls and all
+  three full Fast sweeps pass.
+- The single non-corpus P889 override fixture now gives its pure sizing call
+  an explicit 16-core input, preserving its exact two-worker/five-core override
+  assertions on every host. This resolves that deterministic affinity failure;
+  it does not claim to fix the separately ledgered artwork-backed boot rows.
+- R1's stale-request fixture no longer creates 32 unused authenticated clients
+  for direct store prefilling, and its 24-hour clock jump no longer replays
+  2,880 unrelated periodic registry callbacks. All 128 requests and the real
+  final authenticated HTTP create remain; an exact prefill count was added.
+  Final times: 0.254 / 0.423 / 0.703 s. Temporary phase probes did not capture
+  the entire earlier 20-second wait; that limitation is retained in the report.
+- The source guard's timing family is reduced without changing verdicts:
+  safe marker/escape precheck, empty-graph shortcut and value facts; all 1,568
+  source-file verdicts match the old scanner, including injected indirect and
+  escaped resource violations. Final pinned scan times: 5.407 / 8.978 s.
+
+**New observation, not claimed fixed:**
+`Transport.P895bUdpOverheadTests.Queued_frames_share_token_and_ack_without_waiting_for_more_frames`
+failed one diagnostic two-core sweep (expected one data packet, actual three;
+1.006 s). Its source/assertions are unchanged. It passes the next diagnostic
+sweep, three isolated controls, and all three final Fast sweeps. Counters include
+retransmissions, but no failed wire trace proves the exact cause. The observation
+remains open rather than being relabeled resolved.
+
+The additional full artwork/window training attempt reproduced the existing
+P945/P1041 M2 reminder prompt-order failures and reached its 40-minute process
+bound before three full repetitions. Its full-gate verdict remains
+**FAIL/incomplete**. Headless training, including real embedded-host Nanite
+completion, passes **126/126 ×3**. Complete evidence and the slowest 15 cases of
+both pinned Fast runs: `docs/reports/CI_FAST_TIMING_P1049.md`, P1049b section.
+
+
 ## P1049 CI stabilisation — 2026-11-17 UTC
 
 **P808 and P941 are RESOLVED** (root causes found, not re-labelled as load flakes).

@@ -24,6 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests.Skins;
 /// summary). Headless: every assertion goes through a recording <see cref="IJetVectorSurface"/>
 /// and every expected value is the shared model's own, so a second derivation cannot hide.
 /// </summary>
+[Collection("Training")]
 public sealed class JetConsoleTests(ITestOutputHelper output)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -958,15 +959,13 @@ public sealed class JetConsoleTests(ITestOutputHelper output)
                 jet.DrawConsole(model);
             }
         }
-        // P1049 — the window is sized by the draw path's cache cycles (table in
-        // JetFlightSymbologyTests): 4,096 warm-up = one full cycle of the largest
-        // bounded cache (the chat/value fit caches are 512/256 here), 8,192
-        // measured = two cycles. Assertion unchanged: 0 B.
-        Draw(4_096);
+        // P1049b — fixed inputs repeat a one-frame steady state; cache capacity
+        // is not a frame cycle. Shared window and source audit: JetAllocationWindow.
+        Draw(JetAllocationWindow.WarmupFrames);
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(8_192);
+        Draw(JetAllocationWindow.MeasuredFrames);
         long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-        output.WriteLine($"P1040 Jet console: {bytes} B / 8192 frames = {bytes / 8192d} B/frame");
+        output.WriteLine($"P1040 Jet console: {bytes} B / {JetAllocationWindow.MeasuredFrames} frames = {bytes / (double)JetAllocationWindow.MeasuredFrames} B/frame");
         Assert.Equal(0, bytes);
     }
 

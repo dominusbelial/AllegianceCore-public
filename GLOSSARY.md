@@ -1062,6 +1062,12 @@ list in **reverse**.
   tests: `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetSkinScaffoldTests.cs`;
   report: `docs/reports/JET_SKIN_SCAFFOLD_P1035.md`.
 
+- **Fixed-model Jet allocation windows (P1049b)** — the one-frame steady-state
+  audit and shared 32/128 warm-up/measurement constants live in
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Skins/JetAllocationWindow.cs`;
+  FlightSymbology and Amber probe periods 1 and 127. Dictionary capacity is not
+  a frame cycle. Evidence: `docs/reports/CI_FAST_TIMING_P1049.md` (P1049b).
+
 - **Jet flight symbology (P1036, skin story 2/9)** — the core flight instruments of the Jet skin (P972 §4.2,
   phase 3A). **`HudFlightReference`** (`src/Allegiance.ClientCore.Game/Rendering/HudFlightReference.cs`) is the
   presentation-only snapshot the model adapter carries in `HudContext.FlightReference`: the own (source) ship's
@@ -2071,6 +2077,11 @@ list in **reverse**.
   `tools/p873-training-audit.py`, `docs/reports/P873_REPORT.md`.
   Native training authoring commands (asteroid TSV and narration comments):
   `tools/p873-training-tools.py`.
+- **Training test isolation (P1049b)** — shared process-global input/keymap state
+  is isolated by `tests/Allegiance.ClientCore.Tests/TrainingTestCollection.cs`;
+  `tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj`
+  links that nonparallel collection definition. Jet console/palette training
+  harnesses join it too. Evidence: `docs/reports/CI_FAST_TIMING_P1049.md` (P1049b).
 - **Training slideshow artwork (P943)** — the native slide images, not just captions.
   Each mission's `tm_*.mdl` (native namespace table `SlideshowNamespaces`,
   `WinTrek/WinTrek.cpp:2473-2522`) is parsed by
@@ -2833,6 +2844,11 @@ list in **reverse**.
 - **`tools/run-tests.sh`** → `tools/test-tiers/runner.py` — the shared
   fast/live/perf tier runner (`--tier fast|live|perf|all`). Docs:
   `docs/reports/TT1_TEST_TIERS.md`, `docs/TEST_FLAKES.md`.
+- **Clean-clone source guard (CI-2 / P1049b)** — syntax-only resource/skip audit
+  in `tests/Allegiance.Core.Tests/CleanCloneSkipGuardTests.cs`; every file is read,
+  a conservative marker/escape check selects parsing, and nonempty closures use
+  value facts. Its fixture checks indirect artwork, skip and GPU violations. Evidence:
+  `docs/reports/CI_FAST_TIMING_P1049.md` (P1049b).
 - **`tools/build-tools.sh`** — builds every `tools/*/*.csproj` (as `ci.yml`).
 - **`.github/workflows/ci.yml`** — CI: build solution, build tools, Fast tier,
   replay benchmark. `.github/workflows/guard.yml` — the publish guard.
