@@ -161,7 +161,7 @@ public sealed class CreditsOverlayRenderer
                         ? AccentColor
                         : line.StartsWith("--") ? HeaderColor : BodyColor;
                     if (y + lineH > panelY + 8f)
-                        _sb.DrawString(_small, line, new Vector2(panelX + pad, y), c);
+                        _sb.DrawString(_small, FontSafe(_small, line), new Vector2(panelX + pad, y), c);
                 }
                 y += lineH;
             }
@@ -178,6 +178,24 @@ public sealed class CreditsOverlayRenderer
         {
             _sb.End();
         }
+    }
+
+    /// <summary>The credits text uses em/en dashes the desktop small font has no glyph
+    /// for; SpriteBatch.DrawString throws on any such character (F12 on the default
+    /// black sky crashed the client). Dashes become ASCII '-', any other missing
+    /// character the font's default character or '?'. Display only.</summary>
+    internal static string FontSafe(SpriteFont font, string text)
+    {
+        var glyphs = font.Characters;
+        System.Text.StringBuilder? sb = null;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char ch = text[i];
+            if (ch == '\n' || ch == '\r' || glyphs.Contains(ch)) { sb?.Append(ch); continue; }
+            sb ??= new System.Text.StringBuilder(text, 0, i, text.Length);
+            sb.Append(ch is '—' or '–' or '−' ? '-' : font.DefaultCharacter ?? '?');
+        }
+        return sb?.ToString() ?? text;
     }
 
     private void FillRect(float x, float y, float w, float h, Color color) =>
