@@ -78,7 +78,14 @@ public sealed class P739TimerLiveTests
         Assert.Equal(owner.WarpBombs.Single().TimeExplosion, enemy.WarpBombs.Single().TimeExplosion);
         Assert.Equal(warp.Warp.WarpId, owner.WarpBombs.Single().WarpIdBombed);
         Assert.Equal(type.ExpendableTypeId, owner.WarpBombs.Single().ExpendableIdMissile);
-        Assert.InRange(captured - armedAt!.Value, delay - .1, delay);
+        // The deadline is production's own expression (clock + loaded slot 32),
+        // compared exactly: subtracting armedAt back out does not round-trip and
+        // produced the one-ULP 5.0000000000000009 failures. TimerBounds explains
+        // it; a bomb one 0.05 s tick late or early still fails this.
+        Assert.True(TimerBounds.WarpBombDeadlineMatches(captured, armedAt!.Value, delay),
+            $"captured {captured:R} is not the production deadline " +
+            $"{TimerBounds.WarpBombDeadline(armedAt.Value, delay):R} (armedAt {armedAt.Value:R} + {delay:R}; " +
+            $"re-derived {captured - armedAt.Value:R})");
         m.Core.Constants.FloatConstants[32] = 123; // later core edits cannot rewrite the event
         for (int i = 0; i < 40; i++) { server.TickSim(); Thread.Sleep(1); }
         Assert.Empty(elsewhere.WarpBombs); Assert.Single(owner.WarpBombs);

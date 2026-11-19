@@ -36,6 +36,55 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
             CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
     };
 
+    /// <summary>
+    /// P1056 — deterministic reproduction of the 14.9 s countdown reading, with
+    /// ordered steps and no wall-clock waits: the disabled ready-up countdown is
+    /// armed inside the game-over rotation, so the briefing clock starts at that
+    /// tick, and any later sample is short by however many ticks the sample
+    /// lagged. Three ticks here would have read 14.85 s; production's own span
+    /// from the arming tick is 15 s + the single completion tick.
+    /// </summary>
+    [SkippableFact]
+    public void Disabled_ready_up_countdown_is_armed_on_the_rotation_tick_and_completes_one_tick_past_its_deadline()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.SpawnInitialMinersAtBoot = false;
+        server.Boot(Config(false, "off", 8));
+        using var a = Connect(server, "P1056-count-A", 10561);
+        using var b = Connect(server, "P1056-count-B", 10562);
+        const double late = 2636.1478201210366;   // the P660 late-game clock
+        typeof(Srv).GetField("_simNow", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(server, late);
+        server.Missions[0].Update(late);
+        var flags = (System.Collections.IDictionary)typeof(Srv)
+            .GetField("_playerReady", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(server)!;
+        var peers = (System.Collections.IDictionary)typeof(Srv)
+            .GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(server)!;
+        foreach (var key in peers.Keys) flags[key] = true;
+        server.Missions[0].Stage = MissionStage.Started;
+        End(server);
+        var fresh = server.Missions[0];
+        Assert.Equal(MissionStage.Starting, fresh.Stage);   // armed inside the rotation
+        var deadlines = (Dictionary<Mission, double>)typeof(Srv)
+            .GetField("_startCountdownDeadline", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(server)!;
+        Assert.True(deadlines.TryGetValue(fresh, out var deadline), "countdown was not armed");
+        Assert.Equal(late + 15.0, deadline);                // exactly 15 s after the rotation tick
+        Assert.Equal(15.0, deadline - late, 9);
+
+        // A client observation that lags three ticks: this is the sample point the
+        // flaky assertion used (server.SimNow after the reseat pump).
+        for (int i = 0; i < 3; i++) server.TickSim();
+        Assert.Equal(0.15, server.SimNow - late, 9);
+        Assert.Equal(14.85, deadline - server.SimNow, 9);
+        Assert.True(deadline - server.SimNow < 14.94, "the lagging sample must fall outside the 14.94 s floor");
+
+        // The server-side span from the arming tick is what the test now measures.
+        Pump(server, () => fresh.Stage == MissionStage.Started);
+        Assert.InRange(server.SimNow - late, 15.0, 15.06);
+        Assert.InRange(server.SimNow - deadline, 0, 0.06);   // strict expiry, one tick past target
+        Assert.Equal(0, server.SimPassStageFailures);
+    }
+
     internal static bool Read(ConnectionSession peer, Func<bool> predicate)
     { lock (peer.Gate) return predicate(); }
 
@@ -110,6 +159,21 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
             Assert.Equal(late, fresh.LastUpdate);
             Assert.All(fresh.Sectors, sector => Assert.Equal(late, sector.LastUpdate));
             Assert.Equal(enabled ? MissionStage.NotStarted : MissionStage.Starting, fresh.Stage);
+            // P1056 — where the briefing clock starts. Production arms the
+            // countdown on a server tick: StartCountdown → StartCountdownAt
+            // (Server.Lobby.cs:2097-2098) records target = that tick's _simNow +
+            // 15 s, and AdvanceStartCountdowns starts the match on the first tick
+            // strictly past target (Server.Lobby.cs:2154; native
+            // fsmission.cpp:1926-1938 sets timeStart = Time::Now() +
+            // fStartCountdown, FedSrv.CPP:8235 tests now > timeStart). With
+            // AutoNextMatch disabled the preserved ready flags finish the
+            // rotation's TryAutoStart in the same call (Server.Lobby.cs:1232 →
+            // :1959), so the countdown begins at THIS clock (== late). Sampling
+            // it below, after waiting for the migrated peers to see their new
+            // ship, charged their load-dependent lag (1–3 ticks) to the
+            // briefing and read 14.9 s. Enabled missions arm it at the
+            // intermission deadline instead, captured after the server-side pump.
+            double briefingAt = enabled ? double.NaN : server.SimNow;
             Pump(server, () => Read(a, () => a.World.MyShipId != oldIds[0]
                 && (!enabled || a.World.GameOverResult is not null && a.World.IsIntermission))
                 && Read(b, () => b.World.MyShipId != oldIds[1]
@@ -126,8 +190,8 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
                 Assert.Equal(MissionStage.NotStarted, fresh.Stage);
                 Pump(server, () => fresh.Stage == MissionStage.Starting);
                 Assert.InRange(server.SimNow - late, 8, 8.06);
+                briefingAt = server.SimNow;   // the server tick that armed the countdown
             }
-            double briefingAt = server.SimNow;
             Pump(server, () => Read(a, () => a.World.Mission?.Stage == (int)MissionStage.Starting
                 && a.World.GameOverResult is null && a.World.CountdownRemainingSeconds() is > 0 and <= 15));
             Pump(server, () => fresh.Stage == MissionStage.Started);
