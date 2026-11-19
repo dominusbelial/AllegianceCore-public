@@ -105,6 +105,16 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`. Chromium timing/control/layout proof:
   `tools/p1053-browser-polish.cjs`. Static-file cache contract:
   `docs/BROWSER_HOSTING.md`. Report: `docs/reports/BROWSER_POLISH_P1053.md`.
+- **Sector asset recording (P1054)** — `tools/p1051-flight-opens/Program.cs`
+  accepts `--sectors` to visit the recorded map through ordinary client waypoint
+  commands and discovered aleph targets, dwelling 30 seconds per sector in each
+  HUD style. `tools/p1054-sector-analysis.py` verifies actual opened bytes and
+  attributes dependency reuse and prelaunch opens to common assets. Delivery
+  policy and pending budget decision: `docs/reports/BROWSER_SECTOR_PACKS_P1054.md`.
+  The baseline audio race fix in
+  `src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js` serializes each
+  context's asynchronous resume/suspend and reapplies the latest lifecycle
+  intent; delayed-resume regressions are in `tools/p1051-input-tests.cjs`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

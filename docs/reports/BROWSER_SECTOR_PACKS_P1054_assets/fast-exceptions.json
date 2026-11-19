@@ -1,0 +1,26 @@
+[
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "message": "B never saw A's death (IsDead never latched on B) after 2500 ticks"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+    "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+    "message": "Assert.Same() Failure: Values are not the same instance\nExpected: Ship { AcceptedCommandId = -1, AcceptedShipCommandId = -1, AcceptedShipTarget = null, AcceptedShipWireId = -1, AcceptedShipWireType = -1, \u00b7\u00b7\u00b7 }\nActual:   null"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+    "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+    "message": "must keep clear of the rock, not plow through: minRockDist=68.6"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "message": "Assert.InRange() Failure: Value not in range\nRange:  (4 - 8)\nActual: 8.44999981"
+  }
+]

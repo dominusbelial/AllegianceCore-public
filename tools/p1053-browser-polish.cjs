@@ -107,6 +107,11 @@ async function exercise(page, cdp, ship) {
   // Audio has already been activated by a genuine keyboard gesture. Observe
   // the real RAF gaps caused by browser CPU throttling, with no synthetic load.
   await page.keyboard.down('ArrowRight');
+  // Cold model/texture uploads may already have lowered the buffer. Start the
+  // experiment only after ordinary frames recover, then sample synchronously
+  // so the first throttled RAF cannot erase the initial full-resolution state.
+  await page.waitForFunction(() => preview.pacing().scale === 1 && !preview.pacing().slow && preview.pacing().p95 < 20,
+    null, {timeout:60000});
   const transitions = [];
   await page.evaluate(() => {
     window.pacingObservations = []; window.observePacing = true;
@@ -116,7 +121,7 @@ async function exercise(page, cdp, ship) {
       if (pacingObservations.at(-1)?.scale !== p.scale) pacingObservations.push({...p, viewport:gameMenu.metrics().flight.viewport,audio:gameFlight.audioStates()});
       requestAnimationFrame(observe);
     };
-    requestAnimationFrame(observe);
+    observe();
   });
   for (const rate of [20, 1]) {
     await cdp.send('Emulation.setCPUThrottlingRate', {rate});

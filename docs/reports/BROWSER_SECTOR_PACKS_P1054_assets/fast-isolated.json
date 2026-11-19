@@ -1,0 +1,218 @@
+[
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "1727a1eee2adcc20e13faf0c499d8e042f45f964b29796ff53343f96c3112931",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3105915,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "59975b87919c130d09f2897aa647dbdef8abd1ddd25ddfa045618aa84ca8b08f",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3226861,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "4593a807985fef6835342101d6e61f0788266dc6fb35e009f8d9f20dcda74d69",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3202162,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "93c6df3e3aff22720b38acdbaa6176a5277c404320fc7eecb69dbe6da3a128bc",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+            "outcome": "Passed",
+            "seconds": 0.7368942,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "6e92035264041be50a8ac133c970bbcbc4a1e9fa2172b77e877978071ae17f82",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+            "outcome": "Passed",
+            "seconds": 0.7336343,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "78deb4f1e75bd82807dd9c8582018e18a60c8a93a22e7f2e8f40352a349a1658",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+            "outcome": "Passed",
+            "seconds": 0.7447663,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "609587489e8ba29fd07ed494a5b15ccd6765e443f1f2ed1c29625fc59085dd46",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+            "outcome": "Passed",
+            "seconds": 5.9106583,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "f4c3f7284a89833dd1c37a1050a738e2a1b989882502eb7479014975fdad4f61",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+            "outcome": "Passed",
+            "seconds": 5.795832,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "98957282ce34c4eb7574ccd3931418ce2bba3728abc8e3e2d955e6e3999c6236",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes",
+            "outcome": "Passed",
+            "seconds": 5.8016546,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "379ca650d5bf27dbccfb5c4ea8cc1dc8bc0d9743182c68707144abf3ce7be2cc",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5468894,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "91cf863035ef6e78da1283f374be4d7f53c5bb46c97069d75e07d120b6be1b55",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5664753,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "f2533a22cf1d24ee8545fcf3c03c0040de1bc438f052a48a49fe95e6dcdd29af",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5213826,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  }
+]

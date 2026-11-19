@@ -10294,3 +10294,19 @@ Ignored raw evidence is under `<lane evidence dir>/fast/` and
 `<lane evidence dir>/fast-isolated/`. Sanitized per-case outcomes and TRX hashes:
 [Fast failures/skips](reports/BROWSER_POLISH_P1053_assets/fast-exceptions.json),
 [isolated repetitions](reports/BROWSER_POLISH_P1053_assets/fast-isolated.json).
+
+
+## P1054 sector-pack baseline final Fast (2026-11-19)
+
+The single final Fast sweep ran after the recorder, audio fix, browser proofs and builds: **15,533 passed / 4 failed / 6 skipped**, 15,543 cases, **881.6 s**. All nine infrastructure checks passed; calibrated case limit **11.532 s**, zero timing offenders and zero quarantine retries/flakes. The sweep exited **1**.
+
+Each failure matches a family already ledgered above. Each exact failing method was then selected in three separate fresh processes with artwork; all twelve isolated invocations passed. These are observations, not a root-cause claim or a green Fast-gate claim.
+
+| Method | Sweep observation | Isolated runs 1 / 2 / 3 (s) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Remote death latch absent after 2,500 ticks | **pass / pass / pass**, 1.311 / 1.323 / 1.320 |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Expected target instance; actual null | **pass / pass / pass**, 0.737 / 0.734 / 0.745 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | Asteroid clearance minRockDist=68.6 | **pass / pass / pass**, 5.911 / 5.796 / 5.802 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | Roster time 8.44999981 outside [4,8] | **pass / pass / pass**, 0.547 / 0.566 / 0.521 |
+
+P1054 changes only a browser audio transition scheduler and proof/recording tools. No simulation, wire, lobby limit, listing rule, C# test assertion, timeout, tier or quarantine policy changed. Fast remains **red**. Sanitized evidence: [summary](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-summary.json), [failures](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-exceptions.json), [isolated repetitions](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-isolated.json).

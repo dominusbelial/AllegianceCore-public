@@ -1,0 +1,158 @@
+{
+  "browserVersion": "153.0.8010.0",
+  "headlessGpuRepresentative": false,
+  "pngBytes": 239262,
+  "passkeyLogin": true,
+  "staleCookieNoZombie": true,
+  "contextLossReloadMessage": true,
+  "noSecretsInLogsOrUrls": true,
+  "results": [
+    {
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "cacheCase": "cold",
+      "httpTransferToFlightBytes": 12681175,
+      "httpRequestsToFlight": 672,
+      "selectedView": 2,
+      "webSocketUrls": [
+        "ws://localhost:8048/game",
+        "ws://localhost:8048/game"
+      ],
+      "cacheInspection": {
+        "files": 572,
+        "bytes": 32767280,
+        "noSecrets": true
+      },
+      "packRequests": 572,
+      "packTransferBytes": 7929876,
+      "runtimeTransferBytes": 4470774,
+      "timeToMenuFromNavigationMs": 862.5,
+      "timeToFlightFromNavigationMs": 13287.5,
+      "timeFromLaunchMs": 3154.2000000476837,
+      "briefingProof": [
+        {
+          "file": "briefing-Classic-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-Modern-0.bin",
+          "decodedBytes": 335,
+          "sha256": "6de221e5d6393c9db659615b16bf2d8aa9bc77e48ac66d7f4b011c2b74baa053",
+          "byteEqual": true
+        },
+        {
+          "file": "briefing-opposing-0.bin",
+          "decodedBytes": 343,
+          "sha256": "35b58082a3a29c09e4a76f95c27d3bb924ded6d2381bab2a4d320e394bfd2017",
+          "byteEqual": true
+        }
+      ],
+      "shipId": 8096,
+      "desktopId": 8097,
+      "commanded": {
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8,
+        "stateM": 32
+      },
+      "accepted": {
+        "Id": 8096,
+        "Name": "Browser1051500522",
+        "SideId": 0,
+        "StationId": null,
+        "Ammo": 800,
+        "weaponCount": 1,
+        "parts": [
+          {
+            "PartId": 7,
+            "MountId": 0,
+            "Amount": 32767,
+            "FractionMounted": 240
+          }
+        ],
+        "yaw": -1,
+        "pitch": 1,
+        "throttle": -0.8031496,
+        "StateM": 32,
+        "position": "Vector3 { X = 5.736744, Y = 474.91095, Z = 112.736115 }"
+      },
+      "drawnProjectiles": 767,
+      "receivedProjectiles": 0,
+      "crossVisibility": true,
+      "crossShot": true,
+      "fullThrottleKeyAccepted": true,
+      "hullMountCycling": true,
+      "singleWeaponShot": true,
+      "pointerRefusalRetried": true,
+      "relativeMouseEventAccepted": true,
+      "physicalMouseCalibrationQualified": false,
+      "fullscreenGesture": true,
+      "blurServerNeutral": true,
+      "hiddenAudioSuspended": true,
+      "reconnectedSameShip": true,
+      "dockedStation": 1051,
+      "logoffNoZombie": true,
+      "frameSampleMilliseconds": 60014.29999999999,
+      "frames": 3600,
+      "frameP50Ms": 16.699999999982538,
+      "frameP95Ms": 16.79999999998836,
+      "metrics": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 54757776,
+        "residentBytes": 32884206,
+        "settingsPending": false,
+        "style": "Modern",
+        "gameStyle": "Modern",
+        "online": {
+          "state": "Hangar",
+          "pendingJoins": 0,
+          "decoderReady": true,
+          "shipId": 8096,
+          "resumeSuccesses": 1,
+          "malformed": 0
+        },
+        "flight": {
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "controls": {
+            "yaw": 0,
+            "pitch": 1.0087619e-36,
+            "throttle": 1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = 5.682442, Y = 446.04904, Z = -104.493095 }",
+          "flying": false,
+          "frames": 15645,
+          "drawnShips": 2,
+          "ships": [
+            "Browser1051500522",
+            "DesktopPilot"
+          ],
+          "appliedResets": 1,
+          "position": "Vector3 { X = 5.682442, Y = 446.04904, Z = -104.493095 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [
+            8096,
+            8097
+          ],
+          "drawnProjectiles": 767,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      }
+    }
+  ],
+  "qualification": "Scratch diagnostic: bounded 5-second hidden/audio wait and AudioContext call tracing; unchanged production generation. Does not certify the original four-profile harness."
+}
