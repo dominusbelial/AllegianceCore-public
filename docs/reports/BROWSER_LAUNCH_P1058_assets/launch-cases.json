@@ -1,0 +1,528 @@
+{
+  "browserVersion": "153.0.8010.0",
+  "headlessGpuRepresentative": false,
+  "generation": "local publish gen4 (favicon.47ff617b3e387ab71cc4.png)",
+  "baseline": {
+    "commit": "201b5f9c",
+    "resume_case": {
+      "case": "resume",
+      "style": null,
+      "verbose": null,
+      "reachedFlight": false,
+      "clickSent": null,
+      "silentDrop": true,
+      "readySendsAfterClick": 0,
+      "guardAtClick": "no-ship",
+      "serverReadyLines": [
+        "[ready] 2 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": null,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": true
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": null,
+      "console": null,
+      "notFound": null,
+      "iconLink": null,
+      "iconResponses": null,
+      "silentDropBasis": "DOM click fired (domClicks=1); guard no-ship; readySends stayed 0; busy=false; no status, alert or disabled reason at the click",
+      "visibleReason": false
+    },
+    "delay_cases": [
+      {
+        "case": "0",
+        "style": null,
+        "verbose": null,
+        "reachedFlight": true,
+        "clickSent": null,
+        "silentDrop": null,
+        "readySendsAfterClick": 1,
+        "guardAtClick": "sent",
+        "serverReadyLines": [
+          "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+        ],
+        "intendedLaunches": null,
+        "laterClick": {
+          "sent": null,
+          "reachedFlight": null
+        },
+        "blockedAffordance": null,
+        "enabledAfterResume": null,
+        "blockedFeedback": null,
+        "console": null,
+        "notFound": null,
+        "iconLink": null,
+        "iconResponses": null
+      },
+      {
+        "case": "100",
+        "style": null,
+        "verbose": null,
+        "reachedFlight": true,
+        "clickSent": null,
+        "silentDrop": null,
+        "readySendsAfterClick": 1,
+        "guardAtClick": "sent",
+        "serverReadyLines": [
+          "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+        ],
+        "intendedLaunches": null,
+        "laterClick": {
+          "sent": null,
+          "reachedFlight": null
+        },
+        "blockedAffordance": null,
+        "enabledAfterResume": null,
+        "blockedFeedback": null,
+        "console": null,
+        "notFound": null,
+        "iconLink": null,
+        "iconResponses": null
+      },
+      {
+        "case": "500",
+        "style": null,
+        "verbose": null,
+        "reachedFlight": true,
+        "clickSent": null,
+        "silentDrop": null,
+        "readySendsAfterClick": 1,
+        "guardAtClick": "sent",
+        "serverReadyLines": [
+          "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+        ],
+        "intendedLaunches": null,
+        "laterClick": {
+          "sent": null,
+          "reachedFlight": null
+        },
+        "blockedAffordance": null,
+        "enabledAfterResume": null,
+        "blockedFeedback": null,
+        "console": null,
+        "notFound": null,
+        "iconLink": null,
+        "iconResponses": null
+      },
+      {
+        "case": "2000",
+        "style": null,
+        "verbose": null,
+        "reachedFlight": true,
+        "clickSent": null,
+        "silentDrop": null,
+        "readySendsAfterClick": 1,
+        "guardAtClick": "sent",
+        "serverReadyLines": [
+          "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+        ],
+        "intendedLaunches": null,
+        "laterClick": {
+          "sent": null,
+          "reachedFlight": null
+        },
+        "blockedAffordance": null,
+        "enabledAfterResume": null,
+        "blockedFeedback": null,
+        "console": null,
+        "notFound": null,
+        "iconLink": null,
+        "iconResponses": null
+      }
+    ]
+  },
+  "fixed": [
+    {
+      "case": "0",
+      "style": "Modern",
+      "verbose": true,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "log": 74,
+          "warning": 5
+        },
+        "perAssetVisible": 65,
+        "perAssetDebug": 0,
+        "warningLines": 6
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "0",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 74,
+          "warning": 5
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 6
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "100",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 74,
+          "warning": 5
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 6
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "2000",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 74,
+          "warning": 5
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 6
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "500",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 1 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 74,
+          "warning": 5
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 6
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "hold",
+      "style": "Classic",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 2 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": {
+        "disabled": true,
+        "reason": "Reconnecting to the server\u2026",
+        "shipId": null,
+        "reconnecting": true,
+        "resumeAttempts": 1,
+        "waitedMs": 174
+      },
+      "enabledAfterResume": {
+        "disabled": false,
+        "reason": null,
+        "resumeSuccesses": 1,
+        "resumeAttempts": 2
+      },
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 3,
+          "debug": 77,
+          "warning": 7
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 66,
+        "warningLines": 10
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "hold",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "readySendsAfterClick": 1,
+      "guardAtClick": "sent",
+      "serverReadyLines": [
+        "[ready] 2 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": null,
+        "reachedFlight": null
+      },
+      "blockedAffordance": {
+        "disabled": true,
+        "reason": "Reconnecting to the server\u2026",
+        "shipId": null,
+        "reconnecting": true,
+        "resumeAttempts": 1,
+        "waitedMs": 177
+      },
+      "enabledAfterResume": {
+        "disabled": false,
+        "reason": null,
+        "resumeSuccesses": 1,
+        "resumeAttempts": 2
+      },
+      "blockedFeedback": {
+        "atNull": null,
+        "alert": null
+      },
+      "console": {
+        "byType": {
+          "error": 3,
+          "debug": 76,
+          "warning": 7
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 10
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "resume",
+      "style": "Classic",
+      "verbose": false,
+      "reachedFlight": false,
+      "clickSent": false,
+      "silentDrop": false,
+      "readySendsAfterClick": 0,
+      "guardAtClick": "Reconnecting",
+      "serverReadyLines": [
+        "[ready] 2 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": true,
+        "reachedFlight": true
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": {
+          "launch": {
+            "busy": false,
+            "guard": null,
+            "readySends": 0,
+            "shipId": null,
+            "sideId": null,
+            "stage": null,
+            "inGame": false,
+            "joinedShipId": null,
+            "shipsHasOwn": false,
+            "shipsHasJoined": false
+          },
+          "disabled": false,
+          "reason": null,
+          "status": null
+        },
+        "alert": "Reconnecting to the server\u2026"
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 76,
+          "warning": 6
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 7
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    },
+    {
+      "case": "resume",
+      "style": "Modern",
+      "verbose": false,
+      "reachedFlight": false,
+      "clickSent": false,
+      "silentDrop": false,
+      "readySendsAfterClick": 0,
+      "guardAtClick": "Reconnecting",
+      "serverReadyLines": [
+        "[ready] 2 ship 8096 side 0 fReady=True -> 1 peer(s)"
+      ],
+      "intendedLaunches": 1,
+      "laterClick": {
+        "sent": true,
+        "reachedFlight": true
+      },
+      "blockedAffordance": null,
+      "enabledAfterResume": null,
+      "blockedFeedback": {
+        "atNull": {
+          "launch": {
+            "busy": false,
+            "guard": null,
+            "readySends": 0,
+            "shipId": null,
+            "sideId": null,
+            "stage": null,
+            "inGame": false,
+            "joinedShipId": null,
+            "shipsHasOwn": false,
+            "shipsHasJoined": false
+          },
+          "disabled": false,
+          "reason": null,
+          "status": null
+        },
+        "alert": "Reconnecting to the server\u2026"
+      },
+      "console": {
+        "byType": {
+          "error": 1,
+          "debug": 76,
+          "warning": 6
+        },
+        "perAssetVisible": 0,
+        "perAssetDebug": 65,
+        "warningLines": 7
+      },
+      "notFound": [],
+      "iconLink": "favicon.47ff617b3e387ab71cc4.png",
+      "iconResponses": []
+    }
+  ]
+}

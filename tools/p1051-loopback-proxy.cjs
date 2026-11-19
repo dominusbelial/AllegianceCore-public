@@ -36,6 +36,10 @@ const monitor = setInterval(() => {
 }, 100);
 server.on('connection', socket => { sockets.add(socket); socket.on('close',()=>sockets.delete(socket)); });
 server.on('upgrade', (req, socket, head) => {
+  // P1058 proof control: while `hold-ws` exists the proxy refuses the upgrade,
+  // so a dropped browser socket stays in the client's resume window (a real
+  // retry loop) long enough to inspect the launch affordance.
+  if (fs.existsSync(path.join(controls, 'hold-ws'))) { socket.destroy(); return; }
   gameSockets.add(socket); socket.on('close', () => gameSockets.delete(socket));
   if (req.url !== '/game' || req.headers.origin !== 'http://localhost:8048') { socket.destroy(); return; }
   const upstream = net.connect(gamePort,'127.0.0.1', () => {

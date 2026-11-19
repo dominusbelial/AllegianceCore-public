@@ -81,8 +81,10 @@
             }
             @if (_onlineState == "Hangar")
             {
+                var launch = LaunchAffordance();
                 <p>@_onlineName · side @_session?.World.MySideId</p>
-                <button id="online-launch" disabled="@_onlineBusy" @onclick="LaunchOnlineAsync">Ready and launch current ship</button>
+                <button id="online-launch" disabled="@(!launch.Enabled)" @onclick="LaunchOnlineAsync">Ready and launch current ship</button>
+                @if (launch.Reason is not null) { <p id="launch-reason" role="status">@launch.Reason</p> }
             }
             else if (_onlineState == "Flight")
             {
@@ -95,7 +97,7 @@
                 <button id="flight-fullscreen" data-flight-fullscreen>Fullscreen</button>
             }
         }
-        @if (_onlineBusy) { <p role="status">@(_onlineState == "Hangar" && _session?.World.CountdownRemainingSeconds() is { } seconds ? $"Next match starts in {seconds} seconds…" : "Waiting for the server…")</p> }
+        @if (_onlineBusy) { <p id="launch-status" role="status">@BusyStatus()</p> }
         @if (_onlineError is not null) { <p role="alert">@_onlineError</p> }
         <button id="online-close" @onclick="CloseOnlineAsync">Disconnect and return to menu</button>
     </section>

@@ -105,6 +105,19 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`. Chromium timing/control/layout proof:
   `tools/p1053-browser-polish.cjs`. Static-file cache contract:
   `docs/BROWSER_HOSTING.md`. Report: `docs/reports/BROWSER_POLISH_P1053.md`.
+- **Browser launch gate and console levels (P1058)** — the hangar's ready/launch
+  affordance is one shared decision, `src/Allegiance.ClientCore/State/HangarLaunch.cs`
+  (`MyShipId ?? JoinedShipId`, blocked while the session is between sockets), consumed
+  by `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs` + `Menu.razor` so the
+  button is disabled with a visible reason and a click is never dropped silently;
+  Classic and Modern share it. `src/Allegiance.ClientCore.Browser/wwwroot/console-log.js`
+  gives the shared diagnostics a level (info → `console.debug`, warnings/errors always
+  shown) with the documented `?log=verbose` / `localStorage['allegiance.log']` switch;
+  `wwwroot/favicon.png` derives from `packaging/allegiance.svg` through
+  `packaging/generate-favicon.py` and is content-hashed with the other application files.
+  Proof: `tools/p1058-browser-launch.cjs` (human-pace launch cases) and
+  `tools/p1058-console-log-tests.cjs`; parity: `docs/parity/p1058-browser-launch.csv`.
+  Report: `docs/reports/BROWSER_LAUNCH_P1058.md`. No server, wire or game-rule change.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

@@ -30,7 +30,9 @@ async function main() {
     await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal',
       hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
     const name = 'Polish1053' + Date.now().toString().slice(-6);
-    await page.goto(origin + '/identity.html'); await page.locator('#callsign').fill(name); await page.locator('#register').click();
+    // This lane's headless Chromium build delivers keydown but not text insertion
+    // (fill and Input.insertText both leave the field empty); set it through the DOM.
+    await page.goto(origin + '/identity.html'); await page.locator('#callsign').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},name); await page.locator('#register').click();
     await page.locator('#account').waitFor({ state: 'visible' });
     const profiles = [[0,'Modern',1920,1080],[1,'Modern',1920,1080],[2,'Classic',800,480],[3,'Modern',800,480],[4,'Classic',1920,1080]];
     for (const [index, style, width, height] of (process.argv[6] === '--timing-only' ? profiles.slice(0,2) : profiles)) {

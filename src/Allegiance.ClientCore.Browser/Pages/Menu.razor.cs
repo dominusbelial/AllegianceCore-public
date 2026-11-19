@@ -162,7 +162,12 @@ public partial class Menu
     [JSInvokable]
     public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
         invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
-        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, malformed = _session?.MalformedMessageCount }, flight = _game?.FlightMetrics };
+        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
+        launch = new { busy = _onlineBusy, guard = _launchGuard, readySends = _readySends, shipId = _session?.World.MyShipId,
+            sideId = _session?.World.MySideId, stage = _session?.World.Mission?.Stage, inGame = _session?.World.InGame,
+            joinedShipId = _session?.World.JoinedShipId,
+            shipsHasOwn = _session?.World.MyShipId is { } ownId && _session.World.Ships.ContainsKey(ownId),
+            shipsHasJoined = _session?.World.JoinedShipId is { } joinedId && _session.World.Ships.ContainsKey(joinedId) }, flight = _game?.FlightMetrics };
     private void StopGame()
     {
         var game = _game; _game = null;
