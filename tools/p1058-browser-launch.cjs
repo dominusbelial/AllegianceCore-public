@@ -13,7 +13,8 @@ const testCase = process.argv[5] || '0';
 const hostLog = path.resolve(process.argv[6] || path.join(stateDir, 'host.log'));
 const style = process.argv.includes('--style') ? process.argv[process.argv.indexOf('--style') + 1] : 'Modern';
 const verbose = process.argv.includes('--verbose');
-const origin = 'http://localhost:8048', menu = origin + '/play/preview/menu.html' + (verbose ? '?log=verbose' : '');
+// P1059: dev switch on, so the toolbar renders exactly as before P1059.
+const origin = 'http://localhost:8048', menu = origin + '/play/preview/menu.html?dev=1' + (verbose ? '&log=verbose' : '');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const readState = () => JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
 const readyLines = () => fs.existsSync(hostLog)

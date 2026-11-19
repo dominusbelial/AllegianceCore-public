@@ -5,6 +5,22 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## Master gate on lane-runner, `20b52780` (P1055 + P1053 + P1056 + P1058 + P1054) — 2026-11-19
+
+All tiers on lane-runner (CT 105): fast 15,570, live 453, perf 80 — **FAIL** overall, the same state as every recent
+nightly (84c82b3f, 655c305d, b33ba5cc all red). Shared with the pushed nightlies: `BroadcastSnapshotTests` (4 rows),
+`P928AllocationTests.Crowded_sector…golden(supplemental)`, `P801StrikeMassLiveTests.Fogged_showcase…`. Known:
+`GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster`. **New to this ledger:**
+
+| Test | Sweep observation (fast tier, parallel) | Alone ×3 (workstation, `20b52780`) |
+|---|---|---|
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal` | `minObsDist=70.5, rObs=60.0` (must keep clear) | pass / pass / pass |
+| `NpcDodgeLiveTests.Traveling_npc_does_not_dodge_the_station_it_is_docking_at` | `maxLineDeviation=235.9` | pass / pass / pass |
+
+The merged batch changes no server, NPC or dodge code (only `src/Allegiance.Core/ConsoleLog.cs`, P1055's
+completed-queue guard), so these are load-timing failures of a live NPC flight test under the parallel fast tier;
+root cause not established.
+
 ## P1056 — timer-bound flakes resolved: P739 warp-bomb one ULP and P660 countdown — 2026-11-19
 
 **Root cause 1 — `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission`.**
@@ -10431,3 +10447,25 @@ Ignored raw evidence: `<lane evidence dir>/continuation-fast/` and
 `<lane evidence dir>/continuation-fast-isolated/`. P1054 changes browser visual
 delivery and optional renderer lookup; desktop asset loading is unchanged and
 the full training gate passed **1,206/0/2**, including **42 physical windows**.
+
+## P1059 — final Fast, run last (2026-11-19)
+
+P1059 hides three browser developer/proof controls behind a documented switch; it changes no shared
+simulation, server or client-core file (browser `wwwroot` + Blazor pages + tools/docs only). The
+single final Fast sweep ran last and exited **1**: **15,563 passed / 3 failed / 7 skipped**,
+**15,573 total**, **661.0 s**; all **9 infrastructure checks passed**, calibrated case limit
+**12.54 s**, no timing offender. Browser head and game remained **12/0/0** and **74/0/0**.
+
+Each failing method was then selected in **three separate fresh processes** with artwork
+(**9 invocations, 9 passed**). None of the three is a new family: each is already ledgered above.
+
+| Method | Sweep observation | Three isolated outcomes (passed/failed/skipped) |
+|---|---|---|
+| `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | "NPC diverter did not reach and rescue the pod" (7 s) | **1/0/0, 1/0/0, 1/0/0** (0.79 / 0.77 / 0.79 s) — existing rescue-tick-budget family, ledgered above |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | roster time `8.44999981` outside `[4, 8]` (228 ms) | **1/0/0, 1/0/0, 1/0/0** (0.78 / 0.75 / 0.78 s) — existing simulation-clock roster family, ledgered repeatedly above |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | probe collection empty under load (73 ms) | **1/0/0, 1/0/0, 1/0/0** (0.51 / 0.51 / 0.51 s) — existing live-fixture family (ledgered as pass/pass/pass) |
+
+Fails once but passes 3/3 alone = load flake; no assertion, timeout, tier, quarantine policy,
+throttle, privilege or simulation rule was changed. **Fast remains red** for these three ledgered
+families. Ignored raw evidence: `<lane evidence dir>/fast/` (TRX + logs) and
+`<lane evidence dir>/fast-isolated/` (the nine isolated runs).
