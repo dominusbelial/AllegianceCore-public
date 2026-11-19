@@ -854,6 +854,10 @@ public sealed partial class Game1 : Game
     // trekigc.cpp:984-986 — started while the weapon is active, stopped on
     // release). Keyed by mount, mirroring the burst-loop set above.
     private readonly HashSet<int> _activateLoopMounts = new();
+    // The own ship the loops above belong to, and when EmitOwnShots last ran
+    // (StopStaleOwnWeaponLoops stops the loops once it stops running).
+    private short _weaponLoopShipId = -1;
+    private long _ownShotsLastCallTick;
     // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
     // in the same locked pass that builds _poses so the Draw loop can read the
     // cloaked state lock-free and alpha-blend those ships' models.

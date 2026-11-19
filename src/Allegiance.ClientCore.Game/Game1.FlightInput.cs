@@ -249,6 +249,7 @@ public sealed partial class Game1
             TrainingOverlay.Current = overlayProofId;
             Console.WriteLine($"[training] proof overlay {overlayProofId} forced (ALLEGIANCE_TRAINING_OVERLAY)");
         }
+        StopStaleOwnWeaponLoops();
         _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
         UpdateSoundEvents();
         _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
@@ -3751,25 +3752,27 @@ public sealed partial class Game1
     private void EmitOwnShots(ShipEntity mine, ServerShipUpdate mineUp, Flight.PredictedPose pose, int fireStateM)
     {
         EnsureOwnEchoHook();
+        _ownShotsLastCallTick = Environment.TickCount64;
+        // A different own ship (podded, respawned, new hull) never inherits the old
+        // ship's per-mount loops.
+        if (mine.ShipId != _weaponLoopShipId)
+        {
+            StopOwnWeaponLoops();
+            _weaponLoopShipId = mine.ShipId;
+        }
         if (fireStateM == 0)
         {
             // Fire released (or autopilot driving neutral) → drop every burst loop
             // so a held-trigger loop doesn't linger after the trigger lifts.
             // P787b — and every weapon activate loop (native PlaySoundIf stops
             // m_vpActiveSound when pweapon->fActive() goes false, trekigc.cpp:942-950).
-            if (_burstingMounts.Count > 0 || _prevFiringMounts.Count > 0 || _activateLoopMounts.Count > 0)
-            {
-                _sound?.StopAllWeaponBursts();
-                _sound?.StopAllWeaponActivates();
-                _burstingMounts.Clear();
-                _prevFiringMounts.Clear();
-                _activateLoopMounts.Clear();
-            }
+            StopOwnWeaponLoops();
             return;
         }
 
         var cat = _shopCatalog;
-        if (cat is null || mine.Loadout is not { Count: > 0 } lo) return;
+        // No weapons (a pod) or no catalogue: nothing can be firing, so no loop may play.
+        if (cat is null || mine.Loadout is not { Count: > 0 } lo) { StopOwnWeaponLoops(); return; }
 
         // P465c — the local ship's real hull record (ModelName/Length/Hardpoints)
         // from the shop catalogue, so its per-mount weapon-muzzle offsets can be
@@ -3818,7 +3821,7 @@ public sealed partial class Game1
                 w.SingleShotSound, w.BurstSound,
                 muzzles is not null && (uint)p.MountId < (uint)muzzles.Length ? muzzles[p.MountId] : default));
         }
-        if (specs.Count == 0) return;
+        if (specs.Count == 0) { StopOwnWeaponLoops(); return; }
 
         var ctx = new Flight.OwnShotContext(
             pose.Position, pose.Orientation, mineUp.Velocity,
@@ -3881,6 +3884,31 @@ public sealed partial class Game1
                 if (!nowActive.Contains(m)) { snd.StopWeaponActivate(m); _activateLoopMounts.Remove(m); }
             _activateLoopMounts.UnionWith(nowActive);
         }
+    }
+
+    /// <summary>Stop every own-ship burst and activate loop. Called on trigger
+    /// release, when the own ship changes or has no weapons, and by
+    /// <see cref="StopStaleOwnWeaponLoops"/> once <see cref="EmitOwnShots"/> stops
+    /// running (docked, own ship gone, left flight) — otherwise a loop started by a
+    /// held trigger plays forever.</summary>
+    private void StopOwnWeaponLoops()
+    {
+        if (_burstingMounts.Count == 0 && _prevFiringMounts.Count == 0 && _activateLoopMounts.Count == 0) return;
+        _sound?.StopAllWeaponBursts();
+        _sound?.StopAllWeaponActivates();
+        _burstingMounts.Clear();
+        _prevFiringMounts.Clear();
+        _activateLoopMounts.Clear();
+    }
+
+    /// <summary>Own-shot loops are maintained only by <see cref="EmitOwnShots"/>; if it
+    /// has not run for <see cref="OwnWeaponLoopStaleMs"/> (docked, podded out of the
+    /// ship, disconnected, any non-flight state) the loops are stopped.</summary>
+    internal const long OwnWeaponLoopStaleMs = 250;
+    internal static bool OwnWeaponLoopsStale(long nowTick, long lastCallTick) => nowTick - lastCallTick > OwnWeaponLoopStaleMs;
+    private void StopStaleOwnWeaponLoops()
+    {
+        if (OwnWeaponLoopsStale(Environment.TickCount64, _ownShotsLastCallTick)) StopOwnWeaponLoops();
     }
 
     /// <summary>
