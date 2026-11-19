@@ -10431,3 +10431,25 @@ Ignored raw evidence: `<lane evidence dir>/continuation-fast/` and
 `<lane evidence dir>/continuation-fast-isolated/`. P1054 changes browser visual
 delivery and optional renderer lookup; desktop asset loading is unchanged and
 the full training gate passed **1,206/0/2**, including **42 physical windows**.
+
+## P1059 — final Fast, run last (2026-11-19)
+
+P1059 hides three browser developer/proof controls behind a documented switch; it changes no shared
+simulation, server or client-core file (browser `wwwroot` + Blazor pages + tools/docs only). The
+single final Fast sweep ran last and exited **1**: **15,563 passed / 3 failed / 7 skipped**,
+**15,573 total**, **661.0 s**; all **9 infrastructure checks passed**, calibrated case limit
+**12.54 s**, no timing offender. Browser head and game remained **12/0/0** and **74/0/0**.
+
+Each failing method was then selected in **three separate fresh processes** with artwork
+(**9 invocations, 9 passed**). None of the three is a new family: each is already ledgered above.
+
+| Method | Sweep observation | Three isolated outcomes (passed/failed/skipped) |
+|---|---|---|
+| `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | "NPC diverter did not reach and rescue the pod" (7 s) | **1/0/0, 1/0/0, 1/0/0** (0.79 / 0.77 / 0.79 s) — existing rescue-tick-budget family, ledgered above |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | roster time `8.44999981` outside `[4, 8]` (228 ms) | **1/0/0, 1/0/0, 1/0/0** (0.78 / 0.75 / 0.78 s) — existing simulation-clock roster family, ledgered repeatedly above |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | probe collection empty under load (73 ms) | **1/0/0, 1/0/0, 1/0/0** (0.51 / 0.51 / 0.51 s) — existing live-fixture family (ledgered as pass/pass/pass) |
+
+Fails once but passes 3/3 alone = load flake; no assertion, timeout, tier, quarantine policy,
+throttle, privilege or simulation rule was changed. **Fast remains red** for these three ledgered
+families. Ignored raw evidence: `<lane evidence dir>/fast/` (TRX + logs) and
+`<lane evidence dir>/fast-isolated/` (the nine isolated runs).

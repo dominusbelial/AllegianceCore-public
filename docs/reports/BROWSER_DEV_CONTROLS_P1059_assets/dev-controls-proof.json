@@ -1,0 +1,232 @@
+{
+  "passed": true,
+  "browserVersion": "153.0.8010.0",
+  "headlessGpuRepresentative": false,
+  "devControls": [
+    "#flight-rock",
+    "#flight-waypoint",
+    "#online-pose"
+  ],
+  "playerControls": [
+    "#flight-contact",
+    "#flight-dock",
+    "#flight-starmap",
+    "#flight-fullscreen",
+    "#flight-warp",
+    "#online-briefing",
+    "#online-close"
+  ],
+  "results": [
+    {
+      "style": "Classic",
+      "width": 1920,
+      "height": 1080,
+      "label": "classic-1920x1080",
+      "devOff": false,
+      "devOn": true,
+      "off": {
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1,
+        "#map-sector": 0
+      },
+      "offStarmap": {
+        "#map-sector": 1,
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0
+      },
+      "on": {
+        "#flight-rock": 1,
+        "#flight-waypoint": 1,
+        "#online-pose": 1,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1
+      },
+      "waypointFields": {
+        "#waypoint-x": 1,
+        "#waypoint-y": 1,
+        "#waypoint-z": 1,
+        "#waypoint-go": 1
+      },
+      "storedAfterUrlSwitch": "1",
+      "dev": true,
+      "consoleErrors": []
+    },
+    {
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "label": "modern-1920x1080",
+      "devOff": false,
+      "devOn": true,
+      "off": {
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1,
+        "#map-sector": 0
+      },
+      "offStarmap": {
+        "#map-sector": 1,
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0
+      },
+      "on": {
+        "#flight-rock": 1,
+        "#flight-waypoint": 1,
+        "#online-pose": 1,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1
+      },
+      "waypointFields": {
+        "#waypoint-x": 1,
+        "#waypoint-y": 1,
+        "#waypoint-z": 1,
+        "#waypoint-go": 1
+      },
+      "storedAfterUrlSwitch": "1",
+      "dev": true,
+      "consoleErrors": []
+    },
+    {
+      "style": "Classic",
+      "width": 800,
+      "height": 480,
+      "label": "classic-800x480",
+      "devOff": false,
+      "devOn": true,
+      "off": {
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1,
+        "#map-sector": 0
+      },
+      "offStarmap": {
+        "#map-sector": 1,
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0
+      },
+      "on": {
+        "#flight-rock": 1,
+        "#flight-waypoint": 1,
+        "#online-pose": 1,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1
+      },
+      "waypointFields": {
+        "#waypoint-x": 1,
+        "#waypoint-y": 1,
+        "#waypoint-z": 1,
+        "#waypoint-go": 1
+      },
+      "storedAfterUrlSwitch": "1",
+      "dev": true,
+      "consoleErrors": []
+    },
+    {
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "label": "modern-800x480",
+      "devOff": false,
+      "devOn": true,
+      "off": {
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1,
+        "#map-sector": 0
+      },
+      "offStarmap": {
+        "#map-sector": 1,
+        "#flight-rock": 0,
+        "#flight-waypoint": 0,
+        "#online-pose": 0
+      },
+      "on": {
+        "#flight-rock": 1,
+        "#flight-waypoint": 1,
+        "#online-pose": 1,
+        "#flight-contact": 1,
+        "#flight-dock": 1,
+        "#flight-starmap": 1,
+        "#flight-fullscreen": 1,
+        "#flight-warp": 1,
+        "#online-briefing": 1,
+        "#online-close": 1
+      },
+      "waypointFields": {
+        "#waypoint-x": 1,
+        "#waypoint-y": 1,
+        "#waypoint-z": 1,
+        "#waypoint-go": 1
+      },
+      "storedAfterUrlSwitch": "1",
+      "dev": true,
+      "consoleErrors": []
+    }
+  ],
+  "sticky": {
+    "urlOn": {
+      "dev": true,
+      "stored": "1"
+    },
+    "plainAfterOn": {
+      "dev": true,
+      "stored": "1"
+    },
+    "urlOff": {
+      "dev": false,
+      "stored": "0"
+    },
+    "plainAfterOff": {
+      "dev": false,
+      "stored": "0"
+    }
+  },
+  "consoleErrors": []
+}

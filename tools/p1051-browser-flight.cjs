@@ -7,7 +7,9 @@ const stateDir=path.resolve(process.argv[3]||'.scratch/p1051/host');
 const output=path.resolve(process.argv[4]||'docs/reports/BROWSER_FLIGHT_P1051_assets');
 const fixtures=path.resolve(process.argv[5]||'.scratch/p1051/flight-opens4');
 const generation=path.resolve(process.argv[6]||'.scratch/p1051/generation');
-const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html';
+// P1059: the proof harness uses the developer/proof controls, so it opens
+// the page with the documented dev switch on (off by default for players).
+const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html?dev=1';
 const starter=JSON.parse(fs.readFileSync(path.join(generation,'starter-manifest.json'))),join=JSON.parse(fs.readFileSync(path.join(generation,'join-manifest.json')));
 const starterHashes=new Set(starter.assets.map(a=>a.sha256)),flightAsset=join.assets.find(a=>!starterHashes.has(a.sha256)&&a.source.startsWith('bgrnd'));
 const readState=()=>JSON.parse(fs.readFileSync(path.join(stateDir,'state.json')));

@@ -38,7 +38,8 @@ async function main() {
     for (const [index, style, width, height] of (process.argv[6] === '--timing-only' ? profiles.slice(0,2) : profiles)) {
       console.log('LOAD', phase, index, style, width, height);
       await page.setViewportSize({ width, height });
-      await page.goto(origin + '/play/preview/menu.html');
+      // P1059: dev switch on, so the toolbar renders exactly as before P1059.
+      await page.goto(origin + '/play/preview/menu.html?dev=1');
       await page.waitForFunction(() => window.preview?.measurements.firstFrameMs != null || document.getElementById('runtime-error'), null, { timeout: 120000 });
       assert.equal(await page.locator('#runtime-error').count(), 0, 'runtime boot succeeds');
       const timing = await page.evaluate(() => ({ shellMs: performance.getEntriesByName('first-contentful-paint')[0]?.startTime,

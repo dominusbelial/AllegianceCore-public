@@ -25,6 +25,10 @@ public partial class Menu
     private int _progress;
     private HudStyle _style = HudStyle.Modern;
     private long _savedRevision = -1;
+    // P1059 developer/proof switch (wwwroot/dev-switch.js): off by default, read
+    // once at load from ?dev=1 / localStorage['allegiance.dev']. It only decides
+    // which page controls render; the game methods behind them are untouched.
+    private bool _dev;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -37,6 +41,7 @@ public partial class Menu
         try
         {
             _platform ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", await JsRuntime.InvokeAsync<string>("preview.asset", "./game-platform.js"));
+            await ReadDevSwitchAsync();
             if (!_attempted)
             {
                 var snapshot = await _platform.InvokeAsync<Dictionary<string, string>>("settingsRead");
@@ -78,6 +83,13 @@ public partial class Menu
             _error = "The starter pack or renderer could not start. " + error.Message;
         }
         finally { _loading = false; if (!_disposed) StateHasChanged(); }
+    }
+    private async Task ReadDevSwitchAsync()
+    {
+        // dev-switch.js resolves ?dev=1 / localStorage['allegiance.dev']; a page
+        // built without it (or a refused JS call) keeps the default, off.
+        try { _dev = await JsRuntime.InvokeAsync<bool>("allegianceDevEnabled"); }
+        catch (JSException) { _dev = false; }
     }
     private async Task SetStyleAsync(HudStyle style)
     {
@@ -162,7 +174,7 @@ public partial class Menu
     [JSInvokable]
     public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
         invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
-        residentBytes = _assets?.ResidentBytes, sectors = new { active = _sectorStreamer?.ActiveSector, retries = _sectorStreamer?.RetryCount, completed = _sectorStreamer?.CompletedPacks, status = SectorStatus }, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
+        residentBytes = _assets?.ResidentBytes, sectors = new { active = _sectorStreamer?.ActiveSector, retries = _sectorStreamer?.RetryCount, completed = _sectorStreamer?.CompletedPacks, status = SectorStatus }, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, dev = _dev, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
         launch = new { busy = _onlineBusy, guard = _launchGuard, readySends = _readySends, shipId = _session?.World.MyShipId,
             sideId = _session?.World.MySideId, stage = _session?.World.Mission?.Stage, inGame = _session?.World.InGame,
             joinedShipId = _session?.World.JoinedShipId,

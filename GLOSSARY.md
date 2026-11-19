@@ -118,6 +118,22 @@ list in **reverse**.
   Proof: `tools/p1058-browser-launch.cjs` (human-pace launch cases) and
   `tools/p1058-console-log-tests.cjs`; parity: `docs/parity/p1058-browser-launch.csv`.
   Report: `docs/reports/BROWSER_LAUNCH_P1058.md`. No server, wire or game-rule change.
+- **Browser developer/proof switch (P1059)** — the flight toolbar's proof-only
+  controls (`#flight-rock`, the typed-coordinate waypoint form `#flight-waypoint` /
+  `#waypoint-*`, the authoritative `#online-pose` readout) are hidden from players
+  and never deleted. One switch, `?dev=1` / `localStorage['allegiance.dev']='1'`
+  (a `?dev=0` turns it off again), resolved by
+  `src/Allegiance.ClientCore.Browser/wwwroot/dev-switch.js` before the .NET runtime
+  and read once by `src/Allegiance.ClientCore.Browser/Pages/Menu.razor.cs`; the
+  Flight panel renders those controls only with the switch on (`Pages/Menu.razor`).
+  Off by default; it changes no game rule, wire message, server check or limit, and
+  every game method behind the controls stays. Player controls (starmap, dock,
+  external/chase camera and its rotation, warp autopilot, mission briefing,
+  fullscreen, join/side/launch/disconnect/style/sound) stay visible in both HUD
+  styles. Proof: `tools/p1059-browser-devcases.cjs` (off/on, Classic + Modern,
+  1920×1080 and 800×480) and `tools/p1059-dev-switch-tests.cjs`; parity:
+  `docs/parity/p1059-browser-dev-controls.csv`; hosting note: `docs/BROWSER_HOSTING.md`.
+  Report: `docs/reports/BROWSER_DEV_CONTROLS_P1059.md`.
 - **Browser sector visuals (P1054)** — `tools/p1051-flight-opens/Program.cs`
   records ordinary waypoint/aleph travel through all sectors in both HUDs;
   `tools/p1054-sector-analysis.py` attributes verified desktop opens. The

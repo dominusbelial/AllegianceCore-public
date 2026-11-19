@@ -4,7 +4,9 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const modules=path.resolve(process.argv[2],'node_modules'),stateDir=path.resolve(process.argv[3]),output=path.resolve(process.argv[4]),generation=path.resolve(process.argv[5]);
 const {chromium:playwright}=require(path.join(modules,'playwright'));
-const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html';
+// P1059: this harness clicks #flight-rock, the waypoint form and #map-sector,
+// so it opens the page with the documented dev switch on.
+const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html?dev=1';
 const index=JSON.parse(fs.readFileSync(path.join(generation,'sector-manifest.json'))),base=JSON.parse(fs.readFileSync(path.join(generation,'join-manifest.json')));
 const basePaths=new Set(base.assets.map(a=>'/play/preview/'+a.path)),entry=index.sectors.find(s=>s.sectorId===index.entrySectorId);
 const entryPaths=new Set(entry.assets.map(a=>'/play/preview/'+a.path));

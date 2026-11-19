@@ -90,10 +90,16 @@
             else if (_onlineState == "Flight")
             {
                 <p>@_onlineName · @_session?.ActiveTransportProtocol · server assigned ship</p>
-                <p id="online-pose">@_pose</p>
+                @if (_dev)
+                {
+                    <p id="online-pose">@_pose</p>
+                }
                 <p class="flight-help">W/S thrust · arrows turn · Space fire · Shift boost · click canvas for mouse steering · Escape releases · Alt+Enter fullscreen</p>
                 <button id="flight-contact" @onclick="ToggleContactView">@(_game?.ViewingContact == true ? "Chase view" : "View nearby ships")</button>
-                <button id="flight-rock" @onclick="() => _game?.ToggleRockView()">View nearby asteroid</button>
+                @if (_dev)
+                {
+                    <button id="flight-rock" @onclick="() => _game?.ToggleRockView()">View nearby asteroid</button>
+                }
                 @if (_game?.ViewingContact == true) { <button id="flight-angle" @onclick="() => _game?.RotateContactView()">Rotate view</button> }
                 <button id="flight-dock" @onclick="DockHome">Dock at home station</button>
                 <button id="flight-starmap" @onclick="() => _game?.ToggleStarmap()">Starmap</button>
@@ -109,13 +115,16 @@
                     @foreach (var warp in _session?.World.Warps.Values.Where(w => w.ClusterId == CurrentSector) ?? [])
                     { <option value="@warp.WarpId">@warp.Name</option> }
                 </select></label>
-                <button id="flight-waypoint" @onclick="() => _showWaypoint = !_showWaypoint">Waypoint</button>
-                @if (_showWaypoint)
+                @if (_dev)
                 {
-                    <label>X <input id="waypoint-x" type="number" step="any" @bind="_waypointX" /></label>
-                    <label>Y <input id="waypoint-y" type="number" step="any" @bind="_waypointY" /></label>
-                    <label>Z <input id="waypoint-z" type="number" step="any" @bind="_waypointZ" /></label>
-                    <button id="waypoint-go" @onclick="() => { _game?.FlyToWaypoint(_waypointX, _waypointY, _waypointZ); _showWaypoint = false; }">Fly to waypoint</button>
+                    <button id="flight-waypoint" @onclick="() => _showWaypoint = !_showWaypoint">Waypoint</button>
+                    @if (_showWaypoint)
+                    {
+                        <label>X <input id="waypoint-x" type="number" step="any" @bind="_waypointX" /></label>
+                        <label>Y <input id="waypoint-y" type="number" step="any" @bind="_waypointY" /></label>
+                        <label>Z <input id="waypoint-z" type="number" step="any" @bind="_waypointZ" /></label>
+                        <button id="waypoint-go" @onclick="() => { _game?.FlyToWaypoint(_waypointX, _waypointY, _waypointZ); _showWaypoint = false; }">Fly to waypoint</button>
+                    }
                 }
                 <button id="flight-fullscreen" data-flight-fullscreen>Fullscreen</button>
             }

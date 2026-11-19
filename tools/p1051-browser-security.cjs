@@ -52,7 +52,8 @@ async function main() {
     await page.locator('#account').waitFor({ state: 'visible' });
     const account = await page.evaluate(() => fetch('/api/identity/me').then(response => response.json()));
     secrets.push(...(await context.cookies()).map(cookie => cookie.value));
-    await page.goto(origin + '/play/preview/menu.html');
+    // P1059: dev switch on, exactly as before P1059 (off by default for players).
+    await page.goto(origin + '/play/preview/menu.html?dev=1');
     await page.waitForFunction(() => window.preview?.measurements.firstFrameMs != null, null, { timeout: 90000 });
     const open = async () => { await page.locator('#online-open').click(); await page.locator('#online-panel[data-state="Servers"]').waitFor(); };
     const close = async () => { await flushTicketReads(); await page.locator('#online-close').click(); await page.locator('#online-panel').waitFor({ state: 'detached' }); await clean(); };

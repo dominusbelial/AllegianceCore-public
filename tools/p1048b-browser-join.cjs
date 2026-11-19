@@ -36,7 +36,8 @@ async function main() {
       await page.locator('#account').waitFor({state:'visible'}); await page.locator('#signout').click();
       await page.locator('#login').waitFor({state:'visible'}); await page.locator('#signin').click();
       await page.locator('#account').waitFor({state:'visible'}); assert.equal(await page.locator('#pilot').textContent(),name);
-      await page.goto(origin+'/play/preview/menu.html');
+      // P1059: this harness reads #online-pose, a developer/proof readout.
+      await page.goto(origin+'/play/preview/menu.html?dev=1');
       await page.waitForFunction(()=>window.preview?.measurements.firstFrameMs != null,null,{timeout:60000});
       await page.getByRole('button',{name:style,exact:true}).click();
       await page.locator('#online-open').click();
