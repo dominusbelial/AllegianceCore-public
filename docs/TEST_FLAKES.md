@@ -5,6 +5,59 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1056 — timer-bound flakes resolved: P739 warp-bomb one ULP and P660 countdown — 2026-11-19
+
+**Root cause 1 — `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission`.**
+Production stores the deadline as one double addition, `WarpBombTime = now + EffectiveWarpBombDelay`
+(`src/Allegiance.Core/Model/Sector.cs:4590-4591`; the delay is loaded float slot 32 at
+`Sector.cs:2122`, native `FedSrv/FedSrv.CPP:12546` adds that float constant to the warp's integer-ms
+`Time` clock, `zlib/ztime.h:144-149`). The assertion re-derived the delay by subtracting the arm clock
+(`tests/Allegiance.Core.Tests/P739TimerLiveTests.cs:81`, pre-change), and `(clock + delay) - clock`
+does not round-trip in IEEE 754: for the live 20 Hz mission clock (5–7 s) it returns `delay + 1 ULP`
+whenever the sum rounds up — exactly the ledgered `5.0000000000000009` / `7.0000000000000009`. It is
+a harness-arithmetic artefact, not a late bomb, which is why it also failed alone. **Fix (test only):**
+`tests/Allegiance.Core.Tests/TimerBounds.cs` compares `captured == clock + (double)delay` exactly —
+strictly stronger than the old band, since a bomb one 0.05 s tick late (or early) still fails; the
+live test calls it. No-server regression: `tests/Allegiance.Core.Tests/P1056TimerBoundsTests.cs`
+reproduces the round-up clocks `6.299999999999986` (5 s) and `6.8999999999999835` (7 s).
+
+**Root cause 2 — `P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump`.**
+The briefing clock was sampled after the peer-reseat pump (`tests/Allegiance.ClientCore.Tests/P660NextMatchLiveTests.cs:130`,
+pre-change). With `enabled: False` the ready-up countdown is armed inside `End()` — the game-over
+rotation's `FinishPendingRotation → TryAutoStart → StartCountdown`
+(`src/Allegiance.Server/Server.Lobby.cs:1232,1959,2097-2098`, target = the rotation tick + 15 s) — so
+the pump runs inside the briefing and its load-dependent lag (observed 0, 0.0125 and 0.05 s, and up)
+was charged to the span: 15 s − 0.1 s = the ledgered `14.900000000054206`. Native's rule is an absolute
+`timeStart = Time::Now() + fStartCountdown` with a strict `now > timeStart` start test
+(`FedSrv/fsmission.cpp:1926-1938`, `FedSrv.CPP:8235`), so production is correct. **Fix (test only):**
+the briefing clock is sampled on the server clock at the arming tick (before any client pump; at the
+server-side `Starting` transition for the enabled rows). The `[14.94, 15.06]` bounds are unchanged.
+Deterministic reproduction: `P660NextMatchLiveTests.Disabled_ready_up_countdown_is_armed_on_the_rotation_tick_and_completes_one_tick_past_its_deadline`
+(ordered steps, no busy loop: 3 lagging ticks read 14.85, the server-side span reads 15.0–15.06).
+
+**Verification.** Each fixed test 20× alone in fresh processes: **P739 20/20 runs (60/60 cases)**, **P660
+20/20 runs (80/80 cases)**, 0 failures. Three full Fast tiers (`--parallel 4`, both classes inside the
+bounded pool) — sweep 1 **15,550 executions / 634.6 s / 15,541 passed / 2 failed / 7 not executed**,
+sweep 2 **15,550 / 652.0 s / 15,539 / 4 / 7**, sweep 3 **15,550 / 627.7 s / 15,539 / 4 / 7**; 9/9
+infrastructure checks and the timing guard passed each time, and both families plus their new
+regressions were **19/19 cases green in every sweep** (P660 8/8, P739 5/5, P1056TimerBoundsTests 6/6).
+The ten failure sightings (eight distinct methods) are other families and each distinct method passed
+**3/3 alone** (below). No game rule, timing bound, tier, quarantine or production file changed.
+Report: [TIMER_BOUNDS_P1056.md](reports/TIMER_BOUNDS_P1056.md).
+
+**P1056 Fast-tier sweep cameos (non-task, 2026-11-19).** Each distinct failing method passed **3/3
+alone** in fresh processes: `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` (2
+`AsteroidMined` events at capacity), `P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live`
+(`Muted` vs `Worse`), `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn`
+(B never latched A's death, ledgered family), `BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever`
+(6.43 s outside `[1.5, 5]`), `P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification`
+(`Expected: 8096, Actual: null`), `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup`
+(1,472 B, the known allocation-count class), `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange`
+(transit `ShipStatusMessage` absent), `AsteroidCombatLiveTests.Same_side_friendly_missile_damages_the_asteroid_no_friendly_fire_gate`,
+`P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station`
+(30.73 s, chronic). Fast timing offenders (5/13/6 per sweep, 12.1–30.7 s vs 11.54–13.59 s limits) are
+also non-task and all passed; no bound or tier changed.
+
 ## Merge sweeps P1051 + P1042c — 2026-11-18
 
 **P1051 merge (ec268c2a):** Fast **15,483 cases, 646 s, 4 failed**; each passed **3/3 alone**:
@@ -166,7 +219,8 @@ repeated three times alone on the corrected source:
 | `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | 9.05 s roster time outside [4, 8] | pass / pass / pass (0.519 / 0.542 / 0.556) |
 
 P660 is the existing clock-observation boundary family, including prior isolated
-failures; **it remains unresolved**. No countdown, simulation-clock or gameplay
+failures; **it remains unresolved**. (**Resolved by P1056** — the disabled ready-up countdown was
+sampled one or more ticks late, after the peer-reseat pump; test-side fix, production unchanged.) No countdown, simulation-clock or gameplay
 rule changed. The final-source Fast sweep covered **15,464 cases in 870.1 s**: **15,453 passed /
 4 failed / 7 skipped**, no timing offenders (11.540 s limit), 9/9 infrastructure
 checks. All **89 security cases passed**. Every failed method was repeated three
@@ -180,7 +234,8 @@ times alone, retaining theory rows:
 | `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)` | 5.0000000000000009 outside [4.9000000000000004, 5] | **fail / fail / pass** (0.187 / 0.146 / 0.207); all three theory rows selected |
 
 P739 is the existing one-ULP timer boundary family; **it remains unresolved**,
-including isolated failures. The failed broad/Fast sweeps are not claimed green,
+including isolated failures. (**Resolved by P1056** — production's stored deadline is exact; the
+assertion's re-derived delay does not round-trip in IEEE 754. Test-side fix.) The failed broad/Fast sweeps are not claimed green,
 and isolated passes do not change their outcome. No game rule, assertion, timing
 bound, quarantine or tier was changed.
 Report: [WS_SECURITY_FIXES_P1052.md](reports/WS_SECURITY_FIXES_P1052.md).
