@@ -236,6 +236,10 @@ public sealed partial class Game1
     /// view (native <c>EndOverrideCamera</c> at <c>m_timeOverrideStop</c>,
     /// WinTrek.cpp:6536-6547 / 7673-7678). Called every frame so the swing
     /// always ends.</summary>
+    /// <summary>The camera an expired override (gloat) camera returns to — native
+    /// vmCombat's cmCockpit, never chase.</summary>
+    internal const CameraMode OverrideCameraEndMode = CameraMode.Cockpit;
+
     private void UpdateOverrideCameraExpiry()
     {
         if (_cameraMode != CameraMode.ExternalOverride && !_trainingDeathCameraActive) return;
@@ -246,10 +250,15 @@ public sealed partial class Game1
                 if (!training.Mission.RestoreShip()) _overrideUntil += 10;
                 return;
             }
-            _cameraMode = CameraMode.Chase;
+            // Native EndOverrideCamera (WinTrek.cpp:6536-6568): flying (e.g. in the
+            // lifepod) → SetViewMode(vmCombat) → SetCameraMode(cmCockpit) (:6735-6737);
+            // otherwise the hangar/command screen takes over and the next launch is
+            // again vmCombat → cockpit. Chase here stuck the player in chase view
+            // for the rest of the session.
+            _cameraMode = OverrideCameraEndMode;
             _overrideTarget = null;
             _externalCamAlignedFor = null;
-            Console.WriteLine("[eject] override camera END -> chase");
+            Console.WriteLine("[eject] override camera END -> cockpit");
         }
     }
 }
