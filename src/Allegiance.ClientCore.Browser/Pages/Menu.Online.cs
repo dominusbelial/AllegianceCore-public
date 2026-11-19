@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.JSInterop;
 using System.Net.Http.Json;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.Browser.Assets;
 using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Allegiance.Core;
@@ -15,6 +16,8 @@ namespace Allegiance.ClientCore.Browser.Pages;
 public partial class Menu
 {
     private bool _online, _onlineBusy, _onlineClosing;
+    private string? _launchGuard;
+    private long _readySends;
     private long _onlineGeneration;
     private int _pendingJoins;
     private BrowserServer? _pendingServer;
@@ -186,15 +189,35 @@ public partial class Menu
     }
     private async Task LaunchOnlineAsync()
     {
-        if (_session is not { } session || _onlineBusy || session.World.MyShipId is not { } shipId) return;
+        // Never silent, never stuck: every outcome a click can hit is visible.
+        // The button is disabled in exactly these states (LaunchAffordance), so
+        // this path only answers a click that raced a state change.
+        if (_onlineBusy)
+        {
+            _launchGuard = "busy";
+            _onlineError = "The server is still completing the previous launch request.";
+            StateHasChanged();
+            return;
+        }
+        var readiness = HangarLaunch.Of(_session);
+        if (!readiness.CanLaunch)
+        {
+            _launchGuard = readiness.Blocker.ToString();
+            _onlineError = LaunchBlockerText(readiness.Blocker);
+            StateHasChanged();
+            return;
+        }
+        var session = _session!;
+        short shipId = readiness.ShipId!.Value;
+        _launchGuard = "sent";
         // This handler is a fresh user click after staging/join, so audio can be
         // activated here. Page-level DOM handlers own pointer/fullscreen gestures.
         EnableAudio();
         _onlineBusy = true; _onlineError = null;
         try
         {
-            session.SendPlayerReady(true, shipId);
-            await WaitOnlineAsync(session, () => session.World.Mission?.Stage == MissionStageMessage.StageStarted, waitForStart: true);
+            session.SendPlayerReady(true, shipId); ++_readySends;
+            await WaitOnlineForStartAsync(session);
             if (!session.World.Ships.TryGetValue(shipId, out var ship)) throw new InvalidOperationException("No ship was assigned by the server.");
             long sectorGeneration = session.World.SectorGeneration;
             // Same no-purchase undock as desktop U (Game1.Panes.cs). Keep the
@@ -210,14 +233,66 @@ public partial class Menu
         catch (Exception ex) { if (ReferenceEquals(_session, session)) _onlineError = RequestError(ex); }
         finally { if (ReferenceEquals(_session, session)) { _onlineBusy = false; StateHasChanged(); } }
     }
-    private static string RequestError(Exception error) => error is OperationCanceledException
-        ? "The server did not complete this request. Try again or return to the list." : error.Message;
-    private async Task WaitOnlineAsync(ConnectionSession session, Func<bool> condition, bool waitForStart = false)
+    /// <summary>Longest silent stretch a ready click accepts without the mission
+    /// stage or its countdown moving; every observed change re-arms it.</summary>
+    private const long LaunchWaitMilliseconds = 60000;
+    private static string LaunchBlockerText(HangarLaunch.Blocker blocker) => blocker switch
+    {
+        HangarLaunch.Blocker.NoSession => "Not connected to the server. Return to the list to join again.",
+        HangarLaunch.Blocker.Reconnecting => "Reconnecting to the server…",
+        HangarLaunch.Blocker.NoShipAssigned => "Waiting for the server to assign your ship…",
+        _ => "The launch cannot start yet.",
+    };
+    /// <summary>The hangar button's live state and the reason it is disabled —
+    /// one shared decision for Classic and Modern (they differ only in chrome).</summary>
+    private (bool Enabled, string? Reason) LaunchAffordance()
+    {
+        var readiness = HangarLaunch.Of(_session);
+        return (readiness.CanLaunch && !_onlineBusy, readiness.CanLaunch ? null : LaunchBlockerText(readiness.Blocker));
+    }
+    /// <summary>The busy line: the countdown while the mission starts, else what
+    /// the click is actually waiting for.</summary>
+    private string BusyStatus()
+    {
+        if (_onlineState == "Hangar")
+        {
+            if (_session?.World.CountdownRemainingSeconds() is { } seconds) return $"Next match starts in {seconds} seconds…";
+            if (_session?.World.Mission?.Stage != MissionStageMessage.StageStarted)
+                return "Ready. Waiting for the server to start the mission…";
+        }
+        return "Waiting for the server…";
+    }
+    /// <summary>Native keeps a ready-up click pending until the mission reaches
+    /// STAGE_STARTED — the server ignores DOCKED before that (FedSrv.CPP:7031-7034)
+    /// — so the wait is legitimate, but it must report rather than hang forever.</summary>
+    private async Task WaitOnlineForStartAsync(ConnectionSession session)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-        // Native readiness/intermission can legitimately outlast a request timeout.
-        // Keep this wait asynchronous and cancellable by leaving the owned session.
-        if (!waitForStart) timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        long deadline = Environment.TickCount64 + LaunchWaitMilliseconds;
+        int? lastSeconds = session.World.CountdownRemainingSeconds();
+        while (session.World.Mission?.Stage != MissionStageMessage.StageStarted)
+        {
+            if (session.Lost || session.IsDisposed) throw new IOException("The server connection was lost.");
+            if (!ReferenceEquals(_session, session)) throw new OperationCanceledException("The join was retired.");
+            int? seconds = session.World.CountdownRemainingSeconds();
+            if (seconds != lastSeconds)
+            {
+                lastSeconds = seconds;
+                deadline = Environment.TickCount64 + LaunchWaitMilliseconds;
+            }
+            if (Environment.TickCount64 >= deadline)
+                throw new TimeoutException("The server has not started the mission yet. Ready again to retry.");
+            await Task.Delay(50, timeout.Token);
+        }
+    }
+    private static string RequestError(Exception error) => error is OperationCanceledException
+        ? "The server did not complete this request. Try again or return to the list." : error.Message;
+    private async Task WaitOnlineAsync(ConnectionSession session, Func<bool> condition)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        // The dock acknowledgement keeps its existing bounded wait; the
+        // readiness wait above owns the long, reported wait for the start.
+        timeout.CancelAfter(TimeSpan.FromSeconds(10));
         while (!condition())
         {
             if (session.Lost || session.IsDisposed) throw new IOException("The server connection was lost.");

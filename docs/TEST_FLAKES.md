@@ -5,6 +5,28 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1058 lane — browser launch gate, Fast tier — 2026-11-19
+
+**Fast sweep on the P1058 tree** (`tools/run-tests.sh --tier fast --no-build --parallel 1`, run after every
+implementation/build/browser/HUD gate): **15,551 tests, 1,142.3 s, FAIL** — infrastructure checks PASS, calibrated
+per-case text limit 12.966 s, **4 failed**, 4 not executed, and **five executions over the 10 s warning text**
+(13.759 s `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts`, 13.803 s
+`P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases`, 14.273 s
+`P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`, 22.511 s
+`P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates`, 20.506 s
+`SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players`). Each failure method then
+ran in three fresh processes with artwork:
+
+| Case | Sweep failure | Isolated runs (passed/failed/skipped) | Classification |
+|---|---|---|---|
+| `TurretGunnerFireLiveTests.Gunner_send_loop_makes_the_server_create_projectiles_along_its_orientation` | "no turret projectiles were created by the server despite ACTIVE updates — send loop / firing broken" (1 s) | **1/0/0 ×3**, 1 s each | first sighting; turret/flight/server sources untouched by P1058 (browser launch gate, browser console JS, favicon); live server-projectile window under load |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | "B never saw A's death (IsDead never latched on B) after 2500 ticks" (5 s) | **1/0/0 ×3**, 1 s each | existing family (ledgered in the P1051 merge sweep above) |
+| `SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players` | "lethal hit must destroy the debug station" (20 s) | **1/0/0 ×3**, 411/411/410 ms | first sighting at 20 s in the sweep (load); passes alone |
+| `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` (delay 5/7/10) | delay 5: **5.0000000000000009** above the inclusive 5 bound | **2/1/0, 3/0/0, 1/2/0** (all three delay rows each run) | existing ULP upper-bound family (P1051/P1053 entries above); timer code unchanged |
+
+No assertion, timeout, tier, quarantine, simulation rule or production limit was changed; the sweep remains **red**
+rather than waived. Report: [BROWSER_LAUNCH_P1058.md](reports/BROWSER_LAUNCH_P1058.md).
+
 ## Merge sweeps P1051 + P1042c — 2026-11-18
 
 **P1051 merge (ec268c2a):** Fast **15,483 cases, 646 s, 4 failed**; each passed **3/3 alone**:

@@ -27,7 +27,9 @@ async function main(){
   await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
   await page.goto(origin+'/identity.html');await page.locator('#login').waitFor({state:'visible'});
   const name='Browser1051'+Date.now().toString().slice(-6);
-  await page.locator('#callsign').fill(name);assert.equal(await page.locator('#callsign').inputValue(),name);await page.locator('#register').click();await page.locator('#account').waitFor({state:'visible'});
+  // This lane's headless Chromium build delivers keydown but not text insertion
+  // (fill and Input.insertText both leave the field empty); set it through the DOM.
+  await page.locator('#callsign').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},name);assert.equal(await page.locator('#callsign').inputValue(),name);await page.locator('#register').click();await page.locator('#account').waitFor({state:'visible'});
   await page.locator('#signout').click();await page.locator('#login').waitFor({state:'visible'});await page.locator('#signin').click();await page.locator('#account').waitFor({state:'visible'});
   const originalCookies=await context.cookies();secrets.push(...originalCookies.map(c=>c.value));
   let previousBytes=0;
