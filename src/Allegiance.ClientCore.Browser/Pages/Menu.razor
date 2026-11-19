@@ -3,6 +3,7 @@
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
 
+<span id="pacing-note" hidden role="status">Running slow · audio paused</span>
 <nav id="menu-controls" aria-label="Browser menu controls">
     <span>Local browser game · @_style · @_persistence</span>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>

@@ -1,0 +1,179 @@
+{
+  "passed": true,
+  "headlessGpuRepresentative": false,
+  "results": [
+    {
+      "dprCap": {
+        "scale": 1,
+        "slow": false,
+        "p95": 16.799999999999272,
+        "onTime": 325,
+        "bufferWidth": 3840,
+        "bufferHeight": 1994,
+        "dpr": 2
+      },
+      "observedSteps": [
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 33.30000000000109,
+          "onTime": 106,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": true,
+          "p95": 199.89999999999964,
+          "onTime": 0,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 216.79999999999927,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 381,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 301,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        }
+      ],
+      "gamepad": {
+        "pad": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "keyboard": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "blurNeutral": true,
+        "disconnectNeutral": true,
+        "pollsPerFrame": 1
+      },
+      "pacing": [
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 216.79999999999927,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "audio": [
+            "suspended",
+            "suspended"
+          ],
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "freshControlReversalsAccepted": true
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 301,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "audio": [
+            "running",
+            "running"
+          ],
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "freshControlReversalsAccepted": true
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "cache": "cold",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 48,
+      "menuMs": 796.7999999523163,
+      "flightMs": 12181
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 36,
+      "menuMs": 631.7000000476837,
+      "flightMs": 49176.299999952316
+    }
+  ]
+}

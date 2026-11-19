@@ -21,3 +21,23 @@ footer { padding: 2px 6px; font-size: 9px; }
 
 #online-panel.flight-toolbar p { display:none; }
 #online-panel.flight-toolbar .flight-help, #online-panel.flight-toolbar p[role="alert"] { display:block; font-size:10px; }
+
+/* Browser chrome occupies its own safe area; desktop HUD renderers receive
+   the remaining canvas viewport unchanged. JS measures wrapped toolbar rows. */
+#menu-controls { top: 0; left: 0; right: 0; justify-content: flex-end; flex-wrap: wrap; padding: 4px 8px; background: #08131d; }
+#canvasHolder { top: var(--game-top, 32px); bottom: var(--game-bottom, 20px); }
+#theCanvas { image-rendering: pixelated; }
+#online-panel:is(.flight-toolbar, [data-state="Hangar"]) {
+  position: fixed; top: auto; bottom: 18px; left: 0; right: 0; transform: none;
+  width: 100%; max-width: none; max-height: 40vh; border: 0; border-top: 1px solid #385458;
+  border-radius: 0; background: #081822; padding: 3px 8px; box-shadow: none;
+}
+#online-panel:is(.flight-toolbar, [data-state="Hangar"]) h2,
+#online-panel:is(.flight-toolbar, [data-state="Hangar"]) .eyebrow,
+#online-panel:is(.flight-toolbar, [data-state="Hangar"]) > p:not([role]) { display: none; }
+#online-panel:is(.flight-toolbar, [data-state="Hangar"]) button { margin: 2px; padding: 3px 7px; min-height: 24px; font-size: 11px; }
+#online-panel #mission-briefing { position: fixed; bottom: 100%; left: 8px; margin-bottom: 4px; padding: 12px; background: #081822; border: 1px solid #385458; }
+footer { height: 18px; padding: 2px 6px; font-size: 9px; }
+#pacing-note { position: fixed; z-index: 30; top: var(--game-top, 32px); right: 8px; padding: 3px 7px; font-size: 11px; color: #ffdb8b; background: #081822dd; pointer-events: none; }
+#pacing-note[hidden] { display: none; }
+@media(max-width: 900px) { #menu-controls { justify-content: center; } }

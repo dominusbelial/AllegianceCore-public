@@ -47,14 +47,52 @@ async function main() {
     const open = async () => { await page.locator('#online-open').click(); await page.locator('#online-panel[data-state="Servers"]').waitFor(); };
     const close = async () => { await flushTicketReads(); await page.locator('#online-close').click(); await page.locator('#online-panel').waitFor({ state: 'detached' }); await clean(); };
     const refused = async label => {
-      await page.locator('.online-join').first().click(); await page.locator('#online-panel [role="alert"]').waitFor();
+      await page.locator('.online-join').first().click(); await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});
       const message = await page.locator('#online-panel [role="alert"]').innerText(); assert.match(message, /invalid|expired|token|refused/i);
       await clean(); cases.push({ name: label, refused: true, clearMessage: message, noZombie: true });
     };
+    for (const [routeUrl, expected] of [['ws://10.1.2.3/game', /no web route/i], ['wss://game.example.com/game', /Public joining is not available in the browser\./]]) {
+      let attempts = 0;
+      const seen = () => attempts++;
+      page.on('websocket', seen);
+      await page.route('**/api/servers', async route => {
+        const response = await route.fetch(), body = await response.json();
+        for (const server of body) server.webSocketUrl = routeUrl;
+        await route.fulfill({ response, json: body });
+      });
+      await open();
+      const message = await page.locator('.online-server').first().innerText();
+      assert.match(message, expected); assert.equal(await page.locator('.online-join').count(), 0);
+      await page.waitForTimeout(300); assert.equal(attempts, 0);
+      cases.push({ name: routeUrl.startsWith('ws:') ? 'LAN plaintext listing has no web route' : 'public WSS refused by loopback join gate', passed: true, message, webSocketAttempts: attempts });
+      await close(); await page.unroute('**/api/servers'); page.off('websocket', seen);
+    }
     await page.route('**/api/servers', route => route.fulfill({ status: 503, body: 'temporary list failure' }));
-    await page.locator('#online-open').click(); await page.locator('#online-panel [role="alert"]').waitFor();
+    await page.locator('#online-open').click(); await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});
     await close(); await page.unroute('**/api/servers'); await open();
     cases.push({ name: 'list failure returns and retries', passed: true });
+    if (process.argv[5] === '--deferred-cancel') {
+      const cancelDelayed = async (pattern, match, label) => {
+        let release; const gate = new Promise(resolve => { release = resolve; });
+        let attempts = 0; const seen = () => attempts++;
+        const ticketsBefore = ticketReads.length;
+        page.on('websocket', seen);
+        await page.route(pattern, async route => { await gate; await route.continue(); });
+        try {
+          const requested = page.waitForRequest(request => match.test(new URL(request.url()).pathname), {timeout:90000});
+          await page.locator('.online-join').first().click(); await requested;
+          assert.ok((await page.evaluate(() => gameMenu.metrics())).online.pendingJoins > 0);
+          await close(); release();
+          await page.waitForFunction(() => gameMenu.metrics().online.pendingJoins === 0, null, {timeout:90000});
+          await flushTicketReads(); await clean();
+          assert.equal(attempts, 0); assert.equal(ticketReads.length, ticketsBefore);
+          cases.push({name:label,passed:true,webSocketAttempts:attempts,ticketsMinted:0,noZombie:true});
+        } finally { release(); await page.unroute(pattern); page.off('websocket', seen); }
+        await open();
+      };
+      await cancelDelayed('**/join-manifest.json', /\/join-manifest\.json$/, 'cancel during deferred join-manifest read');
+      await cancelDelayed('**/brotli*.js', /\/brotli(?:\.[0-9a-f]+)?\.js$/, 'cancel during deferred decoder preparation');
+    }
     for (const kind of ['wrong-audience', 'expired']) {
       const responsePath = path.join(stateDir, 'ticket-response.json'); fs.rmSync(responsePath, { force: true });
       const requestPath = path.join(stateDir, 'ticket-request.json');

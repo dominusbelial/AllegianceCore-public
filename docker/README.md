@@ -608,3 +608,9 @@ behind earlier wire bytes; coalescing cannot retract bytes already sent.
 
 See [the implementation and proof report](../docs/reports/BROWSER_WS_TRANSPORT_P1048.md)
 for the measured AOT join, security tests, TCP comparison and lane limitations.
+
+### Browser flight generation cache contract (P1053; hosting unchanged)
+
+The publication and future hosting cache contract lives in
+[Browser generation hosting notes](../docs/BROWSER_HOSTING.md). The local proof
+proxy still sends `no-cache`; no hosting or compose configuration changes here.

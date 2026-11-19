@@ -50,6 +50,21 @@ public sealed partial class Game1 : Game
     public long ManagedHeapBytes => GC.GetTotalMemory(false);
     public Action? OpenOnline { get; set; }
     public Action? DownloadScreenshot { get; set; }
+    public void SetPresentationSize(int width, int height)
+    {
+        if (width <= 0 || height <= 0) return;
+        if (!Started)
+        {
+            _graphics.PreferredBackBufferWidth = width; _graphics.PreferredBackBufferHeight = height;
+            return;
+        }
+        // DOM owns the WebGL drawing buffer. KNI retains the initial device
+        // viewport unless explicitly updated when that buffer changes.
+        GraphicsDevice.PresentationParameters.BackBufferWidth = width;
+        GraphicsDevice.PresentationParameters.BackBufferHeight = height;
+        GraphicsDevice.Viewport = new Viewport(0, 0, width, height);
+    }
+
 
     public Game1(IAssetSource assets, HudStyle style, int width, int height)
     {
@@ -82,13 +97,10 @@ public sealed partial class Game1 : Game
         _hudSmall = Content.Load<SpriteFont>("HUD");
         _hudBig = Content.Load<SpriteFont>("HUDLarge");
         _hudSmall.DefaultCharacter = '?'; _hudBig.DefaultCharacter = '?';
-        _ = Content.Load<SpriteFont>("HUDModern");
-        foreach (var spec in Enum.GetValues<NativeFont>().Select(NativeFontCatalog.Spec))
-        {
-            _ = Content.Load<SpriteFont>(spec.Asset1x);
-            _ = Content.Load<SpriteFont>(spec.Asset2x);
-        }
-        _ = Allegiance.Core.IgcReader.Parse(AssetSources.ReadAllBytes(_assets, "PCore001.igc"));
+        // Flight-only fonts and core parsing are already loaded by
+        // AttachOnlineSession/LoadFlightRenderers after verified join staging.
+        // The first menu frame needs only its two actual font bakes.
+
     }
 
     protected override void Update(GameTime gameTime)

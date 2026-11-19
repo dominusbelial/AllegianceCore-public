@@ -10264,3 +10264,33 @@ admission; the mine/miner simulation and these tests are unchanged.
 Local evidence: `.scratch/p1048/final-fast-isolation/` and
 `final-fast-isolation.log`. Sanitized outcomes and case durations are retained in
 `docs/reports/BROWSER_WS_TRANSPORT_P1048_assets/verification.json`.
+
+## P1053 browser polish final Fast (2026-11-18)
+
+The single final Fast sweep ran after implementation, browser proofs, builds and
+all six training children: **15,509 passed / 5 failed / 6 skipped**, 15,520 cases,
+876.2 s. All nine infrastructure checks passed; calibrated case limit **11.523 s**,
+zero timing offenders, zero quarantine retries/flakes. The sweep exited **1**.
+The five failure signatures are existing ledgered families; these observations do
+not establish a new root cause. P1053 changes browser presentation/startup/input;
+the desktop pad method was extracted byte-for-byte, and the training gate passed
+**1,206/0/2**, including all **42** physical windows.
+
+Each failing method was selected in **three separate fresh processes** with
+artwork after the sweep. Counts below are passed/failed/skipped. Theory methods
+retain all their rows; the specific failing row is identified separately.
+
+| Method | Final sweep observation | Isolated runs 1 / 2 / 3 |
+|---|---|---|
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never saw A's death after 2,500 ticks (4.697 s) | **1/0/0, 1/0/0, 1/0/0** |
+| `Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump` | `enabled=False`, `dilation=off`: **14.900000000054206** outside **[14.94,15.06]** (1.880 s) | **4/0/0, 4/0/0, 4/0/0**, all four theory rows each time |
+| `Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Unexpected `AsteroidMined` broadcast (1.394 s) | **1/0/0, 1/0/0, 1/0/0** |
+| `Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission` | delay 5: **5.0000000000000009 > 5** (0.133 s) | **2/1/0, 3/0/0, 2/1/0**; run 1 delay 7 was **7.0000000000000009 > 7**, run 3 delay 5 reproduced the sweep failure; delay 5/7/10 all selected |
+| `Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | **8.14999962** outside **[4,8]** (0.181 s) | **1/0/0, 1/0/0, 1/0/0** |
+
+The timer boundary remains reproducible alone. Fast remains **red**; no assertion,
+timeout, tier, quarantine, simulation rule or production limit was changed.
+Ignored raw evidence is under `<lane evidence dir>/fast/` and
+`<lane evidence dir>/fast-isolated/`. Sanitized per-case outcomes and TRX hashes:
+[Fast failures/skips](reports/BROWSER_POLISH_P1053_assets/fast-exceptions.json),
+[isolated repetitions](reports/BROWSER_POLISH_P1053_assets/fast-isolated.json).

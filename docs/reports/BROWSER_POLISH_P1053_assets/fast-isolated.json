@@ -1,0 +1,362 @@
+[
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "b24eb240f7ee24b8cbab6284d5b3a67de44aeeb7c381c62b95adcc129b627cbc",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3192067,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "77bcca5bf9c371fd302de6453b11729982177ff6bb278f93493e87729ea6e787",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3434634,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "673750de95c6e2b44a1bed9c18739e2588ff3fe22985795b22339dcff389f5d4",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3368785,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "647c207ee2efca009f55605c960e64004e543aac1f46d804642aaf9a5576f0fb",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 2.5285793,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 1.831945,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 3.2285475,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 4.0067665,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "f18107793041add02b4c428aaabbd7d3f9746a8cfd8cdf4211cb1f5a76e07956",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 3.2171684,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 2.5993601,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 1.8865142,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 4.0433842,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "231320db2409d7603dbe3eaebafe1a0fe30e6a2c7b254b74bfb83a5eed1c307f",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 1.8969429,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"off\")",
+            "outcome": "Passed",
+            "seconds": 2.5479504,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 4.0271922,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: \"auto\")",
+            "outcome": "Passed",
+            "seconds": 3.3108075,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "d865c024b23ab4552f6003cf26bbb253e865e55388245f9125df6d398fd706cd",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7835676,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "599fb0b61e525e1e63cf8a518b5a66cc3bc1b1a824a262ea8b07299681ea785b",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7206766,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "1b19e7e4a0fa287faef0bc1d0554c86b3d53c31d1b31888a63d016595b298a52",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+            "outcome": "Passed",
+            "seconds": 1.7847927,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 1,
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "trxSha256": "112e749f20dcdfadb3df1d95e1b8dce735d7a4f139987ecb5a8be7a93b10d966",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Passed",
+            "seconds": 0.1875129,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "seconds": 0.2538198,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Failed",
+            "seconds": 0.4460508,
+            "message": "Assert.InRange() Failure: Value not in range\nRange:  (6.9000000000000004 - 7)\nActual: 7.0000000000000009"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "1ce341ee48d42f5775098f3d46922c657880a6df6656f210634c289d9e033c89",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Passed",
+            "seconds": 0.5331736,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "seconds": 0.1649981,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Passed",
+            "seconds": 0.2145944,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 1,
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "trxSha256": "b08d417c96b841acb3ef7eddb933486880353de2527f847938c23d7a14abe881",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 5)",
+            "outcome": "Failed",
+            "seconds": 0.1286104,
+            "message": "Assert.InRange() Failure: Value not in range\nRange:  (4.9000000000000004 - 5)\nActual: 5.0000000000000009"
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7)",
+            "outcome": "Passed",
+            "seconds": 0.5779595,
+            "message": ""
+          },
+          {
+            "name": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 10)",
+            "outcome": "Passed",
+            "seconds": 0.2467502,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "f340fcfdfe9ecb439e240abe24fee4ced1ff8e7170e02831975ea5a7eb04e7e6",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5360087,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "927ad96a64a1084033ddaa663b94ea0b1dbcb1988133fb7e6be81360300af12e",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5324607,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "80d0030368fdee0e2affbf8ed0c7cf138df1bc1d56b653a7be1f75a09547eb5d",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster",
+            "outcome": "Passed",
+            "seconds": 0.5515148,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  }
+]

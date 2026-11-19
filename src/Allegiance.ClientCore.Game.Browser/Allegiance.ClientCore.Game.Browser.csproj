@@ -65,7 +65,7 @@
                ../Allegiance.ClientCore.Game/LobbyUrl.cs;
                ../Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs"
       Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../Allegiance.ClientCore.Game/Game1.IntroMenu.cs;../Allegiance.ClientCore.Game/Game1.OptionsMenu.cs;../Allegiance.ClientCore.Game/Game1.Prediction.cs;../Allegiance.ClientCore.Game/Game1.PartLookup.cs;../Allegiance.ClientCore.Game/Game1.ManualFlight.cs;../Allegiance.ClientCore.Game/Game1.DockApproach.cs;../Allegiance.ClientCore.Game/Game1.FlightTargets.cs;../Allegiance.ClientCore.Game/Game1.Eject.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../Allegiance.ClientCore.Game/Game1.IntroMenu.cs;../Allegiance.ClientCore.Game/Game1.OptionsMenu.cs;../Allegiance.ClientCore.Game/Game1.Prediction.cs;../Allegiance.ClientCore.Game/Game1.PartLookup.cs;../Allegiance.ClientCore.Game/Game1.ManualFlight.cs;../Allegiance.ClientCore.Game/Game1.GamePadFlight.cs;../Allegiance.ClientCore.Game/Game1.DockApproach.cs;../Allegiance.ClientCore.Game/Game1.FlightTargets.cs;../Allegiance.ClientCore.Game/Game1.Eject.cs" Link="Shared/%(Filename)%(Extension)" />
     <Compile Include="../Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="Assets/PreviewAssets.cs" />
     <EmbeddedResource Include="../Allegiance.ClientCore.Game/Rendering/Skins/*.skin.json" Link="Rendering/Skins/%(Filename)%(Extension)" />
   </ItemGroup>
