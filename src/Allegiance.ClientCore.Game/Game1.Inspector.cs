@@ -931,6 +931,11 @@ public sealed partial class Game1
         bool bloom = _inspectBloom && _post is { BloomReady: true };
         bool sceneTarget = fsr || bloom || hdr;
         var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
+        var antialiasScene = _sceneAntialiasing!.Prepare(
+            sceneTarget ? sceneRt!.Width : gd.Viewport.Width,
+            sceneTarget ? sceneRt!.Height : gd.Viewport.Height,
+            sceneTarget ? sceneRt!.Format : SurfaceFormat.Color, _upscaling.Antialiasing);
+        if (antialiasScene is not null) { sceneRt = antialiasScene; sceneTarget = true; }
         _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
         bool soft = _inspectSoft && _post is { SoftReady: true };
         float aspect = gd.Viewport.AspectRatio;
@@ -967,6 +972,7 @@ public sealed partial class Game1
 
         if (sceneTarget) { gd.SetRenderTarget(sceneRt); gd.Clear(Color.Black); }
         else gd.Clear(Color.Black);
+        _sceneAntialiasing.LogBoundSamples();
 
         _sectorLighting = InspectSectorLighting();
 
@@ -985,6 +991,7 @@ public sealed partial class Game1
         _gpuTimer?.Stop();
         _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
         _frameTelemetry?.BeginPost();
+        _sceneAntialiasing.Resolve(null, fsr || bloom || hdr);
         Texture2D? upscaleSource = sceneRt;
         if (bloom)
         {

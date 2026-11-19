@@ -1,0 +1,30 @@
+{
+  "productionKni": {
+    "requestedType": "webgl2",
+    "requestedAttributes": {
+      "depth": true,
+      "stencil": false,
+      "antialias": false,
+      "preserveDrawingBuffer": false,
+      "PowerPreference": "high-performance"
+    },
+    "attributes": {
+      "alpha": true,
+      "antialias": false,
+      "depth": true,
+      "desynchronized": false,
+      "failIfMajorPerformanceCaveat": false,
+      "powerPreference": "default",
+      "premultipliedAlpha": true,
+      "preserveDrawingBuffer": false,
+      "stencil": false,
+      "xrCompatible": false
+    },
+    "samples": 0,
+    "sampleBuffers": 0,
+    "drawingBufferWidth": 1920,
+    "drawingBufferHeight": 1032,
+    "devicePixelRatio": 1
+  },
+  "note": "Actual KNI game context after first rendered menu frame; same Game1/device used for online flight. Default WebGL probe differs."
+}

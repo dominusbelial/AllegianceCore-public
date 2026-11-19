@@ -600,6 +600,14 @@ public sealed partial class Game1
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
                 bool sceneTarget = fsr || bloom || hdr;
                 var sceneRt = fsr ? _fsr!.Scene : _post?.SceneRT;
+                // P1057: MSAA follows the actual 3-D size/format (including FSR's
+                // low-resolution HDR scene). Off returns null without touching
+                // any of the legacy render targets or bindings.
+                var antialiasScene = _sceneAntialiasing!.Prepare(
+                    sceneTarget ? sceneRt!.Width : outputViewport.Width,
+                    sceneTarget ? sceneRt!.Height : outputViewport.Height,
+                    sceneTarget ? sceneRt!.Format : SurfaceFormat.Color, _upscaling.Antialiasing);
+                if (antialiasScene is not null) { sceneRt = antialiasScene; sceneTarget = true; }
                 bool soft = _softEnabled && _post is { SoftReady: true };
                 // The ordered pass list is data (HdrOutput.Plan) so the required
                 // order — bloom, then FSR, then the one output transform, then the
@@ -696,6 +704,7 @@ public sealed partial class Game1
                     GraphicsDevice.SetRenderTarget(sceneRt);
                     GraphicsDevice.Clear(Color.Black);
                 }
+                _sceneAntialiasing.LogBoundSamples();
 
                 DrawSkyP576(view, proj, cameraEye);
 
@@ -1875,6 +1884,7 @@ public sealed partial class Game1
                 _gpuTimer?.Start(_frameTelemetry!.FrameId, post: true);
                 _frameTelemetry?.BeginPost();
                 RenderTarget2D? finalTarget = capThis ? _capTarget : null;
+                _sceneAntialiasing.Resolve(finalTarget, fsr || bloom || hdr);
                 Texture2D? upscaleSource = sceneRt;
                 if (bloom && _post is { BloomReady: true })
                 {

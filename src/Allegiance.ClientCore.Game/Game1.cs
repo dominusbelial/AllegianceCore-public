@@ -2179,6 +2179,7 @@ public sealed partial class Game1 : Game
 
     protected override void UnloadContent()
     {
+        _sceneAntialiasing?.Dispose();
         ReleaseTraining();
         DisposeBenchmark();
         DisposeSkirmish();

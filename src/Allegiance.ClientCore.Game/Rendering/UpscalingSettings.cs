@@ -9,6 +9,7 @@ public enum FsrPreset { UltraQuality, Quality, Balanced, Performance }
 /// <summary>Modern client feature; independent of the native/enhanced VFX tier.</summary>
 public sealed class UpscalingSettings
 {
+    public Antialiasing Antialiasing { get; set; }
     public UpscalingMode Upscaling { get; set; }
     public FsrPreset Preset { get; set; } = FsrPreset.Quality;
     /// <summary>0 = no sharpening, 1 = strongest RCAS lobe.</summary>
@@ -39,6 +40,7 @@ public sealed class UpscalingSettings
             Math.Max(1, (int)MathF.Round(Math.Max(1, height) * Math.Clamp(float.IsFinite(scale) ? scale : 1, 0.5f, 1), MidpointRounding.AwayFromZero)));
     public void Normalize()
     {
+        Antialiasing = AntialiasingOptions.Normalize(Antialiasing);
         if (!Enum.IsDefined(Effects)) Effects = Allegiance.ClientCore.State.EffectsDetail.Medium;
         if (!Enum.IsDefined(Upscaling)) Upscaling = UpscalingMode.Off;
         if (!Enum.IsDefined(Preset)) Preset = FsrPreset.Quality;
@@ -48,7 +50,7 @@ public sealed class UpscalingSettings
     }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_GRAPHICS_SETTINGS")
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Allegiance", "graphics.json");
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new AntialiasingJsonConverter(), new JsonStringEnumConverter() } };
     public static UpscalingSettings Load(string path)
     {
         try
