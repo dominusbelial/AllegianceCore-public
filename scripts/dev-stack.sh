@@ -30,6 +30,7 @@
 #       [--map-seed <N>]        fix the generated map's RNG seed (reproducible)
 #       [--bots <N>]            spawn N bots per side via the MCP driver
 #       [--client]              also launch the MonoGame client
+#       [--window <WxH>]        client window size (default 1280x720; Alt+Enter = fullscreen)
 #       [--art <path>]          artwork root (default: $ALLEGIANCE_ARTWORK_PATH)
 #       [--config <file>]       use an existing server config instead of
 #                               generating one
@@ -65,6 +66,7 @@ MAP_GEN=""
 MAP_SEED=""
 BOTS=0
 CLIENT=0
+CLIENT_WINDOW=1280x720
 SERVER_CONFIG=""
 NO_BUILD=0
 
@@ -84,6 +86,7 @@ while [ $# -gt 0 ]; do
     --map-seed) MAP_SEED="$2"; shift 2;;
     --bots) BOTS="$2"; shift 2;;
     --client) CLIENT=1; shift;;
+    --window) CLIENT_WINDOW="$2"; shift 2;;
     --art) ART="$2"; shift 2;;
     --config) SERVER_CONFIG="$2"; shift 2;;
     --no-build) NO_BUILD=1; shift;;
@@ -209,10 +212,10 @@ EOF
   fi
 
   if [ "$CLIENT" -eq 1 ]; then
-    echo "[dev-stack] launching client (--window 1280x720, spectator start)..."
+    echo "[dev-stack] launching client (--window $CLIENT_WINDOW, spectator start)..."
     export ALLEGIANCE_ARTWORK_PATH="$ART"
     DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
-      "$CLIENT_EXE" 127.0.0.1 "$PORT" "devstack" --auto-ready --window 1280x720 \
+      "$CLIENT_EXE" 127.0.0.1 "$PORT" "devstack" --auto-ready --window "$CLIENT_WINDOW" \
       > "$LOG_DIR/client.out" 2>&1 &
     save_pid CLIENT $!
   fi
