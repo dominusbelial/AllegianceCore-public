@@ -1,0 +1,53 @@
+{
+  "entrySector": "Ceto",
+  "mandatoryEntryVisuals": [
+    {
+      "source": "bgrnd55bmp.mdl",
+      "rawBytes": 8388724,
+      "gzipBytes": 3041028,
+      "brotliBytes": 2368110,
+      "sha256": "2ab648469bbabd78dc168d078c4e7bb67c1edc22826a6935ec3a56d2d6efeadb"
+    },
+    {
+      "source": "bgrnd52bmp.mdl",
+      "rawBytes": 8388724,
+      "gzipBytes": 3543295,
+      "brotliBytes": 2722541,
+      "sha256": "ce2d634157f4b60ad37601105181302debd474f3ca89990d51649f427c972f5a"
+    },
+    {
+      "source": "bgrnd03bmp.mdl",
+      "rawBytes": 8388724,
+      "gzipBytes": 2367731,
+      "brotliBytes": 1813511,
+      "sha256": "86f9995d495eb93ed86c122cfdde1ef3ad624d7b4678b36509ef14959f60955d"
+    },
+    {
+      "source": "bgrnd05bmp.mdl",
+      "rawBytes": 8388724,
+      "gzipBytes": 1724723,
+      "brotliBytes": 1328259,
+      "sha256": "da905c072c4b68178167ff04503e383e60ede8582981502605f0cd30f64632fa"
+    },
+    {
+      "source": "environment3bmp.mdl",
+      "rawBytes": 8388728,
+      "gzipBytes": 664143,
+      "brotliBytes": 444840,
+      "sha256": "13b794c68693558db2c70aded4277d0861fcb78f26157e579435d8ee5db2bd55"
+    },
+    {
+      "source": "nebplnt45bmp.mdl",
+      "rawBytes": 8388728,
+      "gzipBytes": 3239369,
+      "brotliBytes": 2496235,
+      "sha256": "416b6da45622d767cf1dab47a7a504a60fac59e5811c7e162bd524e976078cce"
+    }
+  ],
+  "runtimeBestPublishedBytes": 4909489,
+  "gzipBytes": 14580289,
+  "brotliBytes": 11173496,
+  "budgetBytes": 14680064,
+  "lowerBoundBrotliAndRuntimeBytes": 16082985,
+  "excessBytes": 1402921
+}

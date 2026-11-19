@@ -1,0 +1,184 @@
+{
+  "solution": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "standaloneToolProjects": 148,
+  "desktopFilenames": {
+    "beforeCount": 753,
+    "afterCount": 753,
+    "identical": true,
+    "sha256": "3ece68282e4ade29c1dad8c4716b5de801e61865653d76b0b32f696fa624a9a2"
+  },
+  "hud": {
+    "cases": 1848,
+    "pixelDifferences": 0,
+    "semanticDifferences": 0,
+    "animationOnlyRegions": 84,
+    "corruptGoldens": 0,
+    "baselineManifestSha256": "6c6d668e0556d2fa5415eb433137703e711965f7a6f864f74fd2f1b4662b31c1"
+  },
+  "tests": [
+    {
+      "file": "browser-game.trx",
+      "sha256": "0ebdb74f95b9f17ca64638709aa6a2fd703fbd3e311cfaa6ed8bce52de4c7fb2",
+      "counts": {
+        "total": "59",
+        "executed": "59",
+        "passed": "59",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "file": "browser-head.trx",
+      "sha256": "6ee1ea660e5cd496db37da0ef6ef61dc321f7cdd6761d96312aafce32b47fadf",
+      "counts": {
+        "total": "12",
+        "executed": "12",
+        "passed": "12",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "file": "core-transports.trx",
+      "sha256": "bd17f5238c265e6711b988e0e310439ba781c1e5955dd680e98ae7ff77a56bb5",
+      "counts": {
+        "total": "207",
+        "executed": "207",
+        "passed": "207",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "file": "lobby-transports.trx",
+      "sha256": "5496e2850ce598cb12ead73b23c441faa1c2a435f930c625373fcda21645060d",
+      "counts": {
+        "total": "49",
+        "executed": "49",
+        "passed": "49",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "newPython": {
+    "cases": 4,
+    "isolatedRepetitions": 3
+  },
+  "publishPython": {
+    "cases": 4,
+    "repetitions": 3
+  },
+  "javascript": {
+    "cases": 19,
+    "repetitions": 3,
+    "newCases": 5,
+    "newCaseIsolatedRepetitions": 3,
+    "oldSourceRegressionFailures": 5
+  },
+  "framework": {
+    "files": 77,
+    "rawBytes": 17175361,
+    "gzipBytes": 6131057,
+    "smallestPublishedBytes": 4909489
+  },
+  "recordings": [
+    {
+      "style": "Classic",
+      "sectors": 13,
+      "qualifiedDwells": 13,
+      "minimumDwellSeconds": 30.0001517,
+      "opens": 985,
+      "traceSha256": "70981ce1cadbb2a730ad22aeb5d9bda2a790ef1fadeeaaf6846d94fb5c2d1627",
+      "wireSha256": "4ed2b5742e16d0fa222cefddf84db4367d83fe2ff9acb80585c2d5f71176a113",
+      "serverTickOverruns": 0
+    },
+    {
+      "style": "Modern",
+      "sectors": 13,
+      "qualifiedDwells": 13,
+      "minimumDwellSeconds": 30.0000037,
+      "opens": 984,
+      "traceSha256": "e6de7a6ae0a8b9f5cd36b8718d2ff9d48ccd529f32e323a4513a755d028fc731",
+      "wireSha256": "22be5417140a198c738b538841e0df8a588ccc58e702248c5416920d9392b138",
+      "serverTickOverruns": 0
+    }
+  ],
+  "sourceHashes": {
+    "tools/p1051-flight-opens/Program.cs": "c04137bade9e75e8bf19bdb3489692cc80f57c6fcb71d8c636508538c8a40c07",
+    "tools/p1054-sector-analysis.py": "fe91f7aede7a486cbb9cc51f81ef8a02d8823cf420a663a2e7af69f1cb87d012",
+    "tools/p1054-sector-analysis-tests.py": "59bd8ab4f3a035f251619c7f8e7dd7fb1b5d8e0606b69edde5e43f1f41081ae4",
+    "src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js": "e67b54857672164cc0ce547af1e8ed0e9322ea5af6ccdb872ed5af99d47d5ec8",
+    "tools/p1051-input-tests.cjs": "c4c1f4b83d4587c672e5109c896be476906eaabf55f81cc7d212896a5a8a9fcf",
+    "tools/p1053-browser-polish.cjs": "adb131a21aca45c79b3255478c977d4dcf4bda4d9695fb6b30dec0c45b12b5d1"
+  },
+  "sectorStreamingImplemented": false,
+  "entryPolicyDecisionPending": true,
+  "browser": {
+    "securityPassed": 9,
+    "p1051ProfilesPassed": 4,
+    "p1053ProfilesPassed": 5,
+    "audioVisibilityCyclesPassed": 8,
+    "headlessGpuRepresentative": false
+  },
+  "proofProcessesStopped": true,
+  "fast": {
+    "passed": 15533,
+    "failed": 4,
+    "skipped": 6,
+    "total": 15543,
+    "seconds": 881.5766234139446,
+    "green": false,
+    "isolatedInvocations": 12,
+    "isolatedPassed": 12,
+    "timingOffenders": 0
+  },
+  "allOwnedProcessesEnded": true
+}

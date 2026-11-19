@@ -1,0 +1,461 @@
+{
+  "files": 75,
+  "bodyBytes": 4438399,
+  "excludesHttpHeaders": true,
+  "rows": [
+    {
+      "file": "dotnet.native.3bptkeu1pi.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 976433
+    },
+    {
+      "file": "blazor.webassembly.9435ec0d81609bad85f9.js",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 16754
+    },
+    {
+      "file": "dotnet.c10fa943e0107d351ed7.js",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 15167
+    },
+    {
+      "file": "dotnet.native.6ilbvndvcf.js",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 30433
+    },
+    {
+      "file": "dotnet.runtime.v2rwe8u38b.js",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 47651
+    },
+    {
+      "file": "System.Private.CoreLib.vx9uy14qd7.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 556382
+    },
+    {
+      "file": "System.Runtime.InteropServices.JavaScript.u10wr5t8ky.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 17115
+    },
+    {
+      "file": "Allegiance.ClientCore.Browser.3ah9yop52s.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 37430
+    },
+    {
+      "file": "Allegiance.ClientCore.Game.Browser.5zxfz5xp13.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 898095
+    },
+    {
+      "file": "Allegiance.Core.Browser.rxmb7noflu.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 589539
+    },
+    {
+      "file": "Kni.Platform.ltb4q66uun.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 77918
+    },
+    {
+      "file": "Microsoft.AspNetCore.Components.8f52cflfh8.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 92052
+    },
+    {
+      "file": "Microsoft.AspNetCore.Components.Web.ugrzbyw4cd.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 19189
+    },
+    {
+      "file": "Microsoft.AspNetCore.Components.WebAssembly.b7i8rps4cs.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 41899
+    },
+    {
+      "file": "Microsoft.Extensions.Configuration.Abstractions.g80u52ij8n.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2335
+    },
+    {
+      "file": "Microsoft.Extensions.Configuration.Json.ixktlrimdt.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4194
+    },
+    {
+      "file": "Microsoft.Extensions.Configuration.w4ckz9zukx.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 3652
+    },
+    {
+      "file": "Microsoft.Extensions.DependencyInjection.b9mcrj62ry.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 19590
+    },
+    {
+      "file": "Microsoft.Extensions.DependencyInjection.Abstractions.xrieqizdf2.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10070
+    },
+    {
+      "file": "Microsoft.Extensions.Logging.Abstractions.3c4b31trca.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10892
+    },
+    {
+      "file": "Microsoft.Extensions.Logging.vqiumbbk2y.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 7635
+    },
+    {
+      "file": "Microsoft.Extensions.Options.7f85fudcxr.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 7124
+    },
+    {
+      "file": "Microsoft.Extensions.Primitives.m33spxmuwm.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4577
+    },
+    {
+      "file": "Microsoft.JSInterop.WebAssembly.5ydn64ly88.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4891
+    },
+    {
+      "file": "Microsoft.JSInterop.e42ndkvwaz.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 18529
+    },
+    {
+      "file": "System.Collections.nro9rf2ois.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 16459
+    },
+    {
+      "file": "System.Collections.Concurrent.3m6k5f77fd.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10124
+    },
+    {
+      "file": "System.Collections.Immutable.1zzu7vo1e1.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 21716
+    },
+    {
+      "file": "System.ComponentModel.Primitives.alorgfp9u8.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 3413
+    },
+    {
+      "file": "System.ComponentModel.TypeConverter.6pilhedea4.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 1901
+    },
+    {
+      "file": "System.ComponentModel.s232flgnjt.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 1708
+    },
+    {
+      "file": "System.Console.glb7czj7xx.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 6283
+    },
+    {
+      "file": "System.Diagnostics.DiagnosticSource.wi2m9kb6j2.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 16657
+    },
+    {
+      "file": "System.Diagnostics.Process.v9xjoafue5.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2484
+    },
+    {
+      "file": "System.IO.Compression.m2omew8tg5.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4310
+    },
+    {
+      "file": "System.IO.Compression.Brotli.4x919ksd0f.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2391
+    },
+    {
+      "file": "System.IO.Pipelines.uxxioc395v.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2656
+    },
+    {
+      "file": "System.Linq.nwpwjrwgtt.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 32530
+    },
+    {
+      "file": "System.Memory.cjpm8b2rso.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 6146
+    },
+    {
+      "file": "System.Net.Http.Json.9c4djadzx8.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 9654
+    },
+    {
+      "file": "System.Net.Http.fuhdy4bvvj.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 53019
+    },
+    {
+      "file": "System.Net.Primitives.glbhhh2g0x.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 11615
+    },
+    {
+      "file": "System.Net.WebSockets.Client.n7lwv07vfm.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10638
+    },
+    {
+      "file": "System.Net.WebSockets.1bwgxybhtz.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 5407
+    },
+    {
+      "file": "System.Numerics.Vectors.pcrvftz775.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 1705
+    },
+    {
+      "file": "System.ObjectModel.cpkfv2suck.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2123
+    },
+    {
+      "file": "System.Private.Uri.en8dlesd9c.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 27608
+    },
+    {
+      "file": "System.Runtime.InteropServices.tloz5ynh2z.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2952
+    },
+    {
+      "file": "System.Runtime.Numerics.yunqabjqim.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 24604
+    },
+    {
+      "file": "System.Runtime.Serialization.Primitives.h069wxo4le.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 1978
+    },
+    {
+      "file": "System.Runtime.33e6b21mzm.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 3523
+    },
+    {
+      "file": "System.Security.Cryptography.mksvkm9j39.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 9306
+    },
+    {
+      "file": "System.Text.Encodings.Web.29zaodjq3a.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10026
+    },
+    {
+      "file": "System.Text.Json.h2j8wqarm4.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 132838
+    },
+    {
+      "file": "System.Text.RegularExpressions.ed6wk9b3lk.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 100610
+    },
+    {
+      "file": "System.Threading.Tasks.Parallel.55pwlsk5l2.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 6219
+    },
+    {
+      "file": "System.Threading.12i39qsnol.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 3763
+    },
+    {
+      "file": "System.bzv2fdl90t.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 1470
+    },
+    {
+      "file": "Xna.Framework.Audio.8ly32jx0rq.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 7599
+    },
+    {
+      "file": "Xna.Framework.Content.czahhc8cnd.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 19032
+    },
+    {
+      "file": "Xna.Framework.Devices.deb34eci89.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 6040
+    },
+    {
+      "file": "Xna.Framework.Game.r61k3or4ub.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 13715
+    },
+    {
+      "file": "Xna.Framework.Graphics.3oz5j326dl.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 61611
+    },
+    {
+      "file": "Xna.Framework.Input.xywwla7fe3.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 27283
+    },
+    {
+      "file": "Xna.Framework.Media.361q7jlovk.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4951
+    },
+    {
+      "file": "Xna.Framework.Storage.qhs0x804ug.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 4849
+    },
+    {
+      "file": "Xna.Framework.XR.04xxp8tg5m.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 3592
+    },
+    {
+      "file": "Xna.Framework.qqpfue592z.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 31333
+    },
+    {
+      "file": "nkast.Wasm.Audio.a8zkntbvvz.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 7945
+    },
+    {
+      "file": "nkast.Wasm.Canvas.zslu8oeo32.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 18417
+    },
+    {
+      "file": "nkast.Wasm.Dom.l0it6flgje.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 10236
+    },
+    {
+      "file": "nkast.Wasm.JSInterop.yvzx4kyi38.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 8557
+    },
+    {
+      "file": "nkast.Wasm.XHR.jkzbra45c1.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 2614
+    },
+    {
+      "file": "nkast.Wasm.XR.12d3u3erzy.wasm",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 9260
+    },
+    {
+      "file": "icudt_EFIGS.tptq2av103.dat",
+      "status": 200,
+      "encoding": "br",
+      "bodyBytes": 143983
+    }
+  ],
+  "entryOriginalSurfaceBrotliBytes": 11173496,
+  "entrySurfacesAndObservedRuntimeBytes": 15611895,
+  "budgetBytes": 14680064,
+  "excessBytes": 931831
+}

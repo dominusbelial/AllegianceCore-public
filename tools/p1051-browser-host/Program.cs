@@ -58,15 +58,22 @@ server.Boot(new ServerConfig
 using var proxy = Process.Start(new ProcessStartInfo("node") { UseShellExecute = false,
     ArgumentList = { "tools/p1051-loopback-proxy.cjs", assets, server.WebSocketPort.ToString(), scratch } })!;
 using var desktop = new ConnectionSession();
+using var keeper = new ConnectionSession();
 var desktopAccount = identities.CreateAccount("DesktopPilot");
+var keeperAccount = identities.CreateAccount("KeeperPilot");
 var signing = lobby.Services.GetRequiredService<IdentitySigningKey>();
 var core = StaticCore.Load(IgcReader.Parse(File.ReadAllBytes(Path.Combine(art, "PCore001.igc"))));
 desktop.World.MissionCoreResolver = _ => core;
+keeper.World.MissionCoreResolver = _ => core;
 // A headless pilot can follow the shipped map as a human with a map chart can.
 // Only ordinary wire controls enter the server; scanner/visibility still govern
 // both clients' live entity observations. This is not server state injection.
 var navigationWarps = MissionMap.Load(IgcReader.ParseFile(Path.Combine(art, "XXV_simple.igc"))).Warps.ToDictionary(w => w.WarpId);
+var chart = navigationWarps.Values.Select(w => new { w.WarpId, w.ClusterId, w.Name, w.Position,
+    destinationSectorId = navigationWarps[w.DestinationId].ClusterId }).ToArray();
 Task? desktopJoin = null;
+Task? keeperJoin = null;
+bool keeperSeated = false;
 bool desktopSeated = false, desktopLaunched = false;
 int desktopApproach = 0;
 long desktopReadyGeneration = -1, desktopNextLaunch = 0;
@@ -105,6 +112,11 @@ try
         }
         if (desktopJoin?.IsCompletedSuccessfully == true && !desktopSeated)
         { desktop.SendPositionReq(1); desktopSeated = true; }
+        if (File.Exists(Path.Combine(scratch, "keeper-join")) && keeperJoin is null)
+            keeperJoin = keeper.JoinAsync(checked((ushort)tcpPort), keeperAccount.Callsign,
+                new LogonRequest { CharacterName = keeperAccount.Callsign, FedsrvVer = LogonRequest.MsgVer, CrcFileList = -1,
+                    DwCookie = uint.MaxValue, Time = 1, ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(keeperAccount, approved.ServerId, DateTimeOffset.UtcNow)) });
+        if (keeperJoin?.IsCompletedSuccessfully == true && !keeperSeated) { keeper.SendPositionReq(0); keeperSeated = true; }
         if (desktop.World.MySideId == 1 && desktop.World.MyShipId is { } desktopId
             && desktop.World.Ships.TryGetValue(desktopId, out var desktopShip))
         {
@@ -196,11 +208,23 @@ try
             if (controlHistory.Count < 2048 && lastControls.GetValueOrDefault(ship.Id) != key)
             { controlHistory.Add(new { ship.Id, ship.Name, yaw = ship.Controls.Yaw, pitch = ship.Controls.Pitch, throttle = ship.Controls.Throttle, ship.StateM, position = ship.Position.ToString() }); lastControls[ship.Id] = key; }
         }
-        var state = new { desktop = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
+        var posePeers = (System.Collections.IDictionary)typeof(Allegiance.Server.Server).GetField("_peerShipUpdate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(server)!;
+        var livePeers = (System.Collections.IDictionary)typeof(Allegiance.Server.Server).GetField("_peerShips", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(server)!;
+        var poseReceipts = new List<object>();
+        foreach (System.Collections.DictionaryEntry peer in posePeers)
+        {
+            if (livePeers[peer.Key] is not { } live) continue;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            var receipt = peer.Value!;
+            object Read(string name) => receipt.GetType().GetField(name)!.GetValue(receipt)!;
+            poseReceipts.Add(new { ship.Id, accepted = Read("Accepted"), rejected = Read("Rejected"),
+                lastClientTime = Read("LastClientTime"), lastPoseAt = Read("LastPoseAt") is double poseAt && double.IsFinite(poseAt) ? (double?)poseAt : null });
+        }
+        var state = new { sampledAt = Environment.TickCount64, poseReceipts, chart, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId }).ToArray(), desktopShotsReceived },
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
-            { s.Id, s.Name, s.SideId, s.StationId, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
+            { s.Id, s.Name, s.SideId, s.StationId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
         // No credentials in proof evidence.
         string temp = Path.Combine(scratch, "state.tmp");
         await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(state)); File.Move(temp, Path.Combine(scratch, "state.json"), true);

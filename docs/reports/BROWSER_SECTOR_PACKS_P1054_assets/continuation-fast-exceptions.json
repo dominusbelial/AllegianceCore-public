@@ -1,0 +1,32 @@
+[
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "message": "B never saw A's death (IsDead never latched on B) after 2500 ticks"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+    "name": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+    "message": "missile never appeared in client world"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+    "name": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+    "message": "tick 3: independent rollout Vector3 { X = 500, Y = 610, Z = 814.7533 } \u2260 server Vector3 { X = 547.01483, Y = 546.9924, Z = 820.0981 } (\u0394 78.796715) \u2014 the server is not reproducing ExecuteMove"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: [ChatMessage { BObjectModel = False, Cd = Allegiance.Core.Wire.ChatData, ChatTarget = 5, CommandID = 0, Message = \"RS2's proposal to resign has passed.  ( 2 for)\", \u00b7\u00b7\u00b7 }]"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+    "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+    "message": "lethal cross-side hit must destroy side C's only restart station"
+  }
+]

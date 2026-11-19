@@ -2,12 +2,23 @@ using Allegiance.ClientCore.MonoGame.Assets;
 
 namespace Allegiance.ClientCore.Browser.Assets;
 
-/// <summary>A complete, verified residency snapshot. Never performs disk, HTTP or JS interop.</summary>
-public sealed class StagedAssetSource : IAssetSource
+/// <summary>Verified base streams and declared visual names. Deferred names use
+/// the prepared-texture hook; their bytes never trigger IO in Draw.</summary>
+public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource
 {
     private readonly Dictionary<string, byte[]> _files;
     internal StagedAssetSource(Dictionary<string, byte[]> files) => _files = files;
-    public bool Exists(string relativePath) => _files.ContainsKey(StagedManifest.Canonical(relativePath));
+    public IReadOnlySet<string>? StreamedSources { get; set; }
+    public long TextureRevision { get; set; }
+    public Func<string, bool, (bool Handled, Microsoft.Xna.Framework.Graphics.Texture2D? Texture)>? TextureLookup { get; set; }
+    public bool TryGetTexture(string stem, bool colorKey, out Microsoft.Xna.Framework.Graphics.Texture2D? texture)
+    {
+        var result = TextureLookup?.Invoke(stem, colorKey) ?? (false, null);
+        texture = result.Item2; return result.Item1;
+    }
+    public bool Contains(string relativePath) => _files.ContainsKey(StagedManifest.Canonical(relativePath));
+    public bool Exists(string relativePath) => StreamedSources?.Contains(relativePath) == true || Contains(relativePath);
+    public byte[] Bytes(string relativePath) => _files[StagedManifest.Canonical(relativePath)];
     public Stream OpenRead(string relativePath) => _files.TryGetValue(StagedManifest.Canonical(relativePath), out var bytes)
         ? new MemoryStream(bytes, writable: false)
         : throw new AssetNotResidentException(relativePath);

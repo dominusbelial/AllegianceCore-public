@@ -1,7 +1,7 @@
 # Browser generation hosting notes
 
 These notes describe the intended static-file cache contract for a future host.
-P1053 changes publication and browser startup only; it does not configure a host,
+P1053/P1054 change publication, browser startup and visual delivery only; it does not configure a host,
 CDN, TLS, CSP, lobby `/play/` route, or compose service.
 
 [`scripts/publish-browser-flight.sh`](../scripts/publish-browser-flight.sh) finalizes a complete local generation with
@@ -17,6 +17,19 @@ and verifies the complete manifest, prepares the Brotli decoder, and retires
 obsolete cache entries before requesting a fresh ticket. Menu-only staging
 preserves previous complete join entries; per-file checks and the existing
 64 MiB/1,024-entry cache limits still apply.
+
+P1054's `sector-manifest.json` maps the recorded map/seed and sector IDs to
+content-addressed original visual files. Join stages only the gameplay base and
+entry visuals before the ticket. The four entry asteroid surfaces initially use
+the tested 256² copies; their original 2048² files have highest delivery priority
+after launch. Sector entry and speculative target/starmap prefetch stage visuals
+without awaiting them in simulation or input. Missing sky textures leave the
+normal clear/stars/sun components; missing remote rock textures use the existing
+lit-solid geometry. Completed textures replace them after bounded row preparation.
+Progress and retry stay non-modal. The sector index's hashes are retained when
+committing the base manifest, so an otherwise warm base commit does not purge
+streamed visuals. Bounded eviction still applies after a larger sector tour;
+zero-byte warm reload is qualified for the fitting base + entry working set.
 
 Intended headers for a future host (this story changes no host, CSP, CDN or lobby
 `/play/` serving):

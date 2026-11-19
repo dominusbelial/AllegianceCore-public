@@ -1,9 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-function fixture(){
+const flushAudio=()=>new Promise(setImmediate);
+function fixture({delayedResume=false}={}){
  let pads=[], polls=0;const navigator={getGamepads(){polls++;if(pads instanceof Error)throw pads;return pads}};
  class Bus{constructor(){this.handlers=new Map()}addEventListener(n,f){let a=this.handlers.get(n)||[];a.push(f);this.handlers.set(n,a)}removeEventListener(n,f){this.handlers.set(n,(this.handlers.get(n)||[]).filter(x=>x!==f))}dispatch(n,data={}){const event={isTrusted:true,code:'',key:'',repeat:false,altKey:false,buttons:0,target:this,preventDefault(){this.prevented=true},...data};for(const f of this.handlers.get(n)||[])f(event);return event}closest(){return null}}
  const window=new Bus(),document=new Bus(),canvas=new Bus(),calls=[],order=[],audio=[];let lockCalls=0,fullCalls=0;
- class AudioContext{constructor(){this.state='running';audio.push(this)}suspend(){this.state='suspended';return Promise.resolve()}resume(){this.state='running';return Promise.resolve()}}
+ class AudioContext{constructor(){this.state='running';this.resumeRequests=[];audio.push(this)}suspend(){this.state='suspended';return Promise.resolve()}resume(){if(delayedResume)return new Promise(resolve=>this.resumeRequests.push(()=>{this.state='running';resolve()}));this.state='running';return Promise.resolve()}}
  window.AudioContext=AudioContext;document.hidden=false;document.activeElement=canvas;document.pointerLockElement=null;
  document.getElementById=id=>id==='theCanvas'?canvas:{dataset:{state:'Flight'}};
  canvas.focus=()=>document.activeElement=canvas;
@@ -25,15 +26,15 @@ test('Alt+Enter requests fullscreen inside the real event and never during insta
  const f=fixture();assert.equal(f.fullCalls,0);f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true});assert.equal(f.fullCalls,1);assert.equal(f.order[0],'fullscreen');
  f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true,repeat:true});assert.equal(f.fullCalls,1);f.detach();
 });
-test('blur and hidden tab clear every held key/button, exit capture and suspend audio',()=>{
- const f=fixture(),audio=new f.window.AudioContext();assert.equal(audio.state,'suspended');
- f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'running');f.canvas.dispatch('mousedown',{buttons:1});
- f.document.pointerLockElement=f.canvas;f.window.dispatch('blur');assert.equal(f.document.pointerLockElement,null);assert.equal(audio.state,'suspended');
+test('blur and hidden tab clear every held key/button, exit capture and suspend audio',async()=>{
+ const f=fixture(),audio=new f.window.AudioContext();await flushAudio();assert.equal(audio.state,'suspended');
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});await flushAudio();assert.equal(audio.state,'running');f.canvas.dispatch('mousedown',{buttons:1});
+ f.document.pointerLockElement=f.canvas;f.window.dispatch('blur');assert.equal(f.document.pointerLockElement,null);await flushAudio();assert.equal(audio.state,'suspended');
  const release=f.calls.findLastIndex(c=>c[0]==='ReleaseFlightInput');assert.ok(release>=0);assert.deepEqual(Array.from(f.calls.slice(0,release).findLast(c=>c[0]==='FlightKeys')[1]),[]);
- f.document.hidden=true;f.document.dispatch('visibilitychange');assert.equal(audio.state,'suspended');f.document.hidden=false;f.document.dispatch('visibilitychange');assert.equal(audio.state,'suspended');f.window.dispatch('focus');assert.equal(audio.state,'running');f.detach();
+ f.document.hidden=true;f.document.dispatch('visibilitychange');await flushAudio();assert.equal(audio.state,'suspended');f.document.hidden=false;f.document.dispatch('visibilitychange');await flushAudio();assert.equal(audio.state,'suspended');f.window.dispatch('focus');await flushAudio();assert.equal(audio.state,'running');f.detach();
 });
-test('untrusted events never activate audio/pointer; canvas context menu and WebGL loss are contained',()=>{
- const f=fixture(),audio=new f.window.AudioContext();f.window.dispatch('keydown',{code:'KeyW',key:'w',isTrusted:false});assert.equal(f.lockCalls,0);assert.equal(audio.state,'suspended');
+test('untrusted events never activate audio/pointer; canvas context menu and WebGL loss are contained',async()=>{
+ const f=fixture(),audio=new f.window.AudioContext();f.window.dispatch('keydown',{code:'KeyW',key:'w',isTrusted:false});assert.equal(f.lockCalls,0);await flushAudio();assert.equal(audio.state,'suspended');
  assert.equal(f.canvas.dispatch('contextmenu').prevented,true);assert.equal(f.canvas.dispatch('webglcontextlost').prevented,true);assert.ok(f.calls.some(c=>c[0]==='ContextLost'));
  f.detach();const count=f.calls.length;f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(f.calls.length,count);
 });
@@ -59,15 +60,37 @@ test('held pad cannot reassert on blur/hidden/disconnect; resumed focus uses a f
  f.document.hidden=true;f.document.dispatch('visibilitychange');before=f.calls.filter(c=>c[0]==='FlightGamepad').length;f.window.gameFlight.frame();assert.equal(f.calls.filter(c=>c[0]==='FlightGamepad').length,before);
  f.document.hidden=false;f.window.gameFlight.frame();f.window.dispatch('gamepaddisconnected',{gamepad:pad});assert.equal(f.calls.at(-1)[0],'ReleaseFlightInput');f.detach();
 });
-test('pacing suspension cannot enable audio without gesture or override focus and visibility',()=>{
- const f=fixture(),audio=new f.window.AudioContext();f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');
- f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'running');f.window.gameFlight.pacing(true);assert.equal(audio.state,'suspended');
- f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.state,'suspended');f.window.dispatch('blur');f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');
- f.window.dispatch('focus');assert.equal(audio.state,'running');f.document.hidden=true;f.document.dispatch('visibilitychange');f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);assert.equal(audio.state,'suspended');f.detach();
+test('pacing suspension cannot enable audio without gesture or override focus and visibility',async()=>{
+ const f=fixture(),audio=new f.window.AudioContext();f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);await flushAudio();assert.equal(audio.state,'suspended');
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});await flushAudio();assert.equal(audio.state,'running');f.window.gameFlight.pacing(true);await flushAudio();assert.equal(audio.state,'suspended');
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});await flushAudio();assert.equal(audio.state,'suspended');f.window.dispatch('blur');f.window.gameFlight.pacing(false);await flushAudio();assert.equal(audio.state,'suspended');
+ f.window.dispatch('focus');await flushAudio();assert.equal(audio.state,'running');f.document.hidden=true;f.document.dispatch('visibilitychange');f.window.gameFlight.pacing(true);f.window.gameFlight.pacing(false);await flushAudio();assert.equal(audio.state,'suspended');f.detach();
 });
 
 test('a refused Gamepad API releases an active pad without stopping keyboard flight',()=>{
  const f=fixture();f.pads=[{index:0,connected:true,mapping:'standard',axes:[0,0,1,0],buttons:[]}];f.window.gameFlight.frame();
  f.pads=Error('permissions policy');assert.doesNotThrow(()=>f.window.gameFlight.frame());assert.equal(f.calls.at(-1)[0],'ReleaseFlightInput');
  f.window.dispatch('keydown',{code:'ArrowUp',key:'ArrowUp'});assert.deepEqual(Array.from(f.calls.at(-1)[1]),['ArrowUp']);f.detach();
+});
+
+for(const boundary of ['hidden','blur','pacing','detach'])test('pending audio resume cannot outlive '+boundary,async()=>{
+ const f=fixture({delayedResume:true}),audio=new f.window.AudioContext();await flushAudio();
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});assert.equal(audio.resumeRequests.length,1);assert.equal(audio.state,'suspended');
+ if(boundary==='hidden'){f.document.hidden=true;f.document.dispatch('visibilitychange')}
+ else if(boundary==='blur')f.window.dispatch('blur');
+ else if(boundary==='pacing')f.window.gameFlight.pacing(true);
+ else f.detach();
+ // Real WebAudio ordering: a suspend on the currently suspended context is
+ // immediately satisfied, while this preceding resume completes later.
+ audio.resumeRequests.shift()();await flushAudio();assert.equal(audio.state,'suspended');
+ assert.equal(audio.resumeRequests.length,0);if(boundary!=='detach')f.detach();
+});
+test('audio changes coalesce while an operation is pending and follow the latest state',async()=>{
+ const f=fixture({delayedResume:true}),audio=new f.window.AudioContext();await flushAudio();
+ f.window.dispatch('keydown',{code:'KeyW',key:'w'});
+ for(let i=0;i<100;i++){f.window.dispatch('blur');f.window.dispatch('focus')}
+ f.document.hidden=true;f.document.dispatch('visibilitychange');
+ assert.equal(audio.resumeRequests.length,1);audio.resumeRequests.shift()();await flushAudio();assert.equal(audio.state,'suspended');
+ f.document.hidden=false;f.document.dispatch('visibilitychange');assert.equal(audio.resumeRequests.length,1);
+ audio.resumeRequests.shift()();await flushAudio();assert.equal(audio.state,'running');f.detach();
 });

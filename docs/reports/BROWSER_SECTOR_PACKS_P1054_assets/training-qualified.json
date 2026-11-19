@@ -1,0 +1,393 @@
+{
+  "command": "tools/run-training-tests.sh --no-build --repeat 3 --window-proofs-once",
+  "artwork": true,
+  "children": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 131,
+      "failed": 0,
+      "skipped": 0,
+      "total": 131,
+      "trxSha256": "abd802c79b2762e6abf2f9fe73afb7ac14d5142be8955f9c29be688f3be5b9d5",
+      "line": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)"
+    },
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 299,
+      "failed": 0,
+      "skipped": 2,
+      "total": 301,
+      "trxSha256": "398240f248b27868f175c7adcdcdc71faf74e99a5888f853ffc9ec6d07631d8d",
+      "line": "Passed!  - Failed:     0, Passed:   299, Skipped:     2, Total:   301, Duration: 3 h 58 m - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)"
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 131,
+      "failed": 0,
+      "skipped": 0,
+      "total": 131,
+      "trxSha256": "2675ba7b2f003e1b3acc22dd4ad54145f1491b3bf58991ed3fc6c55522afb1fb",
+      "line": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 9 s - Allegiance.ClientCore.Tests.dll (net10.0)"
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 257,
+      "failed": 0,
+      "skipped": 0,
+      "total": 257,
+      "trxSha256": "3f6d3d1c775be05a508b24d9f84285fd87177e73bd059af309ceb0deff29fd5d",
+      "line": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 9 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)"
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.Tests",
+      "passed": 131,
+      "failed": 0,
+      "skipped": 0,
+      "total": 131,
+      "trxSha256": "83974bbf583cc623a09af9d6340459ada7f5d289d1f02532e27130ded9b3aeec",
+      "line": "Passed!  - Failed:     0, Passed:   131, Skipped:     0, Total:   131, Duration: 10 s - Allegiance.ClientCore.Tests.dll (net10.0)"
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "passed": 257,
+      "failed": 0,
+      "skipped": 0,
+      "total": 257,
+      "trxSha256": "34b05a7872bb845c85a7a8bfef7bc89149e403adcfba3f76c319a6c1a3064a1e",
+      "line": "Passed!  - Failed:     0, Passed:   257, Skipped:     0, Total:   257, Duration: 11 m 8 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)"
+    }
+  ],
+  "totalPassed": 1206,
+  "totalFailed": 0,
+  "totalSkipped": 2,
+  "physicalWindows": [
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Modern\")",
+      "outcome": "NotExecuted"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 4)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-lesson=4-08db170dbc374af988e461ec08a20858",
+      "marker": "P912_LESSON_PASS M5 Modern lesson=4",
+      "logSha256": "7f4eeeb005ca429488d84347a9a11f8870b63b1c9b3cb5497f7c6c08c5807717"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Classic-default-3b9ed687acdf4c19b1a8632803229e64",
+      "marker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "86f6be0b6263536c35c40e2dac729e0cb8976b4cb931fd72ef650f351d02d809"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 1)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-lesson=1-f307aea2e4d64a24829ef2feec8d395d",
+      "marker": "P912_LESSON_PASS M5 Modern lesson=1",
+      "logSha256": "b893518285827658f399740834c55a14aa14a1fac064ff5f1db80f1e56276a14"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-default-a1a93eb717454def9b786f58d24d0c35",
+      "marker": "P912_WINDOW_PASS M4 Modern lessons=1,2,3,4,5,6,7,8,9,10",
+      "logSha256": "1c1f11050f05a1bb0e6a88269674e24e518efab4c01807e957492c20a36b79d2"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"muted\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Classic-muted-3895e71e2d9a4e6a9c21c3612216fdfa",
+      "marker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "e6f150aac4a6c4cd2aced3c6b4ca0ae64d57cdc6630a9b5510ecfa484b7385d6"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"muted\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Modern-muted-cc2a5eb6ab2744528dae0ae83a5c1247",
+      "marker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "105bbea8ec2be369db9f53d40bc11b1d6b3dc067c42ca6810db27339203ecaa9"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 11)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m3-Modern-lesson=11-42ea23a50eb740089aacbe6f0e9e6839",
+      "marker": "P912_LESSON_PASS M3 Modern lesson=11",
+      "logSha256": "113af61f77b227e489100711cbcd12f12dd5b50fc420283b696bec2095d06a83"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 1)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=1-91b78f5e94094f059a02553db73f4926",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=1",
+      "logSha256": "eca469efcd17c9501884637231886cb56ca1792d0afadc7a3b8a1c7113b6b1a4"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 10)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m3-Modern-lesson=10-ee8f2b4ff7fa4d40acd2d313d902680e",
+      "marker": "P912_LESSON_PASS M3 Modern lesson=10",
+      "logSha256": "12b12548c60c32d9794683062217e81e9c061354b9455f25256b55cf06490091"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m3-Modern-default-c6a241c26b2b4fea84be89f7ffa13291",
+      "marker": "P912_WINDOW_PASS M3 Modern lessons=1,2,3,4,5,6,7,8,9,10,11,12,13",
+      "logSha256": "b4066a0eebb14ebd0c8c6a71a4ba618ed5dcba8972fbd67cf0109e4fd3f73466"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 3)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-lesson=3-08d44bc554004fb784aff3a00c9c3829",
+      "marker": "P912_LESSON_PASS M8 Modern lesson=3",
+      "logSha256": "c5b8f96256d81a59bdf7ed6440e7d09772fc21bede8752603d70f3e7aaec28ba"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Classic-default-408af3e625c34b6ebd65ad3eee7a879c",
+      "marker": "P912_WINDOW_PASS M5 Classic lessons=1,2,3,4,5",
+      "logSha256": "3fd03ca73795280c5add3a9bc5366666d22df93fd36094496b1be93e1d5885b3"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 7)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=7-4d5463f086c941b58015ad4f1b5c0aea",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=7",
+      "logSha256": "dc14547a17ac1d2da18dd6e3e8096615575037e493c0e26f2734ba4fa629f7fc"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Modern\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-sacrifice-659c4f6c100241ef9e811f9981b74d51",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "logSha256": "2e7e4e80b16ea743eb388aa9942ce9cfd3970b626f3acbaf8b1f5dabb75cce5c"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Modern\", policy: \"departure\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-departure-a48ae5fba6244bf390c91fe40319e9bd",
+      "marker": "P912_WINDOW_PASS M4 Modern lessons=1,2,3,4,5,6,7,8,9,10",
+      "logSha256": "c330fd6748b029daca08114b702b4a5ae10b854cbd31c8ce76d340d8bf79384c"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 9)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=9-710f6cf0191e49e39ab2ec3ac38dccad",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=9",
+      "logSha256": "35d1021f36efe3eecdae36a567ebe3690d99001c8ce1b2b6eb61031d42ff56b8"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 4, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Classic-default-560afcd70bf74d6688ebd59b697709c4",
+      "marker": "P912_WINDOW_PASS M4 Classic lessons=1,2,3,4,5,6,7,8,9,10",
+      "logSha256": "75228cae7f557a6dddf5f8952fdd34bb5a34f773ef347598c00b1d16d2a72798"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 4)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=4-446d8a80dc6f494fae9a6c88cfd4dd06",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=4",
+      "logSha256": "db1f73a4c5f255ea985e43b8f91a713f8e172660f84b15fbee38cca2cf357663"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Classic\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Classic-early-00c6075d4d9748ed8ba09af3aad33522",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "logSha256": "85d1a0cf64d796f0b8b0569f9696dee1f0f5ae6b7066c090508aba8ab086c173"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Modern-missing-audio-a6dc656fd3984497913ddc4cfe426cd4",
+      "marker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "1aab1db757e74ea755507a4207ef4342fec4dd37dbf801ec63bf4c17d5074ad7"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 5)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=5-08577419143b4ad99dc915b010352ffb",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=5",
+      "logSha256": "4e91372bb6a83d0eb418563c8d27f395060068d17743d78c3321c501b3d094f1"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: \"loss\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-loss-ec6ed2a2f34a495e830aa8259d15f8a6",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "logSha256": "1031f2c0e51d4faf4600e17b074a8af728f28677e99082b39a0ec24417093ac8"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 5, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-default-3bf3adfe60f648148d01addc57b9c679",
+      "marker": "P912_WINDOW_PASS M5 Modern lessons=1,2,3,4,5",
+      "logSha256": "612d057d0a9081375d419a9302c6c020fa19201f59060acb17786d0275ac32ae"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Miner_is_destroyed_in_Mars_through_real_input(style: \"Classic\")",
+      "outcome": "NotExecuted"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"missing-audio\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Classic-missing-audio-98f436cf0aac43058fc2da1bd0a7dd3a",
+      "marker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "e0b83d475ae60d4ef5a55d64414d5a2e8941799d9bcd2e492dae7c01287ed41d"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-default-65c7a81def6b4bfda88f72b5ee724d54",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "logSha256": "7e77396bcf14dca44e69aa9019a54943bdc5a22d5a844517dcd81d1c7b339813"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Combined_bomber_and_outpost_loss_is_announced_through_real_input(style: \"Classic\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Classic-sacrifice-872d5b1b152d496caaf59c3ad8ac553c",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "logSha256": "c3ba3662a18655122d0fb81adb7e018bb723bd2bcf9c70ed799d906dddb15784"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 8)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=8-d898cfb96d9841db9c5e8294136d4932",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=8",
+      "logSha256": "d8c35deec8d01bc1cd6fcfb94d48e41e8e9902ba863ec746a28202cd5a83d010"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 3, lesson: 9)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m3-Modern-lesson=9-0e6801d4735c474dae53a1a864e7df8f",
+      "marker": "P912_LESSON_PASS M3 Modern lesson=9",
+      "logSha256": "fd47529fc945aa5787fa7eb68180d732fc8900ff55a6f65b18502c70efd1f726"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 1)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-lesson=1-f448ca4b9e014f8eb15f7e39b62d3330",
+      "marker": "P912_LESSON_PASS M8 Modern lesson=1",
+      "logSha256": "757d1b0d28f2e7eccf47bc1def9d9da20603c9fc686f905d35423ebb8d9406d6"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 3)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-lesson=3-dd48cd479f084a31b59eab371937198a",
+      "marker": "P912_LESSON_PASS M5 Modern lesson=3",
+      "logSha256": "3754d59f732d5c8a440e742656d7958e54af0b824603179db128c7e01102f43a"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 2, style: \"Modern\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Modern-default-3331b3527091424ca16dc59c2eeedc61",
+      "marker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "3f618ca9951db2073e00fdf36be5acb5c51b4783cde4c060f0433aacfc975dab"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Classic-default-ced4b85bf1314704b5dc5846ad3f022f",
+      "marker": "P912_WINDOW_PASS M8 Classic lessons=1,2,3",
+      "logSha256": "76c3a300e90d9b944c3bdd368c3dec423164977b9abacbdc93de3026568aa502"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Early_nanite_mounting_wins_through_real_input(style: \"Modern\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-early-ec940e7dd299452285933011b06e68c8",
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "logSha256": "3c58834708b117b8f639f1ab083e0789e579291eb19d830ecc3130cf72e98f8b"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 10)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=10-b19fb9a734194942b99577a41a1dc48b",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=10",
+      "logSha256": "7c068ed419b50fd01edfdb78c7f33c4ccaf33804806e5edeab5c40812cd76c2b"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Modern\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Modern-reminders-398848254e064cf7927c7bf77c0e6af1",
+      "marker": "P912_WINDOW_PASS M2 Modern lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "c17e8b577715871a7658fd5d7e30db2a73a781cbf50d7710fe0779d46f12447d"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 2)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-lesson=2-e1639afa1089443492a06247103eda64",
+      "marker": "P912_LESSON_PASS M5 Modern lesson=2",
+      "logSha256": "9b488b82f170dd995bb13037780abd6116eaff7a6a683ca76ff8d22fc2b34dc8"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Basic_flight_completes_with_muted_missing_or_repeated_narration(style: \"Classic\", policy: \"reminders\")",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p940/windows/m2-Classic-reminders-8825b5b3775e4f039d4c79e98052dd4e",
+      "marker": "P912_WINDOW_PASS M2 Classic lessons=1,2,3,4,5,6,7,8,9",
+      "logSha256": "317e9f166000a9731c749e744a6d651348babb9664e0fb0aca3781855e4f3b12"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 5, lesson: 5)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m5-Modern-lesson=5-87150e431a984231a69c83126dca7904",
+      "marker": "P912_LESSON_PASS M5 Modern lesson=5",
+      "logSha256": "a93255c53aefeb04da46b0b9e78b6dc5471e6432aa21fa41d9cb729907657535"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 8, lesson: 2)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m8-Modern-lesson=2-908ec44f61b644108847e78fbdcaa1de",
+      "marker": "P912_LESSON_PASS M8 Modern lesson=2",
+      "logSha256": "7644d8f07edffcdf6828911edca7b92b650b00688c67570fc76e54a2c1fea300"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 2)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=2-e743838e616a409082b5b6d0db96435a",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=2",
+      "logSha256": "a085c1faa3e24461ea2e63a6f6f8799a67d0a8f3e0df4aa61c8535f202763ddc"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 3, style: \"Classic\", policy: null)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m3-Classic-default-f92ad78bdace43c487ec00e250088117",
+      "marker": "P912_WINDOW_PASS M3 Classic lessons=1,2,3,4,5,6,7,8,9,10,11,12,13",
+      "logSha256": "da1fa4b6dcfe43451dc9ddf164ab3223c3fe54e0872f69a2a5761c90f73cb88c"
+    },
+    {
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Assigned_lesson_completes_in_its_own_fresh_window(mission: 4, lesson: 3)",
+      "outcome": "Passed",
+      "evidence": "<lane evidence dir>/p931/windows/m4-Modern-lesson=3-c4a43e7e550a4f1b9724a9012625bfd9",
+      "marker": "P912_LESSON_PASS M4 Modern lesson=3",
+      "logSha256": "45ac5402fdb105aae77e76a41abe99ddc4f4391c652ef4ca45974b0b4db95005"
+    }
+  ],
+  "naniteCases": [
+    {
+      "repeat": 1,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+      "outcome": "Passed"
+    },
+    {
+      "repeat": 2,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+      "outcome": "Passed"
+    },
+    {
+      "repeat": 3,
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingUniverseTests.Nanite_escort_crosses_the_real_aleph_once_and_reaches_the_bomber",
+      "outcome": "Passed"
+    }
+  ]
+}

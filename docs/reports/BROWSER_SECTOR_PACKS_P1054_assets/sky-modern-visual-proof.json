@@ -1,0 +1,2065 @@
+{
+  "passed": true,
+  "completedProfiles": 1,
+  "expectedProfiles": 1,
+  "browserVersion": "153.0.8010.0",
+  "headlessGpuRepresentative": false,
+  "results": [
+    {
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "storageRefused": false,
+      "coldBaseBytes": 7819047,
+      "baseOnlyBeforeTicket": true,
+      "entryP95Ms": 16.799999999999272,
+      "entryMaximumFrameMs": 100,
+      "entryPumpMaximumMs": 14,
+      "entryControls": {
+        "before": {
+          "Id": 8100,
+          "accepted": 4,
+          "rejected": 1,
+          "lastClientTime": 98452,
+          "lastPoseAt": 98.39999999999655
+        },
+        "after": {
+          "Id": 8100,
+          "accepted": 18,
+          "rejected": 1,
+          "lastClientTime": 100628,
+          "lastPoseAt": 100.59999999999643
+        },
+        "samples": [
+          {
+            "Id": 8100,
+            "accepted": 6,
+            "rejected": 1,
+            "lastClientTime": 98672,
+            "lastPoseAt": 98.69999999999654
+          },
+          {
+            "Id": 8100,
+            "accepted": 9,
+            "rejected": 1,
+            "lastClientTime": 99143,
+            "lastPoseAt": 99.14999999999651
+          },
+          {
+            "Id": 8100,
+            "accepted": 12,
+            "rejected": 1,
+            "lastClientTime": 99697,
+            "lastPoseAt": 99.69999999999648
+          },
+          {
+            "Id": 8100,
+            "accepted": 15,
+            "rejected": 1,
+            "lastClientTime": 100163,
+            "lastPoseAt": 100.14999999999645
+          }
+        ],
+        "uninterruptedControls": true
+      },
+      "entryWatch": {
+        "samples": [
+          {
+            "sampledAt": 621490744,
+            "Id": 8100,
+            "accepted": 5,
+            "rejected": 1,
+            "lastClientTime": 98510,
+            "lastPoseAt": 98.54999999999654
+          },
+          {
+            "sampledAt": 621490902,
+            "Id": 8100,
+            "accepted": 6,
+            "rejected": 1,
+            "lastClientTime": 98672,
+            "lastPoseAt": 98.69999999999654
+          },
+          {
+            "sampledAt": 621491058,
+            "Id": 8100,
+            "accepted": 7,
+            "rejected": 1,
+            "lastClientTime": 98826,
+            "lastPoseAt": 98.84999999999653
+          },
+          {
+            "sampledAt": 621491213,
+            "Id": 8100,
+            "accepted": 8,
+            "rejected": 1,
+            "lastClientTime": 98993,
+            "lastPoseAt": 98.99999999999652
+          },
+          {
+            "sampledAt": 621491369,
+            "Id": 8100,
+            "accepted": 9,
+            "rejected": 1,
+            "lastClientTime": 99143,
+            "lastPoseAt": 99.14999999999651
+          },
+          {
+            "sampledAt": 621491526,
+            "Id": 8100,
+            "accepted": 10,
+            "rejected": 1,
+            "lastClientTime": 99309,
+            "lastPoseAt": 99.2999999999965
+          },
+          {
+            "sampledAt": 621491681,
+            "Id": 8100,
+            "accepted": 11,
+            "rejected": 1,
+            "lastClientTime": 99462,
+            "lastPoseAt": 99.44999999999649
+          },
+          {
+            "sampledAt": 621491992,
+            "Id": 8100,
+            "accepted": 12,
+            "rejected": 1,
+            "lastClientTime": 99697,
+            "lastPoseAt": 99.69999999999648
+          },
+          {
+            "sampledAt": 621492094,
+            "Id": 8100,
+            "accepted": 13,
+            "rejected": 1,
+            "lastClientTime": 99859,
+            "lastPoseAt": 99.84999999999647
+          },
+          {
+            "sampledAt": 621492250,
+            "Id": 8100,
+            "accepted": 14,
+            "rejected": 1,
+            "lastClientTime": 100009,
+            "lastPoseAt": 99.99999999999646
+          },
+          {
+            "sampledAt": 621492407,
+            "Id": 8100,
+            "accepted": 15,
+            "rejected": 1,
+            "lastClientTime": 100163,
+            "lastPoseAt": 100.14999999999645
+          },
+          {
+            "sampledAt": 621492566,
+            "Id": 8100,
+            "accepted": 16,
+            "rejected": 1,
+            "lastClientTime": 100326,
+            "lastPoseAt": 100.29999999999644
+          },
+          {
+            "sampledAt": 621492776,
+            "Id": 8100,
+            "accepted": 17,
+            "rejected": 1,
+            "lastClientTime": 100476,
+            "lastPoseAt": 100.44999999999644
+          },
+          {
+            "sampledAt": 621492880,
+            "Id": 8100,
+            "accepted": 18,
+            "rejected": 1,
+            "lastClientTime": 100628,
+            "lastPoseAt": 100.59999999999643
+          },
+          {
+            "sampledAt": 621493035,
+            "Id": 8100,
+            "accepted": 19,
+            "rejected": 1,
+            "lastClientTime": 100781,
+            "lastPoseAt": 100.74999999999642
+          },
+          {
+            "sampledAt": 621493190,
+            "Id": 8100,
+            "accepted": 20,
+            "rejected": 1,
+            "lastClientTime": 100943,
+            "lastPoseAt": 100.89999999999641
+          },
+          {
+            "sampledAt": 621493346,
+            "Id": 8100,
+            "accepted": 21,
+            "rejected": 1,
+            "lastClientTime": 101093,
+            "lastPoseAt": 101.0499999999964
+          },
+          {
+            "sampledAt": 621493503,
+            "Id": 8100,
+            "accepted": 22,
+            "rejected": 1,
+            "lastClientTime": 101243,
+            "lastPoseAt": 101.1499999999964
+          },
+          {
+            "sampledAt": 621493711,
+            "Id": 8100,
+            "accepted": 23,
+            "rejected": 1,
+            "lastClientTime": 101502,
+            "lastPoseAt": 101.39999999999638
+          },
+          {
+            "sampledAt": 621493970,
+            "Id": 8100,
+            "accepted": 24,
+            "rejected": 1,
+            "lastClientTime": 101726,
+            "lastPoseAt": 101.64999999999637
+          },
+          {
+            "sampledAt": 621494128,
+            "Id": 8100,
+            "accepted": 25,
+            "rejected": 1,
+            "lastClientTime": 101884,
+            "lastPoseAt": 101.79999999999636
+          },
+          {
+            "sampledAt": 621494283,
+            "Id": 8100,
+            "accepted": 26,
+            "rejected": 1,
+            "lastClientTime": 102043,
+            "lastPoseAt": 101.94999999999635
+          },
+          {
+            "sampledAt": 621494438,
+            "Id": 8100,
+            "accepted": 27,
+            "rejected": 1,
+            "lastClientTime": 102209,
+            "lastPoseAt": 102.09999999999634
+          },
+          {
+            "sampledAt": 621494645,
+            "Id": 8100,
+            "accepted": 28,
+            "rejected": 1,
+            "lastClientTime": 102359,
+            "lastPoseAt": 102.24999999999633
+          },
+          {
+            "sampledAt": 621494749,
+            "Id": 8100,
+            "accepted": 29,
+            "rejected": 1,
+            "lastClientTime": 102509,
+            "lastPoseAt": 102.39999999999633
+          },
+          {
+            "sampledAt": 621494904,
+            "Id": 8100,
+            "accepted": 30,
+            "rejected": 1,
+            "lastClientTime": 102676,
+            "lastPoseAt": 102.54999999999632
+          },
+          {
+            "sampledAt": 621495073,
+            "Id": 8100,
+            "accepted": 31,
+            "rejected": 1,
+            "lastClientTime": 102831,
+            "lastPoseAt": 102.69999999999631
+          },
+          {
+            "sampledAt": 621495238,
+            "Id": 8100,
+            "accepted": 32,
+            "rejected": 1,
+            "lastClientTime": 102993,
+            "lastPoseAt": 102.8499999999963
+          },
+          {
+            "sampledAt": 621495400,
+            "Id": 8100,
+            "accepted": 33,
+            "rejected": 1,
+            "lastClientTime": 103149,
+            "lastPoseAt": 102.99999999999629
+          },
+          {
+            "sampledAt": 621495559,
+            "Id": 8100,
+            "accepted": 34,
+            "rejected": 1,
+            "lastClientTime": 103300,
+            "lastPoseAt": 103.14999999999628
+          },
+          {
+            "sampledAt": 621495664,
+            "Id": 8100,
+            "accepted": 35,
+            "rejected": 1,
+            "lastClientTime": 103459,
+            "lastPoseAt": 103.24999999999628
+          },
+          {
+            "sampledAt": 621495819,
+            "Id": 8100,
+            "accepted": 36,
+            "rejected": 1,
+            "lastClientTime": 103609,
+            "lastPoseAt": 103.39999999999627
+          },
+          {
+            "sampledAt": 621495975,
+            "Id": 8100,
+            "accepted": 37,
+            "rejected": 1,
+            "lastClientTime": 103759,
+            "lastPoseAt": 103.54999999999626
+          },
+          {
+            "sampledAt": 621496181,
+            "Id": 8100,
+            "accepted": 38,
+            "rejected": 1,
+            "lastClientTime": 103926,
+            "lastPoseAt": 103.74999999999625
+          },
+          {
+            "sampledAt": 621496338,
+            "Id": 8100,
+            "accepted": 39,
+            "rejected": 1,
+            "lastClientTime": 104092,
+            "lastPoseAt": 103.89999999999624
+          },
+          {
+            "sampledAt": 621496492,
+            "Id": 8100,
+            "accepted": 40,
+            "rejected": 1,
+            "lastClientTime": 104242,
+            "lastPoseAt": 104.04999999999623
+          },
+          {
+            "sampledAt": 621496648,
+            "Id": 8100,
+            "accepted": 41,
+            "rejected": 1,
+            "lastClientTime": 104392,
+            "lastPoseAt": 104.19999999999622
+          },
+          {
+            "sampledAt": 621496962,
+            "Id": 8100,
+            "accepted": 42,
+            "rejected": 1,
+            "lastClientTime": 104452,
+            "lastPoseAt": 104.4999999999962
+          },
+          {
+            "sampledAt": 621497067,
+            "Id": 8100,
+            "accepted": 43,
+            "rejected": 1,
+            "lastClientTime": 104602,
+            "lastPoseAt": 104.5999999999962
+          },
+          {
+            "sampledAt": 621497224,
+            "Id": 8100,
+            "accepted": 44,
+            "rejected": 1,
+            "lastClientTime": 104752,
+            "lastPoseAt": 104.74999999999619
+          },
+          {
+            "sampledAt": 621497430,
+            "Id": 8100,
+            "accepted": 45,
+            "rejected": 1,
+            "lastClientTime": 104902,
+            "lastPoseAt": 104.89999999999618
+          },
+          {
+            "sampledAt": 621497533,
+            "Id": 8100,
+            "accepted": 46,
+            "rejected": 1,
+            "lastClientTime": 105052,
+            "lastPoseAt": 105.04999999999617
+          },
+          {
+            "sampledAt": 621497688,
+            "Id": 8100,
+            "accepted": 47,
+            "rejected": 1,
+            "lastClientTime": 105202,
+            "lastPoseAt": 105.19999999999617
+          },
+          {
+            "sampledAt": 621497844,
+            "Id": 8100,
+            "accepted": 48,
+            "rejected": 1,
+            "lastClientTime": 105352,
+            "lastPoseAt": 105.34999999999616
+          },
+          {
+            "sampledAt": 621498000,
+            "Id": 8100,
+            "accepted": 49,
+            "rejected": 1,
+            "lastClientTime": 105502,
+            "lastPoseAt": 105.49999999999615
+          },
+          {
+            "sampledAt": 621498156,
+            "Id": 8100,
+            "accepted": 50,
+            "rejected": 1,
+            "lastClientTime": 105652,
+            "lastPoseAt": 105.64999999999614
+          },
+          {
+            "sampledAt": 621498313,
+            "Id": 8100,
+            "accepted": 51,
+            "rejected": 1,
+            "lastClientTime": 105802,
+            "lastPoseAt": 105.79999999999613
+          },
+          {
+            "sampledAt": 621498470,
+            "Id": 8100,
+            "accepted": 52,
+            "rejected": 1,
+            "lastClientTime": 105969,
+            "lastPoseAt": 105.94999999999612
+          },
+          {
+            "sampledAt": 621498627,
+            "Id": 8100,
+            "accepted": 53,
+            "rejected": 1,
+            "lastClientTime": 106135,
+            "lastPoseAt": 106.09999999999611
+          },
+          {
+            "sampledAt": 621498782,
+            "Id": 8100,
+            "accepted": 54,
+            "rejected": 1,
+            "lastClientTime": 106286,
+            "lastPoseAt": 106.2499999999961
+          },
+          {
+            "sampledAt": 621498940,
+            "Id": 8100,
+            "accepted": 55,
+            "rejected": 1,
+            "lastClientTime": 106452,
+            "lastPoseAt": 106.3999999999961
+          },
+          {
+            "sampledAt": 621499095,
+            "Id": 8100,
+            "accepted": 56,
+            "rejected": 1,
+            "lastClientTime": 106619,
+            "lastPoseAt": 106.54999999999609
+          },
+          {
+            "sampledAt": 621499304,
+            "Id": 8100,
+            "accepted": 57,
+            "rejected": 1,
+            "lastClientTime": 106769,
+            "lastPoseAt": 106.69999999999608
+          },
+          {
+            "sampledAt": 621499409,
+            "Id": 8100,
+            "accepted": 58,
+            "rejected": 1,
+            "lastClientTime": 106935,
+            "lastPoseAt": 106.84999999999607
+          },
+          {
+            "sampledAt": 621499565,
+            "Id": 8100,
+            "accepted": 59,
+            "rejected": 1,
+            "lastClientTime": 107085,
+            "lastPoseAt": 106.99999999999606
+          },
+          {
+            "sampledAt": 621499720,
+            "Id": 8100,
+            "accepted": 60,
+            "rejected": 1,
+            "lastClientTime": 107252,
+            "lastPoseAt": 107.14999999999606
+          },
+          {
+            "sampledAt": 621499929,
+            "Id": 8100,
+            "accepted": 61,
+            "rejected": 1,
+            "lastClientTime": 107419,
+            "lastPoseAt": 107.34999999999604
+          },
+          {
+            "sampledAt": 621500084,
+            "Id": 8100,
+            "accepted": 62,
+            "rejected": 1,
+            "lastClientTime": 107585,
+            "lastPoseAt": 107.49999999999604
+          },
+          {
+            "sampledAt": 621500237,
+            "Id": 8100,
+            "accepted": 63,
+            "rejected": 1,
+            "lastClientTime": 107735,
+            "lastPoseAt": 107.64999999999603
+          },
+          {
+            "sampledAt": 621500447,
+            "Id": 8100,
+            "accepted": 64,
+            "rejected": 1,
+            "lastClientTime": 107902,
+            "lastPoseAt": 107.79999999999602
+          },
+          {
+            "sampledAt": 621500553,
+            "Id": 8100,
+            "accepted": 65,
+            "rejected": 1,
+            "lastClientTime": 108069,
+            "lastPoseAt": 107.94999999999601
+          },
+          {
+            "sampledAt": 621500709,
+            "Id": 8100,
+            "accepted": 66,
+            "rejected": 1,
+            "lastClientTime": 108219,
+            "lastPoseAt": 108.099999999996
+          },
+          {
+            "sampledAt": 621500864,
+            "Id": 8100,
+            "accepted": 67,
+            "rejected": 1,
+            "lastClientTime": 108369,
+            "lastPoseAt": 108.24999999999599
+          },
+          {
+            "sampledAt": 621501020,
+            "Id": 8100,
+            "accepted": 68,
+            "rejected": 1,
+            "lastClientTime": 108519,
+            "lastPoseAt": 108.39999999999598
+          },
+          {
+            "sampledAt": 621501176,
+            "Id": 8100,
+            "accepted": 69,
+            "rejected": 1,
+            "lastClientTime": 108669,
+            "lastPoseAt": 108.54999999999598
+          },
+          {
+            "sampledAt": 621501332,
+            "Id": 8100,
+            "accepted": 70,
+            "rejected": 1,
+            "lastClientTime": 108835,
+            "lastPoseAt": 108.69999999999597
+          },
+          {
+            "sampledAt": 621501539,
+            "Id": 8100,
+            "accepted": 71,
+            "rejected": 1,
+            "lastClientTime": 109002,
+            "lastPoseAt": 108.84999999999596
+          },
+          {
+            "sampledAt": 621501644,
+            "Id": 8100,
+            "accepted": 72,
+            "rejected": 1,
+            "lastClientTime": 109152,
+            "lastPoseAt": 108.99999999999595
+          },
+          {
+            "sampledAt": 621501800,
+            "Id": 8100,
+            "accepted": 73,
+            "rejected": 1,
+            "lastClientTime": 109302,
+            "lastPoseAt": 109.14999999999594
+          },
+          {
+            "sampledAt": 621501955,
+            "Id": 8100,
+            "accepted": 74,
+            "rejected": 1,
+            "lastClientTime": 109469,
+            "lastPoseAt": 109.29999999999593
+          },
+          {
+            "sampledAt": 621502113,
+            "Id": 8100,
+            "accepted": 75,
+            "rejected": 1,
+            "lastClientTime": 109635,
+            "lastPoseAt": 109.44999999999592
+          },
+          {
+            "sampledAt": 621502319,
+            "Id": 8100,
+            "accepted": 76,
+            "rejected": 1,
+            "lastClientTime": 109802,
+            "lastPoseAt": 109.59999999999592
+          },
+          {
+            "sampledAt": 621502474,
+            "Id": 8100,
+            "accepted": 77,
+            "rejected": 1,
+            "lastClientTime": 109969,
+            "lastPoseAt": 109.7999999999959
+          },
+          {
+            "sampledAt": 621502683,
+            "Id": 8100,
+            "accepted": 78,
+            "rejected": 1,
+            "lastClientTime": 110119,
+            "lastPoseAt": 109.9499999999959
+          },
+          {
+            "sampledAt": 621502891,
+            "Id": 8100,
+            "accepted": 79,
+            "rejected": 1,
+            "lastClientTime": 110187,
+            "lastPoseAt": 110.19999999999588
+          },
+          {
+            "sampledAt": 621503047,
+            "Id": 8100,
+            "accepted": 80,
+            "rejected": 1,
+            "lastClientTime": 110337,
+            "lastPoseAt": 110.34999999999587
+          },
+          {
+            "sampledAt": 621503202,
+            "Id": 8100,
+            "accepted": 81,
+            "rejected": 1,
+            "lastClientTime": 110487,
+            "lastPoseAt": 110.49999999999586
+          },
+          {
+            "sampledAt": 621503357,
+            "Id": 8100,
+            "accepted": 82,
+            "rejected": 1,
+            "lastClientTime": 110637,
+            "lastPoseAt": 110.64999999999586
+          },
+          {
+            "sampledAt": 621503515,
+            "Id": 8100,
+            "accepted": 83,
+            "rejected": 1,
+            "lastClientTime": 110803,
+            "lastPoseAt": 110.79999999999585
+          },
+          {
+            "sampledAt": 621503671,
+            "Id": 8100,
+            "accepted": 84,
+            "rejected": 1,
+            "lastClientTime": 110970,
+            "lastPoseAt": 110.94999999999584
+          },
+          {
+            "sampledAt": 621503877,
+            "Id": 8100,
+            "accepted": 85,
+            "rejected": 1,
+            "lastClientTime": 111137,
+            "lastPoseAt": 111.14999999999583
+          },
+          {
+            "sampledAt": 621504032,
+            "Id": 8100,
+            "accepted": 86,
+            "rejected": 1,
+            "lastClientTime": 111287,
+            "lastPoseAt": 111.29999999999582
+          },
+          {
+            "sampledAt": 621504187,
+            "Id": 8100,
+            "accepted": 87,
+            "rejected": 1,
+            "lastClientTime": 111453,
+            "lastPoseAt": 111.44999999999581
+          },
+          {
+            "sampledAt": 621504344,
+            "Id": 8100,
+            "accepted": 88,
+            "rejected": 1,
+            "lastClientTime": 111620,
+            "lastPoseAt": 111.5999999999958
+          },
+          {
+            "sampledAt": 621504553,
+            "Id": 8100,
+            "accepted": 89,
+            "rejected": 1,
+            "lastClientTime": 111770,
+            "lastPoseAt": 111.7499999999958
+          },
+          {
+            "sampledAt": 621504657,
+            "Id": 8100,
+            "accepted": 90,
+            "rejected": 1,
+            "lastClientTime": 111920,
+            "lastPoseAt": 111.89999999999579
+          },
+          {
+            "sampledAt": 621504812,
+            "Id": 8100,
+            "accepted": 91,
+            "rejected": 1,
+            "lastClientTime": 112086,
+            "lastPoseAt": 112.04999999999578
+          },
+          {
+            "sampledAt": 621504967,
+            "Id": 8100,
+            "accepted": 92,
+            "rejected": 1,
+            "lastClientTime": 112237,
+            "lastPoseAt": 112.19999999999577
+          },
+          {
+            "sampledAt": 621505123,
+            "Id": 8100,
+            "accepted": 93,
+            "rejected": 1,
+            "lastClientTime": 112387,
+            "lastPoseAt": 112.34999999999576
+          },
+          {
+            "sampledAt": 621505331,
+            "Id": 8100,
+            "accepted": 94,
+            "rejected": 1,
+            "lastClientTime": 112553,
+            "lastPoseAt": 112.49999999999575
+          },
+          {
+            "sampledAt": 621505435,
+            "Id": 8100,
+            "accepted": 95,
+            "rejected": 1,
+            "lastClientTime": 112703,
+            "lastPoseAt": 112.64999999999574
+          },
+          {
+            "sampledAt": 621505591,
+            "Id": 8100,
+            "accepted": 96,
+            "rejected": 1,
+            "lastClientTime": 112853,
+            "lastPoseAt": 112.79999999999573
+          },
+          {
+            "sampledAt": 621505746,
+            "Id": 8100,
+            "accepted": 97,
+            "rejected": 1,
+            "lastClientTime": 113020,
+            "lastPoseAt": 112.94999999999573
+          },
+          {
+            "sampledAt": 621505902,
+            "Id": 8100,
+            "accepted": 98,
+            "rejected": 1,
+            "lastClientTime": 113186,
+            "lastPoseAt": 113.09999999999572
+          },
+          {
+            "sampledAt": 621506058,
+            "Id": 8100,
+            "accepted": 99,
+            "rejected": 1,
+            "lastClientTime": 113336,
+            "lastPoseAt": 113.24999999999571
+          },
+          {
+            "sampledAt": 621506212,
+            "Id": 8100,
+            "accepted": 100,
+            "rejected": 1,
+            "lastClientTime": 113486,
+            "lastPoseAt": 113.3999999999957
+          },
+          {
+            "sampledAt": 621506418,
+            "Id": 8100,
+            "accepted": 101,
+            "rejected": 1,
+            "lastClientTime": 113637,
+            "lastPoseAt": 113.54999999999569
+          },
+          {
+            "sampledAt": 621506521,
+            "Id": 8100,
+            "accepted": 102,
+            "rejected": 1,
+            "lastClientTime": 113803,
+            "lastPoseAt": 113.69999999999568
+          },
+          {
+            "sampledAt": 621506677,
+            "Id": 8100,
+            "accepted": 103,
+            "rejected": 1,
+            "lastClientTime": 113970,
+            "lastPoseAt": 113.84999999999567
+          },
+          {
+            "sampledAt": 621506832,
+            "Id": 8100,
+            "accepted": 104,
+            "rejected": 1,
+            "lastClientTime": 114136,
+            "lastPoseAt": 113.99999999999567
+          },
+          {
+            "sampledAt": 621506987,
+            "Id": 8100,
+            "accepted": 105,
+            "rejected": 1,
+            "lastClientTime": 114286,
+            "lastPoseAt": 114.14999999999566
+          },
+          {
+            "sampledAt": 621507141,
+            "Id": 8100,
+            "accepted": 106,
+            "rejected": 1,
+            "lastClientTime": 114436,
+            "lastPoseAt": 114.29999999999565
+          },
+          {
+            "sampledAt": 621507297,
+            "Id": 8100,
+            "accepted": 107,
+            "rejected": 1,
+            "lastClientTime": 114587,
+            "lastPoseAt": 114.44999999999564
+          },
+          {
+            "sampledAt": 621507503,
+            "Id": 8100,
+            "accepted": 108,
+            "rejected": 1,
+            "lastClientTime": 114753,
+            "lastPoseAt": 114.59999999999563
+          },
+          {
+            "sampledAt": 621507661,
+            "Id": 8100,
+            "accepted": 109,
+            "rejected": 1,
+            "lastClientTime": 114920,
+            "lastPoseAt": 114.79999999999562
+          },
+          {
+            "sampledAt": 621507817,
+            "Id": 8100,
+            "accepted": 110,
+            "rejected": 1,
+            "lastClientTime": 115070,
+            "lastPoseAt": 114.94999999999561
+          },
+          {
+            "sampledAt": 621507972,
+            "Id": 8100,
+            "accepted": 111,
+            "rejected": 1,
+            "lastClientTime": 115236,
+            "lastPoseAt": 115.0999999999956
+          },
+          {
+            "sampledAt": 621508127,
+            "Id": 8100,
+            "accepted": 112,
+            "rejected": 1,
+            "lastClientTime": 115386,
+            "lastPoseAt": 115.2499999999956
+          },
+          {
+            "sampledAt": 621508282,
+            "Id": 8100,
+            "accepted": 113,
+            "rejected": 1,
+            "lastClientTime": 115553,
+            "lastPoseAt": 115.39999999999559
+          },
+          {
+            "sampledAt": 621508437,
+            "Id": 8100,
+            "accepted": 114,
+            "rejected": 1,
+            "lastClientTime": 115720,
+            "lastPoseAt": 115.54999999999558
+          },
+          {
+            "sampledAt": 621508644,
+            "Id": 8100,
+            "accepted": 115,
+            "rejected": 1,
+            "lastClientTime": 115870,
+            "lastPoseAt": 115.69999999999557
+          },
+          {
+            "sampledAt": 621508906,
+            "Id": 8100,
+            "accepted": 116,
+            "rejected": 1,
+            "lastClientTime": 115955,
+            "lastPoseAt": 115.99999999999555
+          },
+          {
+            "sampledAt": 621509063,
+            "Id": 8100,
+            "accepted": 117,
+            "rejected": 1,
+            "lastClientTime": 116121,
+            "lastPoseAt": 116.14999999999554
+          },
+          {
+            "sampledAt": 621509218,
+            "Id": 8100,
+            "accepted": 118,
+            "rejected": 1,
+            "lastClientTime": 116271,
+            "lastPoseAt": 116.29999999999553
+          },
+          {
+            "sampledAt": 621509425,
+            "Id": 8100,
+            "accepted": 119,
+            "rejected": 1,
+            "lastClientTime": 116421,
+            "lastPoseAt": 116.44999999999553
+          },
+          {
+            "sampledAt": 621509529,
+            "Id": 8100,
+            "accepted": 120,
+            "rejected": 1,
+            "lastClientTime": 116571,
+            "lastPoseAt": 116.59999999999552
+          },
+          {
+            "sampledAt": 621509632,
+            "Id": 8100,
+            "accepted": 121,
+            "rejected": 1,
+            "lastClientTime": 116721,
+            "lastPoseAt": 116.69999999999551
+          },
+          {
+            "sampledAt": 621509839,
+            "Id": 8100,
+            "accepted": 122,
+            "rejected": 1,
+            "lastClientTime": 116888,
+            "lastPoseAt": 116.8999999999955
+          },
+          {
+            "sampledAt": 621509995,
+            "Id": 8100,
+            "accepted": 123,
+            "rejected": 1,
+            "lastClientTime": 117038,
+            "lastPoseAt": 117.04999999999549
+          },
+          {
+            "sampledAt": 621510150,
+            "Id": 8100,
+            "accepted": 124,
+            "rejected": 1,
+            "lastClientTime": 117205,
+            "lastPoseAt": 117.19999999999548
+          },
+          {
+            "sampledAt": 621510305,
+            "Id": 8100,
+            "accepted": 125,
+            "rejected": 1,
+            "lastClientTime": 117355,
+            "lastPoseAt": 117.34999999999548
+          },
+          {
+            "sampledAt": 621510512,
+            "Id": 8100,
+            "accepted": 126,
+            "rejected": 1,
+            "lastClientTime": 117521,
+            "lastPoseAt": 117.49999999999547
+          },
+          {
+            "sampledAt": 621510615,
+            "Id": 8100,
+            "accepted": 127,
+            "rejected": 1,
+            "lastClientTime": 117688,
+            "lastPoseAt": 117.64999999999546
+          },
+          {
+            "sampledAt": 621510771,
+            "Id": 8100,
+            "accepted": 128,
+            "rejected": 1,
+            "lastClientTime": 117838,
+            "lastPoseAt": 117.79999999999545
+          },
+          {
+            "sampledAt": 621510927,
+            "Id": 8100,
+            "accepted": 129,
+            "rejected": 1,
+            "lastClientTime": 118005,
+            "lastPoseAt": 117.94999999999544
+          },
+          {
+            "sampledAt": 621511083,
+            "Id": 8100,
+            "accepted": 130,
+            "rejected": 1,
+            "lastClientTime": 118155,
+            "lastPoseAt": 118.09999999999543
+          },
+          {
+            "sampledAt": 621511290,
+            "Id": 8100,
+            "accepted": 131,
+            "rejected": 1,
+            "lastClientTime": 118305,
+            "lastPoseAt": 118.24999999999542
+          },
+          {
+            "sampledAt": 621511394,
+            "Id": 8100,
+            "accepted": 132,
+            "rejected": 1,
+            "lastClientTime": 118455,
+            "lastPoseAt": 118.39999999999542
+          },
+          {
+            "sampledAt": 621511550,
+            "Id": 8100,
+            "accepted": 133,
+            "rejected": 1,
+            "lastClientTime": 118621,
+            "lastPoseAt": 118.5499999999954
+          },
+          {
+            "sampledAt": 621511706,
+            "Id": 8100,
+            "accepted": 134,
+            "rejected": 1,
+            "lastClientTime": 118773,
+            "lastPoseAt": 118.6999999999954
+          }
+        ],
+        "maximumGapMs": 364
+      },
+      "entryRetries": 1,
+      "entryNeverBlank": true,
+      "entryTextures": {
+        "bgrnd55bmp": [
+          2048,
+          2048
+        ],
+        "bgrnd52bmp": [
+          2048,
+          2048
+        ],
+        "bgrnd03bmp": [
+          2048,
+          2048
+        ],
+        "bgrnd05bmp": [
+          2048,
+          2048
+        ]
+      },
+      "warm": {
+        "packRequests": 0,
+        "packBytes": 0
+      },
+      "remoteP95Ms": 16.70000000001164,
+      "remoteMaximumFrameMs": 100.10000000000582,
+      "remoteControls": {
+        "before": {
+          "Id": 8101,
+          "accepted": 362,
+          "rejected": 1,
+          "lastClientTime": 185261,
+          "lastPoseAt": 185.15000000000785
+        },
+        "after": {
+          "Id": 8101,
+          "accepted": 374,
+          "rejected": 1,
+          "lastClientTime": 187277,
+          "lastPoseAt": 187.1000000000083
+        },
+        "samples": [
+          {
+            "Id": 8101,
+            "accepted": 363,
+            "rejected": 1,
+            "lastClientTime": 185428,
+            "lastPoseAt": 185.30000000000788
+          },
+          {
+            "Id": 8101,
+            "accepted": 366,
+            "rejected": 1,
+            "lastClientTime": 185911,
+            "lastPoseAt": 185.750000000008
+          },
+          {
+            "Id": 8101,
+            "accepted": 369,
+            "rejected": 1,
+            "lastClientTime": 186479,
+            "lastPoseAt": 186.3000000000081
+          },
+          {
+            "Id": 8101,
+            "accepted": 372,
+            "rejected": 1,
+            "lastClientTime": 186961,
+            "lastPoseAt": 186.80000000000823
+          }
+        ],
+        "uninterruptedControls": true
+      },
+      "remoteWatch": {
+        "samples": [
+          {
+            "sampledAt": 621580914,
+            "Id": 8101,
+            "accepted": 363,
+            "rejected": 1,
+            "lastClientTime": 185428,
+            "lastPoseAt": 185.30000000000788
+          },
+          {
+            "sampledAt": 621581071,
+            "Id": 8101,
+            "accepted": 364,
+            "rejected": 1,
+            "lastClientTime": 185594,
+            "lastPoseAt": 185.45000000000792
+          },
+          {
+            "sampledAt": 621581279,
+            "Id": 8101,
+            "accepted": 365,
+            "rejected": 1,
+            "lastClientTime": 185761,
+            "lastPoseAt": 185.60000000000795
+          },
+          {
+            "sampledAt": 621581383,
+            "Id": 8101,
+            "accepted": 366,
+            "rejected": 1,
+            "lastClientTime": 185911,
+            "lastPoseAt": 185.750000000008
+          },
+          {
+            "sampledAt": 621581642,
+            "Id": 8101,
+            "accepted": 367,
+            "rejected": 1,
+            "lastClientTime": 186149,
+            "lastPoseAt": 186.00000000000804
+          },
+          {
+            "sampledAt": 621581797,
+            "Id": 8101,
+            "accepted": 368,
+            "rejected": 1,
+            "lastClientTime": 186311,
+            "lastPoseAt": 186.15000000000808
+          },
+          {
+            "sampledAt": 621581954,
+            "Id": 8101,
+            "accepted": 369,
+            "rejected": 1,
+            "lastClientTime": 186479,
+            "lastPoseAt": 186.3000000000081
+          },
+          {
+            "sampledAt": 621582162,
+            "Id": 8101,
+            "accepted": 370,
+            "rejected": 1,
+            "lastClientTime": 186644,
+            "lastPoseAt": 186.50000000000816
+          },
+          {
+            "sampledAt": 621582318,
+            "Id": 8101,
+            "accepted": 371,
+            "rejected": 1,
+            "lastClientTime": 186811,
+            "lastPoseAt": 186.6500000000082
+          },
+          {
+            "sampledAt": 621582475,
+            "Id": 8101,
+            "accepted": 372,
+            "rejected": 1,
+            "lastClientTime": 186961,
+            "lastPoseAt": 186.80000000000823
+          },
+          {
+            "sampledAt": 621582579,
+            "Id": 8101,
+            "accepted": 373,
+            "rejected": 1,
+            "lastClientTime": 187111,
+            "lastPoseAt": 186.90000000000825
+          },
+          {
+            "sampledAt": 621582839,
+            "Id": 8101,
+            "accepted": 374,
+            "rejected": 1,
+            "lastClientTime": 187277,
+            "lastPoseAt": 187.1000000000083
+          },
+          {
+            "sampledAt": 621583099,
+            "Id": 8101,
+            "accepted": 375,
+            "rejected": 1,
+            "lastClientTime": 187359,
+            "lastPoseAt": 187.40000000000836
+          },
+          {
+            "sampledAt": 621583254,
+            "Id": 8101,
+            "accepted": 376,
+            "rejected": 1,
+            "lastClientTime": 187526,
+            "lastPoseAt": 187.5500000000084
+          },
+          {
+            "sampledAt": 621583410,
+            "Id": 8101,
+            "accepted": 377,
+            "rejected": 1,
+            "lastClientTime": 187676,
+            "lastPoseAt": 187.70000000000843
+          },
+          {
+            "sampledAt": 621583619,
+            "Id": 8101,
+            "accepted": 378,
+            "rejected": 1,
+            "lastClientTime": 187842,
+            "lastPoseAt": 187.85000000000846
+          },
+          {
+            "sampledAt": 621583723,
+            "Id": 8101,
+            "accepted": 379,
+            "rejected": 1,
+            "lastClientTime": 187992,
+            "lastPoseAt": 188.0000000000085
+          },
+          {
+            "sampledAt": 621583879,
+            "Id": 8101,
+            "accepted": 380,
+            "rejected": 1,
+            "lastClientTime": 188159,
+            "lastPoseAt": 188.15000000000853
+          },
+          {
+            "sampledAt": 621584036,
+            "Id": 8101,
+            "accepted": 381,
+            "rejected": 1,
+            "lastClientTime": 188309,
+            "lastPoseAt": 188.30000000000857
+          },
+          {
+            "sampledAt": 621584192,
+            "Id": 8101,
+            "accepted": 382,
+            "rejected": 1,
+            "lastClientTime": 188476,
+            "lastPoseAt": 188.4500000000086
+          },
+          {
+            "sampledAt": 621584402,
+            "Id": 8101,
+            "accepted": 383,
+            "rejected": 1,
+            "lastClientTime": 188626,
+            "lastPoseAt": 188.60000000000863
+          },
+          {
+            "sampledAt": 621584506,
+            "Id": 8101,
+            "accepted": 384,
+            "rejected": 1,
+            "lastClientTime": 188792,
+            "lastPoseAt": 188.75000000000867
+          },
+          {
+            "sampledAt": 621584662,
+            "Id": 8101,
+            "accepted": 385,
+            "rejected": 1,
+            "lastClientTime": 188942,
+            "lastPoseAt": 188.9000000000087
+          },
+          {
+            "sampledAt": 621584818,
+            "Id": 8101,
+            "accepted": 386,
+            "rejected": 1,
+            "lastClientTime": 189092,
+            "lastPoseAt": 189.05000000000874
+          },
+          {
+            "sampledAt": 621584974,
+            "Id": 8101,
+            "accepted": 387,
+            "rejected": 1,
+            "lastClientTime": 189259,
+            "lastPoseAt": 189.20000000000877
+          },
+          {
+            "sampledAt": 621585183,
+            "Id": 8101,
+            "accepted": 388,
+            "rejected": 1,
+            "lastClientTime": 189426,
+            "lastPoseAt": 189.3500000000088
+          },
+          {
+            "sampledAt": 621585340,
+            "Id": 8101,
+            "accepted": 389,
+            "rejected": 1,
+            "lastClientTime": 189592,
+            "lastPoseAt": 189.55000000000885
+          },
+          {
+            "sampledAt": 621585546,
+            "Id": 8101,
+            "accepted": 390,
+            "rejected": 1,
+            "lastClientTime": 189742,
+            "lastPoseAt": 189.70000000000888
+          },
+          {
+            "sampledAt": 621585649,
+            "Id": 8101,
+            "accepted": 391,
+            "rejected": 1,
+            "lastClientTime": 189909,
+            "lastPoseAt": 189.85000000000892
+          },
+          {
+            "sampledAt": 621585805,
+            "Id": 8101,
+            "accepted": 392,
+            "rejected": 1,
+            "lastClientTime": 190076,
+            "lastPoseAt": 190.00000000000895
+          },
+          {
+            "sampledAt": 621585961,
+            "Id": 8101,
+            "accepted": 393,
+            "rejected": 1,
+            "lastClientTime": 190226,
+            "lastPoseAt": 190.150000000009
+          },
+          {
+            "sampledAt": 621586118,
+            "Id": 8101,
+            "accepted": 394,
+            "rejected": 1,
+            "lastClientTime": 190376,
+            "lastPoseAt": 190.30000000000902
+          },
+          {
+            "sampledAt": 621586327,
+            "Id": 8101,
+            "accepted": 395,
+            "rejected": 1,
+            "lastClientTime": 190542,
+            "lastPoseAt": 190.45000000000906
+          },
+          {
+            "sampledAt": 621586429,
+            "Id": 8101,
+            "accepted": 396,
+            "rejected": 1,
+            "lastClientTime": 190709,
+            "lastPoseAt": 190.6000000000091
+          },
+          {
+            "sampledAt": 621586690,
+            "Id": 8101,
+            "accepted": 397,
+            "rejected": 1,
+            "lastClientTime": 190900,
+            "lastPoseAt": 190.80000000000913
+          },
+          {
+            "sampledAt": 621586794,
+            "Id": 8101,
+            "accepted": 398,
+            "rejected": 1,
+            "lastClientTime": 191070,
+            "lastPoseAt": 190.95000000000917
+          },
+          {
+            "sampledAt": 621586949,
+            "Id": 8101,
+            "accepted": 399,
+            "rejected": 1,
+            "lastClientTime": 191226,
+            "lastPoseAt": 191.1000000000092
+          },
+          {
+            "sampledAt": 621587105,
+            "Id": 8101,
+            "accepted": 400,
+            "rejected": 1,
+            "lastClientTime": 191392,
+            "lastPoseAt": 191.25000000000924
+          },
+          {
+            "sampledAt": 621587261,
+            "Id": 8101,
+            "accepted": 401,
+            "rejected": 1,
+            "lastClientTime": 191559,
+            "lastPoseAt": 191.40000000000927
+          },
+          {
+            "sampledAt": 621587468,
+            "Id": 8101,
+            "accepted": 402,
+            "rejected": 1,
+            "lastClientTime": 191726,
+            "lastPoseAt": 191.60000000000932
+          },
+          {
+            "sampledAt": 621587625,
+            "Id": 8101,
+            "accepted": 403,
+            "rejected": 1,
+            "lastClientTime": 191892,
+            "lastPoseAt": 191.75000000000935
+          },
+          {
+            "sampledAt": 621587782,
+            "Id": 8101,
+            "accepted": 404,
+            "rejected": 1,
+            "lastClientTime": 192043,
+            "lastPoseAt": 191.90000000000938
+          },
+          {
+            "sampledAt": 621587936,
+            "Id": 8101,
+            "accepted": 405,
+            "rejected": 1,
+            "lastClientTime": 192209,
+            "lastPoseAt": 192.05000000000942
+          },
+          {
+            "sampledAt": 621588093,
+            "Id": 8101,
+            "accepted": 406,
+            "rejected": 1,
+            "lastClientTime": 192359,
+            "lastPoseAt": 192.20000000000945
+          },
+          {
+            "sampledAt": 621588249,
+            "Id": 8101,
+            "accepted": 407,
+            "rejected": 1,
+            "lastClientTime": 192525,
+            "lastPoseAt": 192.3500000000095
+          },
+          {
+            "sampledAt": 621588405,
+            "Id": 8101,
+            "accepted": 408,
+            "rejected": 1,
+            "lastClientTime": 192676,
+            "lastPoseAt": 192.50000000000952
+          },
+          {
+            "sampledAt": 621588613,
+            "Id": 8101,
+            "accepted": 409,
+            "rejected": 1,
+            "lastClientTime": 192826,
+            "lastPoseAt": 192.65000000000956
+          },
+          {
+            "sampledAt": 621588717,
+            "Id": 8101,
+            "accepted": 410,
+            "rejected": 1,
+            "lastClientTime": 192992,
+            "lastPoseAt": 192.8000000000096
+          },
+          {
+            "sampledAt": 621589030,
+            "Id": 8101,
+            "accepted": 411,
+            "rejected": 1,
+            "lastClientTime": 193057,
+            "lastPoseAt": 193.10000000000966
+          },
+          {
+            "sampledAt": 621589187,
+            "Id": 8101,
+            "accepted": 412,
+            "rejected": 1,
+            "lastClientTime": 193224,
+            "lastPoseAt": 193.2500000000097
+          },
+          {
+            "sampledAt": 621589343,
+            "Id": 8101,
+            "accepted": 413,
+            "rejected": 1,
+            "lastClientTime": 193390,
+            "lastPoseAt": 193.40000000000973
+          },
+          {
+            "sampledAt": 621589501,
+            "Id": 8101,
+            "accepted": 414,
+            "rejected": 1,
+            "lastClientTime": 193541,
+            "lastPoseAt": 193.55000000000976
+          },
+          {
+            "sampledAt": 621589659,
+            "Id": 8101,
+            "accepted": 415,
+            "rejected": 1,
+            "lastClientTime": 193707,
+            "lastPoseAt": 193.7000000000098
+          },
+          {
+            "sampledAt": 621589815,
+            "Id": 8101,
+            "accepted": 416,
+            "rejected": 1,
+            "lastClientTime": 193874,
+            "lastPoseAt": 193.85000000000983
+          },
+          {
+            "sampledAt": 621590028,
+            "Id": 8101,
+            "accepted": 417,
+            "rejected": 1,
+            "lastClientTime": 194040,
+            "lastPoseAt": 194.05000000000987
+          },
+          {
+            "sampledAt": 621590236,
+            "Id": 8101,
+            "accepted": 418,
+            "rejected": 1,
+            "lastClientTime": 194207,
+            "lastPoseAt": 194.2000000000099
+          },
+          {
+            "sampledAt": 621590341,
+            "Id": 8101,
+            "accepted": 419,
+            "rejected": 1,
+            "lastClientTime": 194374,
+            "lastPoseAt": 194.35000000000994
+          },
+          {
+            "sampledAt": 621590496,
+            "Id": 8101,
+            "accepted": 420,
+            "rejected": 1,
+            "lastClientTime": 194524,
+            "lastPoseAt": 194.50000000000998
+          },
+          {
+            "sampledAt": 621590652,
+            "Id": 8101,
+            "accepted": 421,
+            "rejected": 1,
+            "lastClientTime": 194690,
+            "lastPoseAt": 194.65000000001
+          },
+          {
+            "sampledAt": 621590808,
+            "Id": 8101,
+            "accepted": 422,
+            "rejected": 1,
+            "lastClientTime": 194841,
+            "lastPoseAt": 194.80000000001004
+          },
+          {
+            "sampledAt": 621591016,
+            "Id": 8101,
+            "accepted": 423,
+            "rejected": 1,
+            "lastClientTime": 195007,
+            "lastPoseAt": 194.95000000001008
+          },
+          {
+            "sampledAt": 621591122,
+            "Id": 8101,
+            "accepted": 424,
+            "rejected": 1,
+            "lastClientTime": 195157,
+            "lastPoseAt": 195.1000000000101
+          },
+          {
+            "sampledAt": 621591278,
+            "Id": 8101,
+            "accepted": 425,
+            "rejected": 1,
+            "lastClientTime": 195324,
+            "lastPoseAt": 195.25000000001015
+          },
+          {
+            "sampledAt": 621591435,
+            "Id": 8101,
+            "accepted": 426,
+            "rejected": 1,
+            "lastClientTime": 195490,
+            "lastPoseAt": 195.40000000001018
+          },
+          {
+            "sampledAt": 621591643,
+            "Id": 8101,
+            "accepted": 427,
+            "rejected": 1,
+            "lastClientTime": 195657,
+            "lastPoseAt": 195.60000000001023
+          },
+          {
+            "sampledAt": 621591747,
+            "Id": 8101,
+            "accepted": 428,
+            "rejected": 1,
+            "lastClientTime": 195807,
+            "lastPoseAt": 195.70000000001025
+          },
+          {
+            "sampledAt": 621591957,
+            "Id": 8101,
+            "accepted": 429,
+            "rejected": 1,
+            "lastClientTime": 195974,
+            "lastPoseAt": 195.9000000000103
+          },
+          {
+            "sampledAt": 621592113,
+            "Id": 8101,
+            "accepted": 430,
+            "rejected": 1,
+            "lastClientTime": 196140,
+            "lastPoseAt": 196.05000000001033
+          },
+          {
+            "sampledAt": 621592269,
+            "Id": 8101,
+            "accepted": 431,
+            "rejected": 1,
+            "lastClientTime": 196307,
+            "lastPoseAt": 196.20000000001036
+          },
+          {
+            "sampledAt": 621592425,
+            "Id": 8101,
+            "accepted": 432,
+            "rejected": 1,
+            "lastClientTime": 196474,
+            "lastPoseAt": 196.3500000000104
+          },
+          {
+            "sampledAt": 621592634,
+            "Id": 8101,
+            "accepted": 433,
+            "rejected": 1,
+            "lastClientTime": 196640,
+            "lastPoseAt": 196.50000000001043
+          },
+          {
+            "sampledAt": 621592790,
+            "Id": 8101,
+            "accepted": 434,
+            "rejected": 1,
+            "lastClientTime": 196807,
+            "lastPoseAt": 196.70000000001048
+          },
+          {
+            "sampledAt": 621592999,
+            "Id": 8101,
+            "accepted": 435,
+            "rejected": 1,
+            "lastClientTime": 196974,
+            "lastPoseAt": 196.8500000000105
+          },
+          {
+            "sampledAt": 621593103,
+            "Id": 8101,
+            "accepted": 436,
+            "rejected": 1,
+            "lastClientTime": 197124,
+            "lastPoseAt": 197.00000000001054
+          },
+          {
+            "sampledAt": 621593259,
+            "Id": 8101,
+            "accepted": 437,
+            "rejected": 1,
+            "lastClientTime": 197274,
+            "lastPoseAt": 197.15000000001058
+          },
+          {
+            "sampledAt": 621593416,
+            "Id": 8101,
+            "accepted": 438,
+            "rejected": 1,
+            "lastClientTime": 197440,
+            "lastPoseAt": 197.3000000000106
+          },
+          {
+            "sampledAt": 621593572,
+            "Id": 8101,
+            "accepted": 439,
+            "rejected": 1,
+            "lastClientTime": 197607,
+            "lastPoseAt": 197.45000000001065
+          },
+          {
+            "sampledAt": 621593729,
+            "Id": 8101,
+            "accepted": 440,
+            "rejected": 1,
+            "lastClientTime": 197757,
+            "lastPoseAt": 197.60000000001068
+          },
+          {
+            "sampledAt": 621593887,
+            "Id": 8101,
+            "accepted": 441,
+            "rejected": 1,
+            "lastClientTime": 197924,
+            "lastPoseAt": 197.75000000001071
+          },
+          {
+            "sampledAt": 621594043,
+            "Id": 8101,
+            "accepted": 442,
+            "rejected": 1,
+            "lastClientTime": 198074,
+            "lastPoseAt": 197.90000000001075
+          },
+          {
+            "sampledAt": 621594199,
+            "Id": 8101,
+            "accepted": 443,
+            "rejected": 1,
+            "lastClientTime": 198240,
+            "lastPoseAt": 198.05000000001078
+          },
+          {
+            "sampledAt": 621594356,
+            "Id": 8101,
+            "accepted": 444,
+            "rejected": 1,
+            "lastClientTime": 198407,
+            "lastPoseAt": 198.20000000001082
+          },
+          {
+            "sampledAt": 621594513,
+            "Id": 8101,
+            "accepted": 445,
+            "rejected": 1,
+            "lastClientTime": 198574,
+            "lastPoseAt": 198.35000000001085
+          },
+          {
+            "sampledAt": 621594723,
+            "Id": 8101,
+            "accepted": 446,
+            "rejected": 1,
+            "lastClientTime": 198740,
+            "lastPoseAt": 198.5500000000109
+          },
+          {
+            "sampledAt": 621595032,
+            "Id": 8101,
+            "accepted": 447,
+            "rejected": 1,
+            "lastClientTime": 198808,
+            "lastPoseAt": 198.85000000001097
+          },
+          {
+            "sampledAt": 621595190,
+            "Id": 8101,
+            "accepted": 448,
+            "rejected": 1,
+            "lastClientTime": 198958,
+            "lastPoseAt": 199.000000000011
+          },
+          {
+            "sampledAt": 621595346,
+            "Id": 8101,
+            "accepted": 449,
+            "rejected": 1,
+            "lastClientTime": 199127,
+            "lastPoseAt": 199.15000000001103
+          },
+          {
+            "sampledAt": 621595502,
+            "Id": 8101,
+            "accepted": 450,
+            "rejected": 1,
+            "lastClientTime": 199291,
+            "lastPoseAt": 199.30000000001107
+          },
+          {
+            "sampledAt": 621595660,
+            "Id": 8101,
+            "accepted": 451,
+            "rejected": 1,
+            "lastClientTime": 199458,
+            "lastPoseAt": 199.4500000000111
+          },
+          {
+            "sampledAt": 621595815,
+            "Id": 8101,
+            "accepted": 452,
+            "rejected": 1,
+            "lastClientTime": 199625,
+            "lastPoseAt": 199.60000000001114
+          }
+        ],
+        "maximumGapMs": 301
+      },
+      "placeholder": {
+        "screen": "Main",
+        "optionsPage": "Root",
+        "invertMouseY": false,
+        "menuSoundEnabled": true,
+        "managedHeapBytes": 122985392,
+        "residentBytes": 32656530,
+        "sectors": {
+          "active": 1052,
+          "retries": 0,
+          "completed": 1,
+          "status": "Loading Borasisi visuals · 0%"
+        },
+        "settingsPending": false,
+        "style": "Modern",
+        "gameStyle": "Modern",
+        "online": {
+          "state": "Flight",
+          "pendingJoins": 0,
+          "decoderReady": true,
+          "shipId": 8101,
+          "resumeSuccesses": 0,
+          "malformed": 0
+        },
+        "flight": {
+          "viewport": {
+            "width": 800,
+            "height": 369
+          },
+          "controls": {
+            "yaw": 0,
+            "pitch": 0,
+            "throttle": -1,
+            "stateM": 0
+          },
+          "authoritative": "Vector3 { X = 3642.2861, Y = 3963.2231, Z = -286.45013 }",
+          "sectorId": 1052,
+          "textures": {
+            "uploadedTextures": 4,
+            "pendingTextures": 0,
+            "revision": 5,
+            "maximumPumpMs": 6.5,
+            "readySectors": [
+              1053
+            ],
+            "surfaces": [
+              {
+                "source": "bgrnd03bmp.mdl",
+                "sha256": "86f9995d495eb93ed86c122cfdde1ef3ad624d7b4678b36509ef14959f60955d",
+                "width": 2048,
+                "height": 2048
+              },
+              {
+                "source": "bgrnd05bmp.mdl",
+                "sha256": "da905c072c4b68178167ff04503e383e60ede8582981502605f0cd30f64632fa",
+                "width": 2048,
+                "height": 2048
+              },
+              {
+                "source": "bgrnd52bmp.mdl",
+                "sha256": "ce2d634157f4b60ad37601105181302debd474f3ca89990d51649f427c972f5a",
+                "width": 2048,
+                "height": 2048
+              },
+              {
+                "source": "bgrnd55bmp.mdl",
+                "sha256": "2ab648469bbabd78dc168d078c4e7bb67c1edc22826a6935ec3a56d2d6efeadb",
+                "width": 2048,
+                "height": 2048
+              }
+            ]
+          },
+          "starmapOpen": false,
+          "selectedMapSector": null,
+          "drawnRockSurfaces": {},
+          "sky": {
+            "stars": 0,
+            "environmentReady": false,
+            "planetReady": false
+          },
+          "flying": true,
+          "frames": 3397,
+          "drawnShips": 1,
+          "ships": [
+            "Browser10547787390"
+          ],
+          "appliedResets": 1,
+          "position": "Vector3 { X = 3636.9, Y = 3956.2983, Z = -285.93713 }",
+          "selectedMount": 0,
+          "fixedMountCount": 1,
+          "shotLaunchers": [],
+          "drawnProjectiles": 0,
+          "receivedProjectiles": 0,
+          "autopilot": null,
+          "clockReady": true,
+          "seeded": true,
+          "pointerLocked": false
+        }
+      },
+      "realTextures": {
+        "uploadedTextures": 11,
+        "pendingTextures": 0,
+        "revision": 16,
+        "maximumPumpMs": 6.5,
+        "readySectors": [
+          1051
+        ],
+        "surfaces": [
+          {
+            "source": "bgrnd03bmp.mdl",
+            "sha256": "86f9995d495eb93ed86c122cfdde1ef3ad624d7b4678b36509ef14959f60955d",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "bgrnd05bmp.mdl",
+            "sha256": "da905c072c4b68178167ff04503e383e60ede8582981502605f0cd30f64632fa",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "bgrnd55bmp.mdl",
+            "sha256": "2ab648469bbabd78dc168d078c4e7bb67c1edc22826a6935ec3a56d2d6efeadb",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "bgrnd51bmp.mdl",
+            "sha256": "a9eb5e53e86101506ac2f6de76c4c5d2cdb85f62845f6c4c0ca8be9b9a49cb52",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "bgrnd56bmp.mdl",
+            "sha256": "2fbe0cd7b72d95ab9e54bc49f8eea1a1e79462f05de75d368bd1b0c5c558798d",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "environment1bmp.mdl",
+            "sha256": "755a7e4df4901ae698477c378b027851eddd4b3f80fe7a6726313ab950863d59",
+            "width": 2048,
+            "height": 2048
+          },
+          {
+            "source": "nebplnt01bmp.mdl",
+            "sha256": "a647843245a9407a601b9354e8172819b77c1646467ffb2095a1bb6928629194",
+            "width": 2048,
+            "height": 2048
+          }
+        ]
+      },
+      "prefetchedNoPlaceholder": true,
+      "serverSeesSector": 1051,
+      "cleanLogoff": true
+    }
+  ]
+}

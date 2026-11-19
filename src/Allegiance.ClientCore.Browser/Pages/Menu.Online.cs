@@ -106,6 +106,9 @@ public partial class Menu
             var joinManifest = _joinManifest ?? await stager.ReadManifestAsync(_lifetime.Token, "join-manifest.json");
             if (generation != _onlineGeneration) return;
             _joinManifest = joinManifest;
+            _sectorManifest ??= await stager.ReadSectorManifestAsync(joinManifest, _lifetime.Token);
+            if (generation != _onlineGeneration) return;
+            stager.RetainedHashes = _sectorManifest.RetainedHashes(joinManifest);
             if (!_joinStaged)
             {
                 var pack = await stager.StageAsync(joinManifest, (percent, status) =>
@@ -115,6 +118,7 @@ public partial class Menu
                 _joinStaged = true;
             }
             if (generation != _onlineGeneration) return;
+            StartSectorStreaming(joinManifest);
             await EnsureBriefingDecoderAsync(joinManifest);
             if (generation != _onlineGeneration) return;
             _game?.AttachOnlineSession(null);
@@ -304,6 +308,7 @@ public partial class Menu
         if (_onlineClosing) return;
         _onlineClosing = true; ++_onlineGeneration;
         _game?.AttachOnlineSession(null);
+        await StopSectorStreamingAsync();
         var session = _session; _session = null;
         try
         {
@@ -318,6 +323,7 @@ public partial class Menu
     {
         if (!_online || Environment.TickCount64 - _lastOnlineRefresh < 200) return;
         _lastOnlineRefresh = Environment.TickCount64;
+        RefreshSectorStreaming();
         if (_session is { } session)
         {
             if (_onlineState == "Flight" && session.World.MyShipId is { } ownId && session.World.Ships.TryGetValue(ownId, out var ownShip) && ownShip.StationId >= 0) _onlineState = "Hangar";

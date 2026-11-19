@@ -1,0 +1,58 @@
+{
+  "earlierAttempt": {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+    "outcome": "Failed",
+    "duration": "00:03:27",
+    "lastGoal": "3.3",
+    "message": "Window child exited nonzero; log ends mid-frame without a managed exception or timeout message.",
+    "exitCode": "not captured by existing test assertion",
+    "logSha256": "a4753fcfd74851dffd372f5aeac8f7b3ae9a22394a2a3206bd77b9d2870bc5dd",
+    "headlessChild": {
+      "passed": 131,
+      "failed": 0,
+      "skipped": 0
+    },
+    "completedWindowProofs": 16,
+    "remainingGateStopped": true
+  },
+  "isolatedRuns": [
+    {
+      "repeat": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "00:05:57.1449639",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+      "proofChildExit": 0,
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "trxSha256": "e438ec8b244a9dcb27707731a8ae2c74e4303451aee6ff67f5a7715a0f882143",
+      "logSha256": "7d32f9a03d8f404e356d27a21cef9a8405003713e3b5e7cdd389ba9e407e06a2"
+    },
+    {
+      "repeat": 2,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "00:05:56.9536055",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+      "proofChildExit": 0,
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "trxSha256": "d88398b682810f85b3b330682257d04ccffc65674c06a7dc98a3e24160677ebc",
+      "logSha256": "c69f8f17b306235235828691e09dbb7247e8fbd26b6884b545f4d95f2eb16531"
+    },
+    {
+      "repeat": 3,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "00:05:54.9515969",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: \"Modern\", policy: null)",
+      "proofChildExit": 0,
+      "marker": "P912_WINDOW_PASS M8 Modern lessons=1,2,3",
+      "trxSha256": "da87ebbe2a33ed92abad6092d26d7456d4dfe71c5090cdc7fa9c915dd9e85c6a",
+      "logSha256": "2d41dde9cea95afbbea967094815e2c308399aa99259c30faad846837b0f9a36"
+    }
+  ],
+  "cause": "Not established. Similar abrupt window exits are ledgered for P918; no root-cause claim.",
+  "assertionsAndTimeoutsUnchanged": true
+}

@@ -1,0 +1,209 @@
+{
+  "passed": true,
+  "headlessGpuRepresentative": false,
+  "results": [
+    {
+      "dprCap": {
+        "scale": 1,
+        "slow": false,
+        "p95": 16.700000000004366,
+        "onTime": 718,
+        "bufferWidth": 3840,
+        "bufferHeight": 1994,
+        "dpr": 2
+      },
+      "observedSteps": [
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 311,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": true,
+          "p95": 133.20000000000073,
+          "onTime": 0,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 100.09999999999854,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": false,
+          "p95": 16.700000000000728,
+          "onTime": 396,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 698,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        }
+      ],
+      "gamepad": {
+        "pad": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "keyboard": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "blurNeutral": true,
+        "disconnectNeutral": true,
+        "pollsPerFrame": 1
+      },
+      "pacing": [
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 100.09999999999854,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "audio": [
+            "suspended",
+            "suspended"
+          ],
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "freshControlReversalsAccepted": true
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.799999999999272,
+          "onTime": 698,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "audio": [
+            "running",
+            "running"
+          ],
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "freshControlReversalsAccepted": true
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "cache": "cold",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 36,
+      "menuMs": 599.7999999523163,
+      "flightMs": 10197.199999928474
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 32,
+      "menuMs": 421.8000000715256,
+      "flightMs": 49008.10000002384
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Classic",
+      "width": 800,
+      "height": 480,
+      "shellMs": 52,
+      "menuMs": 421.6999999284744,
+      "flightMs": 48724.09999990463
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "shellMs": 20,
+      "menuMs": 404.10000002384186,
+      "flightMs": 48755.700000047684
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Classic",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 56,
+      "menuMs": 423.7999999523163,
+      "flightMs": 48960.299999952316
+    }
+  ]
+}

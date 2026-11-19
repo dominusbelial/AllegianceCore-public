@@ -112,7 +112,12 @@ public sealed partial class Game1
     public object FlightMetrics => new {
         viewport = new { width = GraphicsDevice.Viewport.Width, height = GraphicsDevice.Viewport.Height },
         controls = new { yaw = _ownSim.Controls.Yaw, pitch = _ownSim.Controls.Pitch, throttle = _ownSim.Controls.Throttle, stateM = _ownSim.StateM },
-        authoritative = _flightSession?.World.MyShipId is { } ownId && _flightSession.World.Ships.TryGetValue(ownId, out var ownShip) ? ownShip.Latest?.Position.ToString() : null, flying = Flying, frames = FlightFrames, drawnShips = DrawnShips,
+        authoritative = _flightSession?.World.MyShipId is { } ownId && _flightSession.World.Ships.TryGetValue(ownId, out var ownShip) ? ownShip.Latest?.Position.ToString() : null,
+        sectorId = _flightSession?.World.MyShipId is { } sid && _flightSession.World.Ships.TryGetValue(sid, out var sectorShip) ? (short?)sectorShip.SectorId : null,
+        textures = SectorTextureMetrics, starmapOpen = StarmapOpen, selectedMapSector = SelectedMapSector,
+        drawnRockSurfaces = _drawnRockSurfaces,
+        sky = SectorSkyMetrics,
+        flying = Flying, frames = FlightFrames, drawnShips = DrawnShips,
         ships = VisibleShipNames, appliedResets = AppliedResets, position = _ownSim.Position.ToString(),
         selectedMount = _selectedMount, fixedMountCount = _flightSession is null ? 0 : FixedMountCount(),
         shotLaunchers = _seenShotLaunchers.ToArray(), drawnProjectiles = _drawnProjectiles, receivedProjectiles = _flightSession?.World.Diag.TotalReceived, autopilot = _browserAutoTarget?.Name, clockReady = _ownServerClock.Ready, seeded = _ownSimSeeded, pointerLocked = _pointerLocked };
@@ -190,12 +195,15 @@ public sealed partial class Game1
         if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
         UpdateOwnShipSimulation(world, own, up);
         if (!Flying) { _browserAutoTarget = null; return; }
+        if (_browserAutoTarget is { Kind: TargetKind.Warp } warpTarget && world.Warps.TryGetValue(warpTarget.Id, out var oldWarp) && oldWarp.ClusterId != own.SectorId)
+            _browserAutoTarget = null;
         var keys = _flightKeys;
         bool Edge(string action) => ActionDown(keys, action) && !ActionDown(_lastFlightKeys, action);
         if (Edge("ThrottleUp")) _throttle = FlightInput.StepThrottleUp(_throttle);
         if (Edge("ThrottleDown")) _throttle = FlightInput.StepThrottleDown(_throttle);
         if (Edge("ThrottleZero")) _throttle = -1;
         if (Edge("ThrottleFull")) _throttle = 1;
+        if (Edge("ToggleStarmap")) ToggleStarmap();
         if (Edge("ToggleGroupFire")) _groupFire = !_groupFire;
         // Same hull-limited shared cycling as desktop (clintlib.cpp:1935-1975).
         if (Edge("PrevWeapon")) _selectedMount = FlightInput.PrevMount(_selectedMount, FixedMountCount());
@@ -233,9 +241,18 @@ public sealed partial class Game1
                 SimVec? targetPosition = null; short? sector = null;
                 if (target.Kind == TargetKind.Station && world.Stations.TryGetValue(target.Id, out var station)) { targetPosition = Vec(station.Position); sector = station.ClusterId; }
                 if (target.Kind == TargetKind.Probe && world.Probes.TryGetValue(target.Id, out var probe)) { targetPosition = probe.Position; sector = probe.ClusterId; }
+                if (target.Kind == TargetKind.Warp && world.Warps.TryGetValue(target.Id, out var warp)) { targetPosition = Vec(warp.Position); sector = warp.ClusterId; }
+                if (target.Kind == TargetKind.Buoy && world.CommandBuoys.TryGetValue(target.Id, out var buoy)) { targetPosition = Vec(buoy.Position); sector = buoy.ClusterId; }
                 var warps = world.Warps.Values.Where(w => world.Warps.ContainsKey(w.DestinationId)).Select(w => new StarmapGotoRouter.AllWarp(new System.Numerics.Vector3(w.Position[0], w.Position[1], w.Position[2]), w.ClusterId, world.Warps[w.DestinationId].ClusterId)).ToArray();
                 if (TryResolveAutopilotGoal(own.SectorId, sector, targetPosition, warps, out var goal, out bool routed))
-                    command = new(routed ? AutopilotSteering.Pursue(_ownSim.Position, _ownSim.Orientation, goal) : AutopilotSteering.SteerToward(_ownSim.Position, _ownSim.Orientation, goal, _ownSim.Velocity), 0);
+                    command = new(routed || target.Kind == TargetKind.Warp ? AutopilotSteering.Pursue(_ownSim.Position, _ownSim.Orientation, goal) : AutopilotSteering.SteerToward(_ownSim.Position, _ownSim.Orientation, goal, _ownSim.Velocity), 0);
+                if (target.Kind is TargetKind.Warp or TargetKind.Buoy && _shopCatalog?.Core is { } core && core.HullTypes.TryGetValue(own.HullId, out var hull) &&
+                    ClientAutopilotDodge.TryComputeDodgeGoal(world, id, own.SideId, _ownSim.Position, _ownSim.Velocity,
+                        new(hull.Length, hull.Thrust, hull.Mass), true,
+                        hullId => core.HullTypes.TryGetValue(hullId, out var other) ? other.Length : null,
+                        stationId => core.StationTypes.TryGetValue(stationId, out var stationType) ? stationType.Radius : null,
+                        null, out var dodgeGoal))
+                    command = new(AutopilotSteering.Pursue(_ownSim.Position, _ownSim.Orientation, dodgeGoal), 0);
             }
         }
         _ownShipSendArmed = true;
@@ -305,8 +322,20 @@ public sealed partial class Game1
                 eye = camera.Eye; view = camera.View();
             }
         }
-        if (world.Clusters.TryGetValue(own.SectorId, out var cluster) && _skySector != own.SectorId)
-        { _flightSky!.SetCluster(cluster); _skySector = own.SectorId; }
+        if (_viewRock)
+        {
+            var rocks = world.Asteroids.Values.Where(r => r.ClusterId == own.SectorId)
+                .OrderBy(r => (Vec(r.Position) - _ownSim.Position).LengthSquared()).Take(1).ToArray();
+            if (rocks.Length != 0)
+            {
+                var rock = rocks[0];
+                var camera = ExternalCameras.Target(V(rock.Position), ContactViewBackwards[_contactViewAngle], rock.Radius, 0);
+                eye = camera.Eye; view = camera.View();
+            }
+        }
+        if (world.Clusters.TryGetValue(own.SectorId, out var cluster) &&
+            (_skySector != own.SectorId || _skyTextureRevision != (_sectorTextures?.Revision ?? 0)))
+        { _flightSky!.SetCluster(cluster); _skySector = own.SectorId; _skyTextureRevision = _sectorTextures?.Revision ?? 0; }
         _flightSky!.Draw(view, projection, eye);
         DrawnShips = 0;
         var names = new List<string>();
@@ -345,6 +374,7 @@ public sealed partial class Game1
             _flightStations.Draw(mesh, texture is null ? null : _flightStations.TextureFor(texture), matrix, view, projection,
                 (type.Radius / Math.Max(.001f, mesh.MeshRadius)), null, type.ModelName, texture);
         }
+        _drawnRockSurfaces.Clear();
         foreach (var rock in world.Asteroids.Values)
         {
             if (rock.ClusterId != own.SectorId) continue;
@@ -352,7 +382,9 @@ public sealed partial class Game1
             string? texture = _flightRocks.TextureStemFor(rock.ModelName, rock.TextureName);
             var spin = _browserSpins.GetValueOrDefault(rock.AsteroidId);
             var rotation = spin is null ? Matrix.Identity : Matrix.CreateFromAxisAngle(V(spin.Axis), spin.Angle);
-            _flightRocks.Draw(mesh, texture is null ? null : _flightRocks.TextureFor(texture), rotation * Matrix.CreateTranslation(V(rock.Position) - eye), view, projection,
+            var surface = texture is null ? null : _flightRocks.TextureFor(texture);
+            if (texture is not null && !_drawnRockSurfaces.ContainsKey(texture)) _drawnRockSurfaces[texture] = [surface?.Width ?? 0, surface?.Height ?? 0];
+            _flightRocks.Draw(mesh, surface, rotation * Matrix.CreateTranslation(V(rock.Position) - eye), view, projection,
                 rock.Radius / Math.Max(.001f, mesh.MeshRadius), null, rock.ModelName, texture);
         }
         foreach (var warp in world.Warps.Values.Where(w => w.ClusterId == own.SectorId))
@@ -380,6 +412,7 @@ public sealed partial class Game1
             world.KillBonusPercent, up.Orientation.GetRollDegrees(), [], false, 0, world.MyMoney, TurnYaw: _ownSim.Controls.Yaw, TurnPitch: _ownSim.Controls.Pitch, AutopilotEngaged: _browserAutoTarget is not null, WarningMask: world.ShipWarnings.Mask, TimeDilationPercent: (float)world.TimeScale * 100);
         var hud = _hudSettings.Style == HudStyle.Classic ? _classicFlightHud! : _modernFlightHud!;
         hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: contacts), GraphicsDevice.Viewport);
+        DrawBrowserStarmap(own.SectorId);
         FlightFrames++;
     }
 }

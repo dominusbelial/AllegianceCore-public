@@ -1,0 +1,272 @@
+[
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "a60c407d7f54a16f044f21e61161c9ffd10b1874ddc63065260da34c6bb63c7e",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3118768,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "0d8f1eaa3cd4fed821dcfd527943d4cfcaa35a193ee38bfbc6962fd961cebf40",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3172016,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "16a1cab2be1ddaa96166ba7bb190f3f96036196582777fed7f6e1af7a99fb146",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+            "outcome": "Passed",
+            "seconds": 1.3305111,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "091527b58a63df3623f1170b3b93017b1d522bf282a7a26d4cba84cad1d75941",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+            "outcome": "Passed",
+            "seconds": 1.3997238,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "trxSha256": "2bf42155f4abda9fb939a011d3e56c23c53f3cac64a0010c5f668628b3ce2c2e",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+            "outcome": "Failed",
+            "seconds": 1.6485454,
+            "message": "missile position must advance across ticks (per-tick 205) \u2014 frozen at Vector3 { X = 0, Y = 0, Z = 0 } implies only the one-shot 70 arrived"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "c0a2fc66751ad5a0526967cf3a757fa81986db1941d00b35c3cf353bce62a4d1",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire",
+            "outcome": "Passed",
+            "seconds": 1.4420856,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "e6c167ad560f27ff3744d6a99cf67309182c962698787def4d46960ac211a4ca",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+            "outcome": "Passed",
+            "seconds": 0.9918739,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "b33ac38f29607ae5b87c5d78af2e69ab926bbb7f4e9b7157a38517e9d1b23133",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+            "outcome": "Passed",
+            "seconds": 0.9942224,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "5dd5c9e0827343d11155c6b808dee5bcc6cceb051a69b0cf401895c9bb964ead",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout",
+            "outcome": "Passed",
+            "seconds": 0.9990604,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "71db170585e60a7d36af0a343046f8f9c5b95a4c7ddd68c00456179a3027b897",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+            "outcome": "Passed",
+            "seconds": 0.5648571,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "9c483f171a333b8d0f8da601a19960b0351cfa1c083d9078b3b51651d532652c",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+            "outcome": "Passed",
+            "seconds": 0.6234251,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "c0dcf46d8e78e767c62f3e389a6454c5e37e1fe2cdeb22716f3794a54413a96b",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission",
+            "outcome": "Passed",
+            "seconds": 0.6106047,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+    "runs": [
+      {
+        "repeat": 1,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "8a27f5ac73d2d91d5c316510ce776071f7c279e84574c6fb7b7da56d3c78c8bc",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+            "outcome": "Passed",
+            "seconds": 0.437725,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "8374cb131327aed14daf9a6898f9eef16659643f19020cd2c091b43e79d6759e",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+            "outcome": "Passed",
+            "seconds": 0.4758587,
+            "message": ""
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "trxSha256": "02e3319710375885f3b17e376954bf9f42ced2644c6c1262d2151b6f033dccd6",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone",
+            "outcome": "Passed",
+            "seconds": 0.477321,
+            "message": ""
+          }
+        ]
+      }
+    ]
+  }
+]

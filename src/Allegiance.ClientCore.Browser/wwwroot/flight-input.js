@@ -1,18 +1,40 @@
 // Page events own gestures. No request is deferred into RAF or a .NET continuation.
 (() => {
   const contexts = new Set();
-  let audioEnabled = false, framesLate = false, focused = true;
+  const audioTransitions = new WeakMap();
+  let audioEnabled = false, audioVisible = true, framesLate = false, focused = true;
+  function settleAudio(context) {
+    const pending = audioTransitions.get(context);
+    if (pending) { pending.dirty = true; return; }
+    const work = { dirty: true };
+    audioTransitions.set(context, work);
+    // resume() is asynchronous. A suspend() called while that resume is
+    // pending can be a no-op against the still-suspended context, allowing
+    // the resume to finish after blur/hidden. Coalesce changes and apply the
+    // latest lifecycle state after each operation, with one worker/context.
+    void (async () => {
+      try {
+        while (work.dirty) {
+          work.dirty = false;
+          if (context.state === 'closed') { contexts.delete(context); break; }
+          const playing = audioVisible && audioEnabled && !document.hidden && !framesLate && focused;
+          try { await (playing ? context.resume() : context.suspend()); } catch { /* Audio is optional. */ }
+        }
+      } finally { audioTransitions.delete(context); }
+    })();
+  }
   if (window.AudioContext) {
     const NativeAudioContext = window.AudioContext;
     window.AudioContext = class extends NativeAudioContext {
-      constructor(...args) { super(...args); contexts.add(this); if (!audioEnabled || document.hidden || framesLate || !focused) void this.suspend().catch(() => {}); }
+      constructor(...args) { super(...args); contexts.add(this); if (!audioVisible || !audioEnabled || document.hidden || framesLate || !focused) settleAudio(this); }
     };
   }
   function audio(visible, gesture = false) {
+    audioVisible = visible;
     if (gesture) audioEnabled = true;
     for (const context of contexts) {
       if (context.state === 'closed') { contexts.delete(context); continue; }
-      void (visible && audioEnabled && !framesLate && focused ? context.resume() : context.suspend()).catch(() => {});
+      settleAudio(context);
     }
   }
   window.installFlightInput = instance => {

@@ -13,7 +13,16 @@ public sealed class BrowserAssetCache(IJSObjectReference platform, Dictionary<st
     public async ValueTask<bool> PutAsync(StagedAsset asset, byte[] bytes, CancellationToken cancellationToken)
     {
         bool persisted = await platform.InvokeAsync<bool>("cachePut", cancellationToken, asset.Sha256, bytes, asset.ContentType);
-        if (!persisted) _memory[asset.Sha256] = bytes;
+        if (!persisted)
+        {
+            _memory.Remove(asset.Sha256);
+            long total = _memory.Values.Sum(value => (long)value.Length);
+            while (_memory.Count > 0 && (_memory.Count >= 1024 || total + bytes.Length > StagedManifest.MaximumPackBytes))
+            {
+                string oldest = _memory.Keys.First(); total -= _memory[oldest].Length; _memory.Remove(oldest);
+            }
+            _memory[asset.Sha256] = bytes;
+        }
         return persisted;
     }
     public async ValueTask CommitManifestAsync(string identity, string[] hashes, CancellationToken cancellationToken)

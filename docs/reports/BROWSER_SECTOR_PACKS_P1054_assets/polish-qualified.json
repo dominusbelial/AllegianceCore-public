@@ -1,0 +1,209 @@
+{
+  "passed": true,
+  "headlessGpuRepresentative": false,
+  "results": [
+    {
+      "dprCap": {
+        "scale": 1,
+        "slow": false,
+        "p95": 16.700000000004366,
+        "onTime": 319,
+        "bufferWidth": 3840,
+        "bufferHeight": 1994,
+        "dpr": 2
+      },
+      "observedSteps": [
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.80000000000109,
+          "onTime": 133,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": true,
+          "p95": 266.6000000000022,
+          "onTime": 0,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 299.8999999999978,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "audio": [
+            "suspended",
+            "suspended"
+          ]
+        },
+        {
+          "scale": 0.75,
+          "slow": false,
+          "p95": 16.700000000000728,
+          "onTime": 377,
+          "bufferWidth": 1440,
+          "bufferHeight": 748,
+          "dpr": 1,
+          "viewport": {
+            "width": 1440,
+            "height": 748
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.700000000004366,
+          "onTime": 301,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "audio": [
+            "running",
+            "running"
+          ]
+        }
+      ],
+      "gamepad": {
+        "pad": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "keyboard": {
+          "yaw": 1,
+          "pitch": 1,
+          "throttle": 1,
+          "stateM": 32768
+        },
+        "blurNeutral": true,
+        "disconnectNeutral": true,
+        "pollsPerFrame": 1
+      },
+      "pacing": [
+        {
+          "scale": 0.5,
+          "slow": true,
+          "p95": 299.8999999999978,
+          "onTime": 0,
+          "bufferWidth": 960,
+          "bufferHeight": 499,
+          "dpr": 1,
+          "audio": [
+            "suspended",
+            "suspended"
+          ],
+          "viewport": {
+            "width": 960,
+            "height": 499
+          },
+          "freshControlReversalsAccepted": true
+        },
+        {
+          "scale": 1,
+          "slow": false,
+          "p95": 16.700000000004366,
+          "onTime": 301,
+          "bufferWidth": 1920,
+          "bufferHeight": 997,
+          "dpr": 1,
+          "audio": [
+            "running",
+            "running"
+          ],
+          "viewport": {
+            "width": 1920,
+            "height": 997
+          },
+          "freshControlReversalsAccepted": true
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "cache": "cold",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 48,
+      "menuMs": 817.3999999761581,
+      "flightMs": 12257.399999976158
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 40,
+      "menuMs": 572,
+      "flightMs": 48684
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Classic",
+      "width": 800,
+      "height": 480,
+      "shellMs": 32,
+      "menuMs": 565.5,
+      "flightMs": 48852.199999928474
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Modern",
+      "width": 800,
+      "height": 480,
+      "shellMs": 36,
+      "menuMs": 532.7000000476837,
+      "flightMs": 49245.800000071526
+    },
+    {
+      "phase": "after",
+      "cache": "warm",
+      "style": "Classic",
+      "width": 1920,
+      "height": 1080,
+      "shellMs": 44,
+      "menuMs": 543.5,
+      "flightMs": 50357.39999997616
+    }
+  ]
+}

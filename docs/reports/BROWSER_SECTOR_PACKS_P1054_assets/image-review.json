@@ -1,0 +1,65 @@
+{
+  "pngBytes": 1945989,
+  "images": [
+    {
+      "file": "entry-capped-classic-800x480.png",
+      "bytes": 148309,
+      "sha256": "f5565441708b39325091aab0238b0e29d5b29649a2396a3f94914c5fe0b3516e",
+      "reviewed": true
+    },
+    {
+      "file": "entry-capped-modern-800x480.png",
+      "bytes": 103797,
+      "sha256": "4cdc584fb561e9c7a64dedf949efe84cb355c8410b3c7a0946c71c6cc1d2f998",
+      "reviewed": true
+    },
+    {
+      "file": "entry-original-classic-800x480.png",
+      "bytes": 189182,
+      "sha256": "8fcd17285785423599a0db442b291ae9211d1153541b0f1a6b96b1521a1bcabc",
+      "reviewed": true
+    },
+    {
+      "file": "entry-original-modern-800x480.png",
+      "bytes": 139485,
+      "sha256": "db44aa2c6ea566606d88f75fa5d87e711aaa722939cc2cc19cad80f9a86191b7",
+      "reviewed": true
+    },
+    {
+      "file": "placeholder-sky-classic-800x480.png",
+      "bytes": 134262,
+      "sha256": "e0167efe451663dd5e0a49ca063fb77030db5a52f299850a358d4d44d3d8da71",
+      "reviewed": true
+    },
+    {
+      "file": "placeholder-sky-modern-800x480.png",
+      "bytes": 114873,
+      "sha256": "7189effab743d2fbded3bfb536392d0e7cab8700bf60d4d437132ba677038922",
+      "reviewed": true
+    },
+    {
+      "file": "real-sky-classic-800x480.png",
+      "bytes": 372512,
+      "sha256": "2b6bdb8c6e8d242ff218add3310a9fa3ddd8be06ca1ea60801f902e592065d91",
+      "reviewed": true
+    },
+    {
+      "file": "real-sky-modern-800x480.png",
+      "bytes": 365589,
+      "sha256": "9aa842a26540d7a4751bc0fdfafb3f4908f6c49261fe39602428364e0933635d",
+      "reviewed": true
+    },
+    {
+      "file": "starmap-classic-800x480.png",
+      "bytes": 189581,
+      "sha256": "a76583bffd0b35853b3dbc73f4af1004bc54448fca8b969fb3059fbca6aadd70",
+      "reviewed": true
+    },
+    {
+      "file": "starmap-modern-800x480.png",
+      "bytes": 188399,
+      "sha256": "da2ba02686676011efa00a8d92e9f784b7460a8110ece7cde447bc0b187b4949",
+      "reviewed": true
+    }
+  ]
+}

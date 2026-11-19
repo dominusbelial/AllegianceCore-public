@@ -33,7 +33,7 @@ public partial class Menu
     private async Task LoadAsync()
     {
         if (_loading || _disposed) return;
-        _loading = true; _joinStaged = false; _joinManifest = null; _error = null; _progress = 0; StateHasChanged();
+        _loading = true; _joinStaged = false; _joinManifest = null; _sectorManifest = null; _error = null; _progress = 0; StateHasChanged();
         try
         {
             _platform ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", await JsRuntime.InvokeAsync<string>("preview.asset", "./game-platform.js"));
@@ -162,7 +162,7 @@ public partial class Menu
     [JSInvokable]
     public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
         invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
-        residentBytes = _assets?.ResidentBytes, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
+        residentBytes = _assets?.ResidentBytes, sectors = new { active = _sectorStreamer?.ActiveSector, retries = _sectorStreamer?.RetryCount, completed = _sectorStreamer?.CompletedPacks, status = SectorStatus }, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
         launch = new { busy = _onlineBusy, guard = _launchGuard, readySends = _readySends, shipId = _session?.World.MyShipId,
             sideId = _session?.World.MySideId, stage = _session?.World.Mission?.Stage, inGame = _session?.World.InGame,
             joinedShipId = _session?.World.JoinedShipId,
@@ -177,6 +177,7 @@ public partial class Menu
     public async ValueTask DisposeAsync()
     {
         _disposed = true; _lifetime.Cancel();
+        await StopSectorStreamingAsync();
         if (_session is not null) { await _session.DisposeAsync(); _session = null; }
         StopGame();
         if (_reference is not null) await JsRuntime.InvokeVoidAsync("menuDetachText");

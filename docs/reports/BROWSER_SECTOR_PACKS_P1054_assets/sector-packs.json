@@ -1,0 +1,303 @@
+{
+  "map": "XXV_simple.igc",
+  "seed": 1051,
+  "entrySectorId": 1053,
+  "base": {
+    "files": 601,
+    "uniqueFiles": 577,
+    "rawBytes": 32536380,
+    "gzipBytes": 7564835
+  },
+  "runtimeGzipBytes": 6159974,
+  "budgetBytes": 14680064,
+  "totalTransferBytes": 13724809,
+  "entryFirstFrameCopies": [
+    "bgrnd03bmp.mdl",
+    "bgrnd05bmp.mdl",
+    "bgrnd52bmp.mdl",
+    "bgrnd55bmp.mdl"
+  ],
+  "sectors": [
+    {
+      "sectorId": 1051,
+      "name": "Arrokoth",
+      "files": 7,
+      "uniqueFiles": 7,
+      "rawBytes": 58721076,
+      "gzipBytes": 15868095
+    },
+    {
+      "sectorId": 1052,
+      "name": "Borasisi",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 50332352,
+      "gzipBytes": 13504454
+    },
+    {
+      "sectorId": 1053,
+      "name": "Ceto",
+      "files": 4,
+      "uniqueFiles": 4,
+      "rawBytes": 33554896,
+      "gzipBytes": 10647256
+    },
+    {
+      "sectorId": 1054,
+      "name": "Deucalion",
+      "files": 7,
+      "uniqueFiles": 7,
+      "rawBytes": 58721076,
+      "gzipBytes": 16416514
+    },
+    {
+      "sectorId": 1055,
+      "name": "Eris",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 50332352,
+      "gzipBytes": 11456730
+    },
+    {
+      "sectorId": 1056,
+      "name": "Farout",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 50332352,
+      "gzipBytes": 12239470
+    },
+    {
+      "sectorId": 1057,
+      "name": "Haumea",
+      "files": 7,
+      "uniqueFiles": 7,
+      "rawBytes": 58721076,
+      "gzipBytes": 14599010
+    },
+    {
+      "sectorId": 1058,
+      "name": "Ixion",
+      "files": 8,
+      "uniqueFiles": 8,
+      "rawBytes": 67109804,
+      "gzipBytes": 13775905
+    },
+    {
+      "sectorId": 1059,
+      "name": "Makemake",
+      "files": 7,
+      "uniqueFiles": 7,
+      "rawBytes": 50463540,
+      "gzipBytes": 13428113
+    },
+    {
+      "sectorId": 1060,
+      "name": "Orcus",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 42074816,
+      "gzipBytes": 13807066
+    },
+    {
+      "sectorId": 1061,
+      "name": "Quaoar",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 50332352,
+      "gzipBytes": 13173414
+    },
+    {
+      "sectorId": 1062,
+      "name": "Varda",
+      "files": 7,
+      "uniqueFiles": 7,
+      "rawBytes": 58721076,
+      "gzipBytes": 15416844
+    },
+    {
+      "sectorId": 1063,
+      "name": "Sedna",
+      "files": 6,
+      "uniqueFiles": 6,
+      "rawBytes": 50332352,
+      "gzipBytes": 12630796
+    }
+  ],
+  "originalFiles": [
+    {
+      "source": "bgrnd03bmp.mdl",
+      "sha256": "86f9995d495eb93ed86c122cfdde1ef3ad624d7b4678b36509ef14959f60955d",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd05bmp.mdl",
+      "sha256": "da905c072c4b68178167ff04503e383e60ede8582981502605f0cd30f64632fa",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd51bmp.mdl",
+      "sha256": "a9eb5e53e86101506ac2f6de76c4c5d2cdb85f62845f6c4c0ca8be9b9a49cb52",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd52bmp.mdl",
+      "sha256": "ce2d634157f4b60ad37601105181302debd474f3ca89990d51649f427c972f5a",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd53bmp.mdl",
+      "sha256": "bfbabbf12d8547c600d2d128dd18a862e2098a4e19100b4986cbafbfcece0fd9",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd55bmp.mdl",
+      "sha256": "2ab648469bbabd78dc168d078c4e7bb67c1edc22826a6935ec3a56d2d6efeadb",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "bgrnd56bmp.mdl",
+      "sha256": "2fbe0cd7b72d95ab9e54bc49f8eea1a1e79462f05de75d368bd1b0c5c558798d",
+      "byteSize": 8388724,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment1bmp.mdl",
+      "sha256": "755a7e4df4901ae698477c378b027851eddd4b3f80fe7a6726313ab950863d59",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment2bmp.mdl",
+      "sha256": "335fead2b02e4af4ec6a8ac5daaeeb774f770b9d2960a09665a91c16dacb18e6",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment3bmp.mdl",
+      "sha256": "13b794c68693558db2c70aded4277d0861fcb78f26157e579435d8ee5db2bd55",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment4bmp.mdl",
+      "sha256": "f4d42379e812c6644504adc7e6dde10f87936c82bad71a8c10982fba10e16225",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment5bmp.mdl",
+      "sha256": "c93f90ea1c29a8e946938e42fb769a72559b3a8d326f10d3af6016ea2e3f2975",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment6bmp.mdl",
+      "sha256": "4ea35ea1b36de91e54adc373de997b77c3401fd55ec8494fcec535d47c20395b",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment7bmp.mdl",
+      "sha256": "5181b3ce7a7741a9576afdfbc57b1d7106fa956a5e4e9d6d11d8b93cfd14bfb2",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment8bmp.mdl",
+      "sha256": "8d9a7b6c74be7b619f3e628eade1c7699e4999f43af87c089db33ce11aa0c3d5",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "environment9bmp.mdl",
+      "sha256": "87540cc033efb635f8a71f37bda4f027fe3b6677d4393f8cead84106d3c8ac50",
+      "byteSize": 131192,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt01bmp.mdl",
+      "sha256": "a647843245a9407a601b9354e8172819b77c1646467ffb2095a1bb6928629194",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt02bmp.mdl",
+      "sha256": "5a8b6d8e4dc9eb03913592877d423671977f6cc8bbdd5aa20d2baa3cb877ab0d",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt03bmp.mdl",
+      "sha256": "7e8fd39e05dbc234ea5acd27947cb558cc5a6d1fa8c181b155a9315632cb410f",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt07bmp.mdl",
+      "sha256": "13ab8f5e5fc08f13417f2fad3fe6e038ca0f20dba892e5ab19fd041e4c7d056d",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt08bmp.mdl",
+      "sha256": "fbb540a093f894041b0a9220631aab9bec8710a174a7b44c61082af9fc885bc9",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt09bmp.mdl",
+      "sha256": "89daed669da0b61b5f9d9560066fe0b5fc9f07e47fd9098b00d76c00765577a2",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt19bmp.mdl",
+      "sha256": "d45b9289c4af2f02a55e2d88958c2fd290e4a8c0d2b22d1432fc7a726489564d",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt24bmp.mdl",
+      "sha256": "c8fab1771de58be99fa4bd559f8550fab07e4f2acc801d47fb20df28efff28fe",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt31bmp.mdl",
+      "sha256": "3f9f84207f507e980d6f5182d52ed7f445c02aaaea48eb989e0da959027712c3",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt33bmp.mdl",
+      "sha256": "061ec7993f18838f40bfab474d8ea5c54f7718c4b902b1d7cbc5fe4c8367e4c1",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt42bmp.mdl",
+      "sha256": "30709d4533a0abb4f2954e7ce0004afc2b340079d6dd6de3ba5d316edc7d1b33",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt44bmp.mdl",
+      "sha256": "c7985c9c936b219ad7bce0c2c8370e782d3664511eb79a9a1537e2e0f862f078",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    },
+    {
+      "source": "nebplnt45bmp.mdl",
+      "sha256": "416b6da45622d767cf1dab47a7a504a60fac59e5811c7e162bd524e976078cce",
+      "byteSize": 8388728,
+      "byteIdentical": true
+    }
+  ],
+  "deferralRule": "Only recorded bgrnd*bmp RGB565 surfaces, planet/nebula textures and sky namespaces; every other file stays in base."
+}

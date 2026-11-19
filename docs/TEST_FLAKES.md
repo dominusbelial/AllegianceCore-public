@@ -10370,3 +10370,64 @@ Ignored raw evidence is under `<lane evidence dir>/fast/` and
 `<lane evidence dir>/fast-isolated/`. Sanitized per-case outcomes and TRX hashes:
 [Fast failures/skips](reports/BROWSER_POLISH_P1053_assets/fast-exceptions.json),
 [isolated repetitions](reports/BROWSER_POLISH_P1053_assets/fast-isolated.json).
+
+
+## P1054 sector-pack baseline final Fast (2026-11-19)
+
+The single final Fast sweep ran after the recorder, audio fix, browser proofs and builds: **15,533 passed / 4 failed / 6 skipped**, 15,543 cases, **881.6 s**. All nine infrastructure checks passed; calibrated case limit **11.532 s**, zero timing offenders and zero quarantine retries/flakes. The sweep exited **1**.
+
+Each failure matches a family already ledgered above. Each exact failing method was then selected in three separate fresh processes with artwork; all twelve isolated invocations passed. These are observations, not a root-cause claim or a green Fast-gate claim.
+
+| Method | Sweep observation | Isolated runs 1 / 2 / 3 (s) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Remote death latch absent after 2,500 ticks | **pass / pass / pass**, 1.311 / 1.323 / 1.320 |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | Expected target instance; actual null | **pass / pass / pass**, 0.737 / 0.734 / 0.745 |
+| `NpcDodgeLiveTests.Traveling_npc_steers_around_an_asteroid_on_its_path_and_resumes` | Asteroid clearance minRockDist=68.6 | **pass / pass / pass**, 5.911 / 5.796 / 5.802 |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | Roster time 8.44999981 outside [4,8] | **pass / pass / pass**, 0.547 / 0.566 / 0.521 |
+
+P1054 changes only a browser audio transition scheduler and proof/recording tools. No simulation, wire, lobby limit, listing rule, C# test assertion, timeout, tier or quarantine policy changed. Fast remains **red**. Sanitized evidence: [summary](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-summary.json), [failures](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-exceptions.json), [isolated repetitions](reports/BROWSER_SECTOR_PACKS_P1054_assets/fast-isolated.json).
+
+
+## P1054 continuation — abrupt Modern Nanite window exit (2026-11-19)
+
+The first final-source training qualification passed its headless child **131/0/0**
+and **16 physical windows**, then
+`P912TrainingWindowTests.Every_lesson_completes_in_one_real_window_session(mission: 8, style: "Modern", policy: null)`
+failed its window-completed assertion after **3 m 27 s**, at goal **3.3**. The
+child log ends mid-frame without a managed exception or wrapper-timeout message;
+the existing assertion did not include the exit code. The remaining attempt was
+stopped and is not counted as a completed gate. Similar abrupt exits are recorded
+for P918 above, but this does not establish a root cause for this event.
+
+The **exact parameter case** was selected in three separate fresh test processes.
+All three passed **1/0/0**, with complete `P912_WINDOW_PASS M8 Modern` markers and
+proof-child exit **0**. Durations: 00:05:57.1449639, 00:05:56.9536055, 00:05:54.9515969.
+No assertion, timeout, tier, pilot or game rule changed. An ignored launcher adds
+exit-code logging and optional crash-dump capture for subsequent proof children.
+The fresh complete training gate subsequently passed **1,206/0/2**, all six
+children and **42/42 physical windows**, with exit **0**. This does not relabel
+the interrupted attempt as green. [Fresh training receipts](reports/BROWSER_SECTOR_PACKS_P1054_assets/training-qualified.json).
+
+[Sanitized failed-window and isolated receipts](reports/BROWSER_SECTOR_PACKS_P1054_assets/training-window-exit.json).
+
+
+## P1054 continuation — final Fast, run last (2026-11-19)
+
+The continuation's **single final Fast sweep ran last**, after implementation, all browser/desktop/build/static checks and the completed six-child training gate. It exited **1**: **15,547 passed / 5 failed / 6 skipped**, **15,558 total**, **902.6 s**. All **nine infrastructure checks passed**. The calibrated case limit remained **11.531 s**; one timing offender and one quarantine flake were recorded, both the already quarantined side-elimination case. Browser head and game remained **12/0/0** and **74/0/0** in this sweep.
+
+Each failing method, including the timing offender, was then selected in **three separate fresh processes** with artwork: **15 invocations**, **14 passed / 1 failed / 0 skipped** test rows. No second Fast sweep was run.
+
+| Method | Sweep observation | Three isolated outcomes (passed/failed/skipped) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never latched A's death after 2,500 ticks | **1/0/0, 1/0/0, 1/0/0** |
+| `MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire` | Missile never appeared | **1/0/0, 0/1/0, 1/0/0**; the isolated failure saw the one-shot missile at zero but no advancing per-tick position |
+| `BotFlightTests.Bot_trajectory_matches_independent_ExecuteMove_rollout` | Tick 3 pose drift **78.796715** from the independent rollout | **1/0/0, 1/0/0, 1/0/0** |
+| `BallotVotingLiveTests.Resign_passing_deactivates_the_side_and_ends_the_mission` | Passed-ballot announcement arrived without the expected matching observation | **1/0/0, 1/0/0, 1/0/0** |
+| `SideEliminationLiveTests.Eliminating_side2_sends_side_only_gameover_to_it_alone` | Lethal restart-station hit absent; **18.800 s**, over **11.531 s**; quarantine retry passed | **1/0/0, 1/0/0, 1/0/0**, all below the calibrated limit |
+
+These are existing ledgered families, not a root-cause claim. Missile delivery remains reproducible alone, with a different observation from the sweep. **Fast remains red.** No assertion, timeout, tier, quarantine policy, throttle, privilege check, simulation or wire rule was changed. The affected server simulation, ballot and missile transport files are unchanged by this task. [Final summary](reports/BROWSER_SECTOR_PACKS_P1054_assets/continuation-fast-summary.json), [sweep failures](reports/BROWSER_SECTOR_PACKS_P1054_assets/continuation-fast-exceptions.json), [three isolated runs per method and TRX hashes](reports/BROWSER_SECTOR_PACKS_P1054_assets/continuation-fast-isolated.json).
+
+Ignored raw evidence: `<lane evidence dir>/continuation-fast/` and
+`<lane evidence dir>/continuation-fast-isolated/`. P1054 changes browser visual
+delivery and optional renderer lookup; desktop asset loading is unchanged and
+the full training gate passed **1,206/0/2**, including **42 physical windows**.

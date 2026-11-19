@@ -1,4 +1,5 @@
 // Record actual desktop join/launch/60-second first-sector flight opens on loopback.
+// --sectors additionally records 30-second visits throughout the native map.
 using System.Reflection;
 using Allegiance.Server;
 using Allegiance.ClientCore.Session;
@@ -31,8 +32,10 @@ if (args is ["--decode-briefings", var fixtureDirectory])
     return;
 }
 
+bool allSectors = args.Contains("--sectors");
+args = args.Where(a => a != "--sectors").ToArray();
 if (args.Length is < 2 or > 4 || !Enum.TryParse<HudStyle>(args[0], out var style))
-    throw new ArgumentException("p1051-flight-opens Classic|Modern OUTPUT.json [SIDE] [MINERS]");
+    throw new ArgumentException("p1051-flight-opens Classic|Modern OUTPUT.json [SIDE] [MINERS] [--sectors]");
 short selectedSide = args.Length >= 3 ? short.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : (short)0;
 string output = Path.GetFullPath(args[1]);
 string scratch = Path.GetDirectoryName(output)!;
@@ -43,6 +46,7 @@ Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", Path.Combine(scratch, st
 new IntroPreferences { ShowStartupTrainingSuggestion = false, Lobby = "" }.Save();
 new HudSettings { Style = style }.Save(HudSettings.DefaultPath);
 var recorder = new OpenRecorder(style.ToString());
+recorder.AllSectors = allSectors;
 string artwork = AssetSources.ResolveRoot();
 string content = Path.GetFullPath("src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content");
 using var server = new Allegiance.Server.Server { SpawnInitialMinersAtBoot = args.Length == 4 && bool.Parse(args[3]), SimulationRandom = new Random(1051) };
@@ -63,16 +67,24 @@ using var game = new Game1(new Game1.LaunchOptions
     LobbyUrl = "", LobbyUrlExplicit = true, PlayerName = "DesktopRecorder", WindowWidth = 800, WindowHeight = 480,
     EffectsRequested = Allegiance.ClientCore.State.EffectsQuality.Native, SkyTier = "native", AlephGlimpse = false,
     AutoProof = new Allegiance.ClientCore.MonoGame.LiveProof.AutoProofPlan
-        { AutoSide = selectedSide, AutoReady = true, AutoLaunchRequested = true, Camera = "chase", ExitAfter = 100 },
+        { AutoSide = selectedSide, AutoReady = true, AutoLaunchRequested = true, Camera = "chase", ExitAfter = allSectors ? 2400 : 100 },
 });
 var session = (ConnectionSession)typeof(Game1).GetField("_session", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(game)!;
 session.Recording = recording;
+recorder.ResolveSector = () => session.World.MyShipId is { } id && session.World.Ships.TryGetValue(id, out var own)
+    && own.StationId < 0 ? own.SectorId : null;
 game.Content = new RecordingContent(game.Services, content, recorder);
 game.Components.Add(new Scenes(game, recorder));
 try { game.Run(); } finally { cancellation.Cancel(); ticker.GetAwaiter().GetResult(); }
 recording.Dispose();
+// The battle replay's deliberate ten-minute limit is unchanged. Sector walks
+// are longer and need no raw briefing fixture: their evidence is the full wire
+// recording plus the per-sector opens below. The original short mode still
+// exports its decoder fixtures through the existing bounded replay reader.
+IEnumerable<RecordedPacket> briefingPackets = allSectors ? []
+    : new BattleReplay(Path.Combine(scratch, style + ".wire.gz")).Packets;
 int briefing = 0;
-foreach (var packet in new BattleReplay(Path.Combine(scratch, style + ".wire.gz")).Packets)
+foreach (var packet in briefingPackets)
     foreach (var message in packet.Payload.Length == 0 ? [] : FedPacket.Unpack(packet.Payload))
         if (FedMessageHeader.Read(message).Fmid == MissionBriefingInfo.Fmid)
         {
@@ -80,17 +92,33 @@ foreach (var packet in new BattleReplay(Path.Combine(scratch, style + ".wire.gz"
             var decoded = MissionBriefingInfo.Decode(message);
             File.WriteAllBytes(Path.Combine(scratch, $"briefing-{style}-{briefing - 1}.json"), JsonSerializer.SerializeToUtf8Bytes(decoded, MissionBriefingInfoJsonContext.Default.MissionBriefingInfo));
         }
-File.WriteAllText(output, JsonSerializer.Serialize(new { version = 1, style = style.ToString(), recorder.Scenes, recorder.Opens, recorder.Required, recorder.RockSurfaces, recorder.FirstSector, flightSeconds = 60 }, new JsonSerializerOptions { WriteIndented = true }));
+File.WriteAllText(output, JsonSerializer.Serialize(new { version = 1, style = style.ToString(), recorder.Scenes, recorder.Opens, recorder.Required, recorder.RockSurfaces, recorder.FirstSector, recorder.Sectors, recorder.Visits, recorder.SectorRequired, map = "XXV_simple.igc", seed = 1051, flightSeconds = allSectors ? recorder.Visits.Sum(v => v.Seconds) : 60 }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"P1051_OPENS_PASS style={style} scenes={recorder.Scenes.Count} opens={recorder.Opens.Count}");
 
-sealed record Open(string Source, string Origin, string Purpose, string Scene, long ByteSize, string Sha256);
+sealed record Open(string Source, string Origin, string Purpose, string Scene, long ByteSize, string Sha256, short? SectorId);
+sealed record SectorVisit(short SectorId, string Name, double Seconds);
 sealed class OpenRecorder(string style)
 {
     internal readonly List<string> Scenes = new();
+    public bool AllSectors { get; set; }
+    public short? SectorId { get; set; }
+    public Func<short?>? ResolveSector { get; set; }
+    public List<DataClusterIGC> Sectors { get; } = [];
+    public List<SectorVisit> Visits { get; } = [];
     public HashSet<string> Required { get; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> RockSurfaces { get; } = new(StringComparer.OrdinalIgnoreCase);
     public DataClusterIGC? FirstSector { get; set; }
-    internal void Require(string? stem) { if (!string.IsNullOrEmpty(stem)) Required.Add(stem + ".mdl"); }
+    public Dictionary<short, HashSet<string>> SectorRequired { get; } = [];
+    internal void Require(string? stem)
+    {
+        if (string.IsNullOrEmpty(stem)) return;
+        Required.Add(stem + ".mdl");
+        if (SectorId is { } id)
+        {
+            if (!SectorRequired.TryGetValue(id, out var names)) SectorRequired[id] = names = new(StringComparer.OrdinalIgnoreCase);
+            names.Add(stem + ".mdl");
+        }
+    }
     internal readonly List<Open> Opens = new();
     internal string Scene = "Boot";
     internal void Enter(string scene) { Scene = scene; Scenes.Add(style + "/" + scene); }
@@ -98,7 +126,7 @@ sealed class OpenRecorder(string style)
     {
         string hash = Convert.ToHexStringLower(SHA256.HashData(stream));
         stream.Position = 0;
-        Opens.Add(new(source.Replace('\\', '/'), origin, purpose, Scene, stream.Length, hash));
+        Opens.Add(new(source.Replace('\\', '/'), origin, purpose, Scene, stream.Length, hash, ResolveSector?.Invoke()));
         return stream;
     }
 }
@@ -128,9 +156,17 @@ sealed class Scenes(Game1 game, OpenRecorder recorder) : GameComponent(game)
     private System.Diagnostics.Stopwatch? _flightWall;
     private bool _briefingOpened;
     private string _previous = "";
+    private short _sector = -1;
+    private readonly System.Diagnostics.Stopwatch _dwell = new();
+    private readonly HashSet<short> _visited = [];
+    private short _targetWarp = -1;
+    private bool _starmapOpened;
+    private bool _chartWaypoint;
+    private bool _leavingMouth;
+    private Dictionary<short, DataWarpIGC>? _mapWarps;
     public override void Update(GameTime gameTime)
     {
-        if (_wall.Elapsed.TotalSeconds > 100) throw new TimeoutException("Desktop flight recording timed out.");
+        if (_wall.Elapsed.TotalSeconds > (recorder.AllSectors ? 2400 : 100)) throw new TimeoutException("Desktop flight recording timed out.");
         var session = (ConnectionSession)typeof(Game1).GetField("_session", Hidden)!.GetValue(game)!;
         string state = typeof(Game1).GetField("_state", Hidden)!.GetValue(game)!.ToString()!;
         if (session.World.MyShipId is { } id && session.World.Ships.TryGetValue(id, out var own))
@@ -138,6 +174,8 @@ sealed class Scenes(Game1 game, OpenRecorder recorder) : GameComponent(game)
             state = own.StationId >= 0 ? "Docked" : "Flight";
             if (state == "Flight")
             {
+                recorder.SectorId = own.SectorId;
+                if (recorder.AllSectors) VisitSectors(session, own.SectorId);
                 _flightWall ??= System.Diagnostics.Stopwatch.StartNew();
                 _flight = _flightWall.Elapsed.TotalSeconds;
                 var catalog = (ShopCatalog)typeof(Game1).GetField("_shopCatalog", Hidden)!.GetValue(game)!;
@@ -171,7 +209,98 @@ sealed class Scenes(Game1 game, OpenRecorder recorder) : GameComponent(game)
             _ = MissionBriefingGenerator.Build(briefing, strings: strings);
             recorder.Require("missionbrief"); _briefingOpened = true;
         }
-        if (_flight >= 60) game.Exit();
+        if (!recorder.AllSectors && _flight >= 60) game.Exit();
         base.Update(gameTime);
     }
+    private void VisitSectors(ConnectionSession session, short sectorId)
+    {
+        // Chart navigation selects real local alephs; the desktop's production
+        // autopilot emits the same controls/pose stream as an ordinary player.
+        // No ship position, sector, speed or server state is written by this tool.
+        _mapWarps ??= Allegiance.Core.Model.MissionMap.Load(IgcReader.ParseFile(
+            Path.Combine(AssetSources.ResolveRoot(), "XXV_simple.igc"))).Warps.ToDictionary(w => w.WarpId);
+        if (_sector != sectorId)
+        {
+            _sector = sectorId; _targetWarp = -1; _chartWaypoint = _leavingMouth = false; _dwell.Restart();
+            typeof(Game1).GetField("_autoPilotEngaged", Hidden)!.SetValue(game, false);
+            typeof(Game1).GetField("_throttle", Hidden)!.SetValue(game, -1f);
+            var cluster = session.World.Clusters[sectorId];
+            if (recorder.Sectors.All(c => c.ClusterId != sectorId)) recorder.Sectors.Add(cluster);
+            recorder.Enter("Sector/" + sectorId);
+            Console.WriteLine($"P1054_ENTER sector={sectorId} name={cluster.Name}");
+        }
+        if (!_starmapOpened && _dwell.Elapsed.TotalSeconds >= 3)
+        {
+            typeof(Game1).GetField("_minimapExpanded", Hidden)!.SetValue(game, true);
+            _starmapOpened = true;
+        }
+        if (_starmapOpened && _dwell.Elapsed.TotalSeconds >= 6)
+            typeof(Game1).GetField("_minimapExpanded", Hidden)!.SetValue(game, false);
+        if (_dwell.Elapsed.TotalSeconds < 30 && !_visited.Contains(sectorId)) return;
+        if (_visited.Add(sectorId))
+        {
+            recorder.Visits.Add(new(sectorId, session.World.Clusters[sectorId].Name, _dwell.Elapsed.TotalSeconds));
+            Console.WriteLine($"P1054_DWELL sector={sectorId} seconds={_dwell.Elapsed.TotalSeconds:F2}");
+        }
+        if (_targetWarp >= 0)
+        {
+            if (_chartWaypoint && session.World.Warps.ContainsKey(_targetWarp)
+                && (!_leavingMouth || DistanceFromMouth(session) > _mapWarps[_targetWarp].Radius * 3))
+            {
+                Engage("Warp", _targetWarp); _chartWaypoint = false;
+            }
+            return;
+        }
+        var queue = new Queue<(short Sector, short First)>();
+        var seen = new HashSet<short> { sectorId };
+        queue.Enqueue((sectorId, -1));
+        while (_targetWarp < 0 && queue.TryDequeue(out var step))
+            foreach (var warp in _mapWarps.Values.Where(w => w.ClusterId == step.Sector))
+            {
+                if (!_mapWarps.TryGetValue(warp.DestinationId, out var destination) || !seen.Add(destination.ClusterId)) continue;
+                short first = step.First < 0 ? warp.WarpId : step.First;
+                if (!_visited.Contains(destination.ClusterId)) { _targetWarp = first; break; }
+                queue.Enqueue((destination.ClusterId, first));
+            }
+        if (_targetWarp < 0) { game.Exit(); return; }
+        // Give a return through the incoming mouth a normal approach: the
+        // proof pilot flies clear before turning back instead of asking the
+        // desktop's arrival/braking law to start inside its arrival radius.
+        _leavingMouth = DistanceFromMouth(session) < _mapWarps[_targetWarp].Radius * 3;
+        if (!session.World.Warps.ContainsKey(_targetWarp) || _leavingMouth)
+        {
+            var warp = _mapWarps[_targetWarp];
+            // A real local waypoint order at the chart's coordinates, exactly
+            // the native command-view position order (WinTrek/console.cpp:1940-1972;
+            // clintlib/clintlib.cpp:2460-2469). Discovery remains intact.
+            float[] point = warp.Position;
+            if (_leavingMouth)
+            {
+                var own = session.World.Ships[session.World.MyShipId!.Value].Latest!.Position;
+                var offset = new System.Numerics.Vector3(own.X - point[0], own.Y - point[1], own.Z - point[2]);
+                if (offset.LengthSquared() < 1) throw new InvalidDataException("No clearance direction at aleph centre.");
+                offset = System.Numerics.Vector3.Normalize(offset) * 1000;
+                point = [point[0] + offset.X, point[1] + offset.Y, point[2] + offset.Z];
+            }
+            var buoy = new DataBuoyIGC(point, sectorId, DataBuoyIGC.CBuoyWaypoint, 30000, true);
+            lock (session.Gate) session.World.RegisterCommandBuoy(buoy);
+            session.SendChatBuoy("", Allegiance.Core.Sim.ChatTarget.Individual, session.World.MyShipId!.Value, buoy, commandId: OrderChange.CidGoto);
+            Engage("Buoy", buoy.BuoyId); _chartWaypoint = true;
+        }
+        else Engage("Warp", _targetWarp);
+    }
+    private float DistanceFromMouth(ConnectionSession session)
+    {
+        var point = _mapWarps![_targetWarp].Position;
+        var own = session.World.Ships[session.World.MyShipId!.Value].Latest!.Position;
+        return new System.Numerics.Vector3(own.X - point[0], own.Y - point[1], own.Z - point[2]).Length();
+    }
+    private void Engage(string kind, short id)
+    {
+        var targetType = typeof(Game1).GetNestedType("AutopilotTarget", BindingFlags.NonPublic | BindingFlags.Public)!;
+        var kindType = typeof(Game1).GetNestedType("TargetKind", BindingFlags.NonPublic | BindingFlags.Public)!;
+        var target = Activator.CreateInstance(targetType, Enum.Parse(kindType, kind), id, "P1054 chart aleph", OrderChange.CidNone, true);
+        typeof(Game1).GetMethod("EngageAutopilotToward", Hidden)!.Invoke(game, [target, "P1054 recorder"]);
+    }
+
 }
