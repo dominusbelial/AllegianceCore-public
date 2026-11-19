@@ -26,10 +26,18 @@ async function main() {
     page.on('request', request => {
       const url = new URL(request.url()); assert.ok(['localhost', '127.0.0.1'].includes(url.hostname)); urls.push(request.url());
     });
-    page.on('response', response => {
-      if (new URL(response.url()).pathname === '/api/identity/join-token' && response.ok()) {
-        ticketReads.push(response.json().then(({ token }) => { freshTicket = token; secrets.push(token); }).catch(error => ticketReadErrors.push(String(error))));
+    // Capture a real body before delivering it. Response events can lose their
+    // CDP body during a later navigation; the flight harness uses the same
+    // route-owned observation. The trailing wildcard keeps negative exact-URL
+    // fixtures independent when they are subsequently removed with unroute.
+    await page.route('**/api/identity/join-token*', async route => {
+      const response = await route.fetch();
+      if (response.ok()) {
+        const capture = response.json().then(({ token }) => { freshTicket = token; secrets.push(token); })
+          .catch(error => ticketReadErrors.push(String(error)));
+        ticketReads.push(capture); await capture;
       }
+      await route.fulfill({ response });
     });
     const flushTicketReads = async () => { await Promise.all(ticketReads); assert.deepEqual(ticketReadErrors, []); };
     const cdp = await context.newCDPSession(page); await cdp.send('WebAuthn.enable');

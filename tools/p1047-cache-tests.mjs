@@ -85,3 +85,26 @@ test('oversized cached response is bounded and removed before reuse', async () =
   assert.equal(await f.cache.read(hash(1)), null);
   assert.equal(f.files.size, 0); assert.equal(f.entries.size, 0);
 });
+
+test('sector manifest retention preserves base and streamed originals across a warm base commit', async () => {
+  const f = fixture(32);
+  const base = hash(1), entryOriginal = hash(2), nextOriginal = hash(3), obsolete = hash(4);
+  for (const [index, h] of [base, entryOriginal, nextOriginal, obsolete].entries())
+    await f.cache.put(h, new Uint8Array([index + 1]), 'application/octet-stream');
+  await f.cache.commit('base-plus-sector-index', [base, entryOriginal, nextOriginal]);
+  assert.deepEqual(await f.cache.read(entryOriginal), new Uint8Array([2]));
+  assert.deepEqual(await f.cache.read(nextOriginal), new Uint8Array([3]));
+  assert.deepEqual(f.committed.hashes, [base, entryOriginal, nextOriginal]);
+  assert.equal(await f.cache.read(obsolete), null);
+});
+
+test('reused sector hashes consume one cache entry and remain bounded during sector churn', async () => {
+  const f = fixture(8, {}, 3);
+  await f.cache.put(hash(1), new Uint8Array([1, 2, 3, 4]), 'application/octet-stream');
+  await f.cache.put(hash(1), new Uint8Array([1, 2, 3, 4]), 'application/octet-stream');
+  assert.equal(f.entries.size, 1);
+  for (let i = 2; i < 20; i++) await f.cache.put(hash(i), new Uint8Array([i, i, i, i]), 'application/octet-stream');
+  assert.equal(f.files.size, 2);
+  assert.equal([...f.entries.values()].reduce((total, entry) => total + entry.size, 0), 8);
+  assert.deepEqual(await f.cache.read(hash(19)), new Uint8Array([19, 19, 19, 19]));
+});

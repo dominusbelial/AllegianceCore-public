@@ -22,6 +22,9 @@ python3 tools/p1047-browser-packs.py --traces "$intro_classic" "$intro_modern" \
 python3 tools/p1051-browser-packs.py --traces "${traces[@]}" --artwork "$ALLEGIANCE_ARTWORK_PATH" \
   --content src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content \
   --output "$stage/publish/wwwroot" --receipt "$stage/publish/wwwroot/join-receipt.json"
+python3 tools/p1054-browser-packs.py --root "$stage/publish/wwwroot" --artwork "$ALLEGIANCE_ARTWORK_PATH" \
+  --traces docs/reports/BROWSER_SECTOR_PACKS_P1054_assets/desktop-classic.json \
+    docs/reports/BROWSER_SECTOR_PACKS_P1054_assets/desktop-modern.json
 python3 tools/p1053-browser-publish.py "$stage/publish/wwwroot"
 mv "$stage/publish/wwwroot" "$output"
 echo "Local browser flight generation ready."

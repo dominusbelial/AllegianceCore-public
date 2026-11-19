@@ -6,7 +6,7 @@ namespace Allegiance.ClientCore.Browser.Assets;
 
 /// <summary>Version 2 game packs extend the preview's hash contract with provenance and dependencies.</summary>
 public sealed record StagedAsset(string Source, string Path, long ByteSize, string Sha256,
-    string ContentType, string Provenance, string[] Dependencies);
+    string ContentType, string Provenance, string[] Dependencies, string[]? VisualDependencies = null);
 
 public sealed record StagedManifest(int Version, StagedAsset[] Assets)
 {
@@ -21,7 +21,7 @@ public sealed record StagedManifest(int Version, StagedAsset[] Assets)
         return path.ToLowerInvariant();
     }
 
-    public void Validate()
+    public void Validate(IReadOnlySet<string>? residentSources = null)
     {
         if (Version != 2 || Assets is not { Length: > 0 and <= 1024 })
             throw new InvalidDataException("Unsupported game manifest.");
@@ -36,7 +36,8 @@ public sealed record StagedManifest(int Version, StagedAsset[] Assets)
                 asset.Path != $"packs/{asset.Sha256}" || asset.ByteSize is <= 0 or > MaximumFileBytes ||
                 asset.ContentType is not ("application/octet-stream" or "audio/ogg" or "image/png" or "text/plain") ||
                 string.IsNullOrWhiteSpace(asset.Provenance) || asset.Provenance.Length > 512 ||
-                asset.Dependencies is null || asset.Dependencies.Length > 128)
+                asset.Dependencies is null || asset.Dependencies.Length > 128 || asset.VisualDependencies?.Length > 128 ||
+                asset.VisualDependencies?.Any(d => !SectorManifest.IsVisual(Canonical(d))) == true)
                 throw new InvalidDataException($"Invalid game asset: {name}");
             if (hashes.TryGetValue(asset.Sha256, out var sameHash) &&
                 (sameHash.ByteSize != asset.ByteSize || sameHash.ContentType != asset.ContentType))
@@ -48,7 +49,8 @@ public sealed record StagedManifest(int Version, StagedAsset[] Assets)
                 // metadata/dependency closures under the same name are ambiguous.
                 if (previous.Sha256 != asset.Sha256 || previous.ByteSize != asset.ByteSize ||
                     previous.ContentType != asset.ContentType || previous.Provenance != asset.Provenance ||
-                    !previous.Dependencies.Select(Canonical).SequenceEqual(asset.Dependencies.Select(Canonical)))
+                    !previous.Dependencies.Select(Canonical).SequenceEqual(asset.Dependencies.Select(Canonical)) ||
+                    !(previous.VisualDependencies ?? []).Select(Canonical).SequenceEqual((asset.VisualDependencies ?? []).Select(Canonical)))
                     throw new InvalidDataException($"Case-colliding game assets: {name}");
             }
             else { entries.Add(name, asset); total = checked(total + asset.ByteSize); }
@@ -56,7 +58,7 @@ public sealed record StagedManifest(int Version, StagedAsset[] Assets)
         if (total > MaximumPackBytes) throw new InvalidDataException("Game pack exceeds the residency budget.");
         foreach (var asset in Assets)
             foreach (var dependency in asset.Dependencies)
-                if (!entries.ContainsKey(Canonical(dependency)))
+                if (!entries.ContainsKey(Canonical(dependency)) && residentSources?.Contains(Canonical(dependency)) != true)
                     throw new InvalidDataException($"Missing dependency: {dependency}");
     }
 

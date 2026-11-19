@@ -2,16 +2,22 @@ namespace Allegiance.ClientCore.Browser.Assets;
 
 /// <summary>Async network/cache work happens before publication. Draw only sees Current.</summary>
 public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
-    Action<HttpRequestMessage>? prepareRequest = null)
+    Action<HttpRequestMessage>? prepareRequest = null,
+    Func<StagedAsset, byte[], CancellationToken, ValueTask>? verify = null)
 {
     private readonly Dictionary<string, Download> _inflight = new(StringComparer.Ordinal);
     private readonly object _gate = new();
     private long _generation;
+    // Starter/join/sector loaders share the head's HttpClient. Retiring one
+    // join while another starts must not multiply the network budget.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<HttpClient, SemaphoreSlim> DownloadSlots = new();
+    private readonly SemaphoreSlim _downloadSlots = DownloadSlots.GetValue(http, static _ => new(4));
     private sealed class Download
     {
         internal readonly CancellationTokenSource Cancellation = new();
         internal readonly TaskCompletionSource<byte[]> Result = new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal int Waiters;
+        internal required StagedAsset Asset;
     }
     public string[]? RetainedHashes { get; set; }
     // A menu-only stage may preserve the previous complete join residency;
@@ -21,6 +27,22 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
     public StagedAssetSource? Current { get; private set; }
 
     public async Task<StagedManifest> ReadManifestAsync(CancellationToken cancellationToken, string manifestPath = "starter-manifest.json")
+    {
+        var manifest = System.Text.Json.JsonSerializer.Deserialize(await ReadManifestBytesAsync(manifestPath, cancellationToken), StagedJson.Default.StagedManifest)
+            ?? throw new InvalidDataException("Missing game manifest.");
+        manifest.Validate();
+        return manifest;
+    }
+
+    public async Task<SectorManifest> ReadSectorManifestAsync(StagedManifest resident, CancellationToken cancellationToken)
+    {
+        var manifest = System.Text.Json.JsonSerializer.Deserialize(await ReadManifestBytesAsync("sector-manifest.json", cancellationToken), SectorJson.Default.SectorManifest)
+            ?? throw new InvalidDataException("Missing sector manifest.");
+        manifest.Validate(resident);
+        return manifest;
+    }
+
+    private async Task<byte[]> ReadManifestBytesAsync(string manifestPath, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, manifestPath);
         prepareRequest?.Invoke(request);
@@ -36,16 +58,13 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
             if (buffer.Length + count > 1024 * 1024) throw new InvalidDataException("Game manifest is too large.");
             buffer.Write(block, 0, count);
         }
-        var manifest = System.Text.Json.JsonSerializer.Deserialize(buffer.ToArray(), StagedJson.Default.StagedManifest)
-            ?? throw new InvalidDataException("Missing game manifest.");
-        manifest.Validate();
-        return manifest;
+        return buffer.ToArray();
     }
 
     public async Task<StagedAssetSource> StageAsync(StagedManifest manifest, Action<int, string>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, IReadOnlySet<string>? residentSources = null)
     {
-        manifest.Validate();
+        manifest.Validate(residentSources);
         long generation;
         lock (_gate) generation = ++_generation;
         var staged = new Dictionary<string, byte[]>(StringComparer.Ordinal);
@@ -90,7 +109,7 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         lock (_gate)
         {
             start = !_inflight.TryGetValue(asset.Sha256, out download!);
-            if (start) { download = new Download(); _inflight.Add(asset.Sha256, download); }
+            if (start) { download = new Download { Asset = asset }; _inflight.Add(asset.Sha256, download); }
             download.Waiters++;
         }
         if (start) _ = CompleteAsync(asset, download);
@@ -99,7 +118,7 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
             var bytes = await download.Result.Task.WaitAsync(cancellationToken);
             // A shared hash may have been requested by a different manifest.
             // Each waiter still has to satisfy its own declared size contract.
-            PreviewManifest.Verify(asset.Source, asset.ByteSize, asset.Sha256, bytes);
+            if (download.Asset.ByteSize != asset.ByteSize) throw new InvalidDataException("Inconsistent shared asset size.");
             return bytes;
         }
         finally
@@ -129,10 +148,24 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
 
     private async Task<byte[]> LoadAsync(StagedAsset asset, CancellationToken cancellationToken)
     {
+        await _downloadSlots.WaitAsync(cancellationToken);
+        try { return await LoadOwnedAsync(asset, cancellationToken); }
+        finally { _downloadSlots.Release(); }
+    }
+
+    private ValueTask VerifyAsync(StagedAsset asset, byte[] bytes, CancellationToken cancellationToken)
+    {
+        if (verify is not null) return verify(asset, bytes, cancellationToken);
+        PreviewManifest.Verify(asset.Source, asset.ByteSize, asset.Sha256, bytes);
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task<byte[]> LoadOwnedAsync(StagedAsset asset, CancellationToken cancellationToken)
+    {
         var hit = await cache.ReadAsync(asset.Sha256, cancellationToken);
         if (hit is not null)
         {
-            try { PreviewManifest.Verify(asset.Source, asset.ByteSize, asset.Sha256, hit); return hit; }
+            try { await VerifyAsync(asset, hit, cancellationToken); return hit; }
             catch (InvalidDataException) { await cache.RemoveAsync(asset.Sha256, cancellationToken); }
         }
         using var request = new HttpRequestMessage(HttpMethod.Get, asset.Path);
@@ -142,7 +175,17 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         if (response.Content.Headers.ContentType?.MediaType != asset.ContentType)
             throw new InvalidDataException($"Unexpected content type: {asset.Source}");
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var bytes = await PreviewManifest.ReadVerifiedAsync(asset.Source, asset.ByteSize, asset.Sha256, stream, cancellationToken);
+        var bytes = new byte[checked((int)asset.ByteSize)];
+        int offset = 0;
+        while (offset < bytes.Length)
+        {
+            int count = await stream.ReadAsync(bytes.AsMemory(offset), cancellationToken);
+            if (count == 0) break;
+            offset += count;
+        }
+        if (offset != bytes.Length || await stream.ReadAsync(new byte[1], cancellationToken) != 0)
+            throw new InvalidDataException($"Unexpected artwork size: {asset.Source}");
+        await VerifyAsync(asset, bytes, cancellationToken);
         if (!await cache.PutAsync(asset, bytes, cancellationToken))
             Console.WriteLine($"[browser] Storage refused {asset.Source}; keeping verified bytes in memory for this visit.");
         return bytes;

@@ -120,6 +120,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
     public Texture2D? TextureFor(string textureStem)
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
+        if (_assets is IResidentTextureSource resident && resident.TryGetTexture(textureStem, false, out var prepared)) return prepared;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try

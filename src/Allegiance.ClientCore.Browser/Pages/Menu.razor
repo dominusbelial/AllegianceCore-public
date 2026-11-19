@@ -4,6 +4,7 @@
 @inject HttpClient Http
 
 <span id="pacing-note" hidden role="status">Running slow · audio paused</span>
+@if (SectorStatus.Length > 0) { <span id="sector-progress" role="status">@SectorStatus</span> }
 <nav id="menu-controls" aria-label="Browser menu controls">
     <span>Local browser game · @_style · @_persistence</span>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>
@@ -90,8 +91,30 @@
                 <p id="online-pose">@_pose</p>
                 <p class="flight-help">W/S thrust · arrows turn · Space fire · Shift boost · click canvas for mouse steering · Escape releases · Alt+Enter fullscreen</p>
                 <button id="flight-contact" @onclick="ToggleContactView">@(_game?.ViewingContact == true ? "Chase view" : "View nearby ships")</button>
+                <button id="flight-rock" @onclick="() => _game?.ToggleRockView()">View nearby asteroid</button>
                 @if (_game?.ViewingContact == true) { <button id="flight-angle" @onclick="() => _game?.RotateContactView()">Rotate view</button> }
                 <button id="flight-dock" @onclick="DockHome">Dock at home station</button>
+                <button id="flight-starmap" @onclick="() => _game?.ToggleStarmap()">Starmap</button>
+                @if (_game?.StarmapOpen == true)
+                {
+                    <label>Sector <select id="map-sector" value="@_game.SelectedMapSector" @onchange="SelectMapSector">
+                    @foreach (var cluster in (_session?.World.Clusters.Values.AsEnumerable() ?? []).OrderBy(c => c.Name))
+                    { <option value="@cluster.ClusterId">@cluster.Name</option> }
+                    </select></label>
+                }
+                <label>Aleph <select id="flight-warp" value="" @onchange="SelectWarp">
+                    <option value="">Select destination</option>
+                    @foreach (var warp in _session?.World.Warps.Values.Where(w => w.ClusterId == CurrentSector) ?? [])
+                    { <option value="@warp.WarpId">@warp.Name</option> }
+                </select></label>
+                <button id="flight-waypoint" @onclick="() => _showWaypoint = !_showWaypoint">Waypoint</button>
+                @if (_showWaypoint)
+                {
+                    <label>X <input id="waypoint-x" type="number" step="any" @bind="_waypointX" /></label>
+                    <label>Y <input id="waypoint-y" type="number" step="any" @bind="_waypointY" /></label>
+                    <label>Z <input id="waypoint-z" type="number" step="any" @bind="_waypointZ" /></label>
+                    <button id="waypoint-go" @onclick="() => { _game?.FlyToWaypoint(_waypointX, _waypointY, _waypointZ); _showWaypoint = false; }">Fly to waypoint</button>
+                }
                 <button id="flight-fullscreen" data-flight-fullscreen>Fullscreen</button>
             }
         }

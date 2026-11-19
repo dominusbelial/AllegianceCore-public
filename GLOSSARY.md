@@ -105,16 +105,24 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`. Chromium timing/control/layout proof:
   `tools/p1053-browser-polish.cjs`. Static-file cache contract:
   `docs/BROWSER_HOSTING.md`. Report: `docs/reports/BROWSER_POLISH_P1053.md`.
-- **Sector asset recording (P1054)** — `tools/p1051-flight-opens/Program.cs`
-  accepts `--sectors` to visit the recorded map through ordinary client waypoint
-  commands and discovered aleph targets, dwelling 30 seconds per sector in each
-  HUD style. `tools/p1054-sector-analysis.py` verifies actual opened bytes and
-  attributes dependency reuse and prelaunch opens to common assets. Delivery
-  policy and pending budget decision: `docs/reports/BROWSER_SECTOR_PACKS_P1054.md`.
-  The baseline audio race fix in
-  `src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js` serializes each
-  context's asynchronous resume/suspend and reapplies the latest lifecycle
-  intent; delayed-resume regressions are in `tools/p1051-input-tests.cjs`.
+- **Browser sector visuals (P1054)** — `tools/p1051-flight-opens/Program.cs`
+  records ordinary waypoint/aleph travel through all sectors in both HUDs;
+  `tools/p1054-sector-analysis.py` attributes verified desktop opens. The
+  successor `tools/p1054-browser-packs.py` keeps gameplay resident and only four
+  capped entry rock surfaces in base; `src/Allegiance.ClientCore.Game.Browser/Assets/SectorManifest.cs`
+  maps recorded sectors to original visual files. `Assets/SectorPackStreamer.cs`
+  in that browser project owns upgrade/entry/prefetch priority and retry;
+  `Assets/IncrementalSurface.cs` and `Assets/SectorTexturePool.cs` prepare original
+  textures in bounded rows per RAF. Shared renderers optionally look up already
+  prepared textures through `src/Allegiance.ClientCore.Game/Assets/IResidentTextureSource.cs`;
+  desktop sources keep their synchronous native loader. Browser starmap/aleph
+  selection lives in `src/Allegiance.ClientCore.Game.Browser/Game1.Sectors.cs`.
+  Independent original-byte/budget audit: `tools/p1054-sector-audit.py`.
+  Proof: `tools/p1054-browser-sectors.cjs`; report:
+  `docs/reports/BROWSER_SECTOR_PACKS_P1054.md`. The baseline audio race fix in
+  `src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js` serializes async
+  resume/suspend and reapplies lifecycle intent; regressions:
+  `tools/p1051-input-tests.cjs`.
 - **Browser game seams (P1047)** — the KNI source-compiled intro/Options variant
   in `src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj`
   selects the shared `src/Allegiance.ClientCore.Game/Game1.IntroMenu.cs` and

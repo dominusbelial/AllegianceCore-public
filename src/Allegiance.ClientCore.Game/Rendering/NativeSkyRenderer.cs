@@ -58,6 +58,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     private SkyDome? _activeDome;
     private string? _activePoster;
     private Texture2D? _activeEnvTexture;
+    private long _textureRevision;
 
     // P588 — the native planet poster, shared with the black/HD tiers so all
     // three draw the identical native alien planet billboard.
@@ -101,6 +102,8 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     /// </summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        if (_assets is IResidentTextureSource resident && _textureRevision != resident.TextureRevision)
+        { _textureRevision = resident.TextureRevision; _activePoster = null; }
         _spaceCluster = cluster;
         _simSun.SetLightDirection(SimGlare.TowardLight(cluster));
         if (cluster.StarSeed != _starSeed || cluster.Stars != _nStars)
@@ -338,6 +341,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
 
     private Texture2D? TextureFor(string stem)
     {
+        if (_assets is IResidentTextureSource resident && resident.TryGetTexture(stem, true, out var prepared)) return prepared;
         if (_textures.TryGetValue(stem, out var t)) return t;
         if (_missing.Contains(stem)) return null;
         try

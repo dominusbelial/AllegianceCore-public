@@ -105,7 +105,7 @@ public sealed partial class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
-        if (_flightSession is not null) { UpdateOnlineFlight(gameTime); base.Update(gameTime); return; }
+        if (_flightSession is not null) { UpdateOnlineFlight(gameTime); _sectorTextures?.Pump(GraphicsDevice); base.Update(gameTime); return; }
         var keys = _keyboardFocus ? Keyboard.GetState() : default;
         bool up = keys.IsKeyDown(Keys.Up), down = keys.IsKeyDown(Keys.Down);
         bool enter = keys.IsKeyDown(Keys.Enter), tab = keys.IsKeyDown(Keys.Tab);
@@ -207,6 +207,7 @@ public sealed partial class Game1 : Game
     {
         if (disposing)
         {
+            _sectorTextures?.Dispose();
             _menuAudio?.Dispose(); _modernFlightHud?.Dispose();
             _flightShips?.Dispose(); _flightStations?.Dispose(); _flightRocks?.Dispose(); _flightSky?.Dispose(); _flightBolts?.Dispose(); _flightWarps?.Dispose();
         }

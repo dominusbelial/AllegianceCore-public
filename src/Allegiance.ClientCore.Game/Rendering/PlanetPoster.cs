@@ -33,6 +33,7 @@ public sealed class PlanetPoster : IDisposable
     private Vector3 _dir;
     private float _radius;
     private bool _has;
+    private long _textureRevision;
 
     public PlanetPoster(GraphicsDevice gd, IAssetSource assets)
     {
@@ -62,6 +63,8 @@ public sealed class PlanetPoster : IDisposable
     /// <summary>Update the planet from a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        if (_assets is IResidentTextureSource resident && _textureRevision != resident.TextureRevision)
+        { _textureRevision = resident.TextureRevision; _activePlanet = null; }
         if (!string.IsNullOrEmpty(cluster.PlanetName)
             && !string.Equals(cluster.PlanetName, _activePlanet, StringComparison.OrdinalIgnoreCase))
         {
@@ -137,6 +140,7 @@ public sealed class PlanetPoster : IDisposable
 
     private Texture2D? PlanetTextureFor(string planetName)
     {
+        if (_assets is IResidentTextureSource resident && resident.TryGetTexture(planetName, true, out var prepared)) return prepared;
         if (_textures.TryGetValue(planetName, out var t)) return t;
         if (_missing.Contains(planetName)) return null;
         long started = System.Diagnostics.Stopwatch.GetTimestamp();

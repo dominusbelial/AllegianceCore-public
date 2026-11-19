@@ -41,3 +41,6 @@ footer { height: 18px; padding: 2px 6px; font-size: 9px; }
 #pacing-note { position: fixed; z-index: 30; top: var(--game-top, 32px); right: 8px; padding: 3px 7px; font-size: 11px; color: #ffdb8b; background: #081822dd; pointer-events: none; }
 #pacing-note[hidden] { display: none; }
 @media(max-width: 900px) { #menu-controls { justify-content: center; } }
+#sector-progress { position:fixed; z-index:29; top:calc(var(--game-top, 32px) + 24px); right:8px; max-width:calc(100vw - 32px); padding:3px 7px; font-size:11px; color:#c6e2dc; background:#081822dd; pointer-events:none; }
+#online-panel select { max-width:150px; color:#c6e2dc; background:#081822; font-size:11px; }
+#online-panel input[type=number] { width:72px; color:#c6e2dc; background:#081822; font-size:11px; }
