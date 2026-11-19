@@ -5,6 +5,34 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1057 — desktop MSAA lane: Fast timing guard only — 2026-11-19
+
+The final `tools/run-tests.sh --tier fast --no-build` sweep (default four-project
+pool), **11:19–11:28 local, UTC−05:00**, remains **FAIL**: **15,588 executions,
+15,582 passed, zero failed assertions, six not executed**. All nine infrastructure
+checks passed (0.035 s). Five passing executions exceeded the calibrated
+**11.528-second** Fast limit (factor 1.153); these existing catalogue, loadout and
+gunner cases and their production sources are untouched by P1057.
+
+Each affected **method** then ran alone in three fresh processes, serially, with
+artwork, including every theory row. **15 processes / 78 cases passed, zero
+failures or skips**, all below the original sweep limit. This establishes the
+isolated result; it does not waive the red timing gate or prove a single cause
+for the sweep's longer durations.
+
+| Offending sweep case | Sweep seconds | Isolated results per run | Slowest case in runs 1 / 2 / 3 (seconds) |
+|---|---:|---:|---|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | 12.257 | 2 passed ×3 | 3.917 / 3.936 / 3.935 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | 12.042 | 3 passed ×3 | 5.202 / 5.206 / 5.211 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 13.223 | 1 passed ×3 | 3.042 / 3.071 / 3.035 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | 11.939 | 10 passed ×3 | 4.273 / 4.315 / 4.204 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)` | 13.535 | 10 passed ×3 | 1.900 / 1.548 / 1.645 |
+
+Evidence: `<lane evidence dir>/fast/fast/summary.json`, per-project TRX/logs, and
+`<lane evidence dir>/fast-isolated/results.json` plus 15 isolated TRX/logs.
+No assertion, timeout, tier, calibration rule, quarantine or game rule changed.
+Report: [DESKTOP_ANTIALIAS_P1057.md](reports/DESKTOP_ANTIALIAS_P1057.md).
+
 ## P1056 — timer-bound flakes resolved: P739 warp-bomb one ULP and P660 countdown — 2026-11-19
 
 **Root cause 1 — `P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission`.**

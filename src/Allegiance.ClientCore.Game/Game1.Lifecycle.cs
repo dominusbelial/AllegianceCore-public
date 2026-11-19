@@ -906,6 +906,11 @@ public sealed partial class Game1
                 + Rendering.SimPalette.Describe(_grade, _visuals.SimPalette, HdrScene));
         }
 
+        Console.WriteLine($"[antialiasing] startup device={GraphicsDevice.GraphicsProfile} "
+            + $"backbuffer={GraphicsDevice.PresentationParameters.MultiSampleCount} "
+            + $"postScene={_post?.SceneRT?.MultiSampleCount.ToString() ?? "unallocated"} "
+            + $"FSRScene={_fsr?.Scene?.MultiSampleCount.ToString() ?? "unallocated"} "
+            + $"requested={Rendering.AntialiasingOptions.Describe(_upscaling.Antialiasing)}");
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);
 
         // P296 — the warp-transit teleport-spark billboard renderer (native

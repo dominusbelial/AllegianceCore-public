@@ -11,6 +11,7 @@ using Allegiance.Core;
 using Allegiance.Core.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using XnaCol = Microsoft.Xna.Framework.Color;
 using XnaMat = Microsoft.Xna.Framework.Matrix;
 using XnaVec = Microsoft.Xna.Framework.Vector3;
@@ -33,6 +34,8 @@ using XnaVec = Microsoft.Xna.Framework.Vector3;
 // Visuals page in both HUD styles (the real backbuffer).
 
 string repo = RepoRoot();
+if (args.Contains("--aa-scene") || args.Contains("--aa-benchmark") || args.Contains("--aa-check"))
+    return AntialiasProof.Run(args, repo);
 string art = Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") is { Length: > 0 } envArt
     ? envArt : ExternalPaths.Resolve(ExternalResourceKind.Artwork);
 string outDir = Arg("--out") ?? Path.Combine(repo, ".scratch", "p979", "shots");
@@ -73,8 +76,23 @@ void RunScene()
 
 void RunUi()
 {
+    bool aaUi = args.Contains("--aa-ui");
     var style = (Arg("--style") ?? "classic").Equals("modern", StringComparison.OrdinalIgnoreCase)
         ? HudStyle.Modern : HudStyle.Classic;
+    if (aaUi)
+    {
+        // This proof exercises Save through the real menu. Always use an owned
+        // fresh profile, so rerunning it cannot change a player's preferences.
+        string profile = Path.GetFullPath(Path.Combine(outDir, "aa-profile"));
+        Directory.CreateDirectory(profile);
+        Environment.SetEnvironmentVariable("ALLEGIANCE_PLAYER_SETTINGS", Path.Combine(profile, "player.json"));
+        Environment.SetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS", Path.Combine(profile, "hud.json"));
+        Environment.SetEnvironmentVariable("ALLEGIANCE_GRAPHICS_SETTINGS", Path.Combine(profile, "graphics.json"));
+        Environment.SetEnvironmentVariable("ALLEGIANCE_KEYMAP", Path.Combine(profile, "keymap.json"));
+        new IntroPreferences { Lobby = "", ShowStartupTrainingSuggestion = false }.Save();
+        new HudSettings { Style = style }.Save(HudSettings.DefaultPath);
+        new UpscalingSettings().Save(UpscalingSettings.DefaultPath);
+    }
     int width = int.Parse(Arg("--width") ?? "960", System.Globalization.CultureInfo.InvariantCulture);
     int height = int.Parse(Arg("--height") ?? "540", System.Globalization.CultureInfo.InvariantCulture);
     string content = Path.GetFullPath(Path.Combine(repo, "src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content"));
@@ -82,18 +100,20 @@ void RunUi()
     if (!Directory.Exists(link) && Directory.Exists(content)) Directory.CreateSymbolicLink(link, content);
 
     string? visualsSpec = Arg("--visuals");
-    using var game = new Game1(new Game1.LaunchOptions
+    var launch = new Game1.LaunchOptions
     {
         Intro = true,
         PlayerName = "P979Pilot",
         WindowWidth = width,
         WindowHeight = height,
         VisualsOverride = visualsSpec,
-    });
+    };
+    if (aaUi) { launch.LobbyUrl = ""; launch.LobbyUrlExplicit = true; }
+    using var game = new Game1(launch);
     game.Content.RootDirectory = content;
     string tag = (style == HudStyle.Modern ? "modern" : "classic")
         + (visualsSpec is { Length: > 0 } ? "_on" : "_off");
-    game.Components.Add(new VisualsPageProof(game, style, outDir, tag));
+    game.Components.Add(new VisualsPageProof(game, style, outDir, tag, aaUi));
     game.Run();
 }
 
@@ -261,7 +281,7 @@ sealed class SceneRunner : Game
 /// <summary>Photographs the Options → Visuals page of the real client after the
 /// intro has settled (the P970 production-screen pattern: reflection only to
 /// choose the screen, the page and its labels are the real draw).</summary>
-sealed class VisualsPageProof(Game1 game, HudStyle style, string output, string tag) : GameComponent(game)
+sealed class VisualsPageProof(Game1 game, HudStyle style, string output, string tag, bool antialiasing = false) : GameComponent(game)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly Stopwatch _watch = Stopwatch.StartNew();
@@ -293,6 +313,23 @@ sealed class VisualsPageProof(Game1 game, HudStyle style, string output, string 
                 menu.Row0 = menu.Rows(state).ToList()
                     .FindIndex(r => r.Command == OptionsMenuModel.OptionsCommand.OpenVisualsMenu);
                 menu.Activate(state);
+                int aaRow = menu.Rows(state).ToList().FindIndex(r => r.Command == OptionsMenuModel.OptionsCommand.CycleAntialiasing);
+                if (antialiasing)
+                {
+                    if (aaRow < 0) throw new InvalidOperationException("AA option missing");
+                    menu.Row0 = aaRow;
+                    // Exercise the real keyboard handler + Save, rather than
+                    // assigning the setting behind the photographed label.
+                    var update = typeof(Game1).GetMethod("UpdateOptionsMenu", Hidden)!;
+                    for (int click = 0; click < 2; click++)
+                    {
+                        update.Invoke(game, new object[] { new KeyboardState(Keys.Enter) });
+                        update.Invoke(game, new object[] { new KeyboardState() });
+                    }
+                    if (UpscalingSettings.Load(UpscalingSettings.DefaultPath).Antialiasing != Antialiasing.Msaa4)
+                        throw new InvalidOperationException("AA keyboard changes did not persist 4x");
+                    Console.WriteLine("P1057_OPTIONS_PASS " + style + " Off -> 2x -> 4x saved through production handler");
+                }
                 Set("_introView", Enum.Parse(typeof(Game1).GetField("_introView", Hidden)!.FieldType, "Settings"));
                 Console.WriteLine($"[p979-proof] ui style={style} page={menu.Current} viewport="
                     + $"{game.GraphicsDevice.Viewport.Width}x{game.GraphicsDevice.Viewport.Height}");

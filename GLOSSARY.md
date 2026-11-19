@@ -1641,6 +1641,19 @@ list in **reverse**.
   tests `tests/Allegiance.ClientCore.Tests/P985RemoteTimelineTests.cs`;
   report `docs/reports/REMOTE_TIMELINE_P985.md`.
 
+- **Desktop scene MSAA (P1057, default Off)** — `src/Allegiance.ClientCore.Game/Rendering/Antialiasing.cs`
+  defines Off/2×/4×/8× and tolerant saved-value/device clamping;
+  `src/Allegiance.ClientCore.Game/Rendering/UpscalingSettings.cs` persists the choice.
+  `src/Allegiance.ClientCore.Game/Rendering/SceneAntialiasing.cs` owns a preserved
+  colour/depth scene target, resolved on unbind before bloom/HDR/FSR or a plain
+  output copy; HUD and backbuffer remain single-sampled. The shared Visuals menu
+  exposes the desktop setting in Classic/Modern. Physical GL sample readback:
+  `src/Allegiance.ClientCore.Game/Diagnostics/GlSampleCount.cs`. Matched mesh/camera
+  captures, resolve proof and GPU measurement mode:
+  `tools/p979-visual-proof/AntialiasProof.cs`; browser coverage control:
+  `tools/p1057-browser-aa.cjs`; workstation runner: `tools/p1057-aa-measure.sh`.
+  Report: `docs/reports/DESKTOP_ANTIALIAS_P1057.md`. No new native game rule.
+
 - **Linear HDR scene foundation (`visuals.space.hdrPipeline`, P984)** — with the
   flag ON the 3-D scene renders into a floating-point target
   (`SurfaceFormat.HalfVector4`, RGBA16F), the PBR/HD-material path

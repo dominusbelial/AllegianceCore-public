@@ -1,0 +1,93 @@
+{
+  "pngBytes": 2419910,
+  "edgeRectangles": [
+    [
+      640,
+      470,
+      96,
+      80
+    ],
+    [
+      1020,
+      425,
+      96,
+      80
+    ],
+    [
+      860,
+      650,
+      96,
+      80
+    ]
+  ],
+  "edgeScale": 2,
+  "filter": "nearest neighbour",
+  "offSceneByteIdentical": true,
+  "browserOffVsDesktopOffChangedRgbPixels": 3035,
+  "captures": [
+    {
+      "file": "classic-off-0.png",
+      "rgbSha256": "16c91562cc0c3ce6e5ae93fc1a7d177b23a53ba19bc86ac31dbd95f845544e75"
+    },
+    {
+      "file": "classic-off-2.png",
+      "rgbSha256": "bb17f25ac6967f4a4a3ea5114351ca57475790e22f2b1c23b7d83f893f2e7906"
+    },
+    {
+      "file": "classic-off-4.png",
+      "rgbSha256": "bb17f25ac6967f4a4a3ea5114351ca57475790e22f2b1c23b7d83f893f2e7906"
+    },
+    {
+      "file": "classic-off-8.png",
+      "rgbSha256": "bb17f25ac6967f4a4a3ea5114351ca57475790e22f2b1c23b7d83f893f2e7906"
+    },
+    {
+      "file": "classic-on-0.png",
+      "rgbSha256": "ea7af46f449cf577ad437501d98c262e8f500db7fbb545b79e12fa10430dd532"
+    },
+    {
+      "file": "classic-on-2.png",
+      "rgbSha256": "662bcd3cf844bbefce23d4d09c0ceb641510c5f4b3f1f15863141990cbe9d318"
+    },
+    {
+      "file": "classic-on-4.png",
+      "rgbSha256": "662bcd3cf844bbefce23d4d09c0ceb641510c5f4b3f1f15863141990cbe9d318"
+    },
+    {
+      "file": "classic-on-8.png",
+      "rgbSha256": "662bcd3cf844bbefce23d4d09c0ceb641510c5f4b3f1f15863141990cbe9d318"
+    },
+    {
+      "file": "modern-off-0.png",
+      "rgbSha256": "96d5786dec5adb3f5ef4776a76b73a6bc3d33d5e7ae7114bed634b8a67ceb1bf"
+    },
+    {
+      "file": "modern-off-2.png",
+      "rgbSha256": "0752221d90722c5ab57b88fdba22287a9c80377261af904d56a10f4ac0b0db6c"
+    },
+    {
+      "file": "modern-off-4.png",
+      "rgbSha256": "0752221d90722c5ab57b88fdba22287a9c80377261af904d56a10f4ac0b0db6c"
+    },
+    {
+      "file": "modern-off-8.png",
+      "rgbSha256": "0752221d90722c5ab57b88fdba22287a9c80377261af904d56a10f4ac0b0db6c"
+    },
+    {
+      "file": "modern-on-0.png",
+      "rgbSha256": "c017a80920cf4eee65e6bd9b5a5701b22487b8e160ea57113c38622911ceef84"
+    },
+    {
+      "file": "modern-on-2.png",
+      "rgbSha256": "63539688de252abafa724d254c523870eb657e1d561ccb37d1eacfff522c7fa9"
+    },
+    {
+      "file": "modern-on-4.png",
+      "rgbSha256": "63539688de252abafa724d254c523870eb657e1d561ccb37d1eacfff522c7fa9"
+    },
+    {
+      "file": "modern-on-8.png",
+      "rgbSha256": "63539688de252abafa724d254c523870eb657e1d561ccb37d1eacfff522c7fa9"
+    }
+  ]
+}

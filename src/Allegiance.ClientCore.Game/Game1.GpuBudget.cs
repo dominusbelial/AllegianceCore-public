@@ -165,6 +165,7 @@ public sealed partial class Game1
     private ClientFrameTelemetry? _frameTelemetry;
     private GlFrameTimer? _gpuTimer;
     private FsrPostProcessor? _fsr;
+    private SceneAntialiasing? _sceneAntialiasing;
     private bool _graphicsSettingsVisible, _graphicsOpenWasDown;
     /// <summary>P805 (row 470) — native ShowChatHistoryHUD toggle (menu-only,
     /// NOT persisted: WinTrek.cpp:2897,5074-5078,3934), default on.</summary>
@@ -211,6 +212,7 @@ public sealed partial class Game1
         SyncHdMaterialMode();
         _hdMaterials.Flashes = _effectLights;
         _fsr = new(GraphicsDevice, _shaders!);
+        _sceneAntialiasing = new(GraphicsDevice);
         _postWidth = GraphicsDevice.PresentationParameters.BackBufferWidth;
         _postHeight = GraphicsDevice.PresentationParameters.BackBufferHeight;
         _budgetStart = Stopwatch.GetTimestamp();

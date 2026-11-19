@@ -139,6 +139,14 @@ public sealed partial class Game1
                 case OptionsMenuModel.OptionsCommand.LowerVisualRange:
                     StepVisualRange(_optionsMenu.VisualKeyAt(_optionsMenu.Row0, state), -1);
                     break;
+#if !BROWSER
+                case OptionsMenuModel.OptionsCommand.CycleAntialiasing:
+                    _upscaling.Antialiasing = Rendering.AntialiasingOptions.Next(_upscaling.Antialiasing);
+                    try { _upscaling.Save(Rendering.UpscalingSettings.DefaultPath); }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                    { Console.WriteLine($"[antialiasing] cannot save graphics preferences: {e.Message}"); }
+                    break;
+#endif
             }
         }
 
@@ -205,7 +213,11 @@ public sealed partial class Game1
             Visuals: _visuals,
             // P989 — so a flag that depends on the HDR scene path can say it is
             // inactive (null before a flight session created the post-processor).
-            HdrSceneActive: OptionsHdrSceneActive);
+            HdrSceneActive: OptionsHdrSceneActive
+#if !BROWSER
+            , Antialiasing: _upscaling.Antialiasing
+#endif
+            );
     }
 
     /// <summary>
@@ -330,7 +342,14 @@ public sealed partial class Game1
             if (sel)
                 plates.Add(new(band, ScreenPlateRole.Selection, new Color(0.08f, 0.35f, 0.33f, 0.55f)));
             string hot = rows[i].Hotkey == '\0' ? "" : $"  ({rows[i].Hotkey})";
-            frameRows.Add(BandedRow(rows[i].Label, (sel ? "> " : "  ") + rows[i].Label + hot, 72, y, band,
+            string label = rows[i].Label;
+#if !BROWSER
+            // The desktop HUD font lacks em dash. The existing Jet description
+            // otherwise crashes this page before its AA row can be used. Keep
+            // the model/commands intact and render that separator as ASCII.
+            label = label.Replace('\u2014', '-');
+#endif
+            frameRows.Add(BandedRow(rows[i].Label, (sel ? "> " : "  ") + label + hot, 72, y, band,
                 sel, sel ? ScreenInkRole.Title : ScreenInkRole.Plain, sel ? title : Color.White));
             y += rowStep;
         }

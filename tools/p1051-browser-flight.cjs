@@ -74,6 +74,9 @@ async function main(){
    const firstMenu=await page.evaluate(()=>preview.measurements.firstFrameMs);
    const launchAt=await page.evaluate(()=>performance.now());await page.locator('#online-launch').click();await page.locator('#online-panel[data-state="Flight"]').waitFor({timeout:120000});await page.waitForFunction(()=>gameMenu.metrics().flight.frames>3,null,{timeout:60000});
    const firstFlight=await page.evaluate(()=>performance.now()),shipId=(await page.evaluate(()=>gameMenu.metrics())).online.shipId;
+   // P1057: record the EXISTING context, never infer AA from browser defaults.
+   const webGlContext=await page.evaluate(()=>{const c=document.getElementById('theCanvas'),gl=c.getContext('webgl2')||c.getContext('webgl');if(!gl)throw Error('No active WebGL context');return {attributes:gl.getContextAttributes(),samples:gl.getParameter(gl.SAMPLES),sampleBuffers:gl.getParameter(gl.SAMPLE_BUFFERS),drawingBufferWidth:gl.drawingBufferWidth,drawingBufferHeight:gl.drawingBufferHeight,devicePixelRatio}});
+   fs.writeFileSync(path.join(output,'webgl-context-'+label+'.json'),JSON.stringify(webGlContext,null,2));
    const httpTransferToFlightBytes=transfers.reduce((total,item)=>total+item.bytes,0),httpRequestsToFlight=transfers.length;
    await page.locator('#theCanvas').focus();await page.keyboard.press('Backspace',{delay:100});
    await serverWait(s=>s.ships.some(x=>x.Id===shipId&&x.StationId==null&&x.throttle===-1),'initial stop throttle accepted');

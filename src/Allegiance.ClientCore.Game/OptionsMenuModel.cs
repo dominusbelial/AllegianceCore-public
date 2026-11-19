@@ -106,6 +106,7 @@ public sealed class OptionsMenuModel
         RaiseVisualRange,
         /// <summary>P979 — step the numeric flag down (−).</summary>
         LowerVisualRange,
+        CycleAntialiasing,
     }
 
     /// <summary>One menu line: its label (state included, like native's
@@ -141,7 +142,8 @@ public sealed class OptionsMenuModel
         // (flag on AND the RGBA16F target + output transform proven). Null = not
         // known yet (e.g. the intro menu before a flight session), which shows the
         // row's dependency in its description but claims nothing about activity.
-        bool? HdrSceneActive = null);
+        bool? HdrSceneActive = null,
+        Antialiasing? Antialiasing = null);
 
     /// <summary>The menu page currently showing (native's open submenu).</summary>
     public Page Current { get; private set; } = Page.Root;
@@ -284,6 +286,10 @@ public sealed class OptionsMenuModel
                     OptionsCommand.ToggleVisualFlag, definition.Hotkey), definition.Key));
             }
         }
+        if (state.Antialiasing is { } aa)
+            // Native GetAAString uses this parenthesized menu form
+            // (WinTrek/WinTrek.cpp:5964-5967). P1057 limits choices to 0/2/4/8.
+            rows.Add((new Row($"Antialiasing ({AntialiasingOptions.Describe(aa)})", OptionsCommand.CycleAntialiasing), null));
         return rows;
     }
 
