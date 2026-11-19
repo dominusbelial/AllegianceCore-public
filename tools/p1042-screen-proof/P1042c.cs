@@ -95,7 +95,11 @@ sealed partial class ScreenProof
         {
             new(0, 1400f), new(1, 260f), new(0, 800f), new(2, 120f),
         };
-        _infoPane = SectorInfoPaneLayout.Build("Sol", samples, 3);
+        // P1055 — the pane carries the selected sector's warning as its first line: native
+        // draws GetClusterWarningText at the pane origin (sectormap.cpp:517-534), which is
+        // where it belongs once it stops being drawn under the STARMAP header.
+        _infoPane = SectorInfoPaneLayout.Build("Sol", samples, 3, expanded: true,
+            warningText: _options.PreStarmap ? null : StarmapThreatPresentation.WarningText(2));
 
         // Game over: the real GAME_OVER(62) record shapes.
         var go = new GameOver

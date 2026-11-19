@@ -85,10 +85,37 @@ public sealed class ScreenRecorder : IJetVectorSurface, IJetElementAudit, IScree
     public void Plate(string family, string id, RectangleF box)
         => Plates.Add(new(family, id, box));
 
+    /// <summary>P1055 — a CONTENT text run: text the shared content renderer paints (or the
+    /// frame that renderer paints from resolves). <paramref name="Owner"/> is the content
+    /// panel the run belongs to (a run inside its own panel is not a collision).</summary>
+    public readonly record struct ContentTextRun(string Element, string Owner, string Text, RectangleF Box, bool Large);
+    /// <summary>P1055 — a content panel/box: a painted region the content renderer owns
+    /// (the map panel, the sector-info pane, the leaderboard panel).</summary>
+    public readonly record struct ContentBox(string Element, RectangleF Box);
+
+    /// <summary>P1055 — every content text run this scene paints, in draw order.</summary>
+    public readonly List<ContentTextRun> ContentTextRuns = new();
+    /// <summary>P1055 — every content panel/box this scene paints.</summary>
+    public readonly List<ContentBox> ContentBoxes = new();
+
+    /// <summary>P1055 — record one content text run at its resolved anchor, measured with
+    /// the real HUD font (the box the SpriteBatch inks).</summary>
+    public void ContentText(string element, string owner, string text, Vector2 position,
+        float scale, bool large = false)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        var size = Measure(text, large, scale);
+        ContentTextRuns.Add(new(element, owner, text,
+            new RectangleF(position.X, position.Y, size.X, size.Y), large));
+    }
+
+    /// <summary>P1055 — record one content panel/box (a painted region, not chrome).</summary>
+    public void ContentPanel(string element, RectangleF box) => ContentBoxes.Add(new(element, box));
+
     /// <summary>P1042b — a content text run the shared renderer drew at the same
     /// control id the chrome uses.</summary>
     public void Content(string family, string id, RectangleF box, string text)
-        => ContentRuns.Add(new(id, text, box));
+        => ContentTextRuns.Add(new(id, family, text, box, false));
 
     /// <summary>P1042c — record a MEASURED box that no chrome primitive drew (the pre-fix
     /// career title geometry, used to prove the title-vs-tab rule flags before the fix).</summary>
@@ -116,6 +143,10 @@ public static class ScreenAudit
     public sealed record Result(int Controls, int HitVsDraw, int StrokeVsText, int TextOutsidePlate,
         int TextOffScreen, int TextOverlapCross, int TextOverlapSame, int ContentOverlap,
         int TitleVsTab, int Failures, string[] Samples);
+
+    /// <summary>P1055 — the content-vs-content audit counts for one (scene, size, skin).</summary>
+    public sealed record ContentResult(int Runs, int Boxes, int TextText, int TextBox,
+        int OffScreen, int Failures, string[] Samples);
 
     public static Prepared Intro(ScreenRecorder recorder, IntroMainFrame frame)
     {
@@ -287,6 +318,99 @@ public static class ScreenAudit
         int failures = hitVsDraw + strokeVsText + outsidePlate + offScreen + cross + same + titleVsTab;
         return new(recorder.Controls.Count, hitVsDraw, strokeVsText, outsidePlate, offScreen, cross, same,
             contentOverlap, titleVsTab, failures, samples.ToArray());
+    }
+
+    /// <summary>
+    /// P1055 — the CONTENT-vs-CONTENT audit. The P1042b/P1042c classes compare the Jet chrome
+    /// with the content text it sits over; two pieces of the game's own text overlapping each
+    /// other were never checked (Claude's review of the P1042c captures found the Benchmark
+    /// description over its own rows and the sector-info pane over the alert line). This class
+    /// measures content runs the content renderer paints:
+    /// <list type="bullet">
+    /// <item><c>content-overlap</c> — two content text runs whose INK boxes intersect by more
+    /// than <paramref name="tolerance"/> px on BOTH axes. Reported with the shared width/height
+    /// in px (the overlap area).</item>
+    /// <item><c>content-panel-overlap</c> — a content text run crossing a content panel/box it
+    /// does not belong to (a run inside its OWN panel — a pane line in the pane box — is not a
+    /// collision; a run that crosses another panel's edge, or that a later panel paints over,
+    /// is).</item>
+    /// <item><c>content-off-screen</c> — a content text box past the viewport.</item>
+    /// </list>
+    /// The tolerance is 1 px of penetration on each axis, measured on the ink box (the run's
+    /// line pitch is its leading, not ink), so two runs that abut exactly on a 20 px line pitch
+    /// are not counted while a real collision is. <paramref name="findings"/> receives one line
+    /// per finding for the report's table.
+    /// </summary>
+    public static ContentResult EvaluateContent(ScreenRecorder recorder, int width, int height,
+        List<string> findings, float tolerance = 1f, string? screen = null)
+    {
+        var samples = new List<string>();
+        int textText = 0, textBox = 0, offScreen = 0;
+        string tag = screen is null ? "" : screen + ": ";
+
+        for (int i = 0; i < recorder.ContentTextRuns.Count; i++)
+        for (int j = i + 1; j < recorder.ContentTextRuns.Count; j++)
+        {
+            var a = recorder.ContentTextRuns[i];
+            var b = recorder.ContentTextRuns[j];
+            var (w, h) = Overlap(InkBox(a.Box), InkBox(b.Box));
+            if (w <= tolerance || h <= tolerance) continue;
+            textText++;
+            string line = $"{tag}content-overlap {a.Element} '{Clip(a.Text)}' / {b.Element} '{Clip(b.Text)}' " +
+                $"overlap {w:0.#}x{h:0.#} px ({w * h:0} px^2)";
+            findings.Add(line);
+            if (samples.Count < 8) samples.Add(line);
+        }
+
+        foreach (var run in recorder.ContentTextRuns)
+        foreach (var box in recorder.ContentBoxes)
+        {
+            if (box.Element == run.Owner) continue;             // the run's own panel
+            // Nested panels are legal: the sector-info pane sits INSIDE the starmap panel, so
+            // the pane's own lines are "inside the map panel" by construction. A panel that
+            // fully contains the run's OWNER panel is an ancestor, not a collision.
+            var owner = recorder.ContentBoxes.Find(b => b.Element == run.Owner);
+            if (owner.Element is not null && Contains(box.Box, owner.Box)) continue;
+            var (w, h) = Overlap(InkBox(run.Box), box.Box);
+            if (w <= tolerance || h <= tolerance) continue;
+            textBox++;
+            string line = $"{tag}content-panel-overlap {run.Element} '{Clip(run.Text)}' over panel " +
+                $"{box.Element} by {w:0.#}x{h:0.#} px";
+            findings.Add(line);
+            if (samples.Count < 16) samples.Add(line);
+        }
+
+        foreach (var run in recorder.ContentTextRuns)
+        {
+            if (run.Box.X < 0f || run.Box.Y < 0f || run.Box.X + run.Box.Width > width + 0.01f
+                || run.Box.Y + run.Box.Height > height + 0.01f)
+            {
+                offScreen++;
+                string line = $"{tag}content-off-screen {run.Element} '{Clip(run.Text)}' at {Fmt(run.Box)} " +
+                    $"in {width}x{height}";
+                findings.Add(line);
+                if (samples.Count < 24) samples.Add(line);
+            }
+        }
+
+        int failures = textText + textBox + offScreen;
+        return new(recorder.ContentTextRuns.Count, recorder.ContentBoxes.Count, textText, textBox,
+            offScreen, failures, samples.ToArray());
+    }
+
+    /// <summary>P1055 — the overlap rectangle of two boxes (0 when they do not intersect).</summary>
+    private static (float W, float H) Overlap(RectangleF a, RectangleF b)
+    {
+        float w = MathF.Min(a.X + a.Width, b.X + b.Width) - MathF.Max(a.X, b.X);
+        float h = MathF.Min(a.Y + a.Height, b.Y + b.Height) - MathF.Max(a.Y, b.Y);
+        return (w, h);
+    }
+
+    /// <summary>A run's text shortened for a findings line.</summary>
+    private static string Clip(string text)
+    {
+        string flat = text.Replace("\r", "").Replace("\n", " / ");
+        return flat.Length <= 42 ? flat : flat[..39] + "...";
     }
 
     private static bool Same(RectangleF a, RectangleF b)

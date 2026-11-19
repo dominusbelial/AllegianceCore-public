@@ -159,11 +159,8 @@ public static class ConsoleLog
         var probe = Volatile.Read(ref _probeScopes) > 0 ? _threadProbe : null;
         if (probe is not null) probe.Attempts++;
         if (!Verbose) return;
-        var gen = _gen;
-        if (gen.Queue.TryAdd(line))
+        if (TryEnqueue(line))
         {
-            Interlocked.Increment(ref gen.Enqueued);
-            Interlocked.Increment(ref EmittedWrites);
             if (probe is not null) probe.Emitted++;
         }
         else
@@ -171,6 +168,46 @@ public static class ConsoleLog
             Interlocked.Increment(ref DroppedWrites);
             if (probe is not null) probe.Dropped++;
         }
+    }
+
+    /// <summary>
+    /// P1055 — enqueue one line onto the sink generation that is current NOW. A line can
+    /// reach a generation that <see cref="ResetForTest"/> (test path) or <see cref="Shutdown"/>
+    /// (production exit) has already COMPLETED: ResetForTest completes the old queue before it
+    /// swaps <see cref="_gen"/>, so the window between the two is wide (the join can take
+    /// seconds). <see cref="BlockingCollection{T}.TryAdd"/> does not return false on a
+    /// completed collection — it THROWS <c>InvalidOperationException</c>, and on a background
+    /// thread (the server sim/broadcast drain callers, a bot host writer) that killed the
+    /// process: the P1042c fast tier aborted the Core test host ~5,000 tests in with
+    /// "The collection has been marked as complete with regards to additions". A line that
+    /// hits a completed generation is retried ONCE on the generation current now; when that
+    /// one is complete too (shutdown, where no drain is left) the line is DROPPED and counted.
+    /// Never blocks the caller, never throws; the caller's counters stay exact.
+    /// </summary>
+    private static bool TryEnqueue(string line)
+    {
+        var gen = Volatile.Read(ref _gen);
+        if (TryAddTo(gen, line)) return true;
+        var current = Volatile.Read(ref _gen);
+        if (ReferenceEquals(current, gen)) return false;   // full queue: drop (bounded sink)
+        return TryAddTo(current, line);
+    }
+
+    /// <summary>P1055 — the only place a line enters a generation's queue. A completed
+    /// collection is a drop, not an exception (see <see cref="TryEnqueue"/>).</summary>
+    private static bool TryAddTo(Gen gen, string line)
+    {
+        try
+        {
+            if (!gen.Queue.TryAdd(line)) return false;   // full: the bounded sink drops
+        }
+        catch (InvalidOperationException)
+        {
+            return false;                                // CompleteAdding raced the add
+        }
+        Interlocked.Increment(ref gen.Enqueued);
+        Interlocked.Increment(ref EmittedWrites);
+        return true;
     }
 
     /// <summary>
@@ -296,7 +333,7 @@ public static class ConsoleLog
         Verbose = false;
         CloseProbeForTest();                    // a leaked scope must not count the next test
         var old = _gen;
-        old.Queue.CompleteAdding();
+        try { old.Queue.CompleteAdding(); } catch (InvalidOperationException) { /* already completed by Shutdown */ }
         _drain.Join(Math.Min(joinMs, Math.Max(50, (int)(old.Queue.Count * 2 + 50))));
         var next = new Gen();
         Volatile.Write(ref _gen, next);          // retires `old` (its drain stops by itself)
@@ -337,13 +374,11 @@ public static class ConsoleLog
             _buf.Clear();
             // P964 — enqueue onto the CURRENT generation, so a redirected console keeps
             // working across a ResetForTest that replaced the queue under an Install().
-            var gen = _gen;
-            if (gen.Queue.TryAdd(line))
-            {
-                Interlocked.Increment(ref gen.Enqueued);
-                Interlocked.Increment(ref EmittedWrites);
-            }
-            else Interlocked.Increment(ref DroppedWrites);
+            // P1055 — a generation can already be COMPLETE here (ResetForTest completed the
+            // old queue before swapping it, or Shutdown completed the live one at exit);
+            // TryEnqueue retries once on the current generation and drops-and-counts instead
+            // of letting BlockingCollection.TryAdd throw on a caller thread.
+            if (!TryEnqueue(line)) Interlocked.Increment(ref DroppedWrites);
         }
 
         public override void Write(string? value)

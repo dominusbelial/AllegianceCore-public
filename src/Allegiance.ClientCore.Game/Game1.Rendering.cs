@@ -4118,11 +4118,15 @@ public sealed partial class Game1
                                 EabmCapabilities: ptypes.TryGetValue(p.ProbetypeId, out var pt) ? pt.EabmCapabilities : (short)-1));
                         probeCount = SectorMapQueries.CountOwnProbes(probeRows, sid, mySide);
                     }
-                    // P752 — the hovered cluster's warning text (native draws it
-                    // at the pane origin while the pointer is over the sector,
-                    // sectormap.cpp:517-534).
-                    string? warnText = _starmapHoverSector is { } hov
-                        && warningSnapshot.TryGetValue(hov, out var hw)
+                    // P752/P1055 — the hovered cluster's warning text (native draws it at the
+                    // pane origin while the pointer is over the sector, sectormap.cpp:517-534).
+                    // The port's keyboard client has no mouse hover, so the SELECTED sector is
+                    // the native mouse-over equivalent (sectormap.cpp:1413-1461 selects the
+                    // hovered cluster): fall back to it, which is what keeps the alert visible
+                    // now that it lives inside the pane instead of under the header.
+                    short? warnedSector = _starmapHoverSector ?? sid;
+                    string? warnText = warnedSector is { } wsv
+                        && warningSnapshot.TryGetValue(wsv, out var hw)
                         ? StarmapThreatPresentation.WarningText(hw)
                         : null;
                     if (string.IsNullOrEmpty(warnText)) warnText = null;
