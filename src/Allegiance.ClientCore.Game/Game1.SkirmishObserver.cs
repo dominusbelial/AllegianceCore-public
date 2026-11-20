@@ -49,6 +49,11 @@ public sealed partial class Game1
         _autoTarget = null;
         _directorActive = false;
         _spectatorFollowId = -1;
+        // The spectator frame never runs the flight-path world-sound updates, so
+        // stop every space ambient loop now (as docking does); otherwise a probe,
+        // missile, beam or aleph loop keeps playing at its last position for the
+        // rest of the spectate and fades with the camera like a stuck light.
+        SilenceWorldAmbientLoops();
         _session.Dispose();
         lock (_session.Gate) _session.World.Reset();
         _localSpectating = true;
