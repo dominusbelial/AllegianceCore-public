@@ -125,6 +125,8 @@ public sealed record SkirmishOptions
     /// matches leave <c>ServerConfig.SideSelectAutoSeatSeconds</c> null so they
     /// wait for a POSITIONREQ exactly like native.</summary>
     public const double ShowcaseSideSelectAutoSeatSeconds = 30;
+    /// <summary>Remote-ship pose floor for a loopback (non-LAN, non-Grand) skirmish: the full 20 Hz tick rate.</summary>
+    public const double LoopbackMinUpdateHz = 20;
     public const double FastIncomeMultiplier = 8;
     public const double FastResearchTimeScale = 4;
 
@@ -184,9 +186,18 @@ public sealed record SkirmishOptions
             },
             // A calibration candidate may pin the build; otherwise the resolver
             // sizes it from the shared profile (an absent section = resolver).
-            Broadcast = sizing is { ParallelBuild: null, BuildWorkers: null }
-                ? null
-                : new() { ParallelBuild = sizing.ParallelBuild, MaxDegreeOfParallelism = sizing.BuildWorkers },
+            // ParallelBuild/BuildWorkers null = the resolver sizes the build.
+            // Single-player runs over loopback, so bandwidth is free: raise the
+            // remote-ship pose floor from the 2 Hz default to the full tick
+            // rate (native single-player simulated every ship locally, so
+            // remote ships never jumped). Measured at 50v50 (~37 KB/s per
+            // peer, server ~30 % of a core). A LAN host and Grand (400 loopback
+            // peers on one PC, ~60 MB/s of serialisation) keep the default.
+            Broadcast = new()
+            {
+                ParallelBuild = sizing.ParallelBuild, MaxDegreeOfParallelism = sizing.BuildWorkers,
+                MinUpdateHz = HostLan || Size == SkirmishSize.Grand ? new BroadcastConfig().MinUpdateHz : LoopbackMinUpdateHz,
+            },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = HostLan ? HostPort : 0, BindAddress = HostLan ? "0.0.0.0" : "127.0.0.1",
             Discovery = new() { Enabled = HostLan },
