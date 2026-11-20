@@ -183,6 +183,7 @@ public sealed partial class Game1
             if (Edge("SkirmishCamera")) _skirmishCamera.CycleMode();
             if (Edge("FreeCam")) _skirmishCamera.SelectMode(SkirmishCameraMode.Free);
             if (Edge("OrbitCam")) _skirmishCamera.SelectMode(SkirmishCameraMode.HottestFight);
+            HandleSpectatorSectorInput(Edge);
         }
         else direction = 0;
         bool wasFree = _freeCamActive;
@@ -224,8 +225,8 @@ public sealed partial class Game1
         _orbitCam.AutoOrbit = true;
         _orbitCam.AutoOrbitSpeedRadPerSec = .12f;
         if (_freeCamActive && !wasFree) _freeCam.Teleport(_orbitCam.Eye);
-        SyncMouseCapture(modal);
-        if (_freeCamActive && !modal && IsActive)
+        SyncMouseCapture(modal || _spectatorMapOpen);
+        if (_freeCamActive && !modal && !_spectatorMapOpen && IsActive)
         {
             var mouse = Mouse.GetState();
             var vp = GraphicsDevice.Viewport;
@@ -235,6 +236,7 @@ public sealed partial class Game1
             _freeCam.Move((ActionDown(keys, "FreeCamForward") ? 1 : 0) - (ActionDown(keys, "FreeCamBack") ? 1 : 0),
                 (ActionDown(keys, "FreeCamRight") ? 1 : 0) - (ActionDown(keys, "FreeCamLeft") ? 1 : 0),
                 (ActionDown(keys, "FreeCamUp") ? 1 : 0) - (ActionDown(keys, "FreeCamDown") ? 1 : 0), (float)time.ElapsedGameTime.TotalSeconds);
+            CrossSpectatorAleph();
         }
         else { _specMouseInit = false; _orbitCam.Step(time.ElapsedGameTime.TotalSeconds); }
         _observerKeys = keys;

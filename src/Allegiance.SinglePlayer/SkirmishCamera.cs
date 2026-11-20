@@ -18,6 +18,9 @@ public sealed class SkirmishCamera
     private double _lastCut;
     public void CycleMode() { Mode = (SkirmishCameraMode)(((int)Mode + 1) % 4); _lastCut = double.NegativeInfinity; }
     public void SelectMode(SkirmishCameraMode mode) { Mode = mode; _lastCut = double.NegativeInfinity; }
+    /// <summary>Park the free camera in <paramref name="sector"/> (sector pick or
+    /// aleph crossing); Free mode keeps the sector until the player changes it.</summary>
+    public void GoToSector(short sector) { Mode = SkirmishCameraMode.Free; SectorId = sector; ShipId = StationId = null; _lastCut = double.NegativeInfinity; }
 
     public void Update(SkirmishObservation frame, int direction = 0)
     {

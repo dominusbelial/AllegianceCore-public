@@ -2353,6 +2353,7 @@ public sealed partial class Game1
         FlushScheduledAutoshot();
 
         DrawSkirmishStatus();
+        DrawSpectatorSectorMap();
         CaptureSkirmishProof();
         DrawBenchmark();
         base.Draw(gameTime);

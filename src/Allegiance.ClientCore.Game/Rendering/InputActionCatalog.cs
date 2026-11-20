@@ -578,6 +578,8 @@ public static class InputActionCatalog
         new("SkirmishSpectate", "LOCAL SKIRMISH", "Return to spectator (refill bot)", C(Keys.D0), null),
         new("SkirmishCamera", "LOCAL SKIRMISH", "Spectator: action / ship / station / free", K(Keys.V), null),
         new("SkirmishPrevious", "LOCAL SKIRMISH", "Spectator: previous ship / station", K(Keys.PageDown), null),
+        new("SpectatorNextSector", "LOCAL SKIRMISH", "Spectator: go to next sector", K(Keys.Home), null),
+        new("SpectatorPreviousSector", "LOCAL SKIRMISH", "Spectator: go to previous sector", K(Keys.End), null),
         new("OrbitSubjectNext", "FREE-CAM / SPECTATOR", "Orbit camera: cycle locked subject", K(Keys.PageUp), null),
 
         // -- TRAINING (MISSION ONLY) — P785, the six native training keys. Commands are
