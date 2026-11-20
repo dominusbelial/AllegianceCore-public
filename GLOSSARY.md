@@ -2961,6 +2961,15 @@ list in **reverse**.
   in `tests/Allegiance.ClientCore.Tests/P807GameOverHandoffTests.cs`.
   Investigation and qualification: `docs/reports/P807_HANDOFF_HANG_P960.md`;
   the historical workstation-only two-handoff timeout remains unconfirmed.
+- **Allocation and wire observation boundaries (P1060)** —
+  `tests/Allegiance.ClientCore.MonoGame.Tests/NoGcAllocationWindow.cs` protects
+  strict per-thread zero-byte measurements from GC allocation-context retirement;
+  its process-wide collector reservation requires the nonparallel allocation
+  collection. `tests/Allegiance.ClientCore.Tests/DeadLatchRespawnLiveTests.cs`
+  drains death delivery before advancing the next simulation phase, and
+  `tests/Allegiance.Core.Tests/GameOverPlayersWireTests.cs` checks exact connected
+  simulation-clock intervals, excluding a disconnected gap. Root-cause evidence:
+  `docs/reports/TEST_FLAKES_ROOT_CAUSE_P1060.md`. No product or native rule change.
 - **`tools/run-tests.sh`** → `tools/test-tiers/runner.py` — the shared
   fast/live/perf tier runner (`--tier fast|live|perf|all`). Docs:
   `docs/reports/TT1_TEST_TIERS.md`, `docs/TEST_FLAKES.md`.

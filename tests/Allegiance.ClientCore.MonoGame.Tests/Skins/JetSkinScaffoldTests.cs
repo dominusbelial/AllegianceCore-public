@@ -22,6 +22,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests.Skins;
 /// <see cref="IJetVectorSurface"/>, so geometry, smoke and allocation gates run
 /// without a graphics device (the real-window capture is the report's PNG pair).</para>
 /// </summary>
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
 {
     private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -305,9 +306,13 @@ public sealed class JetSkinScaffoldTests(ITestOutputHelper output)
         // is not a frame cycle. Shared window and source audit: JetAllocationWindow.
         Draw(JetAllocationWindow.WarmupFrames);
         Assert.True(surface.Lines > 0);
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(JetAllocationWindow.MeasuredFrames);
-        long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        long bytes;
+        using (new NoGcAllocationWindow())
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            Draw(JetAllocationWindow.MeasuredFrames);
+            bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        }
         output.WriteLine($"P1035 JetHudRenderer.Draw: {bytes} B / {JetAllocationWindow.MeasuredFrames} frames = {bytes / (double)JetAllocationWindow.MeasuredFrames} B/frame");
         Assert.Equal(0, bytes);
     }

@@ -21,6 +21,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests.Skins;
 /// <see cref="IJetVectorSurface"/>, so geometry, gate parity, smoke and the 0 B/frame
 /// gate run without a graphics device.</para>
 /// </summary>
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
 {
     // ── HudFlightReference / attitude geometry ───────────────────────────
@@ -426,9 +427,13 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
         Draw(JetAllocationWindow.WarmupFrames);
         Assert.True(surface.Lines > 0);
         Assert.Contains("HDG 210", surface.Seen);
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        Draw(JetAllocationWindow.MeasuredFrames);
-        long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        long bytes;
+        using (new NoGcAllocationWindow())
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            Draw(JetAllocationWindow.MeasuredFrames);
+            bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        }
         output.WriteLine($"P1036 JetHudRenderer.Draw (ladder+tapes+FPM): {bytes} B / {JetAllocationWindow.MeasuredFrames} frames = {bytes / (double)JetAllocationWindow.MeasuredFrames} B/frame");
         Assert.Equal(0, bytes);
     }

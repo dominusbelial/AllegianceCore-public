@@ -84,6 +84,16 @@ public sealed class DeadLatchRespawnLiveTests
         return n;
     }
 
+    // A real kill publishes its TCP frames synchronously. Drain those frames
+    // without advancing into the next simulated phase: a respawn loadout EXPORT
+    // can legitimately clear IsDead before a polling test sees the death.
+    private static int WaitForDelivery(Func<bool> done, int max)
+    {
+        int n = 0;
+        while (!done() && n < max) { n++; Thread.Sleep(1); }
+        return n;
+    }
+
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
@@ -430,24 +440,34 @@ public sealed class DeadLatchRespawnLiveTests
         var bShip = ships.First(s => s.Id == bid);
         Assert.Equal(aShip.Sector, bShip.Sector);   // both in the same (garrison) sector
 
-        // B initially sees A alive.
         bool BravoSeesDead() { lock (bravo.Gate) return bravo.World.Ships.TryGetValue(aid, out var e) && e.IsDead; }
-        Assert.False(BravoSeesDead(), "B should see A alive before the death");
+        bool BravoSeesFlying()
+        {
+            lock (bravo.Gate)
+                return bravo.World.Ships.TryGetValue(aid, out var e)
+                    && !e.IsNotVisible && e.StationId == -1
+                    && e.PoseSectorId == bShip.Sector!.Id && e.Latest is not null;
+        }
+        // Absence is not evidence of life. Finish B's initial in-sector pose
+        // before injecting the death, rather than racing its join burst.
+        int visible = PumpUntil(server, BravoSeesFlying, 2500);
+        Assert.True(visible < 2500, "B must observe A flying before A dies");
 
         // ══ DEATH: A dies for real (lifepod → real death) — B must latch IsDead. ══
         Assert.True(KillShipForReal(server, aShip), "A's lethal hit must kill");
-        int bSawDead = PumpUntil(server, BravoSeesDead, 2500);
-        Assert.True(bSawDead < 2500, $"B never saw A's death (IsDead never latched on B) after {bSawDead} ticks");
+        int bSawDead = WaitForDelivery(BravoSeesDead, 2500);
+        Assert.True(bSawDead < 2500, $"B never saw A's death (IsDead never latched on B) after {bSawDead} delivery polls");
         int aResp = PumpUntil(server, () => aShip.StationId is not null, 2500);
         Assert.True(aResp < 2500, "A never respawned docked after death");
-        Console.WriteLine($"[P521-2C] B saw A die (IsDead latched) after {bSawDead} ticks; A respawned docked");
+        Console.WriteLine($"[P521-2C] B saw A die (IsDead latched) after {bSawDead} delivery polls; A respawned docked");
 
         // ══ RESPAWN + UNDOCK: A undocks back into the shared sector → B's 176 must
         //    clear the latch so B sees A again. ══
         alpha.SendDocked(-1);
-        int bSawBack = PumpUntil(server, () => !BravoSeesDead(), 3500);
+        int bSawBack = PumpUntil(server,
+            () => aShip.StationId is null && BravoSeesFlying(), 3500);
         Assert.True(bSawBack < 3500,
-            $"B NEVER saw A again after A's death+respawn (IsDead stayed latched on B — the remote half of the P521 bug)");
+            $"B NEVER saw A flying again after death+respawn+undock (fresh visible in-sector pose required)");
         Console.WriteLine($"[P521-2C] B sees A again after A's respawn+undock ({bSawBack} ticks); IsDead cleared on B");
 
         alpha.Shutdown();

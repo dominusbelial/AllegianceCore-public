@@ -462,12 +462,28 @@ public sealed class GameOverPlayersWireTests
         Assert.True(server.TryJoinSide(server.Ships.First(s => s.Ship.Id == c.ShipAssignment!.Ship.ShipId).Ship, side0));
         Assert.NotEqual(side0, side1);
 
+        var firstSeat = server.Ships.Single(s => s.Ship.Id == aShip);
+
         // Stint 1: ~3 s, then Ace leaves (site 1 folds the stint into the cached
         // score). Cee remains, so Ace's side is not emptied and the game continues.
         for (int i = 0; i < 60; i++) server.TickSim();            // 3 s @20 Hz
         a.Dispose();
-        int left = PumpUntil(server, () => server.Ships.FirstOrDefault(s => s.Ship.Id == aShip) is null, 800);
+        double departedAt = server.SimNow;
+        int left = 0;
+        while (server.Ships.Any(s => s.Ship.Id == aShip) && left < 800)
+        {
+            departedAt = server.SimNow;
+            server.TickSim();
+            left++;
+            Thread.Sleep(1);
+        }
+
         Assert.True(left < 800, "Ace must depart");
+
+        float firstStint = (float)(departedAt - firstSeat.ConnectSimTime);
+        Assert.Equal(firstStint, firstSeat.PlayerScore.TimePlayed);
+        // Deliberately leave a simulated gap: disconnected time must not count.
+        for (int i = 0; i < 60; i++) server.TickSim();
 
         // Rejoin: the old score is restored (TimePlayed = stint 1), ConnectSimTime reset.
         using var a2 = new FltBot();
@@ -480,23 +496,43 @@ public sealed class GameOverPlayersWireTests
         a2.ResetGameOvers();
         a2.ResetGameOverPlayerBroadcasts();
 
+        var secondSeat = server.Ships.Single(s => s.Ship.Id == a2.ShipAssignment!.Ship.ShipId);
+        Assert.Equal(firstStint, secondSeat.PlayerScore.TimePlayed);
+        double? gameOverAt = null;
+
         // Stint 2: ~2 s more, still online.
         for (int i = 0; i < 40; i++) server.TickSim();            // 2 s @20 Hz
 
         // Bee leaves → side 1 empties → Ace's side wins by elimination while Ace is online.
         b.Dispose();
-        int seen = PumpUntil(server, () => mission.Stage == MissionStage.Over
-                                           && a2.GameOvers.Count > 0 && a2.GameOverPlayerBroadcasts.Count > 0, 900);
+        int seen = 0;
+        while (!(mission.Stage == MissionStage.Over && a2.GameOvers.Count > 0
+                 && a2.GameOverPlayerBroadcasts.Count > 0) && seen < 900)
+        {
+            // This fixture ends through PeerLeft in the transport drain, before
+            // TickSim advances its clock. Record that boundary once; waiting for
+            // the deferred result packet must not lengthen the completed stint.
+            double beforeTick = server.SimNow;
+            server.TickSim();
+            if (mission.Stage == MissionStage.Over) gameOverAt ??= beforeTick;
+            seen++;
+            Thread.Sleep(1);
+        }
         Assert.True(seen < 900, "elimination must end the mission");
 
         var gop = Assert.Single(a2.GameOverPlayerBroadcasts);
         var ace = gop.Entries.Single(e => e.CharacterName == "Ace");
-        // The roster must carry the SUM (~5 s), safely above the last stint alone
-        // (~2 s + seat overhead) — the pre-fix overwrite would report only ~2 s.
-        Assert.InRange(ace.TimePlayed, 4.0f, 8.0f);
+        // Native igc.h:5602-5613 sums Connect/Disconnect intervals. The old
+        // [4,8] estimate ignored simulated ticks spent awaiting TCP assignments
+        // and departures. Assert the exact two intervals, excluding the gap:
+        // overwriting the first stint or double-counting either stint fails.
+        Assert.NotNull(gameOverAt);
+        float secondStint = (float)(gameOverAt.Value - secondSeat.ConnectSimTime);
+        Assert.Equal(firstStint + secondStint, ace.TimePlayed);
         // The same accumulated PlayerScore.TimePlayed is what ReportMissionResultsToLobby
         // emits verbatim as TimePlayedSeconds/Minutes (Server.Lobby.cs:1324/1335).
-        Console.WriteLine($"P844b-REJOIN-TIME: Ace TimePlayed after leave+rejoin ≈ {ace.TimePlayed:F1}s (sum of both stints)");
+        Console.WriteLine($"P844b-REJOIN-TIME: first={firstStint:R}s second={secondStint:R}s "
+            + $"total={ace.TimePlayed:R}s; disconnected gap excluded");
     }
 
     // ── harness ─────────────────────────────────────────────────────────────
