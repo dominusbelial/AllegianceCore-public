@@ -360,11 +360,41 @@ public sealed class P695HumanShipUpdatesLiveTests(ITestOutputHelper output)
         Assert.InRange(clock.ServerTimeMs(Environment.TickCount64), 5_000_000u, 5_001_000u);
         long generation = session.ConnectionGeneration;
         session.Connect(newServer.BoundPort, "new-epoch");
-        Assert.Equal(generation + 1, session.ConnectionGeneration);
+        Assert.True(session.ConnectionGeneration > generation);
         Assert.Empty(session.TakePingEchoes());
         Call(game, "PumpServerClock");
         Assert.False(clock.Ready, "a reused Game1 must not stamp the previous server's epoch");
         Calibrate(newServer);
         Assert.InRange(clock.ServerTimeMs(Environment.TickCount64), 0u, 1000u);
+
+        // A new skirmish replaces the ConnectionSession object, and each one has
+        // connected exactly once. Their generations must still differ, or the
+        // clock keeps the old (later) epoch, drops every echo of the younger
+        // server as "older", and the server marks every SHIP_UPDATE out of date
+        // (the own ship never moves server-side; alephs and docking misfire).
+        using var first = new ConnectionSession();
+        var clock2 = new OwnShipServerClock();
+        var game2 = HeadlessFlight(first, new OwnShipSimulator(), clock2);
+        void Calibrate2(Srv server)
+        {
+            var wait = Stopwatch.StartNew();
+            while (!clock2.Ready && wait.Elapsed.TotalSeconds < 2)
+            {
+                Call(game2, "PumpServerClock");
+                server.Tick();
+            }
+            Assert.True(clock2.Ready);
+        }
+        first.Connect(oldServer.BoundPort, "first-skirmish");
+        Calibrate2(oldServer);
+        Assert.InRange(clock2.ServerTimeMs(Environment.TickCount64), 5_000_000u, 5_001_000u);
+        using var replacement = new ConnectionSession();
+        Set(game2, "_session", replacement);
+        replacement.Connect(newServer.BoundPort, "second-skirmish");
+        Assert.NotEqual(first.ConnectionGeneration, replacement.ConnectionGeneration);
+        Call(game2, "PumpServerClock");
+        Assert.False(clock2.Ready, "a replaced session must not keep the previous server's epoch");
+        Calibrate2(newServer);
+        Assert.InRange(clock2.ServerTimeMs(Environment.TickCount64), 0u, 1000u);
     }
 }

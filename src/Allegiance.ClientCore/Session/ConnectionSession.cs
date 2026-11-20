@@ -96,8 +96,14 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
     // OwnShipServerClock. Locked via _gate like _ack.
     private readonly List<(uint ServerMs, long LocalMs)> _pingEchoes = new();
     private long _connectionGeneration;
+    // Process-wide so a replacement ConnectionSession (new skirmish, seat change,
+    // benchmark) never repeats a generation a consumer already saw: the desktop
+    // client kept the old server clock epoch, stamped every SHIP_UPDATE outside
+    // the server's ±1.5 s window, and its own ship never moved server-side.
+    private static long s_lastConnectionGeneration;
 
-    /// <summary>Changes only when Connect starts a new server connection, not on mission rotation.</summary>
+    /// <summary>Changes only when Connect starts a new server connection, not on mission
+    /// rotation. Unique across every session in the process.</summary>
     public long ConnectionGeneration { get { lock (_gate) return _connectionGeneration; } }
 
     // P633 — cumulative inbound wire bytes delivered to OnReceive (fed + crc +
@@ -495,7 +501,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
         if (preserveMission) _world.ResetPreservingMissionIdentity();
         else _world.Reset();
         _pingEchoes.Clear();
-        _connectionGeneration++;
+        _connectionGeneration = Interlocked.Increment(ref s_lastConnectionGeneration);
     }
 
     /// <summary>P671 — (re)arm the native keep-alive thread for this session.
