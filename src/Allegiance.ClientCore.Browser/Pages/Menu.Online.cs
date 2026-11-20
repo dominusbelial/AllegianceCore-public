@@ -30,6 +30,10 @@ public partial class Menu
     private bool _showBriefing;
     private string _pose = "Waiting for authoritative updates";
     private long _lastOnlineRefresh;
+    // The published generation's build identity and the game password are held only
+    // in memory: never in storage, a URL, a log or the asset cache.
+    private string? _clientVersion;
+    private string _joinPassword = "";
     private Uri LobbyUri(string path) => new(new Uri(Http.BaseAddress!, "/"), path);
 
     private async Task OpenOnlineAsync()
@@ -38,31 +42,44 @@ public partial class Menu
         _online = true; _onlineBusy = true; _onlineError = null;
         try
         {
-            if (!Http.BaseAddress!.IsLoopback) throw new NotSupportedException("Online play outside loopback is not available in the browser.");
+            if (!Http.BaseAddress!.IsLoopback && Http.BaseAddress.Scheme != Uri.UriSchemeHttps)
+                throw new NotSupportedException("Online play needs the HTTPS lobby page.");
             using var response = await Http.GetAsync(LobbyUri("api/identity/me"), _lifetime.Token);
             if (response.StatusCode == HttpStatusCode.Unauthorized) { _account = null; _onlineState = "Login"; return; }
             response.EnsureSuccessStatusCode();
             _account = await response.Content.ReadFromJsonAsync(IdentityJsonContext.Default.IdentityAccount, _lifetime.Token);
+            await EnsureClientVersionAsync(_lifetime.Token);
             _servers = await Http.GetFromJsonAsync(LobbyUri("api/servers"), BrowserJoinJson.Default.BrowserServerArray, _lifetime.Token) ?? [];
             _onlineState = "Servers";
         }
         catch (Exception ex) { _onlineError = ex.Message; }
         finally { _onlineBusy = false; StateHasChanged(); }
     }
-    // The online menu only opens against a loopback lobby (OpenOnlineAsync), so its
-    // listings use the loopback-directory rule; a public lobby keeps the strict rule.
+    // The online menu uses the directory rule for the page it is served from: a
+    // loopback lobby may list its own loopback route; a public page needs the strict
+    // public WSS route. BrowserJoinPolicy then requires that route to be this origin.
     private bool LoopbackDirectory => Http.BaseAddress?.IsLoopback == true;
-    private string? Unavailable(BrowserServer server)
+    private string? Unavailable(BrowserServer server) =>
+        Http.BaseAddress is { } page ? BrowserJoinPolicy.Refusal(page, server, _clientVersion is not null) : "Online play is unavailable.";
+    /// <summary>Fetch the published generation's build identity once. Absent/unreadable
+    /// means "not reported"; a server that enforces a minimum client version then refuses
+    /// with that reason — the server check is never bypassed.</summary>
+    private async Task EnsureClientVersionAsync(CancellationToken cancellationToken)
     {
-        if (server.Route(LoopbackDirectory) is not { } route) return "Joining this server is not available in the browser (no web route).";
-        try { if (!WebSocketEndpoint.FromLoopbackDirectoryListing(route).Uri.IsLoopback) return "Public joining is not available in the browser."; }
-        catch (ArgumentException) { return "Joining this server is not available in the browser (invalid web route)."; }
-        if (!server.Verified || string.IsNullOrEmpty(server.IdentityServerId)) return "Unverified identity servers are not available in the browser.";
-        if (server.PasswordRequired) return "Password games are not available in the browser.";
-        if (!string.Equals(server.CoreFile, "PCore001.igc", StringComparison.OrdinalIgnoreCase)) return "This core is not available in the browser starter pack.";
-        if (!string.IsNullOrEmpty(server.MinClientVersion)) return "Client update qualification is not available in the browser.";
-        return null;
+        if (_clientVersion is not null) return;
+        try
+        {
+            using var reply = await Http.GetAsync("client-version.json", cancellationToken);
+            if (!reply.IsSuccessStatusCode) return;
+            var info = await reply.Content.ReadFromJsonAsync(BrowserJoinJson.Default.BrowserClientVersion, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(info?.Version)) _clientVersion = info.Version.Trim();
+        }
+        catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or NotSupportedException) { }
     }
+    /// <summary>The advertised lock is early warning; the server's ordinary LOGONREQ
+    /// password gate stays authoritative (native FedSrv.CPP:648-661).</summary>
+    private static bool RequiresPassword(BrowserServer server, BrowserMission? mission) =>
+        mission?.PasswordRequired == true || server.PasswordRequired;
     private async Task EnsureBriefingDecoderAsync(StagedManifest manifest)
     {
         // A cancelled join and its replacement share preparation; neither may
@@ -93,7 +110,9 @@ public partial class Menu
     private async Task JoinServerAsync(BrowserServer server, BrowserMission? mission)
     {
         if (_onlineBusy || _assets is null || _account is null || !_servers.Contains(server) || Unavailable(server) is not null) return;
-        if (mission?.PasswordRequired == true) { _onlineError = "Password games are not available in the browser."; return; }
+        bool passwordRequired = RequiresPassword(server, mission);
+        if (passwordRequired && _joinPassword.Length == 0)
+        { _onlineError = "This game needs its password."; StateHasChanged(); return; }
         long generation = ++_onlineGeneration; ++_pendingJoins;
         ConnectionSession? ownedSession = null;
         _pendingServer = server; _pendingMission = mission;
@@ -126,6 +145,8 @@ public partial class Menu
             if (generation != _onlineGeneration) return;
             var core = StaticCore.Load(IgcReader.Parse(Allegiance.ClientCore.MonoGame.Assets.AssetSources.ReadAllBytes(_assets, "PCore001.igc")));
             var session = ownedSession = _session = new ConnectionSession { WebSocketEndpoint = WebSocketEndpoint.FromLoopbackDirectoryListing(server.Route(LoopbackDirectory)!) };
+            // P894/P1061 — the resume logon reports the same build identity as the first one.
+            session.ClientVersion = _clientVersion;
             session.BrowserMissionBriefingDecoder = message =>
             {
                 var header = FedMessageHeader.Read(message);
@@ -140,7 +161,9 @@ public partial class Menu
             // ticket now; keep it only inside the owned LOGONREQ, never in storage/URLs.
             var refusal = await session.JoinAsync((ushort)server.Port, _account.Callsign,
                 new LogonRequest { CharacterName = _account.Callsign, FedsrvVer = LogonRequest.MsgVer,
-                    CrcFileList = -1, DwCookie = mission?.Cookie ?? uint.MaxValue, Time = 1 },
+                    CrcFileList = -1, DwCookie = mission?.Cookie ?? uint.MaxValue, Time = 1,
+                    ClientVersion = _clientVersion,
+                    MissionPassword = passwordRequired ? _joinPassword : null },
                 identityTicket: async ct =>
                 {
                     using var reply = await Http.PostAsJsonAsync(LobbyUri("api/identity/join-token"),
@@ -153,12 +176,16 @@ public partial class Menu
             if (session.World.JoinError is { } error) throw new InvalidOperationException(error);
             _onlineName = mission?.Name ?? server.MissionName;
             _onlineState = "Sides";
+            _joinPassword = "";
         }
         catch (Exception ex)
         {
             if (generation == _onlineGeneration)
             {
                 _onlineError = ex.Message;
+                // A refusal from the server (password, version, mission) is answered on
+                // the join screen, so the player can correct the password and retry.
+                if (ownedSession?.Ack is not null) _onlineState = "Servers";
                 if (ReferenceEquals(_session, ownedSession)) _session = null;
             }
             if (ownedSession is not null) { await ownedSession.LeaveBrowserAsync(); await ownedSession.DisposeAsync(); }
@@ -317,6 +344,7 @@ public partial class Menu
         finally
         {
             _online = false; _onlineState = "Login"; _onlineError = null; _onlineBusy = false; _onlineClosing = false;
+            _joinPassword = "";
         }
     }
     private void RefreshOnline()

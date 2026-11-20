@@ -14,7 +14,8 @@ const modules = path.resolve(process.argv[2], 'node_modules');
 const stateDir = path.resolve(process.argv[3]);
 const output = path.resolve(process.argv[4]);
 const { chromium: playwright } = require(path.join(modules, 'playwright'));
-const origin = 'http://localhost:8048', menu = origin + '/play/preview/menu.html';
+// P1061: production shape — one HTTPS origin serving /play and /game.
+const origin = 'https://localhost:8443', menu = origin + '/play/menu.html';
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const readState = () => JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
 async function until(predicate, label, timeout = 60000) {
@@ -41,11 +42,11 @@ async function main() {
   const chromium = (await import(require('node:url').pathToFileURL(path.join(modules, '@sparticuz/chromium/build/index.js')).href)).default;
   const browser = await playwright.launch({ executablePath: await chromium.executablePath(), headless: true,
     args: [...chromium.args.filter(a => !['--disable-web-security', '--allow-running-insecure-content'].includes(a)),
-      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
+      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost', '--ignore-certificate-errors'] });
   const results = [];
   let page;
   try {
-    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true });
     page = await context.newPage(); page.setDefaultTimeout(120000);
     const errors = [];
     page.on('pageerror', error => { errors.push(error.message); console.error('PAGEERROR', error.message); });
@@ -76,6 +77,8 @@ async function main() {
       await page.waitForFunction(expected => gameMenu.metrics().gameStyle === expected, style);
       await page.locator('#online-open').click();
       await page.locator('#online-panel[data-state="Servers"]').waitFor();
+      await page.locator('#join-password').waitFor();
+      await page.locator('#join-password').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},fs.readFileSync(path.join(stateDir,'game-password'),'utf8').trim());
       await page.locator('.online-join').first().click();
       await page.locator('#online-panel[data-state="Sides"]').waitFor({ timeout: 120000 });
       await page.locator('.online-side').first().click();

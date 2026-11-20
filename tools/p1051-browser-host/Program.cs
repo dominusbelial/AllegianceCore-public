@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Win32.SafeHandles;
 using System.Text.Json;
 using Allegiance.Core.Identity;
@@ -13,10 +14,12 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.Lobby;
+using Allegiance.Lobby.BrowserPreview;
 using Allegiance.Lobby.Identity;
 using Allegiance.Server;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,12 +29,21 @@ Directory.CreateDirectory(scratch);
 using var freePort = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
 freePort.Start(); int tcpPort = ((System.Net.IPEndPoint)freePort.LocalEndpoint).Port; freePort.Stop();
 File.Delete(Path.Combine(scratch, "stop"));
+// One proof origin, exactly the production shape: HTTPS on loopback terminated by a
+// local proxy, lobby and game listener behind it on their own loopback ports.
+const string Origin = "https://localhost:8443";
+const string ClientVersion = "2.0.0";
+const string GamePassword = "p1061-proof-password";
+var (certPath, keyPath) = WriteCertificate(scratch);
+File.WriteAllText(Path.Combine(scratch, "game-password"), GamePassword);
+File.WriteAllText(Path.Combine(scratch, "client-version"), ClientVersion);
 // Keep test private key material in a Linux anonymous memory file. The actual
 // production signer imports it through its ordinary path-based constructor.
 using var signingMaterial = MemorySigningMaterial.Create();
-using var lobby = new ProofLobby(scratch, signingMaterial.Path);
+using var lobby = new ProofLobby(scratch, signingMaterial.Path, assets, art);
 lobby.UseKestrel(8049);
 using var http = lobby.CreateClient(); // starts the actual app with unchanged admission/CSRF/limits
+var lobbyHttp = lobby.CreateClient();
 var identities = lobby.Services.GetRequiredService<IdentityStore>();
 var identitySettings = lobby.Services.GetRequiredService<IdentitySettings>();
 var account = identities.CreateAccount("ProofOperator");
@@ -45,18 +57,21 @@ await File.WriteAllTextAsync(enrollment, JsonSerializer.Serialize(new ServerEnro
 using var server = new Allegiance.Server.Server { SpawnInitialMinersAtBoot = false, SimulationRandom = new Random(1051) };
 server.Boot(new ServerConfig
 {
-    ArtPath = art, StaticCore = "PCore001.igc", Port = tcpPort, BindAddress = "127.0.0.1", UpdatesPerSecond = 20,
+    ArtPath = art, StaticCore = "PCore001.igc", Port = (ushort)tcpPort, BindAddress = "127.0.0.1", UpdatesPerSecond = 20,
+    // P1061 production admission: one trusted TLS proxy hop, exact public Origin,
+    // no plaintext loopback exception, enforced minimum client version.
+    MinimumClientVersion = ClientVersion,
     Discovery = new() { Enabled = false },
-    WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = ["http://localhost:8048"],
-        AllowLoopbackDevelopment = true, PublicUrl = "ws://localhost:8048/game" },
+    WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = [Origin],
+        KnownProxies = ["127.0.0.1"], AllowLoopbackDevelopment = false, PublicUrl = "wss://localhost:8443/game" },
     Reconnect = new() { Enabled = true, GraceSeconds = 10 },
     Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = false },
-    Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1051 loopback", EnrollmentFile = enrollment },
-    Games = [new() { Name = "P1051 loopback mission", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
-        AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
+    Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
+    Games = [new() { Name = "P1061 public mission", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
+        Password = GamePassword, AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
 });
 using var proxy = Process.Start(new ProcessStartInfo("node") { UseShellExecute = false,
-    ArgumentList = { "tools/p1051-loopback-proxy.cjs", assets, server.WebSocketPort.ToString(), scratch } })!;
+    ArgumentList = { "tools/p1051-loopback-proxy.cjs", certPath, keyPath, "8049", server.WebSocketPort.ToString(), scratch } })!;
 using var desktop = new ConnectionSession();
 using var keeper = new ConnectionSession();
 var desktopAccount = identities.CreateAccount("DesktopPilot");
@@ -65,9 +80,38 @@ var signing = lobby.Services.GetRequiredService<IdentitySigningKey>();
 var core = StaticCore.Load(IgcReader.Parse(File.ReadAllBytes(Path.Combine(art, "PCore001.igc"))));
 desktop.World.MissionCoreResolver = _ => core;
 keeper.World.MissionCoreResolver = _ => core;
-// A headless pilot can follow the shipped map as a human with a map chart can.
-// Only ordinary wire controls enter the server; scanner/visibility still govern
-// both clients' live entity observations. This is not server state injection.
+
+// Desktop joins the exact lobby listing (address, port, advertised route), with
+// the same build identity and the game password the browser types.
+async Task<JsonElement> WaitListingAsync()
+{
+    var until = Environment.TickCount64 + 30000;
+    while (Environment.TickCount64 < until)
+    {
+        using var document = JsonDocument.Parse(await lobbyHttp.GetStringAsync("/api/servers"));
+        foreach (var entry in document.RootElement.EnumerateArray())
+            if (entry.TryGetProperty("identityServerId", out var id) && id.GetString() == approved.ServerId)
+                return entry.Clone();
+        await Task.Delay(100);
+    }
+    throw new InvalidOperationException("The server did not register with the lobby.");
+}
+var listing = await WaitListingAsync();
+var listingInfo = new { id = listing.GetProperty("id").GetString(), address = listing.GetProperty("address").GetString(),
+    port = listing.GetProperty("port").GetInt32(), webSocketUrl = listing.TryGetProperty("webSocketUrl", out var webRoute) ? webRoute.GetString() : null,
+    passwordRequired = listing.TryGetProperty("passwordRequired", out var lockFlag) && lockFlag.GetBoolean(),
+    minClientVersion = listing.TryGetProperty("minClientVersion", out var minimum) ? minimum.GetString() : null,
+    verified = listing.GetProperty("verified").GetBoolean() };
+// Fail-closed version gate, proved on the real listener with the production
+// signer. The attempt starts before the loop; the server's own tick has to drain
+// the LOGONREQ, so the loop ticks while this task waits for its refusal.
+string? oldVersionRefusal = null;
+var stale = new ConnectionSession();
+var staleJoin = stale.JoinAsync((ushort)listingInfo.port, desktopAccount.Callsign,
+    new LogonRequest { CharacterName = desktopAccount.Callsign, FedsrvVer = LogonRequest.MsgVer, CrcFileList = -1,
+        DwCookie = uint.MaxValue, Time = 1, ClientVersion = "0.0.0", MissionPassword = GamePassword,
+        ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(desktopAccount, approved.ServerId, DateTimeOffset.UtcNow)) },
+    host: listingInfo.address!);
 var navigationWarps = MissionMap.Load(IgcReader.ParseFile(Path.Combine(art, "XXV_simple.igc"))).Warps.ToDictionary(w => w.WarpId);
 var chart = navigationWarps.Values.Select(w => new { w.WarpId, w.ClusterId, w.Name, w.Position,
     destinationSectorId = navigationWarps[w.DestinationId].ClusterId }).ToArray();
@@ -88,6 +132,10 @@ try
     while (!File.Exists(Path.Combine(scratch, "stop")))
     {
         server.TickSim();
+        if (staleJoin.IsCompleted && oldVersionRefusal is null)
+            oldVersionRefusal = staleJoin.IsFaulted
+                ? staleJoin.Exception!.GetBaseException().Message
+                : "ADMITTED (the version gate did not refuse 0.0.0)";
         // Malformed admission fixtures use the production signer and validator.
         // Requests contain no secrets; bearer output stays in ignored scratch.
         string ticketRequestPath = Path.Combine(scratch, "ticket-request.json");
@@ -106,16 +154,24 @@ try
         }
         if (File.Exists(Path.Combine(scratch, "desktop-join")) && desktopJoin is null)
         {
-            desktopJoin = desktop.JoinAsync(checked((ushort)tcpPort), desktopAccount.Callsign,
+            desktop.ClientVersion = ClientVersion;
+            desktopJoin = desktop.JoinAsync((ushort)listingInfo.port, desktopAccount.Callsign,
                 new LogonRequest { CharacterName = desktopAccount.Callsign, FedsrvVer = LogonRequest.MsgVer, CrcFileList = -1,
-                    DwCookie = uint.MaxValue, Time = 1, ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(desktopAccount, approved.ServerId, DateTimeOffset.UtcNow)) });
+                    DwCookie = uint.MaxValue, Time = 1, ClientVersion = ClientVersion, MissionPassword = GamePassword,
+                    ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(desktopAccount, approved.ServerId, DateTimeOffset.UtcNow)) },
+                host: listingInfo.address!);
         }
         if (desktopJoin?.IsCompletedSuccessfully == true && !desktopSeated)
         { desktop.SendPositionReq(1); desktopSeated = true; }
         if (File.Exists(Path.Combine(scratch, "keeper-join")) && keeperJoin is null)
-            keeperJoin = keeper.JoinAsync(checked((ushort)tcpPort), keeperAccount.Callsign,
+        {
+            keeper.ClientVersion = ClientVersion;
+            keeperJoin = keeper.JoinAsync(checked((ushort)listingInfo.port), keeperAccount.Callsign,
                 new LogonRequest { CharacterName = keeperAccount.Callsign, FedsrvVer = LogonRequest.MsgVer, CrcFileList = -1,
-                    DwCookie = uint.MaxValue, Time = 1, ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(keeperAccount, approved.ServerId, DateTimeOffset.UtcNow)) });
+                    DwCookie = uint.MaxValue, Time = 1, ClientVersion = ClientVersion, MissionPassword = GamePassword,
+                    ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(keeperAccount, approved.ServerId, DateTimeOffset.UtcNow)) },
+                host: listingInfo.address!);
+        }
         if (keeperJoin?.IsCompletedSuccessfully == true && !keeperSeated) { keeper.SendPositionReq(0); keeperSeated = true; }
         if (desktop.World.MySideId == 1 && desktop.World.MyShipId is { } desktopId
             && desktop.World.Ships.TryGetValue(desktopId, out var desktopShip))
@@ -220,7 +276,7 @@ try
             poseReceipts.Add(new { ship.Id, accepted = Read("Accepted"), rejected = Read("Rejected"),
                 lastClientTime = Read("LastClientTime"), lastPoseAt = Read("LastPoseAt") is double poseAt && double.IsFinite(poseAt) ? (double?)poseAt : null });
         }
-        var state = new { sampledAt = Environment.TickCount64, poseReceipts, chart, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
+        var state = new { sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId }).ToArray(), desktopShotsReceived },
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
@@ -231,22 +287,56 @@ try
         await Task.Delay(50);
     }
 }
-finally { if (!proxy.HasExited) { proxy.Kill(); await proxy.WaitForExitAsync(); } }
+finally { stale.Dispose(); if (!proxy.HasExited) { proxy.Kill(); await proxy.WaitForExitAsync(); } }
 
-sealed class ProofLobby(string scratch, string signingPath) : WebApplicationFactory<ServerRegistry>
+// Proof-only TLS material for the loopback proxy. The certificate is discarded with
+// the scratch directory; Chromium ignores this specific self-signed origin.
+static (string Cert, string Key) WriteCertificate(string directory)
+{
+    using var key = RSA.Create(2048);
+    var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+    var names = new SubjectAlternativeNameBuilder();
+    names.AddDnsName("localhost"); names.AddIpAddress(System.Net.IPAddress.Loopback);
+    request.CertificateExtensions.Add(names.Build());
+    request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
+    request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+    request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension([new System.Security.Cryptography.Oid("1.3.6.1.5.5.7.3.1")], false));
+    using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+    string certPath = Path.Combine(directory, "tls-cert.pem"), keyPath = Path.Combine(directory, "tls-key.pem");
+    File.WriteAllText(certPath, certificate.ExportCertificatePem());
+    File.WriteAllText(keyPath, key.ExportPkcs8PrivateKeyPem());
+    return (certPath, keyPath);
+}
+
+sealed class ProofLobby(string scratch, string signingPath, string assets, string artwork) : WebApplicationFactory<ServerRegistry>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
-        => builder.UseContentRoot(Path.GetFullPath("src/Allegiance.Lobby")).ConfigureServices(services =>
+    {
+        builder.UseContentRoot(Path.GetFullPath("src/Allegiance.Lobby"));
+        // The production topology: one trusted proxy hop on loopback. The lobby's
+        // ForwardedHeaders options are built from configuration at startup.
+        builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
+            new Dictionary<string, string?> { ["Lobby:KnownProxies:0"] = "127.0.0.1" }));
+        builder.ConfigureServices(services =>
         {
             services.RemoveAll<IdentitySettings>();
             services.AddSingleton(new IdentitySettings
             {
-                PublicUrl = "http://localhost:8048",
+                PublicUrl = "https://localhost:8443",
                 ConnectionString = "Data Source=" + Path.Combine(scratch, "accounts.db"),
                 SigningKeyFile = signingPath,
                 PublicKeyFile = Path.Combine(scratch, "public.pem"),
             });
+            // The published generation is served by the lobby itself at /play, the
+            // production prefix, with the public origin in the CSP.
+            services.RemoveAll<BrowserPreviewSettings>();
+            services.AddSingleton(new BrowserPreviewSettings
+            {
+                Enabled = true, Prefix = "/play", BundlePath = assets, ArtworkPath = artwork,
+                PublicOrigin = "https://localhost:8443", WebSocketPath = "/game",
+            });
         });
+    }
 }
 
 // This local Linux proof uses the production signer without persisting a private

@@ -1,0 +1,114 @@
+# Production host shape for the browser + desktop public test.
+#
+# NOT the developer stack. This file is the single place that describes the
+# public VM: every service uses host networking (1:1 with the host firewall),
+# only Caddy listens publicly, and the lobby/game listeners bind loopback.
+#
+# Images are built on the workstation from the repo Dockerfiles and copied:
+#   docker save allegiance-lobby:<release> allegiance-server:<release> | gzip > images.tgz
+#   (on the host) gunzip -c images.tgz | docker load
+# The base images (caddy, alpine) are pulled once on the host or copied the same way.
+#
+# Placeholders that MUST be supplied on the host (never committed):
+#   PUBLIC_HOST      the public DNS name Caddy obtains a certificate for
+#   ACME_EMAIL       Let's Encrypt contact address
+#   RELEASE          the release tag used by the copied images
+# `server.json` beside this file is the private copy of server.example.json with
+# the real game password and the real enrollment audience filled in.
+name: allegiance-public
+
+services:
+  # One-shot: pinned public PCore001/XXV_simple artwork into a named volume.
+  artwork:
+    image: alpine:3.22.2
+    network_mode: host
+    volumes:
+      - artwork:/artwork
+      - ../fetch-trial-artwork.sh:/fetch-trial-artwork.sh:ro
+    entrypoint: ["sh", "/fetch-trial-artwork.sh"]
+    restart: "no"
+
+  # TLS + the only public origin. Routes /play/ and every lobby path to the
+  # loopback lobby, /game to the loopback game WebSocket listener.
+  caddy:
+    image: caddy:2.10-alpine
+    network_mode: host
+    environment:
+      PUBLIC_HOST: "${PUBLIC_HOST:?set PUBLIC_HOST}"
+      ACME_EMAIL: "${ACME_EMAIL:?set ACME_EMAIL}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      lobby:
+        condition: service_healthy
+      server:
+        condition: service_started
+    restart: unless-stopped
+
+  # Directory, identity issuer and the browser bundle. Kestrel binds loopback
+  # only; Caddy is the one trusted proxy hop.
+  lobby:
+    image: allegiance-lobby:${RELEASE:?set RELEASE}
+    network_mode: host
+    environment:
+      ASPNETCORE_URLS: http://127.0.0.1:8080
+      BrowserPreview__Enabled: "true"
+      BrowserPreview__Prefix: /play
+      BrowserPreview__BundlePath: /browser
+      BrowserPreview__ArtworkPath: /artwork
+      BrowserPreview__PublicOrigin: "https://${PUBLIC_HOST:?set PUBLIC_HOST}"
+      BrowserPreview__WebSocketPath: /game
+      Lobby__KnownProxies__0: 127.0.0.1
+      Lobby__Identity__PublicUrl: "https://${PUBLIC_HOST:?set PUBLIC_HOST}"
+      Lobby__Identity__Store: Sqlite
+      Lobby__Identity__ConnectionString: Data Source=/identity/accounts.db
+      Lobby__Identity__SigningKeyFile: /identity/signing-key.pem
+      Lobby__Identity__PublicKeyFile: /trust/public-key.pem
+      Lobby__Identity__OperatorAccountIds__0: "${ALLEGIANCE_LOBBY_OPERATOR_ID:-}"
+      Lobby__Identity__GitHub__Enabled: "false"
+      Lobby__Identity__Google__Enabled: "false"
+      Lobby__Identity__Steam__Enabled: "false"
+      ALLEGIANCE_ARTWORK_PATH: /artwork
+    volumes:
+      - lobby-identity:/identity
+      - lobby-trust:/trust
+      - ./browser-generation:/browser:ro
+      - artwork:/artwork:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  # Authoritative game: TCP+UDP 6073 for the desktop client, and a WebSocket
+  # listener on loopback 6080 that only Caddy reaches through /game.
+  server:
+    image: allegiance-server:${RELEASE:?set RELEASE}
+    network_mode: host
+    command: ["--identity-issuer", "https://${PUBLIC_HOST:?set PUBLIC_HOST}"]
+    volumes:
+      - artwork:/artwork:ro
+      - ./server.json:/app/server.json:ro
+      - lobby-trust:/lobby-trust:ro
+      - server-identity:/server-identity
+    depends_on:
+      artwork:
+        condition: service_completed_successfully
+      lobby:
+        condition: service_healthy
+    environment:
+      ALLEGIANCE_TRANSPORT_PROTOCOL: udp
+      ALLEGIANCE_TRANSPORT_UDP_PORT: "6073"
+      ALLEGIANCE_MINIMUM_CLIENT_VERSION: "${ALLEGIANCE_MINIMUM_CLIENT_VERSION:?set ALLEGIANCE_MINIMUM_CLIENT_VERSION}"
+    restart: unless-stopped
+
+volumes:
+  artwork:
+  lobby-identity:
+  lobby-trust:
+  server-identity:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,53 @@
+{
+  "listing": {
+    "id": "6327235ed3fc49588da1af2d2213b88c",
+    "address": "127.0.0.1",
+    "port": 44539,
+    "webSocketUrl": "wss://localhost:8443/game",
+    "passwordRequired": true,
+    "minClientVersion": "2.0.0",
+    "verified": true
+  },
+  "oldVersionRefusal": "your client (0.0.0) is older than this server's minimum (2.0.0) - update the client and reconnect; the lobby's update feed installs it",
+  "desktop": {
+    "joined": true,
+    "MyShipId": 8115,
+    "MySideId": 1,
+    "desktopLaunched": false,
+    "desktopNavigation": "rendezvous",
+    "desktopShotLaunchers": [
+      8099,
+      8100,
+      8104,
+      8103,
+      8108,
+      8107,
+      8112,
+      8111
+    ],
+    "desktopShotsReceived": 13
+  },
+  "shipsAtEnd": [
+    {
+      "id": 8113,
+      "name": ".Miner8113",
+      "side": 0,
+      "station": null,
+      "sector": 1053
+    },
+    {
+      "id": 8114,
+      "name": ".Miner8114",
+      "side": 1,
+      "station": null,
+      "sector": 1061
+    },
+    {
+      "id": 8115,
+      "name": "",
+      "side": 1,
+      "station": 1052,
+      "sector": 1061
+    }
+  ]
+}

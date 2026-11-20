@@ -14,7 +14,8 @@ const hostLog = path.resolve(process.argv[6] || path.join(stateDir, 'host.log'))
 const style = process.argv.includes('--style') ? process.argv[process.argv.indexOf('--style') + 1] : 'Modern';
 const verbose = process.argv.includes('--verbose');
 // P1059: dev switch on, so the toolbar renders exactly as before P1059.
-const origin = 'http://localhost:8048', menu = origin + '/play/preview/menu.html?dev=1' + (verbose ? '&log=verbose' : '');
+// P1061: the production shape — one HTTPS origin serving /play and /game.
+const origin = 'https://localhost:8443', menu = origin + '/play/menu.html?dev=1' + (verbose ? '&log=verbose' : '');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const readState = () => JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
 const readyLines = () => fs.existsSync(hostLog)
@@ -43,12 +44,12 @@ async function main() {
   const chromium = (await import(require('node:url').pathToFileURL(path.join(modules, '@sparticuz/chromium/build/index.js')).href)).default;
   const browser = await playwright.launch({ executablePath: await chromium.executablePath(), headless: true,
     args: [...chromium.args.filter(a => !['--disable-web-security', '--allow-running-insecure-content'].includes(a)),
-      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
+      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost', '--ignore-certificate-errors'] });
   let page;
   const errors = [], logs = [], responses = [];
   const record = { case: testCase, style, verbose, browserVersion: null, headlessGpuRepresentative: false };
   try {
-    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true });
     page = await context.newPage(); page.setDefaultTimeout(120000);
     page.on('pageerror', error => { errors.push(error.message); console.error('PAGEERROR', error.message); });
     page.on('console', message => logs.push({ type: message.type(), text: message.text() }));
@@ -84,6 +85,11 @@ async function main() {
     await page.waitForFunction(expected => gameMenu.metrics().gameStyle === expected, style);
     await page.locator('#online-open').click();
     await page.locator('#online-panel[data-state="Servers"]').waitFor();
+    // The production game is password-protected; the player types it in the panel.
+    const gamePassword = fs.readFileSync(path.join(stateDir, 'game-password'), 'utf8').trim();
+    await page.locator('#join-password').evaluate((input, value) => {
+      input.value = value; input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, gamePassword);
     await page.locator('.online-join').first().click();
     await page.locator('#online-panel[data-state="Sides"]').waitFor({ timeout: 120000 });
     const readyBefore = readyLines().length;
@@ -183,9 +189,10 @@ async function main() {
       if (!firstClick.disabled) await page.evaluate(() => document.getElementById('online-launch').click());
     }
 
-    // Watch the click for 20 s.
+    // Watch the click for 40 s (the fixture mission's native auto-start countdown
+    // is ~12–15 s, then the dock transition; 20 s sat right at the boundary).
     const trail = [];
-    for (let index = 0; index < 80; index++) {
+    for (let index = 0; index < 160; index++) {
       const state = await page.evaluate(snapshot);
       trail.push(state);
       if (state.state === 'Flight' || (state.alert && index >= 8)) break;
@@ -210,7 +217,7 @@ async function main() {
       const disabled = await page.evaluate(() => document.getElementById('online-launch')?.disabled ?? null);
       await page.evaluate(() => document.getElementById('online-launch')?.click());
       const later = [];
-      for (let index = 0; index < 80; index++) {
+      for (let index = 0; index < 160; index++) {
         const state = await page.evaluate(snapshot);
         later.push(state);
         if (state.state === 'Flight' || (state.alert && index >= 8)) break;

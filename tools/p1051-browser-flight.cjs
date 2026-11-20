@@ -9,7 +9,9 @@ const fixtures=path.resolve(process.argv[5]||'.scratch/p1051/flight-opens4');
 const generation=path.resolve(process.argv[6]||'.scratch/p1051/generation');
 // P1059: the proof harness uses the developer/proof controls, so it opens
 // the page with the documented dev switch on (off by default for players).
-const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html?dev=1';
+// P1061: the production shape on loopback — one HTTPS origin that serves the
+// lobby at /play and the game WebSocket at /game.
+const origin='https://localhost:8443',menu=origin+'/play/menu.html?dev=1';
 const starter=JSON.parse(fs.readFileSync(path.join(generation,'starter-manifest.json'))),join=JSON.parse(fs.readFileSync(path.join(generation,'join-manifest.json')));
 const starterHashes=new Set(starter.assets.map(a=>a.sha256)),flightAsset=join.assets.find(a=>!starterHashes.has(a.sha256)&&a.source.startsWith('bgrnd'));
 const readState=()=>JSON.parse(fs.readFileSync(path.join(stateDir,'state.json')));
@@ -20,11 +22,11 @@ async function screenshot(page,name){await page.screenshot({path:path.join(outpu
 async function main(){
  fs.mkdirSync(output,{recursive:true});
  const chromium=(await import(require('node:url').pathToFileURL(path.join(modules,'@sparticuz/chromium/build/index.js')).href)).default;
- const launch=async()=>playwright.launch({executablePath:await chromium.executablePath(),headless:true,args:[...chromium.args.filter(a=>!['--disable-web-security','--allow-running-insecure-content'].includes(a)),'--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost']});
+ const launch=async()=>playwright.launch({executablePath:await chromium.executablePath(),headless:true,args:[...chromium.args.filter(a=>!['--disable-web-security','--allow-running-insecure-content'].includes(a)),'--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost','--ignore-certificate-errors']});
  let browser=await launch();
  const results=[],secrets=[],allLogs=[],allUrls=[];let page,context,observedLogs=[];
  try{
-  context=await browser.newContext({viewport:{width:1920,height:1080}});page=await context.newPage();page.setDefaultTimeout(30000);
+  context=await browser.newContext({viewport:{width:1920,height:1080},ignoreHTTPSErrors:true});page=await context.newPage();page.setDefaultTimeout(30000);
   const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
   await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
   await page.goto(origin+'/identity.html');await page.locator('#login').waitFor({state:'visible'});
@@ -38,7 +40,7 @@ async function main(){
   const scenarios=[[0,'Classic',1920,1080,'cold'],[1,'Modern',1920,1080,'warm'],[2,'Classic',800,480,'stale'],[3,'Modern',800,480,'storage-refused']];
   for(const [index,style,width,height,cacheCase] of (process.argv[7]==='--modern-cold'?[[0,'Modern',1920,1080,'cold']]:process.argv[7]==='--storage-only'?[scenarios[3]]:scenarios)){
    console.log('CASE',style,width,height,cacheCase);
-   if(index===3){await context.close();await browser.close();browser=await launch();context=await browser.newContext({viewport:{width,height}});await context.addCookies(originalCookies);page=await context.newPage();page.setDefaultTimeout(30000);
+   if(index===3){await context.close();await browser.close();browser=await launch();context=await browser.newContext({viewport:{width,height},ignoreHTTPSErrors:true});await context.addCookies(originalCookies);page=await context.newPage();page.setDefaultTimeout(30000);
     await page.addInitScript(()=>{caches.open=async()=>{throw new DOMException('P1051 storage-refused fixture','QuotaExceededError')}});
    }else await page.setViewportSize({width,height});
    const errors=[],logs=[],requests=[],transfers=[],webSocketUrls=[];observedLogs=logs;let currentToken;
@@ -49,7 +51,7 @@ async function main(){
    // lose its body during navigation and escape main's error/teardown path.
    await page.route('**/api/identity/join-token',async route=>{const response=await route.fetch();if(response.ok()){const body=await response.json();secrets.push(body.token);currentToken=body.token}await route.fulfill({response})});
    page.on('pageerror',errorHandler);page.on('console',logHandler);page.on('request',requestHandler);
-   const wsHandler=socket=>{assert.equal(socket.url(),'ws://localhost:8048/game');webSocketUrls.push(socket.url());allUrls.push(socket.url())};page.on('websocket',wsHandler);
+   const wsHandler=socket=>{assert.equal(socket.url(),'wss://localhost:8443/game');webSocketUrls.push(socket.url());allUrls.push(socket.url())};page.on('websocket',wsHandler);
    const network=await context.newCDPSession(page);await network.send('Network.enable');const urls=new Map();
    network.on('Network.requestWillBeSent',e=>urls.set(e.requestId,new URL(e.request.url).pathname));network.on('Network.loadingFinished',e=>transfers.push({path:urls.get(e.requestId)||'',bytes:e.encodedDataLength}));
    let failedOnce=false;
@@ -59,12 +61,24 @@ async function main(){
    await page.getByRole('button',{name:style,exact:true}).click();await page.waitForFunction(()=>gameFlight.audioStates().every(s=>s==='running'));await page.waitForFunction(s=>gameMenu.metrics().gameStyle===s,style);
    await page.locator('#online-open').click();await page.locator('#online-panel[data-state="Servers"]').waitFor();
    const ticketBefore=requests.filter(p=>p==='/api/identity/join-token').length;
+   // The game is password-protected (the production setting). Prove the server's
+   // ordinary gate still refuses a wrong password, then join with the real one.
+   const gamePassword=fs.readFileSync(path.join(stateDir,'game-password'),'utf8').trim();
+   await page.locator('#join-password').waitFor();
+   const typePassword=value=>page.locator('#join-password').evaluate((input,text)=>{input.value=text;input.dispatchEvent(new Event('input',{bubbles:true}))},value);
+   if(index===0){
+     await typePassword('wrong-'+gamePassword);await page.locator('.online-join').first().click();
+     const refusal=page.locator('#online-panel [role="alert"]');await refusal.waitFor({timeout:30000});
+     assert.match(await refusal.innerText(),/refused|password|mission/i);
+     console.log('PASSWORD_REFUSAL_PASS');
+   }
+   await typePassword(gamePassword);
    await page.locator('.online-join').first().click();
    if(index===3){await page.locator('#join-retry').waitFor({timeout:60000});assert.equal(requests.filter(p=>p==='/api/identity/join-token').length,ticketBefore);const timeOrigin=await page.evaluate(()=>performance.timeOrigin);await page.locator('#join-retry').click();await page.locator('#online-panel[data-state="Sides"]').waitFor({timeout:60000});assert.equal(await page.evaluate(()=>performance.timeOrigin),timeOrigin)}
    else await page.locator('#online-panel[data-state="Sides"]').waitFor({timeout:60000});
    const packRequests=requests.filter(p=>p.includes('/packs/'));
    if(index===1)assert.equal(packRequests.length,0,'warm visit fetches no pack files');
-   if(index===2)assert.deepEqual(packRequests,['/play/preview/'+flightAsset.path],'only stale file fetched');
+   if(index===2)assert.deepEqual(packRequests,['/play/'+flightAsset.path],'only stale file fetched');
    if(index===3){assert.ok(logs.some(l=>l.includes('Storage refused')));const counts=new Map();for(const p of packRequests)counts.set(p,(counts.get(p)||0)+1);for(const [p,count]of counts)assert.equal(count,p.endsWith(flightAsset.sha256)?2:1,'retry must retain earlier memory files')}
    const ticketIndex=requests.findIndex(p=>p==='/api/identity/join-token'),lastAsset=requests.findLastIndex(p=>p.includes('/packs/'));assert.ok(ticketIndex>lastAsset,'ticket after staging');
    await page.locator('.online-side').first().click();await page.locator('#online-panel[data-state="Hangar"]').waitFor();
@@ -154,7 +168,7 @@ async function main(){
   // Wrong/stale directory mission cookie must refuse and clean the reserved session.
   const shipsBeforeStaleCookie=readState().ships.map(ship=>ship.Id).sort((a,b)=>a-b);
   await page.route('**/api/servers',async route=>{const response=await route.fetch();let body=await response.json();for(const server of body)for(const mission of server.missions||[])mission.cookie=2147483646;await route.fulfill({response,json:body})});
-  await page.locator('#online-open').click();await page.locator('.online-join').first().click();await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});assert.match(await page.locator('#online-panel [role="alert"]').innerText(),/refused|mission|join/i);await page.locator('#online-close').click();await page.locator('#online-panel').waitFor({state:'detached'});await serverWait(s=>!s.players.includes(name)&&JSON.stringify(s.ships.map(ship=>ship.Id).sort((a,b)=>a-b))===JSON.stringify(shipsBeforeStaleCookie),'stale mission cookie preserves the server ship registry');await page.unroute('**/api/servers');
+  await page.locator('#online-open').click();await page.locator('#join-password').waitFor();await page.locator('#join-password').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},fs.readFileSync(path.join(stateDir,'game-password'),'utf8').trim());await page.locator('.online-join').first().click();await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});assert.match(await page.locator('#online-panel [role="alert"]').innerText(),/refused|mission|join/i);await page.locator('#online-close').click();await page.locator('#online-panel').waitFor({state:'detached'});await serverWait(s=>!s.players.includes(name)&&JSON.stringify(s.ships.map(ship=>ship.Id).sort((a,b)=>a-b))===JSON.stringify(shipsBeforeStaleCookie),'stale mission cookie preserves the server ship registry');await page.unroute('**/api/servers');
   // Actual WebGL context loss must stop RAF with the visible reload explanation.
   await page.evaluate(()=>{const canvas=document.getElementById('theCanvas'),gl=canvas.getContext('webgl2')||canvas.getContext('webgl');gl.getExtension('WEBGL_lose_context').loseContext()});await page.getByText(/WebGL context lost\. Reload/).waitFor();
   for(const secret of secrets)if(secret){assert.ok(!allLogs.join('\n').includes(secret));assert.ok(!allUrls.join('\n').includes(secret))}

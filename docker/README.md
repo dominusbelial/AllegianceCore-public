@@ -505,6 +505,28 @@ For a standalone loopback development server (outside Docker), add:
 }
 ```
 
+**P1061 production topology:** enable `webSocket` with one public HTTPS origin, the
+TLS proxy as the only trusted hop, and loopback development off:
+
+```json
+"webSocket": {
+  "enabled": true,
+  "publicUrl": "wss://<public-origin>/game",
+  "bindAddress": "127.0.0.1",
+  "port": 6080,
+  "path": "/game",
+  "allowedOrigins": ["https://<public-origin>"],
+  "knownProxies": ["127.0.0.1"],
+  "allowLoopbackDevelopment": false
+}
+```
+
+Caddy routes `wss://<public-origin>/game` to `127.0.0.1:6080`, so no new public port
+is opened. The complete public stack (host networking, Caddy, lobby `/play/`, game
+server, artwork, production `server.json` and lobby settings) lives in
+[`public/`](public/); see the deploy and rollback checklist in
+[`docs/BROWSER_HOSTING.md`](../docs/BROWSER_HOSTING.md).
+
 Clients must request **only** `allegiance-fed-v1`. Each binary WebSocket message
 contains one complete ordinary FedPacket, CRC included; fragments are reassembled
 before the shared decoder. There is no type-byte greeting. Authentication remains

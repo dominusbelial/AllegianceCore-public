@@ -37,7 +37,7 @@ list in **reverse**.
   Default-off `BrowserPreview:Enabled` and bundle/artwork settings live in
   `src/Allegiance.Lobby/BrowserPreview/BrowserPreviewSettings.cs`; scoped hosting
   in `src/Allegiance.Lobby/BrowserPreview/BrowserPreviewHosting.cs` serves only
-  `/play/preview/` before the API limiter. Publish with
+  the configured prefix (`/play/preview/` by default; `/play` on the public host) before the API limiter. Publish with
   `scripts/publish-browser-preview.sh`; optional compose exporter and setup in
   `docker/README.md`. Report: `docs/reports/BROWSER_PREVIEW_P1046.md`.
 - **Direct browser server transport (P1048)** — default-off `webSocket` JSON
@@ -133,6 +133,8 @@ list in **reverse**.
   styles. Proof: `tools/p1059-browser-devcases.cjs` (off/on, Classic + Modern,
   1920×1080 and 800×480) and `tools/p1059-dev-switch-tests.cjs`; parity:
   `docs/parity/p1059-browser-dev-controls.csv`; hosting note: `docs/BROWSER_HOSTING.md`.
+
+- **Public browser host (P1061)** — production `/play/` generation served by the lobby with the host cache contract, a scoped CSP whose `connect-src` adds exactly the same-origin `wss` route, and extensionless `packs/<sha256>` files (`src/Allegiance.Lobby/BrowserPreview/BrowserPreviewSettings.cs`, `BrowserPreviewHosting.cs`). The browser join decision (`src/Allegiance.ClientCore.Browser/Pages/BrowserJoinPolicy.cs`) requires the page's own HTTPS origin, a verified identity server and a reported build identity when the server enforces `minimumClientVersion`; the game password is typed and sent in `MissionPassword`, and the server's existing gates stay authoritative. Publication adds `client-version.json` and a per-pack `artwork-provenance.json` (`tools/p1053-browser-publish.py`, `tools/p1061-browser-provenance.py`). The public stack is `docker/public/docker-compose.yml` with `docker/public/Caddyfile`, `docker/public/server.example.json` and `docker/public/lobby.env.example`; deploy/rollback checks are in `docs/BROWSER_HOSTING.md`, and `tools/p1061-deploy-check.py` statically validates the compose shape, Caddy routes, server JSON and Dockerfile COPY sources. Report: `docs/reports/BROWSER_PUBLIC_HOST_P1061.md`.
   Report: `docs/reports/BROWSER_DEV_CONTROLS_P1059.md`.
 - **Browser sector visuals (P1054)** — `tools/p1051-flight-opens/Program.cs`
   records ordinary waypoint/aleph travel through all sectors in both HUDs;

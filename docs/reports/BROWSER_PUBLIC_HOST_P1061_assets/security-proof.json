@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "browserVersion": "153.0.8010.0",
+  "cases": [
+    {
+      "name": "LAN plaintext listing has no web route",
+      "passed": true,
+      "message": "P1061 loopback\n\nJoining this server is not available in the browser (no web route).",
+      "webSocketAttempts": 0
+    },
+    {
+      "name": "cross-origin public WSS refused",
+      "passed": true,
+      "message": "P1061 loopback\n\nThe game route is not on this lobby's origin.",
+      "webSocketAttempts": 0
+    },
+    {
+      "name": "list failure returns and retries",
+      "passed": true
+    },
+    {
+      "name": "wrong-audience",
+      "refused": true,
+      "clearMessage": "invalid or expired lobby join token",
+      "noZombie": true
+    },
+    {
+      "name": "expired",
+      "refused": true,
+      "clearMessage": "invalid or expired lobby join token",
+      "noZombie": true
+    },
+    {
+      "name": "ticket failure retries through real fresh-ticket join",
+      "passed": true
+    },
+    {
+      "name": "replayed unexpired ticket",
+      "refused": true,
+      "clearMessage": "lobby join token already used",
+      "noZombie": true
+    },
+    {
+      "name": "wrong/stale mission cookie",
+      "refused": true,
+      "clearMessage": "The server refused this mission join.",
+      "noZombie": true,
+      "serverShipRegistryUnchanged": true
+    },
+    {
+      "name": "browser back-navigation retires the join",
+      "passed": true
+    }
+  ],
+  "inspection": {
+    "files": 577,
+    "bytes": 32536380,
+    "noSecrets": true
+  },
+  "noSecretsInLogsOrUrls": true
+}

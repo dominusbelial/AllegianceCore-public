@@ -6,10 +6,10 @@
 <span id="pacing-note" hidden role="status">Running slow · audio paused</span>
 @if (SectorStatus.Length > 0) { <span id="sector-progress" role="status">@SectorStatus</span> }
 <nav id="menu-controls" aria-label="Browser menu controls">
-    <span>Local browser game · @_style · @_persistence</span>
+    <span>Browser game · @_style · @_persistence</span>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Classic)">Classic</button>
     <button aria-pressed="@(_style == Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern ? "true" : "false")" disabled="@(_game is null)" @onclick="() => SetStyleAsync(Allegiance.ClientCore.MonoGame.Rendering.HudStyle.Modern)">Modern</button>
-    <button id="online-open" disabled="@(_game is null || _online || _onlineBusy)" @onclick="OpenOnlineAsync">Play on loopback</button>
+    <button id="online-open" disabled="@(_game is null || _online || _onlineBusy)" @onclick="OpenOnlineAsync">Play online</button>
     <button disabled="@(_game is null)" @onclick="EnableAudio">@_audioStatus</button>
     <button disabled="@(_game is null)" @onclick="ScreenshotAsync">Download screenshot</button>
 </nav>
@@ -29,11 +29,11 @@
 @if (_online)
 {
     <section id="online-panel" class="@(_onlineState == "Flight" ? "flight-toolbar" : "panel")" aria-live="polite" data-state="@_onlineState">
-        <p class="eyebrow">ALLEGIANCE · LOCAL GAME · @_style</p>
+        <p class="eyebrow">ALLEGIANCE · BROWSER GAME · @_style</p>
         <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Sign in")</h2>
         @if (_onlineState == "Login")
         {
-            <p>Sign in to the local lobby, then return to this tab.</p>
+            <p>Sign in to the lobby, then return to this tab.</p>
             <a href="/identity.html" target="_blank" rel="noopener">Open lobby sign-in</a>
             <button id="online-refresh" disabled="@_onlineBusy" @onclick="OpenOnlineAsync">Refresh identity and servers</button>
         }
@@ -45,6 +45,10 @@
               @if (_onlineError is not null) { <button id="join-retry" disabled="@_onlineBusy" @onclick="RetryStagingAsync">Retry</button> } }
             else if (_onlineState == "Servers")
             {
+                @if (_servers.Any(s => s.PasswordRequired || (s.Missions?.Any(m => m.PasswordRequired) ?? false)))
+                {
+                    <label>Game password <input id="join-password" type="password" autocomplete="off" @bind="_joinPassword" @bind:event="oninput" /></label>
+                }
                 @foreach (var server in _servers)
                 {
                     <article class="online-server">
@@ -54,13 +58,13 @@
                         {
                             @foreach (var mission in missions)
                             {
-                                <button class="online-join" disabled="@(_onlineBusy || mission.PasswordRequired)" @onclick="() => JoinServerAsync(server, mission)">Join @mission.Name</button>
+                                <button class="online-join" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, mission)">Join @mission.Name</button>
                             }
                         }
                         else { <button class="online-join" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, null)">Join @server.MissionName</button> }
                     </article>
                 }
-                @if (_servers.Length == 0) { <p>No local servers are listed.</p> }
+                @if (_servers.Length == 0) { <p>No servers are listed.</p> }
             }
             else if (_onlineState == "Sides")
             {
