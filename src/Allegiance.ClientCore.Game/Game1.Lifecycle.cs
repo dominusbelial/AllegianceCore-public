@@ -394,17 +394,7 @@ public sealed partial class Game1
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(_assets);
         if (_shopCatalog?.Core is { } startupCore) _assetMissionCores["PCore001"] = startupCore;
-        _session.World.MissionCoreResolver = ResolveAssetMissionCore;
-        // P540 — give the ClientWorld a way to resolve an ejected ship's lifepod
-        // hull id (it has no core of its own). Wired once the catalogue loads,
-        // before the wire receive path starts.
-        _session.World.LifepodHullResolver = ResolveLifepodHull;
-        _session.World.PartTypeResolver = ResolveFlightPart;
-        // P758 — the part-treasure ack decision surface: the session answers a
-        // c_tcPart ACQUIRE_TREASURE offer with the native HitTreasure mount
-        // pick (shipIGC.h:1239-1305), resolved through the same loaded shop
-        // catalogue the docked screen uses.
-        _session.TreasureMountSource = new ShopCatalogMountSource(_shopCatalog);
+        WireSession(_session);
         // P465b — cache the core's projectile-type table once (from the same
         // loaded core the shop catalogue reads) so the per-frame bolt gather can
         // style each bolt by its real type. Null when the core is missing →
@@ -1142,5 +1132,26 @@ public sealed partial class Game1
                 if (p.PartId == partTypeId) { part = p; return true; }
             return false;
         }
+    }
+
+    /// <summary>Attach every catalogue-backed resolver a session's world needs.
+    /// Called for the startup session AND for every replacement session (a new
+    /// skirmish, a seat change, a reconnect after disposal, a benchmark run):
+    /// before this, replacements got only the hull-stats resolver, so the world
+    /// could not resolve the side's lifepod hull (the hangar never restored a
+    /// ship after a pod death and never saved the last loadout), the mission
+    /// core, flight part types or the treasure mount source.</summary>
+    private void WireSession(ConnectionSession session)
+    {
+        // P448b — remote-ship hull stats for the dead reckoner.
+        session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
+        session.World.MissionCoreResolver = ResolveAssetMissionCore;
+        // P540 — resolve an ejected ship's lifepod hull id (the world has no core).
+        session.World.LifepodHullResolver = ResolveLifepodHull;
+        session.World.PartTypeResolver = ResolveFlightPart;
+        // P758 — the part-treasure ack decision surface: the session answers a
+        // c_tcPart ACQUIRE_TREASURE offer with the native HitTreasure mount
+        // pick (shipIGC.h:1239-1305), resolved through the loaded shop catalogue.
+        session.TreasureMountSource = new ShopCatalogMountSource(_shopCatalog);
     }
 }

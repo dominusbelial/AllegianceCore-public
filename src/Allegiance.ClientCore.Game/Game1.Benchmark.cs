@@ -220,7 +220,7 @@ public sealed partial class Game1
         _nativeShipRenderer.ResetHdResidency();
         _benchStatus = _benchSuggestion is null ? $"Benchmark {_benchmark!.Mode}: run {_benchRuns.Count + 1}/3" : $"Auto-tune verification {_benchTune.Count + 1}/2";
         _session.Dispose(); _session = new ConnectionSession();
-        _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
+        WireSession(_session);
         _ownReady = true; _dockedActive = false;
         _state = ClientState.Intro;
         if (_benchmark!.Mode == "replay")

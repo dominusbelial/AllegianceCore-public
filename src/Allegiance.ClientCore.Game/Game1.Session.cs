@@ -1252,7 +1252,7 @@ public sealed partial class Game1
         if (_session.IsDisposed)
         {
             _session = new ConnectionSession();
-            _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
+            WireSession(_session);
         }
         _moderation.Reset();
         // P970 — remember which join screen this attempt came from (a password
