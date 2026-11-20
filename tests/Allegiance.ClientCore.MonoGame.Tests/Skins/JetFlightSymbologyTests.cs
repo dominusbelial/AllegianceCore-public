@@ -231,8 +231,9 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
 
     [Theory]
     [InlineData(0f, false, false)]
-    [InlineData(60f, true, false)]
-    [InlineData(-60f, false, true)]
+    [InlineData(70f, true, false)]
+    [InlineData(-70f, false, true)]
+    [InlineData(60f, false, false)]
     [InlineData(30f, false, false)]
     public void Off_scale_chevrons_fire_only_past_the_ladder_limit(float pitch, bool top, bool bottom)
     {
@@ -627,5 +628,19 @@ public sealed class JetFlightSymbologyTests(ITestOutputHelper output)
                 CommandChrome = _ => Chrome++
             };
         }
+    }
+}
+
+/// <summary>Domingo 2026-11-19: the Jet pitch ladder must not run from the top of
+/// the screen to the bottom; it stays a compact gyro window around the boresight.</summary>
+public sealed class JetLadderExtentTests
+{
+    [Theory]
+    [InlineData(1080f, 1.5f)]
+    [InlineData(2160f, 3f)]
+    public void Full_size_ladder_covers_at_most_half_the_screen_height(float height, float scale)
+    {
+        float extent = 2f * JetFlightGeometry.LadderHalfSpanDegrees * JetFlightGeometry.LadderPixelsPerDegree * scale;
+        Assert.True(extent <= height * 0.5f, $"ladder {extent}px of {height}px");
     }
 }

@@ -101,10 +101,13 @@ public static class JetFlightGeometry
     /// (P972 §4.2: "5° at ≥ 1080p if it stays uncluttered").</summary>
     public const float LadderFineStepDegrees = 5f;
 
-    /// <summary>Full-size ladder half-span (rungs within ±40° of the current
-    /// pitch; ±20° at the 800×480 floor, P972 §4.5).</summary>
-    public const float LadderHalfSpanDegrees = 40f;
-    public const float CompactLadderHalfSpanDegrees = 20f;
+    /// <summary>Full-size ladder half-span (rungs within ±20° of the current
+    /// pitch; ±12° at the 800×480 floor). Was ±40°/±20° (P972 §4.5): at 1080p
+    /// (scale 1.5) ±40° spanned 960 of 1080 px, top to bottom of the screen;
+    /// ±20° keeps it to ~44 % of the height around the boresight (Domingo,
+    /// 2026-11-19: "should be smaller, it should not cross the screen").</summary>
+    public const float LadderHalfSpanDegrees = 20f;
+    public const float CompactLadderHalfSpanDegrees = 12f;
 
     /// <summary>The highest pitch a numeric rung may carry; beyond it the
     /// ladder shows an off-scale chevron instead of a rung.</summary>
