@@ -137,6 +137,12 @@ gain. The port simply skips the non-buyable part. This is documented here and in
 a comment at the gate; it does not affect the funds/tech behaviour the task
 specifies.
 
+> **Superseded 2026-11-19:** the salvage branch is now mirrored. Skipping it
+> dropped a joining player's spawn gun (a part the home station does not sell)
+> on the first launch, so the player flew unarmed. An owned, unsellable part is
+> re-used free of charge, once per owned part (`Server.ShipCommands.cs`, test
+> `Owned_Unsellable_Part_Is_Reused_Not_Dropped`).
+
 ### 6. Debug mode
 
 There is **no economy precedent** for `liveSettings.debugMode` skipping a price

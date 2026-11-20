@@ -202,12 +202,13 @@ public sealed class BuyLoadoutPricingLiveTests
         return (anyPaid, null);
     }
 
-    private static DataPartTypeIGC FindMountablePart(StaticCore core, DataStationTypeIGC st, Side side, DataHullTypeIGC hull, bool wantSellable)
+    private static DataPartTypeIGC FindMountablePart(StaticCore core, DataStationTypeIGC st, Side side, DataHullTypeIGC hull, bool wantSellable,
+        IReadOnlySet<short>? exclude = null)
     {
         // Ordered by PartId for determinism (Dictionary enumeration order varies
         // per process).
         foreach (var pt in core.PartTypes.Values.OrderBy(p => p.PartId))
-            if (hull.CanMountPart(pt) && StationSells(st, side, pt) == wantSellable)
+            if (hull.CanMountPart(pt) && StationSells(st, side, pt) == wantSellable && exclude?.Contains(pt.PartId) != true)
                 return pt;
         throw new InvalidOperationException(
             $"PCore001 has no {(wantSellable ? "" : "non-")}sellable part mountable on hull {hull.HullId}");
@@ -370,7 +371,10 @@ public sealed class BuyLoadoutPricingLiveTests
         // part is any mountable-but-unsellable part (it is skipped by the tech
         // gate regardless of its requested mount).
         var sellable = FindSellableMountableWeapon(core, st, side, hull);
-        var gated = FindMountablePart(core, st, side, hull, wantSellable: false);
+        // Not a part the ship already owns: native re-uses an owned unsellable
+        // part (shipIGC.h:1041-1056), which the next scenario covers.
+        var owned = LiveShip(h.Server, buyerId).Parts.Select(p => p.Type.PartId).ToHashSet();
+        var gated = FindMountablePart(core, st, side, hull, wantSellable: false, exclude: owned);
         Assert.NotEqual(sellable.PartId, gated.PartId);
 
         int oldVal = ValueOf(h.Server, buyerId);
@@ -395,6 +399,44 @@ public sealed class BuyLoadoutPricingLiveTests
         Assert.Equal(1_000_000, WalletOf(h.Server, buyerId));
         Assert.Empty(h.Buyer.MoneyChanges);
         Console.WriteLine($"BUY-TECH-PART-LIVE: docked buyer {buyerId} requested sellable part {sellable.PartId} + gated part {gated.PartId} -> sellable mounted, gated skipped (FBoughtEverything=false)");
+    }
+
+    // ── (3c) owned but unsellable part: re-used, not dropped ─────────────
+
+    /// <summary>Native's salvage branch (Igc/shipIGC.h:1041-1056): a part the
+    /// station cannot sell is still mounted when the ship already owns one. A
+    /// joining player's spawn gun is such a part; before this the first launch
+    /// re-requested it, the tech gate skipped it and the player flew unarmed.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Owned_Unsellable_Part_Is_Reused_Not_Dropped()
+    {
+        Require.Artwork();
+        using var h = BootDocked(CheapestSellable);
+        short buyerId = h.BuyerId;
+        var ctx = DockCtx(h.Server, buyerId);
+        Assert.NotNull(ctx.st); Assert.NotNull(ctx.side);
+        var st = ctx.st!.Value; var side = ctx.side!;
+        var core = h.Server.Missions[0].Core;
+        var ship = LiveShip(h.Server, buyerId);
+        var hull = ship.HullType;
+        var gated = core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon).OrderBy(p => p.PartId)
+            .First(p => hull.CanMountPart(p, 0) && !StationSells(st, side, p));
+        // Give the ship one it owns (the spawn path does the same with its gun).
+        ship.ClearLoadout();
+        Assert.NotNull(ship.MountPart(gated, 20, 0, ExpandedPartData.FullyMounted));
+        Fund(h.Server, buyerId, 1_000_000);
+        int before = WalletOf(h.Server, buyerId);
+
+        h.Buyer.SendBuyLoadout(hull.HullId, fLaunch: false, parts: new[]
+        {
+            new ExpandedPartData(gated.PartId, 20, 0, ExpandedPartData.FullyMounted),
+        });
+        // The purchase is processed when the server acks it; pump a fixed window.
+        PumpUntil(h.Server, () => false, 1500);
+
+        Assert.Contains(LiveShip(h.Server, buyerId).Parts, p => p.Type.PartId == gated.PartId);
+        Assert.Equal(before, WalletOf(h.Server, buyerId));   // re-used: nothing charged
     }
 
     // ── (4) downgrade refund ─────────────────────────────────────────────

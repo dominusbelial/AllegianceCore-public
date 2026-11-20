@@ -2924,6 +2924,14 @@ public sealed partial class Server
         // refused purchase must leave the ship exactly as it was).
         var toMount = new List<(DataPartTypeIGC Type, short Amount, byte MountId, byte Fraction)>();
         int projectedSkipped = 0;
+        // Native's salvage branch (Igc/shipIGC.h:1041-1056): a part the station
+        // cannot sell is still mounted when the ship already owns one of that
+        // type — the old part is re-used, never upgraded. Each owned part can be
+        // claimed once. (P441 had skipped this branch; a joining player's spawn
+        // gun, which the home station does not sell, then vanished on the first
+        // launch and the player flew unarmed.)
+        var reusable = ship.Parts.Concat(ship.CargoHold.OfType<MountedPart>())
+            .GroupBy(part => part.PartId).ToDictionary(g => g.Key, g => g.Count());
         foreach (var p in buy.Parts)
         {
             if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
@@ -2954,11 +2962,18 @@ public sealed partial class Server
             // skip the part, which also makes FBoughtEverything false.
             // P473 — a harness connection with ignoreTechGate set skips ONLY
             // this check; it still pays the part's real price if mounted.
+            bool reused = false;
             if (!harnessIgnoreTech && stationType is { } pSt && side is { } pSide &&
                 !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.Techs))
             {
-                projectedSkipped++;
-                continue;
+                if (!reusable.TryGetValue(partType.PartId, out int owned) || owned <= 0)
+                {
+                    projectedSkipped++;
+                    continue;
+                }
+                reusable[partType.PartId] = owned - 1;
+                reused = true;
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {partType.PartId} ('{partType.Name}') not sold here — re-using the one the ship owns (native shipIGC.h:1041-1056)");
             }
             // P488 — part successor upgrade (native m_station->GetSuccessor(ppt),
             // shipIGC.h:1033): a requested part the docked station considers
@@ -2966,7 +2981,7 @@ public sealed partial class Server
             // hardpoint gate below re-checks the (possibly upgraded) part against
             // the new hull. Non-docked keeps the requested part (no station to
             // consult, same scope as the tech gate).
-            if (stationType is { } pSuccSt && side is { } pSuccSide)
+            if (!reused && stationType is { } pSuccSt && side is { } pSuccSide)
                 partType = SuccessorUpgrade.PartSuccessor(mission.Core, partType, pSuccSt.TtbmLocal, pSuccSide.Techs);
             int mount = unchecked((sbyte)p.MountId);
             bool occupied = toMount.Any(x => x.MountId == p.MountId
