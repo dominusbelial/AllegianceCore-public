@@ -375,6 +375,10 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     private TcpListener? _listener;
     private NetworkStream? _clientStream;
     private PeerSender? _clientSender;
+    // Guarded by _gate: a late receive/keep-alive reply after teardown is
+    // expected; sending before any successful Join remains a programming error.
+    private bool _clientHasConnected;
+    private bool _clientClosedSendLogged;
     private bool _isHost;
     private volatile bool _running;
     // P320 — set in Shutdown() so the client read-loop's finally knows the
@@ -533,7 +537,9 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                 // Published only after the greeting is queued: the session keep-alive
                 // thread sends as soon as IsConnected is true, and a data frame ahead of
                 // the greeting gets this connection dropped as a protocol error.
-                lock (_gate) _clientSender = sender;
+                _clientSender = sender;
+                _clientHasConnected = true;
+                _clientClosedSendLogged = false;
                 IsConnected = true;
                 Spawn(() =>
                 {
@@ -597,8 +603,22 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
             }
             else
             {
-                ps = _clientSender
-                    ?? throw new InvalidOperationException("not connected");
+                ps = _clientSender;
+                if (ps is null)
+                {
+                    if (!_clientHasConnected) throw new InvalidOperationException("not connected");
+                    // Shutdown and sender-worker failure can clear the sender
+                    // while OnReceive is still dispatching. A connected check
+                    // at any caller cannot close this race. Native returns a
+                    // failed send without throwing (_Utility/TcpTransport.cpp:
+                    // 282-287; _Utility/Messages.cpp:594-605 logs the result).
+                    if (!_clientClosedSendLogged)
+                    {
+                        _clientClosedSendLogged = true;
+                        Console.WriteLine("[client] send dropped: connection already closed");
+                    }
+                    return;
+                }
             }
         }
         // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected

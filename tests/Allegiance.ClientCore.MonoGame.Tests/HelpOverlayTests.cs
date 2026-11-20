@@ -15,7 +15,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// never lets a group overflow the panel or leaves the columns wildly
 /// unbalanced.
 /// </summary>
-public class HelpOverlayTests
+public class HelpOverlayTests(Xunit.Abstractions.ITestOutputHelper output)
 {
     /// <summary>
     /// P941 — these tests pin the KEY SET the port shipped before the native
@@ -252,35 +252,92 @@ public class HelpOverlayTests
         Assert.Equal(withBar.Height + HelpOverlayLayout.TopicBarHeight, withoutBar.Height);
     }
 
-    [Fact]
-    public void ControlsSections_FitThe720pManualBand()
+    [Theory]
+    [InlineData("hlpControls", 720)]
+    [InlineData("hlpControls2", 720)]
+    [InlineData("hlpControls", 1080)]
+    [InlineData("hlpControls2", 1080)]
+    [InlineData("hlpControls", 1440)]
+    [InlineData("hlpControls2", 1440)]
+    public void ControlsPage_fits_with_two_rows_of_headroom(string topic, int height)
     {
-        // The real catalogue at 1280x720 with the topic bar: the targeting group
-        // alone is taller than the whole band, so the Controls layout splits it
-        // into sections. Every section stays inside the band, and the sections
-        // still cover every entry of every group exactly once.
-        var groups = Groups;
-        const float panelY = 720f * 0.05f;
-        const float panelH = 720f * 0.90f;
-        var band = HelpOverlayLayout.ContentBand(panelY, panelH, topicBar: true);
-        var sections = HelpOverlayLayout.LayoutSections(
-            groups.Select(g => g.Entries.Count).ToArray(), band.Top, band.Height);
+        foreach (var layout in new[] { InputLayout.Port, InputLayout.Native })
+        {
+            var groups = HelpManualModel.ControlsGroups(new ActionMap(InputActionCatalog.Definitions, layout), topic);
+            var band = HelpOverlayLayout.ContentBand(height * 0.04f, height * 0.92f, topicBar: true);
+            // Conservative 11px HUD monospace advance for a graphics-free guard. The
+            // window proof also validates this plan with the actual spritefont.
+            var table = HelpOverlayLayout.MeasureControls(groups, text => text.Length * 11f,
+                height * 16f / 9f * 0.982f - 2f * HelpOverlayLayout.Padding, band.Height);
+            output.WriteLine($"{topic} {layout} {height}p: {groups.Sum(g => g.Entries.Count)} entries, "
+                + $"scale={table.Scale:F2}, columns={table.ColumnWidths.Length}, "
+                + $"rows used={table.UsedHeight / (22f * table.Scale):F2}, "
+                + $"capacity={table.CapacityHeight / (22f * table.Scale):F2}, spare={table.RemainingRows:F2}");
+            Assert.True(table.Scale >= (layout == InputLayout.Port ? 0.51f : 0.45f),
+                $"{topic} {layout}: text scale {table.Scale:F2} leaves too little reading room");
+            Assert.True(table.RemainingRows >= 2f - 0.001f,
+                $"{topic}: only {table.RemainingRows:F2} spare rows; rebalance complete groups before adding bindings");
+            Assert.True(table.UsedWidth <= height * 16f / 9f * 0.982f - 2f * HelpOverlayLayout.Padding);
+            foreach (var section in table.Sections)
+                Assert.True((section.Y + section.Height) * table.Scale <= band.Height);
+            foreach (var column in table.Sections.GroupBy(s => s.Column))
+            {
+                var ordered = column.OrderBy(s => s.Y).ToArray();
+                for (int i = 1; i < ordered.Length; i++)
+                    Assert.True(ordered[i - 1].Y + ordered[i - 1].Height
+                        + HelpOverlayLayout.ControlsGroupGap <= ordered[i].Y);
+            }
+        }
+    }
 
-        Assert.InRange(sections.Max(s => s.Column) + 1, 2, HelpOverlayLayout.MaxSectionColumns);
-        foreach (var section in sections)
+    [Theory]
+    [InlineData(InputLayout.Port)]
+    [InlineData(InputLayout.Native)]
+    public void Controls_pages_cover_every_live_group_and_entry_exactly_once(InputLayout layout)
+    {
+        var map = new ActionMap(InputActionCatalog.Definitions, layout);
+        var pages = new[] { "hlpControls", "hlpControls2" }
+            .SelectMany(topic => HelpManualModel.ControlsGroups(map, topic)).ToArray();
+        Assert.Equal(map.ToHelpGroups().Count, pages.Length);
+        Assert.Equal(pages.Length, pages.Select(g => g.Title).Distinct().Count());
+        foreach (var group in map.ToHelpGroups())
+            Assert.Equal(group.Entries, pages.Single(g => g.Title == group.Title).Entries);
+        foreach (var topic in new[] { "hlpControls", "hlpControls2" })
         {
-            Assert.True(section.Y >= band.Top, $"section of group {section.GroupIndex} starts above the band");
-            Assert.True(section.Y + section.Height <= band.Top + band.Height,
-                $"section of group {section.GroupIndex} overflows the 720p band "
-                + $"(y={section.Y}, h={section.Height}, band={band.Top}+{band.Height})");
+            var groups = HelpManualModel.ControlsGroups(map, topic);
+            var band = HelpOverlayLayout.ContentBand(720f * 0.04f, 720f * 0.92f, true);
+            var sections = HelpOverlayLayout.MeasureControls(groups, text => text.Length * 11f,
+                1280f * 0.982f - 2f * HelpOverlayLayout.Padding, band.Height).Sections;
+            for (int g = 0; g < groups.Count; g++)
+                Assert.Equal(Enumerable.Range(0, groups[g].Entries.Count), sections.Where(s => s.GroupIndex == g)
+                    .SelectMany(s => Enumerable.Range(s.FirstEntry, s.EntryCount)));
         }
-        for (int g = 0; g < groups.Count; g++)
-        {
-            var covered = sections.Where(s => s.GroupIndex == g).SelectMany(
-                s => Enumerable.Range(s.FirstEntry, s.EntryCount)).ToArray();
-            Assert.Equal(groups[g].Entries.Count, covered.Length);
-            Assert.Equal(Enumerable.Range(0, groups[g].Entries.Count), covered);
-        }
+    }
+
+    [Theory]
+    [InlineData("Target enemy [TK_TargetEnemy]", "Target enemy")]
+    [InlineData("Zoom camera (hold)", "Zoom camera (hold)")]
+    [InlineData("Cycle view [P836]", "Cycle view [P836]")]
+    public void Help_description_omits_only_the_native_source_tag(string source, string display)
+        => Assert.Equal(display, HelpManualModel.ControlsDescription(source));
+
+    [Fact]
+    public void Controls_entry_point_next_previous_and_back_keep_stable_topic_ids()
+    {
+        var manual = new HelpManualModel();
+        manual.GoTo("hlpControls"); // KeyBind and InFlightProof entry point
+        Assert.Equal("CONTROLS: FLIGHT", manual.Current.Title);
+        manual.MoveTopicSelection(1);
+        Assert.Equal("hlpControls2", manual.CurrentTopic);
+        Assert.Equal("CONTROLS: OTHER", manual.Current.Title);
+        manual.MoveTopicSelection(-1);
+        Assert.Equal("hlpControls", manual.CurrentTopic);
+        manual.Back();
+        Assert.Equal("hlpControls2", manual.CurrentTopic);
+        manual.Back();
+        Assert.Equal("hlpControls", manual.CurrentTopic);
+        manual.GoTo("hlpControls2"); // topic bar selection
+        Assert.True(HelpManualModel.IsControlsTopic(manual.CurrentTopic));
     }
 
     [Fact]

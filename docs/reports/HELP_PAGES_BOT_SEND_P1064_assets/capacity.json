@@ -1,0 +1,674 @@
+[
+  {
+    "height": 720,
+    "layout": "Port",
+    "topic": "hlpControls",
+    "entries": 127,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 29
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 60
+      }
+    ],
+    "Scale": 0.51,
+    "columns": 3,
+    "UsedWidth": 1190.85,
+    "UsedHeight": 532.44,
+    "CapacityHeight": 556.4,
+    "rowsUsed": 47.454548,
+    "rowsCapacity": 49.590023,
+    "RemainingRows": 2.1354744,
+    "totalRowsUsed": 137.36363,
+    "totalRowsCapacity": 148.77007
+  },
+  {
+    "height": 720,
+    "layout": "Port",
+    "topic": "hlpControls2",
+    "entries": 107,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 9
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 5
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 0.53,
+    "columns": 3,
+    "UsedWidth": 1120.4199,
+    "UsedHeight": 530,
+    "CapacityHeight": 556.4,
+    "rowsUsed": 45.454548,
+    "rowsCapacity": 47.7187,
+    "RemainingRows": 2.264153,
+    "totalRowsUsed": 133.36363,
+    "totalRowsCapacity": 143.1561
+  },
+  {
+    "height": 720,
+    "layout": "Native",
+    "topic": "hlpControls",
+    "entries": 134,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 35
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 61
+      }
+    ],
+    "Scale": 0.48,
+    "columns": 3,
+    "UsedWidth": 1178.4,
+    "UsedHeight": 532.8,
+    "CapacityHeight": 556.4,
+    "rowsUsed": 50.454548,
+    "rowsCapacity": 52.6894,
+    "RemainingRows": 2.234852,
+    "totalRowsUsed": 146.36363,
+    "totalRowsCapacity": 158.0682
+  },
+  {
+    "height": 720,
+    "layout": "Native",
+    "topic": "hlpControls2",
+    "entries": 118,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 19
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 6
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 0.5,
+    "columns": 3,
+    "UsedWidth": 1107,
+    "UsedHeight": 533,
+    "CapacityHeight": 556.4,
+    "rowsUsed": 48.454544,
+    "rowsCapacity": 50.58182,
+    "RemainingRows": 2.127275,
+    "totalRowsUsed": 144.36363,
+    "totalRowsCapacity": 151.74547
+  },
+  {
+    "height": 1080,
+    "layout": "Port",
+    "topic": "hlpControls",
+    "entries": 127,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 29
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 60
+      }
+    ],
+    "Scale": 0.79,
+    "columns": 3,
+    "UsedWidth": 1835.9601,
+    "UsedHeight": 842.14,
+    "CapacityHeight": 887.60004,
+    "rowsUsed": 48.454544,
+    "rowsCapacity": 51.070194,
+    "RemainingRows": 2.6156514,
+    "totalRowsUsed": 141.36363,
+    "totalRowsCapacity": 153.21059
+  },
+  {
+    "height": 1080,
+    "layout": "Port",
+    "topic": "hlpControls2",
+    "entries": 107,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 9
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 5
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 0.85,
+    "columns": 3,
+    "UsedWidth": 1796.9,
+    "UsedHeight": 850,
+    "CapacityHeight": 887.60004,
+    "rowsUsed": 45.454544,
+    "rowsCapacity": 47.46524,
+    "RemainingRows": 2.0106971,
+    "totalRowsUsed": 133.36363,
+    "totalRowsCapacity": 142.39572
+  },
+  {
+    "height": 1080,
+    "layout": "Native",
+    "topic": "hlpControls",
+    "entries": 134,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 35
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 61
+      }
+    ],
+    "Scale": 0.75,
+    "columns": 3,
+    "UsedWidth": 1841.25,
+    "UsedHeight": 849,
+    "CapacityHeight": 887.60004,
+    "rowsUsed": 51.454544,
+    "rowsCapacity": 53.79394,
+    "RemainingRows": 2.3393962,
+    "totalRowsUsed": 146.36363,
+    "totalRowsCapacity": 161.38182
+  },
+  {
+    "height": 1080,
+    "layout": "Native",
+    "topic": "hlpControls2",
+    "entries": 118,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 19
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 6
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 0.79,
+    "columns": 3,
+    "UsedWidth": 1749.06,
+    "UsedHeight": 842.14,
+    "CapacityHeight": 887.60004,
+    "rowsUsed": 48.454544,
+    "rowsCapacity": 51.070194,
+    "RemainingRows": 2.6156514,
+    "totalRowsUsed": 144.36363,
+    "totalRowsCapacity": 153.21059
+  },
+  {
+    "height": 1440,
+    "layout": "Port",
+    "topic": "hlpControls",
+    "entries": 127,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 29
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 60
+      }
+    ],
+    "Scale": 1,
+    "columns": 3,
+    "UsedWidth": 2335,
+    "UsedHeight": 1154,
+    "CapacityHeight": 1218.8,
+    "rowsUsed": 52.454544,
+    "rowsCapacity": 55.4,
+    "RemainingRows": 2.9454567,
+    "totalRowsUsed": 137.36363,
+    "totalRowsCapacity": 166.20001
+  },
+  {
+    "height": 1440,
+    "layout": "Port",
+    "topic": "hlpControls2",
+    "entries": 107,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 9
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 5
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 1,
+    "columns": 3,
+    "UsedWidth": 2103,
+    "UsedHeight": 1154,
+    "CapacityHeight": 1218.8,
+    "rowsUsed": 52.454544,
+    "rowsCapacity": 55.4,
+    "RemainingRows": 2.9454567,
+    "totalRowsUsed": 133.36363,
+    "totalRowsCapacity": 166.20001
+  },
+  {
+    "height": 1440,
+    "layout": "Native",
+    "topic": "hlpControls",
+    "entries": 134,
+    "groups": [
+      {
+        "Title": "MOVEMENT",
+        "count": 14
+      },
+      {
+        "Title": "CRUISE THROTTLE",
+        "count": 5
+      },
+      {
+        "Title": "WEAPONS",
+        "count": 19
+      },
+      {
+        "Title": "TARGETING / AUTOPILOT",
+        "count": 35
+      },
+      {
+        "Title": "CAMERA / VIEW",
+        "count": 61
+      }
+    ],
+    "Scale": 1,
+    "columns": 3,
+    "UsedWidth": 2411,
+    "UsedHeight": 1154,
+    "CapacityHeight": 1218.8,
+    "rowsUsed": 52.454544,
+    "rowsCapacity": 55.4,
+    "RemainingRows": 2.9454567,
+    "totalRowsUsed": 144.36363,
+    "totalRowsCapacity": 166.20001
+  },
+  {
+    "height": 1440,
+    "layout": "Native",
+    "topic": "hlpControls2",
+    "entries": 118,
+    "groups": [
+      {
+        "Title": "INVENTORY / CARGO",
+        "count": 19
+      },
+      {
+        "Title": "QUEUED ORDERS (RECEIVED COMMAND)",
+        "count": 3
+      },
+      {
+        "Title": "COMMANDED SHIP (DRONE)",
+        "count": 5
+      },
+      {
+        "Title": "VOTE / COMMAND",
+        "count": 2
+      },
+      {
+        "Title": "MUSIC",
+        "count": 3
+      },
+      {
+        "Title": "CHAT",
+        "count": 10
+      },
+      {
+        "Title": "LOBBY (SERVER BROWSER)",
+        "count": 14
+      },
+      {
+        "Title": "READY CHECK (PRE-FLIGHT)",
+        "count": 10
+      },
+      {
+        "Title": "PANES / MENUS",
+        "count": 18
+      },
+      {
+        "Title": "FREE-CAM / SPECTATOR",
+        "count": 9
+      },
+      {
+        "Title": "LOCAL SKIRMISH",
+        "count": 7
+      },
+      {
+        "Title": "TRAINING (MISSION ONLY)",
+        "count": 6
+      },
+      {
+        "Title": "SYSTEM",
+        "count": 4
+      },
+      {
+        "Title": "TEAM FUNDING",
+        "count": 8
+      }
+    ],
+    "Scale": 1,
+    "columns": 3,
+    "UsedWidth": 2147,
+    "UsedHeight": 1132,
+    "CapacityHeight": 1218.8,
+    "rowsUsed": 51.454544,
+    "rowsCapacity": 55.4,
+    "RemainingRows": 3.9454567,
+    "totalRowsUsed": 144.36363,
+    "totalRowsCapacity": 166.20001
+  }
+]

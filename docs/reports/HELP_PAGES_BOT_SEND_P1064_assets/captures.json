@@ -1,0 +1,58 @@
+[
+  {
+    "file": "help-classic-1280x720-page1.png",
+    "width": 1280,
+    "height": 720,
+    "rgbSha256": "5694dee18dd6efab7c0399864dd034ae43cce9954ec6646eea57e692db8acce0",
+    "bytes": 59446
+  },
+  {
+    "file": "help-classic-1280x720-page2.png",
+    "width": 1280,
+    "height": 720,
+    "rgbSha256": "f37817e78b78ff4c8141200a02aebc696caa6b25cbae75f7e6f726406f535758",
+    "bytes": 60158
+  },
+  {
+    "file": "help-classic-1920x1080-page1.png",
+    "width": 1920,
+    "height": 1080,
+    "rgbSha256": "9153d37c3eb15a9675ef93588ae18a9ce78dc9eb349ee99ebf68442ab1ad6afd",
+    "bytes": 109487
+  },
+  {
+    "file": "help-classic-1920x1080-page2.png",
+    "width": 1920,
+    "height": 1080,
+    "rgbSha256": "ce541dd98acf44277f28ce0c51d6b77e09b72178964dd3e07c09af0b4c3239d7",
+    "bytes": 113323
+  },
+  {
+    "file": "help-modern-1280x720-page1.png",
+    "width": 1280,
+    "height": 720,
+    "rgbSha256": "5694dee18dd6efab7c0399864dd034ae43cce9954ec6646eea57e692db8acce0",
+    "bytes": 59446
+  },
+  {
+    "file": "help-modern-1280x720-page2.png",
+    "width": 1280,
+    "height": 720,
+    "rgbSha256": "f37817e78b78ff4c8141200a02aebc696caa6b25cbae75f7e6f726406f535758",
+    "bytes": 60158
+  },
+  {
+    "file": "help-modern-1920x1080-page1.png",
+    "width": 1920,
+    "height": 1080,
+    "rgbSha256": "9153d37c3eb15a9675ef93588ae18a9ce78dc9eb349ee99ebf68442ab1ad6afd",
+    "bytes": 109487
+  },
+  {
+    "file": "help-modern-1920x1080-page2.png",
+    "width": 1920,
+    "height": 1080,
+    "rgbSha256": "ce541dd98acf44277f28ce0c51d6b77e09b72178964dd3e07c09af0b4c3239d7",
+    "bytes": 113323
+  }
+]

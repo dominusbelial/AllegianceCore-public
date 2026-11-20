@@ -77,13 +77,14 @@ void RunScene()
 void RunUi()
 {
     bool aaUi = args.Contains("--aa-ui");
+    bool helpPages = args.Contains("--help-pages");
     var style = (Arg("--style") ?? "classic").Equals("modern", StringComparison.OrdinalIgnoreCase)
         ? HudStyle.Modern : HudStyle.Classic;
-    if (aaUi)
+    if (aaUi || helpPages)
     {
         // This proof exercises Save through the real menu. Always use an owned
         // fresh profile, so rerunning it cannot change a player's preferences.
-        string profile = Path.GetFullPath(Path.Combine(outDir, "aa-profile"));
+        string profile = Path.GetFullPath(Path.Combine(outDir, helpPages ? "help-profile" : "aa-profile"));
         Directory.CreateDirectory(profile);
         Environment.SetEnvironmentVariable("ALLEGIANCE_PLAYER_SETTINGS", Path.Combine(profile, "player.json"));
         Environment.SetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS", Path.Combine(profile, "hud.json"));
@@ -108,12 +109,13 @@ void RunUi()
         WindowHeight = height,
         VisualsOverride = visualsSpec,
     };
-    if (aaUi) { launch.LobbyUrl = ""; launch.LobbyUrlExplicit = true; }
+    if (aaUi || helpPages) { launch.LobbyUrl = ""; launch.LobbyUrlExplicit = true; }
     using var game = new Game1(launch);
     game.Content.RootDirectory = content;
     string tag = (style == HudStyle.Modern ? "modern" : "classic")
         + (visualsSpec is { Length: > 0 } ? "_on" : "_off");
-    game.Components.Add(new VisualsPageProof(game, style, outDir, tag, aaUi));
+    if (helpPages) game.Components.Add(new HelpPagesProof(game, style, outDir));
+    else game.Components.Add(new VisualsPageProof(game, style, outDir, tag, aaUi));
     game.Run();
 }
 
@@ -345,5 +347,72 @@ sealed class VisualsPageProof(Game1 game, HudStyle style, string output, string 
         }
         _step++;
         _next = _watch.Elapsed.TotalSeconds + 1.2;
+    }
+}
+
+/// <summary>P1064: real Game1 Help screen, production fonts, model and renderer.
+/// A fresh local profile and empty lobby URL keep the proof wholly offline.</summary>
+sealed class HelpPagesProof(Game1 game, HudStyle style, string output) : GameComponent(game)
+{
+    private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
+    private readonly Stopwatch _watch = Stopwatch.StartNew();
+    private int _step;
+    private double _next;
+    private T Get<T>(string field) => (T)typeof(Game1).GetField(field, Hidden)!.GetValue(game)!;
+    private void Set(string field, object value) => typeof(Game1).GetField(field, Hidden)!.SetValue(game, value);
+
+    public override void Update(GameTime time)
+    {
+        if (_watch.Elapsed.TotalSeconds > 60) throw new TimeoutException("Help pages proof timeout");
+        if (Get<bool>("_autoShotScheduled") || _watch.Elapsed.TotalSeconds < _next) return;
+        if (_step == 0)
+        {
+            if (Get<object>("_state").ToString() != "Intro") return;
+            typeof(Game1).GetMethod("StopIntroScan", Hidden)!.Invoke(game, null);
+            Get<HudSettings>("_hudSettings").Style = style;
+            Set("_introView", Enum.Parse(typeof(Game1).GetField("_introView", Hidden)!.FieldType, "Help"));
+            Get<HelpManualModel>("_helpManual").GoTo("hlpControls");
+            var font = Get<SpriteFont>("_hudSmall");
+            var rows = new List<object>();
+            foreach (int height in new[] { 720, 1080, 1440 })
+            foreach (var layout in new[] { InputLayout.Port, InputLayout.Native })
+            foreach (string topic in new[] { "hlpControls", "hlpControls2" })
+            {
+                var groups = HelpManualModel.ControlsGroups(new ActionMap(InputActionCatalog.Definitions, layout), topic);
+                var band = HelpOverlayLayout.ContentBand(height * 0.04f, height * 0.92f, true);
+                float width = height * 16f / 9f * 0.982f - 2f * HelpOverlayLayout.Padding;
+                var table = HelpOverlayLayout.MeasureControls(groups, text => font.MeasureString(text).X, width, band.Height);
+                if (table.UsedWidth > width || table.RemainingRows < 1.999f)
+                    throw new InvalidOperationException($"{topic} {height}p does not fit: {table}");
+                Console.WriteLine($"HELP_CAPACITY {layout} {topic} {height}p {table.Scale:F2} width={table.UsedWidth:F1}/{width:F1} spare={table.RemainingRows:F2} fontLine={font.LineSpacing} glyph={font.MeasureString("M").X}");
+                if (height == 720 && layout == InputLayout.Port)
+                    foreach (var group in groups)
+                        Console.WriteLine($"HELP_GROUP {group.Title} {group.Entries.Count} max={group.Entries.Max(e => HelpManualModel.ControlsDescription(e.Description).Length)}");
+                rows.Add(new { height, layout = layout.ToString(), topic, entries = groups.Sum(g => g.Entries.Count),
+                    groups = groups.Select(g => new { g.Title, count = g.Entries.Count }), table.Scale,
+                    columns = table.ColumnWidths.Length, table.UsedWidth, table.UsedHeight, table.CapacityHeight,
+                    rowsUsed = table.UsedHeight / (22f * table.Scale),
+                    rowsCapacity = table.CapacityHeight / (22f * table.Scale), table.RemainingRows,
+                    totalRowsUsed = table.Sections.GroupBy(s => s.Column).Sum(column => column.Max(s => s.Y + s.Height) / 22f),
+                    totalRowsCapacity = table.CapacityHeight / (22f * table.Scale) * table.ColumnWidths.Length });
+            }
+            File.WriteAllText(Path.Combine(output, $"capacity-{style.ToString().ToLowerInvariant()}.json"),
+                System.Text.Json.JsonSerializer.Serialize(rows, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+        else if (_step == 1 || _step == 3)
+        {
+            Set("_autoshotDir", output);
+            Set("_autoShotName", $"help-{style.ToString().ToLowerInvariant()}-{game.GraphicsDevice.Viewport.Width}x{game.GraphicsDevice.Viewport.Height}-page{(_step == 1 ? 1 : 2)}");
+            Set("_autoShotScheduled", true);
+        }
+        else if (_step == 2)
+        {
+            var manual = Get<HelpManualModel>("_helpManual");
+            manual.MoveTopicSelection(1);
+            if (manual.CurrentTopic != "hlpControls2") throw new InvalidOperationException("Controls navigation failed");
+        }
+        else { game.Exit(); return; }
+        _step++;
+        _next = _watch.Elapsed.TotalSeconds + 0.6;
     }
 }
