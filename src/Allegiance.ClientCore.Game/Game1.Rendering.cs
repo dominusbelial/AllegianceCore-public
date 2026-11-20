@@ -805,9 +805,11 @@ public sealed partial class Game1
                     // (native SetLOD(screenRadius * lodBias), thinggeo.cpp:1624).
                     _shipLodProfile.LodBias = _lodControl.Bias;
                     px = Rendering.ShipLod.ApplyLodBias(px, _shipLodProfile);
-                    float farAmt = Rendering.ShipLod.FarAmount(px, _shipLodProfile);
+                    // visuals ships.fullDetail: no far sprite, no simpler native mesh.
+                    bool fullDetail = _visuals.ShipFullDetail;
+                    float farAmt = fullDetail ? 0f : Rendering.ShipLod.FarAmount(px, _shipLodProfile);
                     bool wasFar = _shipLodFar.TryGetValue(id, out var wf) && wf;
-                    bool isFar = Rendering.ShipLod.NextFarState(px, wasFar, _shipLodProfile);
+                    bool isFar = !fullDetail && Rendering.ShipLod.NextFarState(px, wasFar, _shipLodProfile);
                     _shipLodFar[id] = isFar;
                     if (isFar) _lodFarCount++; else _lodFullCount++;
 
@@ -834,7 +836,7 @@ public sealed partial class Game1
                             // when fully in the near tier (during the crossfade the
                             // base mesh is kept so the fade-out is seamless).
                             var drawGeo = ngeo0;
-                            if (farAmt <= 0f && _nativeShipRenderer.LodLevelCount(nref.ModelStem!) > 0)
+                            if (!fullDetail && farAmt <= 0f && _nativeShipRenderer.LodLevelCount(nref.ModelStem!) > 0)
                             {
                                 int lev = Rendering.ShipLod.NativeLodLevelFor(px, _nativeShipRenderer.LodPixelRadii(nref.ModelStem!));
                                 if (lev > 0)

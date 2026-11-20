@@ -122,6 +122,13 @@ public static class VisualFlags
     /// Visual only: the skin is presentation and never changes a game rule.</summary>
     public const string JetSkinKey = "hud.jetSkin";
 
+    /// <summary>Ships always drawn at full detail: no far-tier sprite (the port's
+    /// P628 addition) and no native LODGeo reduction (native selects a simpler
+    /// mesh by projected pixel radius, thinggeo.cpp:1618-1624). Default OFF (the
+    /// native/P628 path); a modern GPU can afford the base mesh everywhere
+    /// (Domingo 2026-11-19: "i dont want it to hide any detail"). Visual only.</summary>
+    public const string ShipFullDetailKey = "ships.fullDetail";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -197,6 +204,11 @@ public static class VisualFlags
             "Jet HUD",
             "military vector HUD — in development",
             VisualFlagKind.Toggle),
+        new VisualFlag(
+            ShipFullDetailKey,
+            "Full ship detail",
+            "never swap distant ships for sprites or simpler meshes",
+            VisualFlagKind.Toggle),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -248,6 +260,7 @@ public sealed class VisualOptions
     /// <summary>P1035 — the Jet HUD skin is exposed in the Shift+F12 cycle and to
     /// <c>Request("jet")</c>. Off while the skin is in development.</summary>
     public bool JetSkin => IsOn(VisualFlags.JetSkinKey);
+    public bool ShipFullDetail => IsOn(VisualFlags.ShipFullDetailKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)
