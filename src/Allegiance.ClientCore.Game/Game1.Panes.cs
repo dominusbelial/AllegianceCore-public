@@ -194,18 +194,9 @@ public sealed partial class Game1
                 // `pod hull && GetStation()` branch calls RestoreLoadout(station)
                 // (appmsg.cpp:2022-2023 → clintlib.h:1876-1886), which replays the
                 // head of the cached loadout list. Same model, same rule.
-                // With no saved loadout (e.g. the last ship flew with no parts),
-                // native still never relaunches the pod: ReplaceLoadout falls back
-                // to the first buyable hull + its default loadout (clintlib.h:1632-1633,1850-1868).
-                if (world.OwnShipDockedInLifepod)
-                {
-                    if (world.OwnSavedLoadout is { } saved && _shopModel.RestoreSavedLoadout(saved.HullId, saved.Parts))
-                        Console.WriteLine($"[monogame] docked in a lifepod: restored last loadout hull {_shopModel.EffectiveHullId} "
-                            + $"+ {_shopModel.ChosenParts.Count} part(s) (native RestoreLoadout, clintlib.h:1876-1886)");
-                    else if (world.OwnSavedLoadout is null && _shopModel.RestoreDefaultLoadout())
-                        Console.WriteLine($"[monogame] docked in a lifepod with no saved loadout: fresh ship hull {_shopModel.EffectiveHullId} "
-                            + $"+ {_shopModel.ChosenParts.Count} default part(s) (native ReplaceLoadout fallback, clintlib.h:1850-1868)");
-                }
+                // (The restore itself runs every docked frame below: the dock can
+                // open the hangar before the death's lifepod hull/station reach the
+                // world, so a once-at-dock check missed it and the pod was shown.)
                 // P755 — the loadout menu's own-deploy cues: part chosen / slot
                 // emptied → mountSound/unmountSound (load.cpp:1887/1889); a hull
                 // pick rebases the default loadout → mountSound (load.cpp:1480-1487).
@@ -226,6 +217,7 @@ public sealed partial class Game1
 
             RefreshDockedOffers(world, mySe);
             SyncShopWithServer(world, mySe);   // P1017
+            RestoreLifepodLoadout(world, mySe);
             ContinueHangarLaunch(mySe);
             ReleaseTeleportOnBoardRefusal();   // P757 — EndLockDown equivalent
             if (UpdateHangarControls(ks, composing)) return true;
@@ -2339,4 +2331,23 @@ public sealed partial class Game1
     /// hangar/teleport screen, where B means "back to hangar" instead.</summary>
     internal static bool ScoreboardToggleAllowed(bool chatActive, bool qcMenuOpen, bool dockedActive)
         => !chatActive && !qcMenuOpen && !dockedActive;
+
+    /// <summary>P996 — berthed in a lifepod, the hangar replaces the pod with a real
+    /// ship, the way native's LOADOUT_CHANGE handler does whenever the own ship is a
+    /// pod at a station (appmsg.cpp:2022-2023 → RestoreLoadout, clintlib.h:1876-1886):
+    /// the last saved loadout, or with none native's ReplaceLoadout fallback, the
+    /// first buyable hull + its default loadout (clintlib.h:1632-1633,1850-1868).
+    /// Checked every docked frame, not once at dock: the hangar can open before the
+    /// lifepod hull arrives. Never overrides a hull the player has picked.</summary>
+    private void RestoreLifepodLoadout(ClientWorld world, ShipEntity mySe)
+    {
+        if (_shopModel is not { } shop || shop.ChosenHullId is not null) return;
+        if (!world.OwnShipDockedInLifepod || shop.EffectiveHullId != mySe.HullId) return;
+        if (world.OwnSavedLoadout is { } saved && shop.RestoreSavedLoadout(saved.HullId, saved.Parts))
+            Console.WriteLine($"[monogame] docked in a lifepod: restored last loadout hull {shop.EffectiveHullId} "
+                + $"+ {shop.ChosenParts.Count} part(s) (native RestoreLoadout, clintlib.h:1876-1886)");
+        else if (world.OwnSavedLoadout is null && shop.RestoreDefaultLoadout())
+            Console.WriteLine($"[monogame] docked in a lifepod with no saved loadout: fresh ship hull {shop.EffectiveHullId} "
+                + $"+ {shop.ChosenParts.Count} default part(s) (native ReplaceLoadout fallback, clintlib.h:1850-1868)");
+    }
 }
