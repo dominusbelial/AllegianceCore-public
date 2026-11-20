@@ -198,7 +198,9 @@ public sealed partial class Game1
         if (_seatChange is not null) status = "Changing seat (waiting for a playable match)...";
         if (_skirmishError.Length > 0) status = _skirmishError;
         if (_skirmish.Options.HostLan) status = _skirmish.Failure ?? _skirmish.LanStatus;
-        else status += "   Ctrl+1 Join Alpha   Ctrl+2 Join Bravo   Ctrl+0 Spectate   Ctrl+P Pause   Ctrl+F10 End";
+        else status += LocalSpectating
+            ? "   Ctrl+1 Join Alpha   Ctrl+2 Join Bravo   Ctrl+P Pause   Ctrl+F10 End"
+            : "   Esc menu: change seat   Ctrl+P Pause   Ctrl+F10 End";
         _spriteBatch.Begin();
         _spriteBatch.Draw(_whitePixel, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, LocalSpectating ? 126 : 30), new Color(0, 0, 0, 210));
         float scale = Math.Min(1f, (GraphicsDevice.Viewport.Width - 24) / _hudSmall.MeasureString(status).X);

@@ -75,7 +75,7 @@ public sealed partial class Game1
     {
         if (_skirmish is null) return;
         bool Edge(string action) => ActionDown(keys, action) && !ActionDown(_skirmishLastKeys, action);
-        if (!_chatActive && !_keyBindVisible && _seatChange is null)
+        if (SeatHotkeysLive(LocalSpectating, _chatActive, _keyBindVisible, _seatChange is not null))
         {
             short? side = Edge("SkirmishJoinAlpha") ? (short)0 : Edge("SkirmishJoinBravo") ? (short)1 : null;
             if (side is not null || Edge("SkirmishSpectate"))
@@ -85,6 +85,12 @@ public sealed partial class Game1
         }
         _skirmishLastKeys = keys;
     }
+
+    /// <summary>Ctrl+1/2/0 are port-only seat keys. While flying, Ctrl is native fire-missile
+    /// and Ctrl+number is native PromoteTurret/SwapWeapon (InputActionCatalog), so the seat keys
+    /// only work while spectating; a flying pilot changes seat from the Esc menu.</summary>
+    internal static bool SeatHotkeysLive(bool spectating, bool chatActive, bool keyBindVisible, bool seatChangePending)
+        => spectating && !chatActive && !keyBindVisible && !seatChangePending;
 
     private void RequestSkirmishSeat(short? side)
     {
