@@ -31,6 +31,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// Pure/headless (no graphics device) except the per-style source contracts,
 /// which follow the Hud19CentreHudTests discipline.
 /// </summary>
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class P804ClientLeadTests
 {
     private readonly ITestOutputHelper _out;
@@ -475,16 +476,20 @@ public sealed class P804ClientLeadTests
         var watch = new Stopwatch();
         float sink = 0f;
         const int frames = 1000;
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        watch.Start();
-        for (int i = 0; i < frames; i++)
+        long allocated;
+        using (new NoGcAllocationWindow())
         {
-            var r = ClientLead.Solve(input);
-            sink += r.Green + r.Time + r.Direction.X;
-            sink += ClientLead.CockpitGreen(i * 0.1f, 0f, 100f, 100f, 10f);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            watch.Start();
+            for (int i = 0; i < frames; i++)
+            {
+                var r = ClientLead.Solve(input);
+                sink += r.Green + r.Time + r.Direction.X;
+                sink += ClientLead.CockpitGreen(i * 0.1f, 0f, 100f, 100f, 10f);
+            }
+            watch.Stop();
+            allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         }
-        watch.Stop();
-        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.Equal(0, allocated);
         Assert.True(sink > 0f);   // keep the loop alive

@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Content;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class P902SoundTemplateTests
 {
     // Native ds3dvirtualbuffer.cpp:780-797: angles are used directly, not halved.
@@ -151,9 +152,14 @@ public sealed class P902SoundTemplateTests
         var cursor = new AsrCursor(template.Pcm, template.Region);
         byte[] buffer = new byte[1024];
         for (int i = 0; i < 100; i++) { cursor.Read(buffer); cache.Get(pcm, 2f / 8000); }
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 1000; i++) { cursor.Read(buffer); cache.Get(pcm, 2f / 8000); }
-        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        long allocated;
+        using (new NoGcAllocationWindow())
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 1000; i++) { cursor.Read(buffer); cache.Get(pcm, 2f / 8000); }
+            allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        }
+        Assert.Equal(0, allocated);
     }
 
     // Native software-mixer budgets, ds3dengine.cpp:507-545; default :333.

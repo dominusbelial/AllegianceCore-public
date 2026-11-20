@@ -13,6 +13,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// byte-identical to the native loop, Modern declutters), the zero-allocation
 /// frame budget and the settings/menu wiring.
 /// </summary>
+[Collection(AllocationMeasurementCollection.Name)]
 public class P828RadarLabelDeclutterTests
 {
     // ── fixtures ───────────────────────────────────────────────────────────
@@ -418,21 +419,15 @@ public class P828RadarLabelDeclutterTests
         for (int warm = 0; warm < 20; warm++)
             model.Select(contacts, RadarMode.Default, false, plan, cache);
 
-        // Best of 5 windows: JIT tier-up under a loaded test host can land in
-        // one window; a real per-frame allocation shows in all of them.
-        long BestOf5(RadarLabelDeclutterOptions options)
+        long Measure(RadarLabelDeclutterOptions options)
         {
-            long best = long.MaxValue;
-            for (int window = 0; window < 5 && best != 0; window++)
-            {
-                long start = GC.GetAllocatedBytesForCurrentThread();
-                for (int frame = 0; frame < 120; frame++)
-                    model.Select(contacts, RadarMode.Default, false, options, cache);
-                best = Math.Min(best, GC.GetAllocatedBytesForCurrentThread() - start);
-            }
-            return best;
+            using var allocationWindow = new NoGcAllocationWindow();
+            long start = GC.GetAllocatedBytesForCurrentThread();
+            for (int frame = 0; frame < 120; frame++)
+                model.Select(contacts, RadarMode.Default, false, options, cache);
+            return GC.GetAllocatedBytesForCurrentThread() - start;
         }
-        long allocated = BestOf5(plan);
+        long allocated = Measure(plan);
 
         // 400 contacts, 120 frames: not one byte (decision/scratch arrays, the
         // cluster and tag lists and the count-tag strings are all reused).
@@ -442,7 +437,7 @@ public class P828RadarLabelDeclutterTests
         // The option-off path is allocation-free too (Classic's cost).
         var off = RadarLabelDeclutterOptions.Off;
         for (int warm = 0; warm < 20; warm++) model.Select(contacts, RadarMode.Default, false, off, cache);
-        Assert.Equal(0, BestOf5(off));
+        Assert.Equal(0, Measure(off));
     }
 
     // ── 7. settings + menu wiring ─────────────────────────────────────────

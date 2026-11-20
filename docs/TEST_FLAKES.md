@@ -5,6 +5,71 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1060 — resolved recurring families (2026-11-20)
+
+Commit-to-be reference: **P1060 working tree** (Codex lane; no commit or push).
+The older observations below remain historical evidence; the four families in this
+section are resolved by test fixes. No product or native game rule changed.
+Full evidence and final gate status: [TEST_FLAKES_ROOT_CAUSE_P1060.md](reports/TEST_FLAKES_ROOT_CAUSE_P1060.md).
+
+| Resolved family | Proven cause and fix | Qualification |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B receives/applies death; the test advances the next tick and a respawn loadout EXPORT clears `IsDead` between polls. Drain the already-sent TCP death frames before advancing simulation; require an actual visible in-sector pose after undock. | Before **1/20** failed, instrumented extension **6/100** (three failing send/receive traces retained); after **0/20** failed. |
+| `GameOverPlayersWireTests.Rejoined_player_accumulates_time_across_stints_in_roster` | The [4,8] estimate ignores simulation ticks spent waiting for assignment/departure delivery. Native counts connected intervals; the server already does so. Assert their exact sum, including wait ticks and excluding a deliberately inserted disconnected gap. | Before **5/20** failed; after **0/20** failed, exact equality. |
+| Jet fixed-model/full-symbology zero-allocation pair | GC retirement of the thread's allocation context counts unused buffer bytes without allocating objects. Exact CLR allocation callbacks plus GC traces prove the counter artefact. Measure one unchanged window inside `NoGcAllocationWindow`, with process-wide GC state isolated by its nonparallel collection. | Both target methods: **10/10** isolated; full parallel project/Fast batches and repeated-body evidence are in the report. Zero-byte limits unchanged. |
+| `P902SoundTemplateTests.Asr_and_cache_hit_mix_math_allocate_nothing_after_warmup` | Same GC counter artefact; no per-frame sound/cache allocation. The controlled counter-only GC check reports 7,424 bytes, exactly the unused allocation-context space, with no allocation callback. Same guarded measurement. | **10/10** isolated; full-project batches in the report. The 100/1,000 warm-up/measurement counts and zero-byte limit stay. |
+
+The P804 lead, P828 radar and HUD18 target-pane counters share that measurement
+weakness and now use the same guard. P828's best-of-five retry was removed in favor
+of a single 120-frame window. A real byte-array allocation remains visible and an
+intervening collection invalidates the measurement instead of being retried.
+
+Unrelated observations left open: `HelpOverlayTests.ControlsSections_FitThe720pManualBand`
+(overflows the 720p band; reproducible in baseline project runs), the existing
+`Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state`, and
+`P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live`.
+Additional non-task observations: `Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact`
+and `JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing`
+pass three isolated repeats. Clean-runner GPU proofs
+`HdrFoundationTests.Gpu_proof_shows_one_transform_float_targets_resize_and_fallback`
+and `SimPaletteTests.Gpu_proof_applies_the_sim_grade_bloom_and_keeps_the_hud_ungraded`
+fail three isolated repeats with NoSuitableGraphicsDeviceException / null GL
+extension string. The help-overlay layout failure also fails three alone. These
+remain open; the report distinguishes them from the earlier relocated diagnostic
+P803 path failures, which pass three each in their normal directory layout.
+The final Fast sweep and three isolated repeats of its non-task failures are
+recorded in the report; no unrelated fix or gate waiver is part of P1060.
+
+### P1060 final Fast — red, with unrelated failures retained
+
+The final completed Fast sweep (2026-11-20, 16:16–16:24 local, UTC−05:00) exits **1**:
+**14,064 passed / 4 failed / 7 not executed**, 14,075 executions, **1,571 missing**
+after Core's test host crashes. Nine infrastructure checks pass; calibrated limit
+**11.632 s**, six timing offenders, no quarantine flake. The changed remote death
+and allocation checks pass; the roster test is unexecuted after the Core abort
+and retains its **20/20** isolated qualification. No gate is waived.
+
+| Non-task method / issue | Final sweep | Three isolated outcomes after the sweep |
+|---|---|---|
+| `HelpOverlayTests.ControlsSections_FitThe720pManualBand` | group 9 ends at y=636 beyond y=630 | **fail / fail / fail**; bounds bug remains open |
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | default ExpandedPartData instead of granted launcher | **pass / pass / pass**; existing launcher-receipt family |
+| `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | warning did not arm; 27.789 s | **pass / pass / pass**; existing warning-receipt family |
+| `Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification` | expected ship 8096, actual null | **pass / pass / pass**; existing resume-receipt family |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civs 3/25: 12.683 / 19.946 s | **2 cases passed ×3**, slowest 7.518 / 5.498 / 4.207 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civs 35/25: 17.831 / 11.700 s | **3 cases passed ×3**, slowest 5.499 / 7.519 / 7.459 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 15.523 s | **pass / pass / pass**, 4.438 / 5.115 / 5.383 s |
+| Background bot send after disconnect | `InvalidOperationException: not connected`; Core coverage aborted | `PlayerMoneyAutoDonateTests` **11 passed / 11 passed / abort after 7 passes**, reproducing the identical stack |
+
+The crash stack is `TcpTransport.Send:600 → Bot.Send:1895 → Bot.OnReceive:2340 →
+TcpTransport.ReadDataLoop:1455`: an inbound callback attempts a scripted pose after
+the socket is disconnected. The isolated failed process was in the MU1/MU2
+fixture of `Mutual_donation_clears_target_first_then_donates`. This is separate
+from P1060's four fixes; Bot and transport sources are unchanged. The exact
+mutual-donation method passes three further isolated runs, while the class
+reproduces the abort once in three. The disconnect race remains open.
+Report and raw evidence: [P1060](reports/TEST_FLAKES_ROOT_CAUSE_P1060.md),
+`<lane evidence dir>/final-fast-qualified/` and `final-isolation-*`.
+
 ## Master gate on lane-runner, `20b52780` (P1055 + P1053 + P1056 + P1058 + P1054) — 2026-11-19
 
 All tiers on lane-runner (CT 105): fast 15,570, live 453, perf 80 — **FAIL** overall, the same state as every recent

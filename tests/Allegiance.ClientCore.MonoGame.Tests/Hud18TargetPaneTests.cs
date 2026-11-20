@@ -16,6 +16,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// Pure rules only — no GraphicsDevice (`TargetWeaponRange`, `TargetTti`,
 /// `TargetPaneModel`, `SelectedMountWeapon`).
 /// </summary>
+[Collection(AllocationMeasurementCollection.Name)]
 public class Hud18TargetPaneTests
 {
     private const short Sector = 10;
@@ -294,13 +295,17 @@ public class Hud18TargetPaneTests
 
         bool inRange = false;
         string? tti = null;
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int frame = 0; frame < 1000; frame++)
+        long allocated;
+        using (new NoGcAllocationWindow())
         {
-            inRange = TargetWeaponRange.IsInRange(input);
-            tti = TargetTti.Text(7500f, 100f, 0f);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int frame = 0; frame < 1000; frame++)
+            {
+                inRange = TargetWeaponRange.IsInRange(input);
+                tti = TargetTti.Text(7500f, 100f, 0f);
+            }
+            allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         }
-        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.True(inRange);
         Assert.Equal("1:15", tti);
