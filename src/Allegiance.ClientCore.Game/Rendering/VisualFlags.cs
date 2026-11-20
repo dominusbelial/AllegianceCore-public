@@ -124,9 +124,9 @@ public static class VisualFlags
 
     /// <summary>Ships always drawn at full detail: no far-tier sprite (the port's
     /// P628 addition) and no native LODGeo reduction (native selects a simpler
-    /// mesh by projected pixel radius, thinggeo.cpp:1618-1624). Default OFF (the
-    /// native/P628 path); a modern GPU can afford the base mesh everywhere
-    /// (Domingo 2026-11-19: "i dont want it to hide any detail"). Visual only.</summary>
+    /// mesh by projected pixel radius, thinggeo.cpp:1618-1624). Default ON since
+    /// 2026-11-20 (Domingo: distant sprite ships "look weird"; 2026-11-19: "i dont
+    /// want it to hide any detail"); OFF restores the native/P628 path. Visual only.</summary>
     public const string ShipFullDetailKey = "ships.fullDetail";
 
     /// <summary>Every flag, in options-page order.</summary>
@@ -208,7 +208,8 @@ public static class VisualFlags
             ShipFullDetailKey,
             "Full ship detail",
             "never swap distant ships for sprites or simpler meshes",
-            VisualFlagKind.Toggle),
+            VisualFlagKind.Toggle,
+            DefaultOn: true),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>

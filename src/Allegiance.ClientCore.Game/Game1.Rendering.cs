@@ -1659,8 +1659,9 @@ public sealed partial class Game1
                 // gate), for the local hull AND every visible remote ship.
                 foreach (var kv in _engineTrailEmitters)
                 {
-                    // P628 — no engine trails at the far tier (distant sprite ships).
-                    if (IsFarLod(kv.Key)) continue;
+                    // Native draws thrust trails at every distance (no LOD gate in
+                    // thinggeo.cpp AddThrustParticles), so far-tier sprite ships keep
+                    // them too: they are how distant ships read in a battle.
                     var et = kv.Value;
                     _engineTrail.Emit(new Rendering.EngineTrailShip(
                         kv.Key, et.Position, et.Velocity, et.Orientation, et.Radius,
@@ -1730,10 +1731,9 @@ public sealed partial class Game1
                 // when it stops. The anchor/right/colour were gathered under the
                 // Gate above.
                 _drawMotionTrailStrips.Clear();
-                // P628 — no motion ribbons at the far tier (distant sprite ships);
-                // filter the enumerated strips by ship id.
-                foreach (var strip in _motionTrail.Enumerate())
-                    if (!IsFarLod(strip.ShipId)) _drawMotionTrailStrips.Add(strip);
+                // Ribbons are drawn at every distance, far-tier sprite ships included
+                // (P628 dropped them; they are what makes a distant fleet readable).
+                _drawMotionTrailStrips.AddRange(_motionTrail.Enumerate());
                 _motionTrailRenderer.Draw(_drawMotionTrailStrips, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
@@ -2579,8 +2579,8 @@ public sealed partial class Game1
     }
 
     /// <summary>P628 — is this ship currently in the FAR tier (hysteresis-gated)?
-    /// Used to suppress engine trails / motion ribbons and the model depth
-    /// silhouette for distant sprite ships.</summary>
+    /// Used to skip the model depth silhouette for distant sprite ships
+    /// (trails and ribbons are drawn at every distance).</summary>
     private bool IsFarLod(short id)
         => _shipLodFar.TryGetValue(id, out var f) && f;
 

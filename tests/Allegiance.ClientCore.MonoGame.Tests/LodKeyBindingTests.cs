@@ -22,11 +22,11 @@ public sealed class LodKeyBindingTests
 public sealed class ShipFullDetailFlagTests
 {
     [Fact]
-    public void Full_ship_detail_is_a_visual_toggle_default_off()
+    public void Full_ship_detail_is_a_visual_toggle_default_on()
     {
         var flag = VisualFlags.Find(VisualFlags.ShipFullDetailKey);
         Assert.NotNull(flag);
-        Assert.False(flag!.DefaultOn);
+        Assert.True(flag!.DefaultOn);
         Assert.Equal(VisualFlagKind.Toggle, flag.Kind);
     }
 }
