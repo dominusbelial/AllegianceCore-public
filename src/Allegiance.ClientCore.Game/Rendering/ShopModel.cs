@@ -931,8 +931,18 @@ public sealed class ShopModel
             return true;
         }
 
-        // Native fallback (clintlib.h:1850-1868): the first hull in core order the
-        // station can buy within budget, then BuyDefaultLoadout.
+        return RestoreDefaultLoadout(budget);
+    }
+
+    /// <summary>Native fallback (clintlib.h:1850-1868): the first hull in core order
+    /// the station can buy within budget, then BuyDefaultLoadout. Also the whole
+    /// answer when there is NO saved loadout (native ReplaceLoadout with an empty
+    /// m_loadouts, clintlib.h:1632-1633): a pod berthed at a station is always
+    /// offered a fresh ship, never relaunched as the pod.</summary>
+    public bool RestoreDefaultLoadout() => RestoreDefaultLoadout(MyMoney ?? long.MaxValue);
+
+    private bool RestoreDefaultLoadout(long budget)
+    {
         foreach (var hull in BuyableHulls)
         {
             if (hull.Price > budget) continue;

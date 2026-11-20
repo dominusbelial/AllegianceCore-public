@@ -194,10 +194,18 @@ public sealed partial class Game1
                 // `pod hull && GetStation()` branch calls RestoreLoadout(station)
                 // (appmsg.cpp:2022-2023 → clintlib.h:1876-1886), which replays the
                 // head of the cached loadout list. Same model, same rule.
-                if (world.OwnShipDockedInLifepod && world.OwnSavedLoadout is { } saved
-                    && _shopModel.RestoreSavedLoadout(saved.HullId, saved.Parts))
-                    Console.WriteLine($"[monogame] docked in a lifepod: restored last loadout hull {_shopModel.EffectiveHullId} "
-                        + $"+ {_shopModel.ChosenParts.Count} part(s) (native RestoreLoadout, clintlib.h:1876-1886)");
+                // With no saved loadout (e.g. the last ship flew with no parts),
+                // native still never relaunches the pod: ReplaceLoadout falls back
+                // to the first buyable hull + its default loadout (clintlib.h:1632-1633,1850-1868).
+                if (world.OwnShipDockedInLifepod)
+                {
+                    if (world.OwnSavedLoadout is { } saved && _shopModel.RestoreSavedLoadout(saved.HullId, saved.Parts))
+                        Console.WriteLine($"[monogame] docked in a lifepod: restored last loadout hull {_shopModel.EffectiveHullId} "
+                            + $"+ {_shopModel.ChosenParts.Count} part(s) (native RestoreLoadout, clintlib.h:1876-1886)");
+                    else if (world.OwnSavedLoadout is null && _shopModel.RestoreDefaultLoadout())
+                        Console.WriteLine($"[monogame] docked in a lifepod with no saved loadout: fresh ship hull {_shopModel.EffectiveHullId} "
+                            + $"+ {_shopModel.ChosenParts.Count} default part(s) (native ReplaceLoadout fallback, clintlib.h:1850-1868)");
+                }
                 // P755 — the loadout menu's own-deploy cues: part chosen / slot
                 // emptied → mountSound/unmountSound (load.cpp:1887/1889); a hull
                 // pick rebases the default loadout → mountSound (load.cpp:1480-1487).

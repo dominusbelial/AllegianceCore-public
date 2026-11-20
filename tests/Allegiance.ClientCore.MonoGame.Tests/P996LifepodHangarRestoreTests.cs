@@ -135,6 +135,23 @@ public class P996LifepodHangarRestoreTests
         Assert.NotEmpty(shop.ChosenParts);
     }
 
+    /// <summary>No saved loadout at all (the last ship flew with no parts, so none
+    /// was recorded): native ReplaceLoadout with an empty m_loadouts still buys the
+    /// first buyable hull with its default loadout (clintlib.h:1632-1633,1850-1868).
+    /// A pod berthed at a station is never relaunched as the pod.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void No_saved_loadout_still_offers_a_fresh_ship()
+    {
+        Require.Artwork();
+        var pod = Lifepod();
+        var shop = new ShopModel(Offer, pod.HullId, Array.Empty<ExpandedPartData>());
+        Assert.True(shop.RestoreDefaultLoadout());
+        Assert.Equal(Offer.Hulls[0].HullId, shop.EffectiveHullId);
+        Assert.NotEqual(pod.HullId, shop.EffectiveHullId);
+        Assert.NotEmpty(shop.ChosenParts);
+    }
+
     /// <summary>Native checks the saved loadout against the wallet
     /// (<c>pcl-&gt;pht-&gt;GetPrice() &lt;= budget</c>, clintlib.h:1806). A saved hull
     /// the player cannot afford now falls back to an affordable one.</summary>
