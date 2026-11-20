@@ -96,6 +96,7 @@ public sealed partial class Game1
     {
         if (_skirmish is null || _skirmish.Options.HostLan || _seatChange is not null || side == _skirmish.PlayerSide) return;
         _requestedSeat = side;
+        Console.WriteLine($"[skirmish] seat request: {SeatName(_skirmish.PlayerSide)} -> {SeatName(side)}");
         EnterLocalSpectator();
         _seatChange = _skirmish.SetPlayerSideAsync(side, _skirmishCancel?.Token ?? default);
     }
@@ -107,6 +108,7 @@ public sealed partial class Game1
         try
         {
             change.GetAwaiter().GetResult();
+            Console.WriteLine($"[skirmish] seat change done: now {SeatName(_requestedSeat)}");
             if (_requestedSeat is null) return;
             _localSpectating = false;
             _freeCamActive = _orbitCamActive = false;
@@ -117,8 +119,14 @@ public sealed partial class Game1
             _disconnectTransitioned = false;
             BeginConnect("127.0.0.1", _skirmish!.Port);
         }
-        catch (Exception ex) { _skirmishError = "Seat change failed: " + ex.Message; }
+        catch (Exception ex)
+        {
+            _skirmishError = "Seat change failed: " + ex.Message;
+            Console.WriteLine($"[skirmish] seat change to {SeatName(_requestedSeat)} FAILED: {ex}");
+        }
     }
+
+    private static string SeatName(short? side) => side switch { null => "spectator", 0 => "Alpha", 1 => "Bravo", _ => $"side {side}" };
 
     private KeyboardState _observerKeys;
     private void UpdateLocalSpectator(GameTime time, KeyboardState keys)
