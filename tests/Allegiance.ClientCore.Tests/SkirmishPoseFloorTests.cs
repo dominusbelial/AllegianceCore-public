@@ -31,3 +31,18 @@ public sealed class SkirmishPoseFloorTests
         Assert.Equal(2, new ServerConfig().Broadcast?.MinUpdateHz ?? fallback);
     }
 }
+
+/// <summary>The skirmish setup screen draws the size warning with the desktop small
+/// font, which has no em dash: choosing Grand crashed the client.</summary>
+public sealed class SkirmishWarningGlyphTests
+{
+    [Fact]
+    public void Size_warnings_are_plain_ascii()
+    {
+        foreach (var size in Enum.GetValues<SkirmishSize>())
+        {
+            string warning = new SkirmishOptions { Size = size }.Warning;
+            Assert.True(warning.All(c => c < 128), $"{size}: {warning}");
+        }
+    }
+}

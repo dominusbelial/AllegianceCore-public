@@ -102,7 +102,7 @@ public sealed record SkirmishOptions
     public string Warning => Size switch
     {
         SkirmishSize.Epic => "Epic runs 120 pilots on this machine. Expect higher CPU use and automatic slow motion.",
-        SkirmishSize.Grand => "Grand runs 400 pilots — the rig's 200v200 Showcase preset. Expect heavy CPU use and automatic slow motion.",
+        SkirmishSize.Grand => "Grand runs 400 pilots - the rig's 200v200 Showcase preset. Expect heavy CPU use and automatic slow motion.",
         _ => ""
     };
     public (float Accuracy, double Reaction, float Aggression) Knobs => Difficulty switch

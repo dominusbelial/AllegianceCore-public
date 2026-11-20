@@ -180,23 +180,8 @@ public sealed class CreditsOverlayRenderer
         }
     }
 
-    /// <summary>The credits text uses em/en dashes the desktop small font has no glyph
-    /// for; SpriteBatch.DrawString throws on any such character (F12 on the default
-    /// black sky crashed the client). Dashes become ASCII '-', any other missing
-    /// character the font's default character or '?'. Display only.</summary>
-    internal static string FontSafe(SpriteFont font, string text)
-    {
-        var glyphs = font.Characters;
-        System.Text.StringBuilder? sb = null;
-        for (int i = 0; i < text.Length; i++)
-        {
-            char ch = text[i];
-            if (ch == '\n' || ch == '\r' || glyphs.Contains(ch)) { sb?.Append(ch); continue; }
-            sb ??= new System.Text.StringBuilder(text, 0, i, text.Length);
-            sb.Append(ch is '—' or '–' or '−' ? '-' : font.DefaultCharacter ?? '?');
-        }
-        return sb?.ToString() ?? text;
-    }
+    /// <summary>See <see cref="FontText.Safe"/> (kept for the existing call sites and tests).</summary>
+    internal static string FontSafe(SpriteFont font, string text) => FontText.Safe(font, text);
 
     private void FillRect(float x, float y, float w, float h, Color color) =>
         _sb.Draw(_white, new Rectangle((int)System.MathF.Round(x),

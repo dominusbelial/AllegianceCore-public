@@ -51,12 +51,12 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         var dimCol = frame.Inks.Dim;
         var textCol = frame.Inks.Body;
 
-        var tsz = _big.MeasureString(frame.Title);
-        _batch.DrawString(_big, frame.Title, new Vector2((w - tsz.X) / 2f, 28f), titleCol);
+        var tsz = _big.MeasureString(FontText.Safe(_big, frame.Title));
+        _batch.DrawString(_big, FontText.Safe(_big, frame.Title), new Vector2((w - tsz.X) / 2f, 28f), titleCol);
         if (frame.Subtitle.Length > 0)
         {
-            var ssz = _small.MeasureString(frame.Subtitle);
-            _batch.DrawString(_small, frame.Subtitle, new Vector2((w - ssz.X) / 2f, 82f), dimCol);
+            var ssz = _small.MeasureString(FontText.Safe(_small, frame.Subtitle));
+            _batch.DrawString(_small, FontText.Safe(_small, frame.Subtitle), new Vector2((w - ssz.X) / 2f, 82f), dimCol);
         }
 
         float cx = w / 2f;
@@ -67,7 +67,7 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         for (int i = 0; i < frame.Labels.Count; i++)
         {
             string label = frame.Labels[i];
-            var sz = _small.MeasureString(label);
+            var sz = _small.MeasureString(FontText.Safe(_small, label));
             bool sel = i == frame.Selected;
             if (sel)
             {
@@ -75,7 +75,7 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
                         (int)lay.Rows[i].Width, (int)lay.Rows[i].Height),
                     SelectionPlate);
             }
-            _batch.DrawString(_small, label, new Vector2(cx - sz.X * rowScale / 2f, y + 2f),
+            _batch.DrawString(_small, FontText.Safe(_small, label), new Vector2(cx - sz.X * rowScale / 2f, y + 2f),
                 sel ? titleCol : textCol, 0, Vector2.Zero, rowScale, SpriteEffects.None, 0);
             y += rowH;
         }
@@ -84,7 +84,7 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         // introscreen.cpp:1604-1608; the field itself is the port's addition).
         bool pilotFocus = frame.PilotFocused;
         var nameLabel = frame.PilotLabel;
-        var nsz = _small.MeasureString(nameLabel);
+        var nsz = _small.MeasureString(FontText.Safe(_small, nameLabel));
         var field = frame.PilotField;
         if (pilotFocus)
         {
@@ -96,7 +96,7 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
                 new Rectangle((int)(cx - fieldW / 2f), (int)field.Bottom, (int)fieldW, 2), titleCol);
         }
         float textX = cx - nsz.X / 2f;
-        _batch.DrawString(_small, nameLabel, new Vector2(textX, lay.PilotY),
+        _batch.DrawString(_small, FontText.Safe(_small, nameLabel), new Vector2(textX, lay.PilotY),
             pilotFocus ? titleCol : dimCol);
         if (pilotFocus)
         {
@@ -108,18 +108,18 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         }
 
         var identityLine = frame.IdentityLine;
-        var identitySize = _small.MeasureString(identityLine);
+        var identitySize = _small.MeasureString(FontText.Safe(_small, identityLine));
         float identityScale = frame.IdentityScale;
-        _batch.DrawString(_small, identityLine, new Vector2((w - identitySize.X * identityScale) / 2f, lay.IdentityY),
+        _batch.DrawString(_small, FontText.Safe(_small, identityLine), new Vector2((w - identitySize.X * identityScale) / 2f, lay.IdentityY),
             titleCol, 0, Vector2.Zero, identityScale, SpriteEffects.None, 0);
 
         // P946 — one line that says what the screen accepts: the arrows always
         // move the menu, Enter selects, Tab switches typed-text focus (only
         // when an account does not) and Esc leaves. The footer sits below the
         // pilot field, so it never enters the button column.
-        var fsz = _small.MeasureString(frame.Hint);
+        var fsz = _small.MeasureString(FontText.Safe(_small, frame.Hint));
         float hintScale = frame.HintScale;
-        _batch.DrawString(_small, frame.Hint, new Vector2((w - fsz.X * hintScale) / 2f, lay.FooterY),
+        _batch.DrawString(_small, FontText.Safe(_small, frame.Hint), new Vector2((w - fsz.X * hintScale) / 2f, lay.FooterY),
             dimCol, 0, Vector2.Zero, hintScale, SpriteEffects.None, 0);
     }
 
@@ -134,13 +134,13 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         var inks = frame.Inks;
         if (frame.Title.Length > 0)
         {
-            var tsz = _big.MeasureString(frame.Title);
-            _batch.DrawString(_big, frame.Title, new Vector2((frame.Width - tsz.X) / 2f, 28f), inks.Title);
+            var tsz = _big.MeasureString(FontText.Safe(_big, frame.Title));
+            _batch.DrawString(_big, FontText.Safe(_big, frame.Title), new Vector2((frame.Width - tsz.X) / 2f, 28f), inks.Title);
         }
         if (frame.Subtitle.Length > 0)
         {
-            var ssz = _small.MeasureString(frame.Subtitle);
-            _batch.DrawString(_small, frame.Subtitle, new Vector2((frame.Width - ssz.X) / 2f, 82f), inks.Dim);
+            var ssz = _small.MeasureString(FontText.Safe(_small, frame.Subtitle));
+            _batch.DrawString(_small, FontText.Safe(_small, frame.Subtitle), new Vector2((frame.Width - ssz.X) / 2f, 82f), inks.Dim);
         }
 
         // Fill plates first: each one only backs its own row/field. The field UNDERLINE
@@ -154,13 +154,13 @@ public sealed class IntroScreenPainter : IScreenContentRenderer
         for (int i = 0; i < frame.Rows.Count; i++)
         {
             var row = frame.Rows[i];
-            _batch.DrawString(_small, row.Text, row.Position, row.ClassicInk, 0, Vector2.Zero,
+            _batch.DrawString(_small, FontText.Safe(_small, row.Text), row.Position, row.ClassicInk, 0, Vector2.Zero,
                 row.Scale, SpriteEffects.None, 0);
         }
         for (int i = 0; i < frame.Lines.Count; i++)
         {
             var line = frame.Lines[i];
-            _batch.DrawString(_small, line.Text, line.Position, line.ClassicInk, 0, Vector2.Zero,
+            _batch.DrawString(_small, FontText.Safe(_small, line.Text), line.Position, line.ClassicInk, 0, Vector2.Zero,
                 line.Scale, SpriteEffects.None, 0);
         }
         for (int i = 0; i < frame.Plates.Count; i++)
