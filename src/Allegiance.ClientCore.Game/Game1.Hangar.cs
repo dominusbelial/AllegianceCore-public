@@ -285,6 +285,12 @@ public sealed partial class Game1
         // screen; Jet draws the same artwork unchanged and layers vector chrome over
         // the same HangarScreen rectangles the pointer hit test uses. Missing artwork
         // keeps the pre-P945 text-row fallback, never a blank screen.
+        // The native hangar screen is opaque and fills the window. At a non-native
+        // aspect the art is letterboxed, and the 3D space scene drawn underneath
+        // (still-live smoke/trail particles) showed through the margins: black them.
+        _spriteBatch.Begin();
+        _spriteBatch.Draw(_whitePixel, vp.Bounds, Color.Black);
+        _spriteBatch.End();
         if (ActiveScreen.HangarArtAvailable)
         {
             ActiveScreen.DrawHangar(new HangarScreenFrame(vp, _hangarHover, _hangarLaunchAnimation,

@@ -54,6 +54,36 @@ public sealed partial class Game1
     /// audio-state surface (the same [monogame] audio convention as P213/P216),
     /// used for the P232 live proof.
     /// </summary>
+    /// <summary>While docked the space scene is not heard (native: the hangar/loadout
+    /// screen replaces the combat view, WinTrek.cpp:6706-6718), but the per-object
+    /// ambient loops (projectiles, missiles, probes, alephs, stations, asteroids) are
+    /// only stopped by these flight-frame updates — docking left them looping
+    /// forever. Muted, each update feeds its planner an empty set and replays only
+    /// the planner's Stop commands (no explosion/launch/deploy one-shots), so every
+    /// loop stops and the planners start them again on launch.</summary>
+    private bool _worldAmbientMuted;
+
+    internal static IEnumerable<T> AmbientCommandsFor<T>(bool muted, List<T> commands, Func<T, bool> isStop)
+        => muted ? commands.Where(isStop) : commands;
+
+    private IEnumerable<T> AmbientCommands<T>(List<T> commands, Func<T, bool> isStop)
+        => AmbientCommandsFor(_worldAmbientMuted, commands, isStop);
+
+    private void SilenceWorldAmbientLoops()
+    {
+        _worldAmbientMuted = true;
+        try
+        {
+            UpdateProjectileSounds();
+            UpdateMissileSounds();
+            UpdateProbeSounds();
+            UpdateWarpSounds();
+            UpdateStationSounds();
+            UpdateAsteroidSounds();
+        }
+        finally { _worldAmbientMuted = false; }
+    }
+
     private void UpdateProjectileSounds()
     {
         var world = _session.World;
@@ -117,7 +147,8 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _projectileSoundPlanner.Plan(inRange))
+        if (_worldAmbientMuted) inRange.Clear();
+        foreach (var cmd in AmbientCommands(_projectileSoundPlanner.Plan(inRange), c => c.Action == Audio.ProjectileSoundAction.Stop))
         {
             switch (cmd.Action)
             {
@@ -190,9 +221,11 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _missileSoundPlanner.Plan(inSector,
+        if (_worldAmbientMuted) inSector.Clear();
+        foreach (var cmd in AmbientCommands(_missileSoundPlanner.Plan(inSector,
             // P893 — while 3D is on, admit missiles out to the native −60 dB range.
-            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.MissileFlight) : null))
+            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.MissileFlight) : null),
+            c => c.Action == Audio.MissileSoundAction.AmbientStop))
         {
             switch (cmd.Action)
             {
@@ -295,9 +328,11 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _probeSoundPlanner.Plan(inSector,
+        if (_worldAmbientMuted) inSector.Clear();
+        foreach (var cmd in AmbientCommands(_probeSoundPlanner.Plan(inSector,
             // P893 — while 3D is on, admit probes out to the native −60 dB range.
-            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.ProbeAmbient) : null))
+            snd.Sound3DEnabled ? Audio.Native3DMix.AudibleRange(Audio.Native3DRole.ProbeAmbient) : null),
+            c => c.Action == Audio.ProbeSoundAction.AmbientStop))
         {
             switch (cmd.Action)
             {
@@ -373,7 +408,8 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _warpSoundPlanner.Plan(inRange))
+        if (_worldAmbientMuted) inRange.Clear();
+        foreach (var cmd in AmbientCommands(_warpSoundPlanner.Plan(inRange), c => c.Action == Audio.WarpSoundAction.Stop))
         {
             switch (cmd.Action)
             {
@@ -438,7 +474,8 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _stationSoundPlanner.Plan(inRange))
+        if (_worldAmbientMuted) inRange.Clear();
+        foreach (var cmd in AmbientCommands(_stationSoundPlanner.Plan(inRange), c => c.Action == Audio.StationSoundAction.Stop))
         {
             switch (cmd.Action)
             {
@@ -517,7 +554,8 @@ public sealed partial class Game1
             }
         }
 
-        foreach (var cmd in _asteroidSoundPlanner.Plan(inRange))
+        if (_worldAmbientMuted) inRange.Clear();
+        foreach (var cmd in AmbientCommands(_asteroidSoundPlanner.Plan(inRange), c => c.Action == Audio.StationSoundAction.Stop))
         {
             switch (cmd.Action)
             {

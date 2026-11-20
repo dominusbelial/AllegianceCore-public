@@ -1443,7 +1443,12 @@ public sealed partial class Game1
         // shops the loadout and launches. Running first and returning means no
         // flight control / weapon / toggles apply while docked.
         if (HandleDockedScreen(ks, composing))
+        {
+            // The space scene is not heard from the hangar: stop every space ambient
+            // loop (they are otherwise only updated by the flight path skipped here).
+            SilenceWorldAmbientLoops();
             return;
+        }
 
 
         // P572 — --auto-goto / --auto-target / --auto-dock-after (only airborne;
