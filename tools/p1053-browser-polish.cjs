@@ -5,7 +5,8 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
 const modules = path.resolve(process.argv[2], 'node_modules');
 const stateDir = path.resolve(process.argv[3]), output = path.resolve(process.argv[4]), phase = process.argv[5];
 const { chromium: playwright } = require(path.join(modules, 'playwright'));
-const origin = 'http://localhost:8048';
+// P1061: production shape — one HTTPS origin serving /play and /game.
+const origin = 'https://localhost:8443';
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const state = () => JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
 async function until(predicate, label, timeout = 30000) {
@@ -18,11 +19,11 @@ async function main() {
   const chromium = (await import(require('node:url').pathToFileURL(path.join(modules, '@sparticuz/chromium/build/index.js')).href)).default;
   const browser = await playwright.launch({ executablePath: await chromium.executablePath(), headless: true,
     args: [...chromium.args.filter(a => !['--disable-web-security', '--allow-running-insecure-content'].includes(a)),
-      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
+      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost', '--ignore-certificate-errors'] });
   let page;
   const results = [], errors = [];
   try {
-    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true });
     page = await context.newPage(); page.setDefaultTimeout(60000);
     page.on('pageerror', error => { errors.push(error.message); console.error(error.message); });
     page.on('request', request => assert.ok(['localhost', '127.0.0.1'].includes(new URL(request.url()).hostname)));
@@ -39,13 +40,15 @@ async function main() {
       console.log('LOAD', phase, index, style, width, height);
       await page.setViewportSize({ width, height });
       // P1059: dev switch on, so the toolbar renders exactly as before P1059.
-      await page.goto(origin + '/play/preview/menu.html?dev=1');
+      await page.goto(origin + '/play/menu.html?dev=1');
       await page.waitForFunction(() => window.preview?.measurements.firstFrameMs != null || document.getElementById('runtime-error'), null, { timeout: 120000 });
       assert.equal(await page.locator('#runtime-error').count(), 0, 'runtime boot succeeds');
       const timing = await page.evaluate(() => ({ shellMs: performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
         menuMs: preview.measurements.firstFrameMs }));
       await page.getByRole('button', { name: style, exact: true }).click();
       await page.locator('#online-open').click(); await page.locator('#online-panel[data-state="Servers"]').waitFor();
+      await page.locator('#join-password').waitFor();
+      await page.locator('#join-password').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},fs.readFileSync(path.join(stateDir,'game-password'),'utf8').trim());
       await page.locator('.online-join').first().click(); await page.locator('#online-panel[data-state="Sides"]').waitFor();
       await page.locator('.online-side').first().click(); await page.locator('#online-panel[data-state="Hangar"]').waitFor();
       if (index !== 1) await page.screenshot({ path: path.join(output, `${phase}-docked-${style}-${width}x${height}.png`) });

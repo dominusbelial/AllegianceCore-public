@@ -1,0 +1,47 @@
+# P1061 — Caddy site block for the public test host.
+#
+# One public HTTPS origin. Caddy terminates TLS (Let's Encrypt) and is the only
+# trusted proxy hop:
+#   /game              -> game server WebSocket listener on 127.0.0.1:6080
+#   everything else    -> lobby on 127.0.0.1:8080 (/play/, /api/, /identity*)
+#
+# Caddy's encode handler never re-compresses a response that already carries
+# Content-Encoding (the lobby serves .br/.gz for framework files and packs), and
+# its default exclusions cover images/video. Nothing is compressed twice.
+
+{
+	email {$ACME_EMAIL}
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$PUBLIC_HOST} {
+	# The browser game needs a secure context; HSTS pins the single origin.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	encode zstd gzip
+
+	# Same-origin WebSocket route: the browser's Origin header is the public
+	# origin, which the game server's allowedOrigins contains exactly.
+	handle /game {
+		reverse_proxy 127.0.0.1:6080 {
+			transport http {
+				versions 1.1
+			}
+			# Overwrite, never append a client-supplied forwarding header:
+			# the server trusts exactly one hop (webSocket.knownProxies).
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8080 {
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto https
+		}
+	}
+}

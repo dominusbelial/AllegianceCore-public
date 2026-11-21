@@ -50,7 +50,7 @@ def defer_flight_assets(root):
             Path(str(file) + suffix).unlink(missing_ok=True)
 
 
-def finalize(root):
+def finalize(root, client_version=''):
     defer_flight_assets(root)
     mapping = {}
     for source in sorted(root.rglob('*')):
@@ -80,6 +80,11 @@ def finalize(root):
     # Stable manifests deliberately remain no-store; every versioned entry has
     # an immutable URL. Also embed the map as HTML data, avoiding a startup RTT.
     (root / 'app-manifest.json').write_text(json.dumps({'version': 1, 'files': mapping}, indent=2) + '\n')
+    # P1061 — the release identity the browser reports in LOGONREQ ClientVersion.
+    # Absent file means "not reported"; a server that enforces a minimum version
+    # then refuses the logon (the server check is never bypassed).
+    if client_version:
+        (root / 'client-version.json').write_text(json.dumps({'version': client_version}, indent=2) + '\n')
     for page in root.glob('*.html'):
         text = page.read_text()
         text = re.sub(r'((?:src|href)=")([^"]+)(")', lambda m: m[1] + mapping.get(m[2], m[2]) + m[3], text)
@@ -106,6 +111,8 @@ def finalize(root):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
+    parser.add_argument('--client-version', default='',
+                        help='release identity the browser reports at logon (required for a server minimumClientVersion)')
     args = parser.parse_args()
-    mapping = finalize(args.root)
+    mapping = finalize(args.root, args.client_version)
     print(json.dumps({'hashedApplicationFiles': len(mapping)}))

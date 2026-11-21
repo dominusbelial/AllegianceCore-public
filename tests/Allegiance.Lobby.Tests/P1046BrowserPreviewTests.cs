@@ -79,7 +79,10 @@ public sealed class P1046BrowserPreviewTests
         {
             using var response = await client.GetAsync(path);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.True(response.Headers.CacheControl!.NoCache);
+            // P1061: entry pages and mutable manifests are never stored; stable-name files revalidate.
+            if (path.EndsWith("/", StringComparison.Ordinal) || path.EndsWith(".html", StringComparison.Ordinal) || path.EndsWith(".json", StringComparison.Ordinal))
+                Assert.True(response.Headers.CacheControl!.NoStore);
+            else Assert.True(response.Headers.CacheControl!.NoCache);
             Assert.Equal(BrowserPreviewHosting.ContentSecurityPolicy, response.Headers.GetValues("Content-Security-Policy").Single());
             using var conditional = new HttpRequestMessage(HttpMethod.Get, path);
             conditional.Headers.IfNoneMatch.Add(response.Headers.ETag!);

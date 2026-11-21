@@ -6,10 +6,11 @@ const modules=path.resolve(process.argv[2],'node_modules'),stateDir=path.resolve
 const {chromium:playwright}=require(path.join(modules,'playwright'));
 // P1059: this harness clicks #flight-rock, the waypoint form and #map-sector,
 // so it opens the page with the documented dev switch on.
-const origin='http://localhost:8048',menu=origin+'/play/preview/menu.html?dev=1';
+// P1061: production shape — one HTTPS origin serving /play and /game.
+const origin='https://localhost:8443',menu=origin+'/play/menu.html?dev=1';
 const index=JSON.parse(fs.readFileSync(path.join(generation,'sector-manifest.json'))),base=JSON.parse(fs.readFileSync(path.join(generation,'join-manifest.json')));
-const basePaths=new Set(base.assets.map(a=>'/play/preview/'+a.path)),entry=index.sectors.find(s=>s.sectorId===index.entrySectorId);
-const entryPaths=new Set(entry.assets.map(a=>'/play/preview/'+a.path));
+const basePaths=new Set(base.assets.map(a=>'/play/'+a.path)),entry=index.sectors.find(s=>s.sectorId===index.entrySectorId);
+const entryPaths=new Set(entry.assets.map(a=>'/play/'+a.path));
 const readState=()=>JSON.parse(fs.readFileSync(path.join(stateDir,'state.json'))),delay=ms=>new Promise(r=>setTimeout(r,ms));
 const percentile=(values,p)=>[...values].sort((a,b)=>a-b)[Math.min(values.length-1,Math.floor(values.length*p))];
 const watchTimers=new Set();
@@ -42,7 +43,9 @@ async function register(context,page,name){
 }
 async function join(page,style){
  await page.goto(menu);await page.waitForFunction(()=>window.preview?.measurements.firstFrameMs!=null,null,{timeout:120000});
- await page.getByRole('button',{name:style,exact:true}).click();await page.locator('#online-open').click();await page.locator('.online-join').first().click();await page.waitForFunction(()=>document.querySelector('#online-panel')?.dataset.state==='Sides'||document.querySelector('#online-panel [role="alert"]'),null,{timeout:120000});assert.equal(await page.locator('#online-panel [role="alert"]').count(),0,await page.locator('#online-panel [role="alert"]').allTextContents());
+ await page.getByRole('button',{name:style,exact:true}).click();await page.locator('#online-open').click();await page.locator('#join-password').waitFor();
+      await page.locator('#join-password').evaluate((input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))},fs.readFileSync(path.join(stateDir,'game-password'),'utf8').trim());
+      await page.locator('.online-join').first().click();await page.waitForFunction(()=>document.querySelector('#online-panel')?.dataset.state==='Sides'||document.querySelector('#online-panel [role="alert"]'),null,{timeout:120000});assert.equal(await page.locator('#online-panel [role="alert"]').count(),0,await page.locator('#online-panel [role="alert"]').allTextContents());
  await page.locator('.online-side').first().click();await page.locator('#online-panel[data-state="Hangar"]').waitFor();await page.locator('#online-launch').click();await page.locator('#online-panel[data-state="Flight"]').waitFor({timeout:120000});
  await page.waitForFunction(()=>gameMenu.metrics().flight.frames>3);await page.locator('#theCanvas').focus();await page.keyboard.press('Backspace',{delay:100});
  return (await metrics(page)).online.shipId;
@@ -78,7 +81,7 @@ async function captureEntryAngles(page,label,phase){
 }
 async function main(){
  fs.mkdirSync(output,{recursive:true});const chromium=(await import(require('node:url').pathToFileURL(path.join(modules,'@sparticuz/chromium/build/index.js')).href)).default;
- const launch=async()=>playwright.launch({executablePath:await chromium.executablePath(),headless:true,args:[...chromium.args.filter(a=>!['--disable-web-security','--allow-running-insecure-content'].includes(a)),'--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost']});
+ const launch=async()=>playwright.launch({executablePath:await chromium.executablePath(),headless:true,args:[...chromium.args.filter(a=>!['--disable-web-security','--allow-running-insecure-content'].includes(a)),'--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost','--ignore-certificate-errors']});
  let browser=await launch();
  const results=[];let page,releaseEntry,releaseRemote;const logs=[];
  try{
@@ -86,7 +89,7 @@ async function main(){
  const profiles=visualSwap?[[process.argv[6]==='--visual-swap-modern'?'Modern':'Classic',800,480,false]]:entryViews?[['Classic',800,480,false],['Modern',800,480,false]]:process.argv[6]==='--smoke'?[['Classic',800,480,false]]:[['Classic',1920,1080,false],['Modern',1920,1080,false],['Classic',800,480,false],['Modern',800,480,true]];
  for(const [style,width,height,storageRefused]of profiles){
   const label=style.toLowerCase()+'-'+width+'x'+height;console.log('CASE',label,storageRefused?'storage-refused':'persistent');
-  const context=await browser.newContext({viewport:{width,height}});page=await context.newPage();page.setDefaultTimeout(120000);
+  const context=await browser.newContext({viewport:{width,height},ignoreHTTPSErrors:true});page=await context.newPage();page.setDefaultTimeout(120000);
   const errors=[],requests=[],transfers=[],secrets=[];
   page.on('pageerror',e=>{errors.push(e.message);console.error(e.message)});page.on('console',m=>{logs.push(m.text());if(m.type()==='error')console.error(m.text())});
   page.on('request',r=>{const u=new URL(r.url());assert.ok(['localhost','127.0.0.1'].includes(u.hostname));requests.push({path:u.pathname,time:Date.now()})});
@@ -95,7 +98,7 @@ async function main(){
   const name='Browser1054'+Date.now().toString().slice(-7);await register(context,page,name);
   await page.route('**/api/identity/join-token',async route=>{const response=await route.fetch();if(response.ok())secrets.push((await response.json()).token);await route.fulfill({response})});
   const entryGate=releaseEntry=gate(),remoteGate=releaseRemote=gate();let entryReleased=false,remoteReleased=false,failedOnce=false;
-  const remote=index.sectors.find(s=>s.sectorId===1052),remoteOnly=new Set(remote.assets.map(a=>'/play/preview/'+a.path).filter(p=>!entryPaths.has(p)&&!basePaths.has(p)));
+  const remote=index.sectors.find(s=>s.sectorId===1052),remoteOnly=new Set(remote.assets.map(a=>'/play/'+a.path).filter(p=>!entryPaths.has(p)&&!basePaths.has(p)));
   await page.route('**/packs/*',async route=>{
    const p=new URL(route.request().url()).pathname;
    if(entryPaths.has(p)&&!entryReleased)await entryGate.promise;

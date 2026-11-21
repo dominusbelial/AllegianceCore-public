@@ -21,6 +21,11 @@ services:
     environment:
       BrowserPreview__Enabled: "${ALLEGIANCE_BROWSER_PREVIEW_ENABLED:-false}"
       BrowserPreview__BundlePath: /browser-preview
+      # P1061 — the production host serves the generation at /play with the public
+      # origin in the CSP; the developer stack keeps the preview prefix.
+      BrowserPreview__Prefix: "${ALLEGIANCE_BROWSER_PREVIEW_PREFIX:-/play/preview}"
+      BrowserPreview__PublicOrigin: "${ALLEGIANCE_BROWSER_PUBLIC_ORIGIN:-}"
+      BrowserPreview__WebSocketPath: "${ALLEGIANCE_BROWSER_WS_PATH:-/game}"
       BrowserPreview__ArtworkPath: "" # Empty uses the stack's ALLEGIANCE_ARTWORK_PATH.
       ALLEGIANCE_ARTWORK_PATH: /artwork
       Lobby__PlayerHostedGames: "${ALLEGIANCE_LOBBY_PLAYER_HOSTED_GAMES:-false}"

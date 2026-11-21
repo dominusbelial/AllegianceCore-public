@@ -1,0 +1,83 @@
+{
+  "cases": [
+    {
+      "case": "0",
+      "style": "Modern",
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "sent",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    },
+    {
+      "case": "100",
+      "style": "Modern",
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "sent",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    },
+    {
+      "case": "2000",
+      "style": "Modern",
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "sent",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    },
+    {
+      "case": "500",
+      "style": "Modern",
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "sent",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    },
+    {
+      "case": "hold",
+      "style": "Modern",
+      "reachedFlight": true,
+      "clickSent": true,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "sent",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    },
+    {
+      "case": "resume",
+      "style": "Modern",
+      "reachedFlight": false,
+      "clickSent": false,
+      "silentDrop": false,
+      "serverReadyLines": 1,
+      "intendedLaunches": 1,
+      "guard": "Reconnecting",
+      "notFound": 0,
+      "icon": "favicon.47ff617b3e387ab71cc4.png",
+      "failure": null
+    }
+  ],
+  "note": "production shape: https origin, /play route, password game; 40 s observation window"
+}

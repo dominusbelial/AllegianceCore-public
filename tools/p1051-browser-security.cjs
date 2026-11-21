@@ -4,7 +4,8 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
 const modules = path.resolve(process.argv[2], 'node_modules');
 const stateDir = path.resolve(process.argv[3]), output = path.resolve(process.argv[4]);
 const { chromium: playwright } = require(path.join(modules, 'playwright'));
-const origin = 'http://localhost:8048';
+// P1061: the production shape — one HTTPS origin serving /play and /game.
+const origin = 'https://localhost:8443';
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(predicate, label, timeout = 15000) {
   const end = Date.now() + timeout;
@@ -16,11 +17,11 @@ async function main() {
   const chromium = (await import(require('node:url').pathToFileURL(path.join(modules, '@sparticuz/chromium/build/index.js')).href)).default;
   const browser = await playwright.launch({ executablePath: await chromium.executablePath(), headless: true,
     args: [...chromium.args.filter(arg => !['--disable-web-security', '--allow-running-insecure-content'].includes(arg)),
-      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
+      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost', '--ignore-certificate-errors'] });
   const secrets = [], logs = [], urls = [], cases = [], ticketReads = [], ticketReadErrors = [];
   let page, freshTicket;
   try {
-    const context = await browser.newContext({ viewport: { width: 800, height: 480 } });
+    const context = await browser.newContext({ viewport: { width: 800, height: 480 }, ignoreHTTPSErrors: true });
     page = await context.newPage(); page.setDefaultTimeout(30000);
     page.on('console', message => logs.push(message.text()));
     page.on('request', request => {
@@ -53,16 +54,25 @@ async function main() {
     const account = await page.evaluate(() => fetch('/api/identity/me').then(response => response.json()));
     secrets.push(...(await context.cookies()).map(cookie => cookie.value));
     // P1059: dev switch on, exactly as before P1059 (off by default for players).
-    await page.goto(origin + '/play/preview/menu.html?dev=1');
+    await page.goto(origin + '/play/menu.html?dev=1');
     await page.waitForFunction(() => window.preview?.measurements.firstFrameMs != null, null, { timeout: 90000 });
+    // The production game is password-protected; every join uses the real one.
+    const gamePassword = fs.readFileSync(path.join(stateDir, 'game-password'), 'utf8').trim();
+    const typePassword = () => page.locator('#join-password').evaluate((input, value) => {
+      input.value = value; input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, gamePassword);
+    const joinFirst = async () => {
+      if (await page.locator('#join-password').count()) await typePassword();
+      await page.locator('.online-join').first().click();
+    };
     const open = async () => { await page.locator('#online-open').click(); await page.locator('#online-panel[data-state="Servers"]').waitFor(); };
     const close = async () => { await flushTicketReads(); await page.locator('#online-close').click(); await page.locator('#online-panel').waitFor({ state: 'detached' }); await clean(); };
     const refused = async label => {
-      await page.locator('.online-join').first().click(); await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});
+      await joinFirst(); await page.locator('#online-panel [role="alert"]').waitFor({timeout:240000});
       const message = await page.locator('#online-panel [role="alert"]').innerText(); assert.match(message, /invalid|expired|token|refused/i);
       await clean(); cases.push({ name: label, refused: true, clearMessage: message, noZombie: true });
     };
-    for (const [routeUrl, expected] of [['ws://10.1.2.3/game', /no web route/i], ['wss://game.example.com/game', /Public joining is not available in the browser\./]]) {
+    for (const [routeUrl, expected] of [['ws://10.1.2.3/game', /no web route/i], ['wss://game.example.com/game', /not on this lobby's origin/]]) {
       let attempts = 0;
       const seen = () => attempts++;
       page.on('websocket', seen);
@@ -75,7 +85,7 @@ async function main() {
       const message = await page.locator('.online-server').first().innerText();
       assert.match(message, expected); assert.equal(await page.locator('.online-join').count(), 0);
       await page.waitForTimeout(300); assert.equal(attempts, 0);
-      cases.push({ name: routeUrl.startsWith('ws:') ? 'LAN plaintext listing has no web route' : 'public WSS refused by loopback join gate', passed: true, message, webSocketAttempts: attempts });
+      cases.push({ name: routeUrl.startsWith('ws:') ? 'LAN plaintext listing has no web route' : 'cross-origin public WSS refused', passed: true, message, webSocketAttempts: attempts });
       await close(); await page.unroute('**/api/servers'); page.off('websocket', seen);
     }
     await page.route('**/api/servers', route => route.fulfill({ status: 503, body: 'temporary list failure' }));
@@ -91,7 +101,7 @@ async function main() {
         await page.route(pattern, async route => { await gate; await route.continue(); });
         try {
           const requested = page.waitForRequest(request => match.test(new URL(request.url()).pathname), {timeout:90000});
-          await page.locator('.online-join').first().click(); await requested;
+          await joinFirst(); await requested;
           assert.ok((await page.evaluate(() => gameMenu.metrics())).online.pendingJoins > 0);
           await close(); release();
           await page.waitForFunction(() => gameMenu.metrics().online.pendingJoins === 0, null, {timeout:90000});
@@ -117,7 +127,7 @@ async function main() {
       await refused(kind); await close(); await page.unroute('**/api/identity/join-token'); await open();
     }
     await page.route('**/api/identity/join-token', route => route.fulfill({ status: 503, body: 'temporary ticket failure' }));
-    await page.locator('.online-join').first().click(); await page.locator('#join-retry').waitFor();
+    await joinFirst(); await page.locator('#join-retry').waitFor();
     await clean(); await page.unroute('**/api/identity/join-token'); 
     // Read the retry's real ticket before it is delivered (one-shot route, the
     // only handler for the pattern after the 503 fixture is unrouted).
@@ -163,7 +173,7 @@ async function main() {
     assert.deepEqual(state().ships.map(ship => ship.Id).sort((a, b) => a - b), shipIdsBeforeStale);
     cases.at(-1).serverShipRegistryUnchanged = true;
     await page.unroute('**/api/servers');
-    await open(); await page.locator('.online-join').first().click(); await page.locator('#online-panel[data-state="Sides"]').waitFor();
+    await open(); await joinFirst(); await page.locator('#online-panel[data-state="Sides"]').waitFor();
     await flushTicketReads(); await page.goBack(); await page.locator('#account').waitFor({ state: 'visible' }); await clean();
     cases.push({ name: 'browser back-navigation retires the join', passed: true });
     for (const secret of secrets) { assert.ok(!logs.join('\n').includes(secret)); assert.ok(!urls.join('\n').includes(secret)); }

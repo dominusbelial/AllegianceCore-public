@@ -1,8 +1,33 @@
-# Browser generation hosting notes
+# Browser generation hosting
 
-These notes describe the intended static-file cache contract for a future host.
-P1053/P1054 change publication, browser startup and visual delivery only; it does not configure a host,
-CDN, TLS, CSP, lobby `/play/` route, or compose service.
+This is the deployment contract for the browser generation: how the lobby serves it, the cache
+headers it intends, and the exact build/copy/config/smoke/rollback steps for the public test host.
+The local proof host uses the same lobby route with the preview prefix; production uses `/play`.
+
+## What serves what
+
+| URL | Served by | Notes |
+|---|---|---|
+| `/play/` | lobby (`BrowserPreview`, ASP.NET Core) | published generation, mounted read-only; outside the `/api` limiter |
+| `/api/*`, `/identity*` | the same lobby | unchanged policies, 120 req/min per IP |
+| `wss://<public-origin>/game` | game server (`webSocket`) | loopback `127.0.0.1:6080`, reached through Caddy `:443` |
+| `:6073` TCP+UDP | game server | desktop client, from the lobby listing |
+
+Caddy terminates TLS for one origin and is the only trusted proxy hop (`Lobby__KnownProxies__0` and
+`webSocket.knownProxies` are `127.0.0.1`). No extra port is opened for the browser.
+
+## Cache contract
+
+| File class | Cache-Control |
+|---|---|
+| HTML entry points; `*-manifest.json`, receipts and other mutable JSON metadata | `no-store` |
+| Content-addressed JS/CSS/WASM, SDK fingerprinted `_framework` files, `packs/<sha256>`, hashed `art/` and notices | `public, max-age=31536000, immutable` |
+| Any remaining stable-name compatibility file | `no-cache` |
+
+Precompressed `.br`/`.gz` sidecars are negotiated from `Accept-Encoding` with `Vary: Accept-Encoding`;
+the publication tool writes gzip (not brotli) for `packs/<sha256>` and both for framework files. Caddy's
+`encode` never re-compresses a response that already carries `Content-Encoding`, so nothing is compressed
+twice; keep MIME types, integrity validation and same-origin credentials intact.
 
 [`scripts/publish-browser-flight.sh`](../scripts/publish-browser-flight.sh) finalizes a complete local generation with
 [`tools/p1053-browser-publish.py`](../tools/p1053-browser-publish.py). The .NET SDK's fingerprinted WASM/runtime files
@@ -62,19 +87,139 @@ Harnesses that click a developer/proof control open the page with `?dev=1`
 `p1054-browser-sectors.cjs` and `p1058-browser-launch.cjs`). Classification and native citations:
 `docs/reports/BROWSER_DEV_CONTROLS_P1059.md`.
 
-Intended headers for a future host (this story changes no host, CSP, CDN or lobby
-`/play/` serving):
+## Client build identity and the game password
 
-| File class | Intended Cache-Control |
-|---|---|
-| HTML entry points; `*-manifest.json`, receipts and other mutable JSON metadata | `no-store` |
-| Content-addressed JS/CSS/WASM, SDK fingerprinted `_framework` files, `packs/<sha256>`, hashed `art/` and notices | `public, max-age=31536000, immutable` |
-| Any remaining stable-name compatibility file | `no-cache` |
+The server advertises `minimumClientVersion` and **enforces it at LOGONREQ**. The browser bundle
+writes `client-version.json` at publication (`p1053-browser-publish.py --client-version <release>`,
+or `BROWSER_CLIENT_VERSION=<release>` for the shell script) and reports that value in `ClientVersion`.
+A generation published without one cannot join a server that requires a version — the logon is refused
+with the update reason, exactly as for a desktop build reporting `0.0.0`.
 
-Keep MIME types, integrity validation, same-origin credentials and matching
-compression headers intact. Publish complete generations atomically and retain
-old immutable files while old tabs can reference them. The local proof proxy
-continues to send `no-cache` for every HTTP file; warm zero pack transfer is
-provided by the existing verified browser Cache API, independently of these
-intended hosting headers. No compose service, port, store or environment variable
-is added.
+The game password is typed into the browser join panel and sent in the ordinary `MissionPassword`
+field; the server's existing join gate compares it and answers `DPR_BadPassword`. Nothing stores it.
+
+## Build the images and the generation (workstation)
+
+Set the release the desktop bundles and the browser generation both report. It must be at least the
+server's `minimumClientVersion`.
+
+```sh
+export DOTNET="$HOME/.dotnet/dotnet"
+export NUGET_HTTP_CACHE_PATH="$PWD/.scratch/browser/nuget-http"
+export ALLEGIANCE_ARTWORK_PATH=<artwork checkout>
+export BROWSER_CLIENT_VERSION=<release>          # e.g. 0.1.6
+
+# 1. Images (repo Dockerfiles, unchanged).
+docker build -f src/Allegiance.Lobby/Dockerfile  -t allegiance-lobby:<release>  .
+docker build -f src/Allegiance.Server/Dockerfile -t allegiance-server:<release> .
+
+# 2. Browser generation, atomically.
+scripts/publish-browser-flight.sh .scratch/browser/generation <traces...>   # see the P1051 report
+
+# 3. Copy to the host (placeholders; use the operator's own access path).
+docker save allegiance-lobby:<release> allegiance-server:<release> | gzip > images-<release>.tgz
+scp images-<release>.tgz <host-ip>:~/allegiance-public/
+tar -C .scratch/browser/generation -czf generation-<release>.tgz .
+scp generation-<release>.tgz <host-ip>:~/allegiance-public/
+```
+
+## Full local compose run with Caddy (workstation)
+
+This is the same shape as the host, with a local origin and Caddy's internal CA:
+
+```sh
+cd docker/public
+cp server.example.json server.json          # replace <public-origin> with localhost,
+                                            # create the enrollment and the game password
+mkdir -p browser-generation
+tar -C browser-generation --strip-components=0 -xzf <workstation>/generation-<release>.tgz
+# The lobby/server images are the ones built above from the repo Dockerfiles.
+PUBLIC_HOST=localhost ACME_EMAIL=unused RELEASE=<release> \
+  ALLEGIANCE_MINIMUM_CLIENT_VERSION=<release> docker compose up -d
+docker compose ps                            # lobby healthy, caddy/server running
+# Caddy uses its local CA for localhost; trust it once if Chrome must accept it:
+docker compose exec caddy caddy trust
+curl -sI https://localhost/play/ | head -5
+```
+
+## Deploy (host)
+
+```sh
+# 0. Pull or load base images once: caddy:2.10-alpine, alpine:3.22.2.
+# 1. Directory layout (outside the repo):
+#    ~/allegiance-public/{docker-compose.yml,Caddyfile,server.json,browser-generation/}
+gunzip -c images-<release>.tgz | docker load
+rm -rf ~/allegiance-public/browser-generation
+tar -C ~/allegiance-public -xzf generation-<release>.tgz
+rsync -a --delete <workstation>/docker/public/ ~/allegiance-public/
+
+# 2. Fill the private values (never in git):
+#    PUBLIC_HOST, ACME_EMAIL, RELEASE, ALLEGIANCE_MINIMUM_CLIENT_VERSION,
+#    ALLEGIANCE_LOBBY_OPERATOR_ID; server.json: <public-origin>, <game-password>,
+#    <enrollment-server-id>. Keep server.json mode 0600.
+
+# 3. Firewall: only 22, 80, 443/tcp+udp, 3478-3479/udp, 6073/tcp+udp.
+# 4. Start:
+cd ~/allegiance-public && docker compose up -d
+
+# 5. Enroll the server's identity (operator device flow, as in the dev stack),
+#    then restart the server so its audience/issuer match.
+```
+
+The production stack is [`docker/public/docker-compose.yml`](../docker/public/docker-compose.yml)
+(host networking, Caddy, lobby, server, artwork), with
+[`Caddyfile`](../docker/public/Caddyfile), [`server.example.json`](../docker/public/server.example.json)
+and [`lobby.env.example`](../docker/public/lobby.env.example). The lobby image is the repo
+Dockerfile unchanged; the browser generation is **mounted** (`./browser-generation:/browser:ro`)
+rather than baked into the image, so a generation swap is atomic, needs no image rebuild, and the
+past generation can be kept for rollback.
+
+## Smoke checks (exact)
+
+```sh
+# 200 + WASM MIME + precompressed negotiation + immutable content-addressed file
+curl -sI https://<public-origin>/play/ | grep -Ei 'HTTP/|cache-control|content-security-policy'
+curl -sI -H 'Accept-Encoding: br' https://<public-origin>/play/_framework/<fingerprinted>.wasm \
+  | grep -Ei 'HTTP/|content-type|content-encoding|vary|cache-control'
+curl -sI https://<public-origin>/play/menu.html | grep -Ei 'HTTP/|cache-control'   # no-store
+# CSP carries wasm-unsafe-eval and exactly the same-origin wss route
+curl -sI https://<public-origin>/play/ | grep -i 'content-security-policy'
+# WSS upgrade through the origin (101 Switching Protocols; no second port)
+curl -si -o /dev/null -w '%{http_code}\n' \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Protocol: allegiance-fed-v1' \
+  -H 'Origin: https://<public-origin>' https://<public-origin>/game
+# Identity + listing + a browser login and join
+curl -s https://<public-origin>/api/servers | head -c 400
+# Then in Chrome: open https://<public-origin>/play/, sign in, join the game
+# (type its password), select a side, ready, launch; the desktop client joins
+# the same listing with the same password and both ships move/fire.
+```
+
+A refused upgrade (403) for a wrong `Origin`, 404 for any path outside the published generation, and a
+`429` only after 120 `/api` requests in a minute (never for `/play/` static files) are also expected.
+
+## Rollback
+
+```sh
+cd ~/allegiance-public
+docker compose down                                  # stops the public stack
+mv browser-generation browser-generation.<old>       # keep the old generation
+tar -C . -xzf generation-<previous>.tgz              # previous complete generation
+docker compose up -d
+# Full rollback to the previous images:
+docker load < images-<previous>.tgz && RELEASE=<previous> docker compose up -d
+```
+
+The lobby keeps old immutable files while tabs reference them, so a generation swap does not break
+an already-open page; entry pages are `no-store`, so a reload always picks the new generation.
+
+## What remains for Claude's TLS run
+
+- DNS for `<public-origin>` and the Let's Encrypt certificate (Caddy obtains it automatically).
+- The host firewall rule set above.
+- `docker compose config` on the host (Docker is not installed in the lane).
+- The real `PUBLIC_HOST`, operator id, enrollment and game password, all outside git.
+
+The local proof proxy continues to send `no-cache` for HTTP files (it predates these hosting headers);
+warm zero pack transfer is provided by the verified browser Cache API independently of them.

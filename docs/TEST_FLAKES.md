@@ -10608,3 +10608,24 @@ Fails once but passes 3/3 alone = load flake; no assertion, timeout, tier, quara
 throttle, privilege or simulation rule was changed. **Fast remains red** for these three ledgered
 families. Ignored raw evidence: `<lane evidence dir>/fast/` (TRX + logs) and
 `<lane evidence dir>/fast-isolated/` (the nine isolated runs).
+
+## P1061 — final Fast, run last (2026-11-20)
+
+P1061 changes the lobby's browser-hosting route, the browser join decision, publication and deployment
+files; it changes no shared simulation, server dispatch or desktop rendering. The single final Fast sweep
+exited **1**: **15,675 passed / 3 failed / 7 not executed**, **15,685 total**, **571.2 s**; all **9
+infrastructure checks passed**, calibrated case limit **11.562 s**; five passing cases ran 13.2–18.0 s
+(lane load), all passed, none failed on time. Browser head and
+game were **12/0/0** and **91/0/0**; the whole lobby suite was **284/0/0** in the sweep.
+
+Each failing method was selected in **three separate fresh processes** with artwork:
+
+| Method | Sweep observation | Three isolated outcomes (passed/failed/skipped) |
+|---|---|---|
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Observer never latched the death after 2,500 ticks (4 s) | **1/0/0, 1/0/0, 1/0/0** (1 s each) — existing family, ledgered above |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | one extra queued ASTEROID_MINED after the capacity receipt | **1/0/0, 1/0/0, 1/0/0** (1 s each) — existing mining-receipt family, ledgered repeatedly above |
+| `HelpOverlayTests.ControlsSections_FitThe720pManualBand` | section of group 9 overflows the 720p band (y=538, h=98) | **0/1/0, 0/1/0, 0/1/0** (22 ms each); the same method fails on the untouched base `3dd3e18a` in a separate clean worktree — a pre-existing catalogue/layout mismatch, not this task |
+
+No assertion, timeout, tier, quarantine policy, throttle, privilege, simulation or wire rule was changed.
+**Fast remains red** for these three families. Ignored raw evidence: `<lane evidence dir>/fast/` (TRX +
+logs) and the isolated runs recorded in the P1061 report.
