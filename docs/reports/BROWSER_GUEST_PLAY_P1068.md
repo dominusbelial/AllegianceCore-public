@@ -133,7 +133,7 @@ in one click. It also checks same-browser reuse, forgetting, disabled browser
 offers on all three entry points, clean logoff, and zero ticket/passkey requests.
 No listing is fabricated for the guest admission/refusal proof.
 
-Final structured evidence: `BROWSER_GUEST_PLAY_P1068_assets/browser-guest.json`.
+Final structured evidence (lane run; replaced in review by the post-merge workstation summary `BROWSER_GUEST_PLAY_P1068_assets/browser-guest-summary.json`).
 Timing is an automated fresh-context loopback measurement including menu/pack
 loading and the disclosure capture, not measured human reading time or a public
 VPS latency claim. The final one-click/fullscreen run reached flight in
@@ -226,3 +226,18 @@ This adds an explicit browser choice, a random private-by-default local identity
 a discovery admission fact, honest account-limit disclosure and clear refusal
 recovery. Existing server authority, account sign-in and all gameplay/wire rules
 stay intact.
+
+## Workstation browser results — Claude (2026-11-21, post-merge with P1069/P1070)
+
+Run on the merged review branch with `tools/p1068-browser-guest.cjs` against
+`p1051-browser-host --guests 1`: **PASS**, zero page errors, page open → flying **11,040 ms**,
+independent contexts `Pilot-M1SN161BYD` (lobby home) and `Pilot-MTTKG2CFN5` (`identity.html`).
+
+Review change: P1070 moved `#online-launch` behind `?dev=1`, so a guest (no dev switch) launches
+from the game window's own hangar Launch pane; the harness now uses `gameMenu.launch()` and waits
+for the Flight state instead of clicking the dev-only button.
+
+Captures were opened and checked: the disclosure panel reads as written above; Classic and
+Modern flight both keep `Guest · Pilot-…` and `Sign in / create account` visible under the
+canvas; the Modern frame also shows P1069's afterburner ribbon. The evidence JSON is reduced to a
+summary (`browser-guest-summary.json`); the request log/console stream are counts only.

@@ -373,3 +373,40 @@ and `node --check`, all exited). `.scratch/p1070/` holds the NuGet HTTP cache on
 **Unfinished:** the browser run and the eight captures — this lane has no Chromium. Everything needed is in place:
 `tools/p1070-browser-hangar.cjs`, the exact commands above, and `p1051-browser-host --bots 1`. Claude runs it, opens
 the captures and appends the metrics and visual descriptions.
+
+## Workstation browser results — Claude (2026-11-21, post-merge with P1068/P1069)
+
+`tools/p1070-browser-hangar.cjs` against `p1051-browser-host --bots 1`: **PASS** — hangar in the
+canvas, loadout opened by its drawn pane, a hull and a part chosen by drawn rows, Buy
+acknowledged (state `Current`, hull 17 Adv Stl Fighter + 7 parts; the proof host's test unlock
+refills the wallet to $500,000, so money is not evidence here), eight captures (728,543 bytes),
+launch from the canvas, fly, re-dock, and a plain visit with no `?dev=1` controls.
+
+Review found and fixed, in this order:
+
+1. **Small-window crash (real bug).** The shared `LoadoutV2Layout.Compute` supports 640×480 and
+   up; an 800×480 page leaves an 800×369 canvas, `Compute` threw `ArgumentOutOfRangeException`
+   inside `Draw`, and the WASM loop died — the session dropped (`LinkDead`). The browser now lays
+   out and draws the loadout at the smallest same-aspect size that meets the minimum into an
+   offscreen target and scales it onto the canvas; the pointer is scaled the same way, so
+   draw == hit holds. Desktop code is unchanged.
+2. **Stale shop after launch (real bug).** `BrowserHangarModel.Update` resets when undocked, but
+   it only ran while docked, so a launched pilot kept the old shop and the next dock skipped
+   `EnterDock`. The undocked flight path now resets it (desktop builds a fresh shop on every dock,
+   `Game1.Panes.cs:127-206`).
+3. JS hook: verb bounds were XNA `Rectangle`s whose fields JSON interop skips (null coordinates);
+   now plain `{x,y,width,height}`. `slots`/`hullName`/`offers` now read the drawn view model,
+   which resolves a docked hull the station does not offer from the full core (P1014 design;
+   native `clintlib.h:1499-1505` keeps the current hull) — the shop's offer list does not.
+   New `chosen` field (part@mount) so replacing a part in an occupied slot is visible.
+4. Harness: Chromium `--single-process` shared localStorage across contexts, so the "plain
+   visit" inherited the remembered dev switch; the flag is dropped (as P1068 did) and the plain
+   context gets the signed-in storage minus `allegiance.dev`.
+
+Captures opened and checked: the Classic/Modern hangar shows the native hangar art with the
+Exit pane and the port's Buy/Default cells; the Launch pane is a text fallback because the
+`animlaunch` frame animation is missing from the browser pack (console warning) — follow-up.
+The loadout shows the hull column (198 rows: the proof host's all-tech unlock), the streamed
+hull preview, seven equipment slots with parts, the stat sheet and Default/Revert/Confirm/
+Launch. At 800×480 the loadout is the scaled layout, readable; the hangar's Buy/Def cells sit
+at the bottom edge partly under the identity strip — follow-up.

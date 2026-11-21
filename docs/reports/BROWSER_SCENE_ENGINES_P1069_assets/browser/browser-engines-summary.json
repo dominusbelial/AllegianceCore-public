@@ -1,0 +1,2817 @@
+{
+ "size": 5,
+ "browserVersion": "153.0.8010.0",
+ "headlessGpuRepresentative": false,
+ "effectLoad": "full",
+ "wasmHeapNote": "Memory constructor instrumentation runs before the runtime; wasmLinearBytes sums each actual WebAssembly.Memory buffer. managedHeapBytes is the .NET managed portion.",
+ "timing": [
+  {
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "frames": 1216,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.79999999998836,
+   "headlessGpuRepresentative": false
+  },
+  {
+   "style": "Modern",
+   "width": 1920,
+   "height": 1080,
+   "frames": 1197,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.79999999998836,
+   "headlessGpuRepresentative": false
+  },
+  {
+   "style": "Classic",
+   "width": 800,
+   "height": 480,
+   "frames": 1193,
+   "p50Ms": 16.699999999982538,
+   "p95Ms": 16.79999999998836,
+   "headlessGpuRepresentative": false
+  },
+  {
+   "style": "Modern",
+   "width": 800,
+   "height": 480,
+   "frames": 1213,
+   "p50Ms": 16.699999999982538,
+   "p95Ms": 16.79999999998836,
+   "headlessGpuRepresentative": false
+  }
+ ],
+ "captures": [
+  {
+   "file": "engines-5-classic-1920x1080.jpg",
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "battle": {
+    "sectorShips": 5,
+    "contacts": 5,
+    "meshes": 5,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     90,
+     13,
+     86,
+     87
+    ],
+    "culledRocks": 21,
+    "shipPassMs": 0.5,
+    "maxShipPassMs": 148.3,
+    "firstDrawMs": 54,
+    "maxFirstDrawMs": 474,
+    "hullUploadMs": 38.2999,
+    "hullQueued": 0,
+    "hullUploaded": 6
+   },
+   "scene": {
+    "ready": true,
+    "effectLoad": "full",
+    "dust": 11,
+    "strobes": 1,
+    "sparks": 0,
+    "exhaust": 141,
+    "glows": 5,
+    "ribbons": 5,
+    "enginesReady": true,
+    "glimpses": 1,
+    "skyTier": "black",
+    "paintingsReady": true,
+    "constructionReady": false
+   }
+  },
+  {
+   "file": "engines-5-modern-1920x1080.jpg",
+   "style": "Modern",
+   "width": 1920,
+   "height": 1080,
+   "battle": {
+    "sectorShips": 7,
+    "contacts": 5,
+    "meshes": 5,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     90,
+     13,
+     86,
+     17
+    ],
+    "culledRocks": 25,
+    "shipPassMs": 0.5999,
+    "maxShipPassMs": 149.3,
+    "firstDrawMs": 63,
+    "maxFirstDrawMs": 474,
+    "hullUploadMs": 46.3,
+    "hullQueued": 0,
+    "hullUploaded": 8
+   },
+   "scene": {
+    "ready": true,
+    "effectLoad": "full",
+    "dust": 14,
+    "strobes": 0,
+    "sparks": 0,
+    "exhaust": 140,
+    "glows": 5,
+    "ribbons": 5,
+    "enginesReady": true,
+    "glimpses": 1,
+    "skyTier": "black",
+    "paintingsReady": true,
+    "constructionReady": false
+   }
+  },
+  {
+   "file": "engines-5-classic-800x480.jpg",
+   "style": "Classic",
+   "width": 800,
+   "height": 480,
+   "battle": {
+    "sectorShips": 9,
+    "contacts": 8,
+    "meshes": 8,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     33,
+     13,
+     86,
+     17,
+     151,
+     15
+    ],
+    "culledRocks": 25,
+    "shipPassMs": 0.7,
+    "maxShipPassMs": 149.3,
+    "firstDrawMs": 165,
+    "maxFirstDrawMs": 474,
+    "hullUploadMs": 147.9,
+    "hullQueued": 0,
+    "hullUploaded": 10
+   },
+   "scene": {
+    "ready": true,
+    "effectLoad": "full",
+    "dust": 14,
+    "strobes": 0,
+    "sparks": 0,
+    "exhaust": 282,
+    "glows": 8,
+    "ribbons": 8,
+    "enginesReady": true,
+    "glimpses": 1,
+    "skyTier": "black",
+    "paintingsReady": true,
+    "constructionReady": false
+   }
+  },
+  {
+   "file": "engines-5-modern-800x480.jpg",
+   "style": "Modern",
+   "width": 800,
+   "height": 480,
+   "battle": {
+    "sectorShips": 8,
+    "contacts": 6,
+    "meshes": 6,
+    "standIns": 0,
+    "hullIds": [
+     33,
+     13,
+     86,
+     17,
+     151,
+     15
+    ],
+    "culledRocks": 20,
+    "shipPassMs": 0.6,
+    "maxShipPassMs": 149.3,
+    "firstDrawMs": 165,
+    "maxFirstDrawMs": 474,
+    "hullUploadMs": 147.9,
+    "hullQueued": 0,
+    "hullUploaded": 10
+   },
+   "scene": {
+    "ready": true,
+    "effectLoad": "full",
+    "dust": 18,
+    "strobes": 2,
+    "sparks": 0,
+    "exhaust": 420,
+    "glows": 6,
+    "ribbons": 6,
+    "enginesReady": true,
+    "glimpses": 1,
+    "skyTier": "black",
+    "paintingsReady": true,
+    "constructionReady": false
+   }
+  },
+  {
+   "file": "engines-close-afterburner-1920x1080.jpg",
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "battle": {
+    "sectorShips": 8,
+    "contacts": 6,
+    "meshes": 6,
+    "standIns": 0,
+    "hullIds": [
+     33,
+     13,
+     86,
+     17,
+     151,
+     15
+    ],
+    "culledRocks": 12,
+    "shipPassMs": 0.6,
+    "maxShipPassMs": 149.3,
+    "firstDrawMs": 165,
+    "maxFirstDrawMs": 474,
+    "hullUploadMs": 147.9,
+    "hullQueued": 0,
+    "hullUploaded": 10
+   },
+   "scene": {
+    "ready": true,
+    "effectLoad": "full",
+    "dust": 22,
+    "strobes": 3,
+    "sparks": 0,
+    "exhaust": 421,
+    "glows": 6,
+    "ribbons": 6,
+    "enginesReady": true,
+    "glimpses": 1,
+    "skyTier": "black",
+    "paintingsReady": true,
+    "constructionReady": false
+   },
+   "closeBehindAfterburner": true
+  }
+ ],
+ "imageBytes": 325863,
+ "maxShipPassMs": 149.3,
+ "maxFirstDrawMs": 474,
+ "peakEffectCounts": {
+  "exhaust": 420,
+  "glows": 8,
+  "ribbons": 8
+ },
+ "manifest": {
+  "version": 1,
+  "coreSha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+  "joinUnchanged": true,
+  "join": {
+   "rawBytes": 32536380,
+   "gzipBytes": 7564835
+  },
+  "onDemand": {
+   "files": 391,
+   "uniqueFiles": 391,
+   "rawBytes": 166834430,
+   "gzipBytes": 49164045
+  },
+  "packs": [
+   {
+    "key": "missile-32",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-33",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-34",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-35",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "missile-36",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "missile-37",
+    "rawBytes": 12784,
+    "gzipBytes": 5432
+   },
+   {
+    "key": "missile-39",
+    "rawBytes": 12784,
+    "gzipBytes": 6031
+   },
+   {
+    "key": "missile-40",
+    "rawBytes": 12784,
+    "gzipBytes": 6031
+   },
+   {
+    "key": "missile-41",
+    "rawBytes": 12784,
+    "gzipBytes": 5432
+   },
+   {
+    "key": "missile-42",
+    "rawBytes": 38256,
+    "gzipBytes": 11375
+   },
+   {
+    "key": "missile-43",
+    "rawBytes": 38256,
+    "gzipBytes": 11375
+   },
+   {
+    "key": "missile-44",
+    "rawBytes": 38256,
+    "gzipBytes": 12257
+   },
+   {
+    "key": "missile-45",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-46",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-18",
+    "rawBytes": 38256,
+    "gzipBytes": 12257
+   },
+   {
+    "key": "missile-3",
+    "rawBytes": 46192,
+    "gzipBytes": 15522
+   },
+   {
+    "key": "missile-4",
+    "rawBytes": 46192,
+    "gzipBytes": 15522
+   },
+   {
+    "key": "missile-7",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "missile-8",
+    "rawBytes": 12784,
+    "gzipBytes": 4984
+   },
+   {
+    "key": "missile-20",
+    "rawBytes": 12784,
+    "gzipBytes": 5275
+   },
+   {
+    "key": "missile-23",
+    "rawBytes": 12784,
+    "gzipBytes": 5275
+   },
+   {
+    "key": "missile-24",
+    "rawBytes": 12784,
+    "gzipBytes": 5432
+   },
+   {
+    "key": "missile-25",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-28",
+    "rawBytes": 12784,
+    "gzipBytes": 5667
+   },
+   {
+    "key": "missile-5",
+    "rawBytes": 36624,
+    "gzipBytes": 11179
+   },
+   {
+    "key": "missile-95",
+    "rawBytes": 12784,
+    "gzipBytes": 5014
+   },
+   {
+    "key": "missile-96",
+    "rawBytes": 12784,
+    "gzipBytes": 5014
+   },
+   {
+    "key": "missile-601",
+    "rawBytes": 12784,
+    "gzipBytes": 6031
+   },
+   {
+    "key": "missile-29",
+    "rawBytes": 36624,
+    "gzipBytes": 11179
+   },
+   {
+    "key": "missile-52",
+    "rawBytes": 36624,
+    "gzipBytes": 11179
+   },
+   {
+    "key": "missile-58",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-59",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-60",
+    "rawBytes": 12784,
+    "gzipBytes": 4776
+   },
+   {
+    "key": "missile-74",
+    "rawBytes": 46192,
+    "gzipBytes": 15522
+   },
+   {
+    "key": "missile-75",
+    "rawBytes": 46192,
+    "gzipBytes": 15522
+   },
+   {
+    "key": "missile-77",
+    "rawBytes": 15144,
+    "gzipBytes": 4178
+   },
+   {
+    "key": "missile-78",
+    "rawBytes": 38256,
+    "gzipBytes": 12257
+   },
+   {
+    "key": "missile-79",
+    "rawBytes": 10668,
+    "gzipBytes": 3553
+   },
+   {
+    "key": "missile-80",
+    "rawBytes": 12496,
+    "gzipBytes": 4437
+   },
+   {
+    "key": "missile-81",
+    "rawBytes": 10140,
+    "gzipBytes": 2497
+   },
+   {
+    "key": "missile-82",
+    "rawBytes": 10140,
+    "gzipBytes": 2497
+   },
+   {
+    "key": "missile-83",
+    "rawBytes": 36624,
+    "gzipBytes": 14796
+   },
+   {
+    "key": "missile-14",
+    "rawBytes": 135168,
+    "gzipBytes": 82870
+   },
+   {
+    "key": "missile-31",
+    "rawBytes": 135168,
+    "gzipBytes": 82870
+   },
+   {
+    "key": "missile-76",
+    "rawBytes": 38256,
+    "gzipBytes": 12257
+   },
+   {
+    "key": "missile-84",
+    "rawBytes": 38256,
+    "gzipBytes": 12257
+   },
+   {
+    "key": "missile-69",
+    "rawBytes": 12784,
+    "gzipBytes": 5667
+   },
+   {
+    "key": "missile-70",
+    "rawBytes": 135168,
+    "gzipBytes": 82870
+   },
+   {
+    "key": "missile-71",
+    "rawBytes": 135168,
+    "gzipBytes": 82870
+   },
+   {
+    "key": "missile-99",
+    "rawBytes": 12784,
+    "gzipBytes": 5490
+   },
+   {
+    "key": "missile-61",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-62",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-63",
+    "rawBytes": 12784,
+    "gzipBytes": 5378
+   },
+   {
+    "key": "missile-55",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "missile-56",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "missile-57",
+    "rawBytes": 12784,
+    "gzipBytes": 5043
+   },
+   {
+    "key": "hull-245",
+    "rawBytes": 148412,
+    "gzipBytes": 43181
+   },
+   {
+    "key": "hull-92",
+    "rawBytes": 189992,
+    "gzipBytes": 51325
+   },
+   {
+    "key": "hull-85",
+    "rawBytes": 177930,
+    "gzipBytes": 44765
+   },
+   {
+    "key": "hull-285",
+    "rawBytes": 177930,
+    "gzipBytes": 44765
+   },
+   {
+    "key": "hull-210",
+    "rawBytes": 177930,
+    "gzipBytes": 44765
+   },
+   {
+    "key": "hull-228",
+    "rawBytes": 191306,
+    "gzipBytes": 73187
+   },
+   {
+    "key": "hull-215",
+    "rawBytes": 191306,
+    "gzipBytes": 73187
+   },
+   {
+    "key": "hull-258",
+    "rawBytes": 153898,
+    "gzipBytes": 66980
+   },
+   {
+    "key": "hull-288",
+    "rawBytes": 153886,
+    "gzipBytes": 55380
+   },
+   {
+    "key": "hull-214",
+    "rawBytes": 153886,
+    "gzipBytes": 55380
+   },
+   {
+    "key": "hull-256",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-93",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-286",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-211",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-251",
+    "rawBytes": 550124,
+    "gzipBytes": 144733
+   },
+   {
+    "key": "hull-281",
+    "rawBytes": 550112,
+    "gzipBytes": 175644
+   },
+   {
+    "key": "hull-212",
+    "rawBytes": 547664,
+    "gzipBytes": 174550
+   },
+   {
+    "key": "hull-290",
+    "rawBytes": 201250,
+    "gzipBytes": 69719
+   },
+   {
+    "key": "hull-127",
+    "rawBytes": 201976,
+    "gzipBytes": 65056
+   },
+   {
+    "key": "hull-220",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-148",
+    "rawBytes": 225626,
+    "gzipBytes": 63028
+   },
+   {
+    "key": "hull-299",
+    "rawBytes": 160318,
+    "gzipBytes": 68666
+   },
+   {
+    "key": "hull-289",
+    "rawBytes": 201250,
+    "gzipBytes": 69719
+   },
+   {
+    "key": "hull-204",
+    "rawBytes": 201250,
+    "gzipBytes": 69719
+   },
+   {
+    "key": "hull-294",
+    "rawBytes": 149264,
+    "gzipBytes": 62874
+   },
+   {
+    "key": "hull-293",
+    "rawBytes": 149444,
+    "gzipBytes": 53360
+   },
+   {
+    "key": "hull-295",
+    "rawBytes": 149444,
+    "gzipBytes": 53360
+   },
+   {
+    "key": "hull-34",
+    "rawBytes": 191812,
+    "gzipBytes": 64377
+   },
+   {
+    "key": "hull-78",
+    "rawBytes": 325884,
+    "gzipBytes": 121290
+   },
+   {
+    "key": "hull-287",
+    "rawBytes": 191812,
+    "gzipBytes": 64377
+   },
+   {
+    "key": "hull-291",
+    "rawBytes": 177094,
+    "gzipBytes": 59464
+   },
+   {
+    "key": "hull-222",
+    "rawBytes": 207524,
+    "gzipBytes": 77650
+   },
+   {
+    "key": "hull-221",
+    "rawBytes": 217940,
+    "gzipBytes": 83800
+   },
+   {
+    "key": "hull-62",
+    "rawBytes": 217940,
+    "gzipBytes": 83800
+   },
+   {
+    "key": "hull-100",
+    "rawBytes": 325884,
+    "gzipBytes": 121290
+   },
+   {
+    "key": "hull-216",
+    "rawBytes": 156064,
+    "gzipBytes": 58321
+   },
+   {
+    "key": "hull-217",
+    "rawBytes": 156064,
+    "gzipBytes": 58321
+   },
+   {
+    "key": "hull-236",
+    "rawBytes": 146720,
+    "gzipBytes": 53367
+   },
+   {
+    "key": "hull-237",
+    "rawBytes": 146720,
+    "gzipBytes": 53367
+   },
+   {
+    "key": "hull-272",
+    "rawBytes": 156064,
+    "gzipBytes": 58321
+   },
+   {
+    "key": "hull-271",
+    "rawBytes": 156064,
+    "gzipBytes": 58321
+   },
+   {
+    "key": "hull-244",
+    "rawBytes": 142928,
+    "gzipBytes": 53867
+   },
+   {
+    "key": "hull-86",
+    "rawBytes": 178796,
+    "gzipBytes": 70598
+   },
+   {
+    "key": "hull-385",
+    "rawBytes": 178796,
+    "gzipBytes": 70598
+   },
+   {
+    "key": "hull-310",
+    "rawBytes": 178796,
+    "gzipBytes": 70598
+   },
+   {
+    "key": "hull-388",
+    "rawBytes": 151822,
+    "gzipBytes": 61506
+   },
+   {
+    "key": "hull-314",
+    "rawBytes": 151822,
+    "gzipBytes": 61506
+   },
+   {
+    "key": "hull-315",
+    "rawBytes": 151822,
+    "gzipBytes": 61506
+   },
+   {
+    "key": "hull-386",
+    "rawBytes": 163246,
+    "gzipBytes": 59304
+   },
+   {
+    "key": "hull-311",
+    "rawBytes": 163246,
+    "gzipBytes": 59304
+   },
+   {
+    "key": "hull-313",
+    "rawBytes": 163246,
+    "gzipBytes": 59304
+   },
+   {
+    "key": "hull-381",
+    "rawBytes": 184368,
+    "gzipBytes": 74659
+   },
+   {
+    "key": "hull-312",
+    "rawBytes": 184368,
+    "gzipBytes": 74659
+   },
+   {
+    "key": "hull-324",
+    "rawBytes": 184368,
+    "gzipBytes": 74659
+   },
+   {
+    "key": "hull-390",
+    "rawBytes": 191396,
+    "gzipBytes": 68465
+   },
+   {
+    "key": "hull-156",
+    "rawBytes": 151822,
+    "gzipBytes": 61506
+   },
+   {
+    "key": "hull-320",
+    "rawBytes": 163246,
+    "gzipBytes": 59304
+   },
+   {
+    "key": "hull-149",
+    "rawBytes": 163246,
+    "gzipBytes": 59304
+   },
+   {
+    "key": "hull-389",
+    "rawBytes": 191396,
+    "gzipBytes": 68465
+   },
+   {
+    "key": "hull-304",
+    "rawBytes": 191396,
+    "gzipBytes": 68465
+   },
+   {
+    "key": "hull-393",
+    "rawBytes": 175040,
+    "gzipBytes": 65015
+   },
+   {
+    "key": "hull-395",
+    "rawBytes": 175040,
+    "gzipBytes": 65015
+   },
+   {
+    "key": "hull-35",
+    "rawBytes": 184494,
+    "gzipBytes": 72462
+   },
+   {
+    "key": "hull-79",
+    "rawBytes": 2142960,
+    "gzipBytes": 433217
+   },
+   {
+    "key": "hull-387",
+    "rawBytes": 184494,
+    "gzipBytes": 72462
+   },
+   {
+    "key": "hull-391",
+    "rawBytes": 194726,
+    "gzipBytes": 58943
+   },
+   {
+    "key": "hull-194",
+    "rawBytes": 180332,
+    "gzipBytes": 56573
+   },
+   {
+    "key": "hull-321",
+    "rawBytes": 200260,
+    "gzipBytes": 60692
+   },
+   {
+    "key": "hull-322",
+    "rawBytes": 180332,
+    "gzipBytes": 56573
+   },
+   {
+    "key": "hull-101",
+    "rawBytes": 2142960,
+    "gzipBytes": 433217
+   },
+   {
+    "key": "hull-325",
+    "rawBytes": 2142960,
+    "gzipBytes": 433217
+   },
+   {
+    "key": "hull-316",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-317",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-319",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-336",
+    "rawBytes": 148898,
+    "gzipBytes": 56725
+   },
+   {
+    "key": "hull-337",
+    "rawBytes": 148898,
+    "gzipBytes": 56725
+   },
+   {
+    "key": "hull-338",
+    "rawBytes": 148898,
+    "gzipBytes": 56725
+   },
+   {
+    "key": "hull-372",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-371",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-370",
+    "rawBytes": 151654,
+    "gzipBytes": 59613
+   },
+   {
+    "key": "hull-344",
+    "rawBytes": 135816,
+    "gzipBytes": 36954
+   },
+   {
+    "key": "hull-87",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-485",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-410",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-488",
+    "rawBytes": 550188,
+    "gzipBytes": 134301
+   },
+   {
+    "key": "hull-414",
+    "rawBytes": 546668,
+    "gzipBytes": 178226
+   },
+   {
+    "key": "hull-486",
+    "rawBytes": 553720,
+    "gzipBytes": 174155
+   },
+   {
+    "key": "hull-411",
+    "rawBytes": 553720,
+    "gzipBytes": 174155
+   },
+   {
+    "key": "hull-481",
+    "rawBytes": 544762,
+    "gzipBytes": 72838
+   },
+   {
+    "key": "hull-412",
+    "rawBytes": 541480,
+    "gzipBytes": 70706
+   },
+   {
+    "key": "hull-415",
+    "rawBytes": 541480,
+    "gzipBytes": 70706
+   },
+   {
+    "key": "hull-490",
+    "rawBytes": 563976,
+    "gzipBytes": 191380
+   },
+   {
+    "key": "hull-158",
+    "rawBytes": 597460,
+    "gzipBytes": 144801
+   },
+   {
+    "key": "hull-420",
+    "rawBytes": 553720,
+    "gzipBytes": 174155
+   },
+   {
+    "key": "hull-150",
+    "rawBytes": 553720,
+    "gzipBytes": 174155
+   },
+   {
+    "key": "hull-489",
+    "rawBytes": 563976,
+    "gzipBytes": 191380
+   },
+   {
+    "key": "hull-404",
+    "rawBytes": 563976,
+    "gzipBytes": 191380
+   },
+   {
+    "key": "hull-493",
+    "rawBytes": 572832,
+    "gzipBytes": 174993
+   },
+   {
+    "key": "hull-495",
+    "rawBytes": 572832,
+    "gzipBytes": 174993
+   },
+   {
+    "key": "hull-36",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-80",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-487",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-491",
+    "rawBytes": 187398,
+    "gzipBytes": 61468
+   },
+   {
+    "key": "hull-421",
+    "rawBytes": 201998,
+    "gzipBytes": 82493
+   },
+   {
+    "key": "hull-422",
+    "rawBytes": 189322,
+    "gzipBytes": 80928
+   },
+   {
+    "key": "hull-102",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-416",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-417",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-419",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-436",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-437",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-438",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-472",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-471",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-444",
+    "rawBytes": 133552,
+    "gzipBytes": 34480
+   },
+   {
+    "key": "hull-470",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-88",
+    "rawBytes": 177848,
+    "gzipBytes": 85485
+   },
+   {
+    "key": "hull-585",
+    "rawBytes": 177848,
+    "gzipBytes": 85485
+   },
+   {
+    "key": "hull-510",
+    "rawBytes": 177848,
+    "gzipBytes": 85485
+   },
+   {
+    "key": "hull-588",
+    "rawBytes": 578080,
+    "gzipBytes": 218707
+   },
+   {
+    "key": "hull-514",
+    "rawBytes": 578080,
+    "gzipBytes": 218707
+   },
+   {
+    "key": "hull-515",
+    "rawBytes": 578080,
+    "gzipBytes": 218707
+   },
+   {
+    "key": "hull-586",
+    "rawBytes": 177118,
+    "gzipBytes": 82521
+   },
+   {
+    "key": "hull-511",
+    "rawBytes": 177118,
+    "gzipBytes": 82521
+   },
+   {
+    "key": "hull-581",
+    "rawBytes": 579610,
+    "gzipBytes": 225475
+   },
+   {
+    "key": "hull-512",
+    "rawBytes": 579610,
+    "gzipBytes": 225475
+   },
+   {
+    "key": "hull-67",
+    "rawBytes": 1333866,
+    "gzipBytes": 547362
+   },
+   {
+    "key": "hull-590",
+    "rawBytes": 183582,
+    "gzipBytes": 68370
+   },
+   {
+    "key": "hull-159",
+    "rawBytes": 578080,
+    "gzipBytes": 218707
+   },
+   {
+    "key": "hull-520",
+    "rawBytes": 177118,
+    "gzipBytes": 82521
+   },
+   {
+    "key": "hull-151",
+    "rawBytes": 177118,
+    "gzipBytes": 82521
+   },
+   {
+    "key": "hull-589",
+    "rawBytes": 183582,
+    "gzipBytes": 68370
+   },
+   {
+    "key": "hull-504",
+    "rawBytes": 183582,
+    "gzipBytes": 68370
+   },
+   {
+    "key": "hull-593",
+    "rawBytes": 188866,
+    "gzipBytes": 83813
+   },
+   {
+    "key": "hull-595",
+    "rawBytes": 188866,
+    "gzipBytes": 83813
+   },
+   {
+    "key": "hull-37",
+    "rawBytes": 195466,
+    "gzipBytes": 89438
+   },
+   {
+    "key": "hull-81",
+    "rawBytes": 3579928,
+    "gzipBytes": 2110790
+   },
+   {
+    "key": "hull-587",
+    "rawBytes": 195466,
+    "gzipBytes": 89438
+   },
+   {
+    "key": "hull-591",
+    "rawBytes": 191172,
+    "gzipBytes": 89648
+   },
+   {
+    "key": "hull-521",
+    "rawBytes": 197602,
+    "gzipBytes": 90876
+   },
+   {
+    "key": "hull-522",
+    "rawBytes": 191306,
+    "gzipBytes": 91992
+   },
+   {
+    "key": "hull-103",
+    "rawBytes": 3579928,
+    "gzipBytes": 2110790
+   },
+   {
+    "key": "hull-516",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-517",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-519",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-536",
+    "rawBytes": 183092,
+    "gzipBytes": 65619
+   },
+   {
+    "key": "hull-537",
+    "rawBytes": 183092,
+    "gzipBytes": 65619
+   },
+   {
+    "key": "hull-538",
+    "rawBytes": 183092,
+    "gzipBytes": 65619
+   },
+   {
+    "key": "hull-572",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-571",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-544",
+    "rawBytes": 535748,
+    "gzipBytes": 201308
+   },
+   {
+    "key": "hull-570",
+    "rawBytes": 189050,
+    "gzipBytes": 68290
+   },
+   {
+    "key": "hull-89",
+    "rawBytes": 319296,
+    "gzipBytes": 292607
+   },
+   {
+    "key": "hull-634",
+    "rawBytes": 319296,
+    "gzipBytes": 292607
+   },
+   {
+    "key": "hull-685",
+    "rawBytes": 319296,
+    "gzipBytes": 292607
+   },
+   {
+    "key": "hull-610",
+    "rawBytes": 319296,
+    "gzipBytes": 292607
+   },
+   {
+    "key": "hull-688",
+    "rawBytes": 180490,
+    "gzipBytes": 59765
+   },
+   {
+    "key": "hull-614",
+    "rawBytes": 180490,
+    "gzipBytes": 59765
+   },
+   {
+    "key": "hull-615",
+    "rawBytes": 180490,
+    "gzipBytes": 59765
+   },
+   {
+    "key": "hull-686",
+    "rawBytes": 192582,
+    "gzipBytes": 76219
+   },
+   {
+    "key": "hull-611",
+    "rawBytes": 192582,
+    "gzipBytes": 76219
+   },
+   {
+    "key": "hull-681",
+    "rawBytes": 8430438,
+    "gzipBytes": 2430132
+   },
+   {
+    "key": "hull-612",
+    "rawBytes": 8430438,
+    "gzipBytes": 2430132
+   },
+   {
+    "key": "hull-605",
+    "rawBytes": 8430438,
+    "gzipBytes": 2430132
+   },
+   {
+    "key": "hull-690",
+    "rawBytes": 176462,
+    "gzipBytes": 66405
+   },
+   {
+    "key": "hull-160",
+    "rawBytes": 180490,
+    "gzipBytes": 59765
+   },
+   {
+    "key": "hull-620",
+    "rawBytes": 206516,
+    "gzipBytes": 79315
+   },
+   {
+    "key": "hull-152",
+    "rawBytes": 206516,
+    "gzipBytes": 79315
+   },
+   {
+    "key": "hull-689",
+    "rawBytes": 176462,
+    "gzipBytes": 66405
+   },
+   {
+    "key": "hull-604",
+    "rawBytes": 176462,
+    "gzipBytes": 66405
+   },
+   {
+    "key": "hull-693",
+    "rawBytes": 169822,
+    "gzipBytes": 62242
+   },
+   {
+    "key": "hull-695",
+    "rawBytes": 169822,
+    "gzipBytes": 62242
+   },
+   {
+    "key": "hull-38",
+    "rawBytes": 190816,
+    "gzipBytes": 66236
+   },
+   {
+    "key": "hull-82",
+    "rawBytes": 2274472,
+    "gzipBytes": 656363
+   },
+   {
+    "key": "hull-687",
+    "rawBytes": 190816,
+    "gzipBytes": 66236
+   },
+   {
+    "key": "hull-691",
+    "rawBytes": 186428,
+    "gzipBytes": 72958
+   },
+   {
+    "key": "hull-621",
+    "rawBytes": 195512,
+    "gzipBytes": 70414
+   },
+   {
+    "key": "hull-622",
+    "rawBytes": 193566,
+    "gzipBytes": 76054
+   },
+   {
+    "key": "hull-104",
+    "rawBytes": 2274472,
+    "gzipBytes": 656363
+   },
+   {
+    "key": "hull-616",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-617",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-619",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-636",
+    "rawBytes": 149720,
+    "gzipBytes": 56562
+   },
+   {
+    "key": "hull-637",
+    "rawBytes": 149720,
+    "gzipBytes": 56562
+   },
+   {
+    "key": "hull-638",
+    "rawBytes": 149720,
+    "gzipBytes": 56562
+   },
+   {
+    "key": "hull-672",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-671",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-670",
+    "rawBytes": 207476,
+    "gzipBytes": 74273
+   },
+   {
+    "key": "hull-644",
+    "rawBytes": 146012,
+    "gzipBytes": 51290
+   },
+   {
+    "key": "hull-800",
+    "rawBytes": 134184,
+    "gzipBytes": 48514
+   },
+   {
+    "key": "hull-801",
+    "rawBytes": 527336,
+    "gzipBytes": 170528
+   },
+   {
+    "key": "hull-223",
+    "rawBytes": 35616,
+    "gzipBytes": 12801
+   },
+   {
+    "key": "hull-218",
+    "rawBytes": 173410,
+    "gzipBytes": 43832
+   },
+   {
+    "key": "hull-318",
+    "rawBytes": 160890,
+    "gzipBytes": 52356
+   },
+   {
+    "key": "hull-418",
+    "rawBytes": 43652,
+    "gzipBytes": 15839
+   },
+   {
+    "key": "hull-518",
+    "rawBytes": 164776,
+    "gzipBytes": 60887
+   },
+   {
+    "key": "hull-618",
+    "rawBytes": 144960,
+    "gzipBytes": 23044
+   },
+   {
+    "key": "hull-90",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-13",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-14",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-15",
+    "rawBytes": 4211060,
+    "gzipBytes": 1331208
+   },
+   {
+    "key": "hull-16",
+    "rawBytes": 4211060,
+    "gzipBytes": 1331208
+   },
+   {
+    "key": "hull-17",
+    "rawBytes": 4214052,
+    "gzipBytes": 1207886
+   },
+   {
+    "key": "hull-18",
+    "rawBytes": 4214052,
+    "gzipBytes": 1207886
+   },
+   {
+    "key": "hull-19",
+    "rawBytes": 16245096,
+    "gzipBytes": 4711617
+   },
+   {
+    "key": "hull-20",
+    "rawBytes": 16245096,
+    "gzipBytes": 4711617
+   },
+   {
+    "key": "hull-21",
+    "rawBytes": 16245096,
+    "gzipBytes": 4711617
+   },
+   {
+    "key": "hull-22",
+    "rawBytes": 8503568,
+    "gzipBytes": 2208698
+   },
+   {
+    "key": "hull-161",
+    "rawBytes": 691678,
+    "gzipBytes": 236282
+   },
+   {
+    "key": "hull-23",
+    "rawBytes": 556224,
+    "gzipBytes": 185101
+   },
+   {
+    "key": "hull-153",
+    "rawBytes": 556224,
+    "gzipBytes": 185101
+   },
+   {
+    "key": "hull-24",
+    "rawBytes": 8503568,
+    "gzipBytes": 2208698
+   },
+   {
+    "key": "hull-25",
+    "rawBytes": 8503568,
+    "gzipBytes": 2208698
+   },
+   {
+    "key": "hull-26",
+    "rawBytes": 310308,
+    "gzipBytes": 85295
+   },
+   {
+    "key": "hull-27",
+    "rawBytes": 310308,
+    "gzipBytes": 85295
+   },
+   {
+    "key": "hull-50",
+    "rawBytes": 40666,
+    "gzipBytes": 13616
+   },
+   {
+    "key": "hull-83",
+    "rawBytes": 2198000,
+    "gzipBytes": 880024
+   },
+   {
+    "key": "hull-32",
+    "rawBytes": 40666,
+    "gzipBytes": 13616
+   },
+   {
+    "key": "hull-28",
+    "rawBytes": 164928,
+    "gzipBytes": 64463
+   },
+   {
+    "key": "hull-29",
+    "rawBytes": 160890,
+    "gzipBytes": 51804
+   },
+   {
+    "key": "hull-31",
+    "rawBytes": 194938,
+    "gzipBytes": 71394
+   },
+   {
+    "key": "hull-30",
+    "rawBytes": 206516,
+    "gzipBytes": 73442
+   },
+   {
+    "key": "hull-105",
+    "rawBytes": 2198000,
+    "gzipBytes": 880024
+   },
+   {
+    "key": "hull-1",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-2",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-3",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-4",
+    "rawBytes": 164776,
+    "gzipBytes": 46808
+   },
+   {
+    "key": "hull-7",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-8",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-9",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-10",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-11",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-12",
+    "rawBytes": 546724,
+    "gzipBytes": 221676
+   },
+   {
+    "key": "hull-33",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-91",
+    "rawBytes": 575172,
+    "gzipBytes": 250269
+   },
+   {
+    "key": "hull-49",
+    "rawBytes": 575172,
+    "gzipBytes": 250269
+   },
+   {
+    "key": "hull-51",
+    "rawBytes": 575172,
+    "gzipBytes": 250269
+   },
+   {
+    "key": "hull-52",
+    "rawBytes": 559846,
+    "gzipBytes": 171765
+   },
+   {
+    "key": "hull-53",
+    "rawBytes": 559846,
+    "gzipBytes": 171765
+   },
+   {
+    "key": "hull-55",
+    "rawBytes": 559846,
+    "gzipBytes": 171765
+   },
+   {
+    "key": "hull-56",
+    "rawBytes": 604580,
+    "gzipBytes": 235114
+   },
+   {
+    "key": "hull-58",
+    "rawBytes": 604580,
+    "gzipBytes": 235114
+   },
+   {
+    "key": "hull-59",
+    "rawBytes": 604580,
+    "gzipBytes": 235114
+   },
+   {
+    "key": "hull-60",
+    "rawBytes": 647492,
+    "gzipBytes": 205965
+   },
+   {
+    "key": "hull-61",
+    "rawBytes": 647492,
+    "gzipBytes": 205965
+   },
+   {
+    "key": "hull-63",
+    "rawBytes": 647492,
+    "gzipBytes": 205965
+   },
+   {
+    "key": "hull-66",
+    "rawBytes": 144666,
+    "gzipBytes": 54506
+   },
+   {
+    "key": "hull-162",
+    "rawBytes": 146368,
+    "gzipBytes": 60273
+   },
+   {
+    "key": "hull-68",
+    "rawBytes": 1151328,
+    "gzipBytes": 250555
+   },
+   {
+    "key": "hull-154",
+    "rawBytes": 1151328,
+    "gzipBytes": 250555
+   },
+   {
+    "key": "hull-69",
+    "rawBytes": 144666,
+    "gzipBytes": 54506
+   },
+   {
+    "key": "hull-70",
+    "rawBytes": 144666,
+    "gzipBytes": 54506
+   },
+   {
+    "key": "hull-71",
+    "rawBytes": 135100,
+    "gzipBytes": 47285
+   },
+   {
+    "key": "hull-72",
+    "rawBytes": 135100,
+    "gzipBytes": 47285
+   },
+   {
+    "key": "hull-54",
+    "rawBytes": 140304,
+    "gzipBytes": 43951
+   },
+   {
+    "key": "hull-84",
+    "rawBytes": 16968640,
+    "gzipBytes": 4825156
+   },
+   {
+    "key": "hull-76",
+    "rawBytes": 140304,
+    "gzipBytes": 43951
+   },
+   {
+    "key": "hull-75",
+    "rawBytes": 140304,
+    "gzipBytes": 43951
+   },
+   {
+    "key": "hull-74",
+    "rawBytes": 140304,
+    "gzipBytes": 43951
+   },
+   {
+    "key": "hull-73",
+    "rawBytes": 140304,
+    "gzipBytes": 43951
+   },
+   {
+    "key": "hull-106",
+    "rawBytes": 16968640,
+    "gzipBytes": 4825156
+   },
+   {
+    "key": "hull-39",
+    "rawBytes": 139202,
+    "gzipBytes": 39138
+   },
+   {
+    "key": "hull-40",
+    "rawBytes": 139202,
+    "gzipBytes": 39138
+   },
+   {
+    "key": "hull-41",
+    "rawBytes": 139202,
+    "gzipBytes": 39138
+   },
+   {
+    "key": "hull-42",
+    "rawBytes": 134692,
+    "gzipBytes": 48661
+   },
+   {
+    "key": "hull-43",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-44",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-45",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-46",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-47",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-48",
+    "rawBytes": 139938,
+    "gzipBytes": 39307
+   },
+   {
+    "key": "hull-64",
+    "rawBytes": 134096,
+    "gzipBytes": 46261
+   },
+   {
+    "key": "hull-225",
+    "rawBytes": 325884,
+    "gzipBytes": 121290
+   },
+   {
+    "key": "hull-248",
+    "rawBytes": 325884,
+    "gzipBytes": 121290
+   },
+   {
+    "key": "hull-425",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-525",
+    "rawBytes": 3579928,
+    "gzipBytes": 2110790
+   },
+   {
+    "key": "hull-625",
+    "rawBytes": 2274472,
+    "gzipBytes": 656363
+   },
+   {
+    "key": "hull-6",
+    "rawBytes": 2198000,
+    "gzipBytes": 880024
+   },
+   {
+    "key": "hull-65",
+    "rawBytes": 16968640,
+    "gzipBytes": 4825156
+   },
+   {
+    "key": "hull-109",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-108",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-107",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-115",
+    "rawBytes": 534100,
+    "gzipBytes": 140520
+   },
+   {
+    "key": "hull-139",
+    "rawBytes": 538412,
+    "gzipBytes": 163820
+   },
+   {
+    "key": "hull-117",
+    "rawBytes": 538412,
+    "gzipBytes": 163820
+   },
+   {
+    "key": "hull-116",
+    "rawBytes": 538412,
+    "gzipBytes": 163820
+   },
+   {
+    "key": "hull-130",
+    "rawBytes": 535926,
+    "gzipBytes": 104791
+   },
+   {
+    "key": "hull-112",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-111",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-110",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-99",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-98",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-97",
+    "rawBytes": 538368,
+    "gzipBytes": 131581
+   },
+   {
+    "key": "hull-113",
+    "rawBytes": 0,
+    "gzipBytes": 0
+   },
+   {
+    "key": "hull-120",
+    "rawBytes": 541888,
+    "gzipBytes": 135959
+   },
+   {
+    "key": "hull-119",
+    "rawBytes": 541888,
+    "gzipBytes": 135959
+   },
+   {
+    "key": "hull-114",
+    "rawBytes": 541888,
+    "gzipBytes": 135959
+   },
+   {
+    "key": "hull-123",
+    "rawBytes": 546832,
+    "gzipBytes": 160362
+   },
+   {
+    "key": "hull-122",
+    "rawBytes": 546832,
+    "gzipBytes": 160362
+   },
+   {
+    "key": "hull-121",
+    "rawBytes": 544176,
+    "gzipBytes": 158564
+   },
+   {
+    "key": "hull-132",
+    "rawBytes": 535492,
+    "gzipBytes": 125686
+   },
+   {
+    "key": "hull-131",
+    "rawBytes": 535492,
+    "gzipBytes": 125686
+   },
+   {
+    "key": "hull-135",
+    "rawBytes": 545472,
+    "gzipBytes": 157404
+   },
+   {
+    "key": "hull-134",
+    "rawBytes": 542276,
+    "gzipBytes": 155202
+   },
+   {
+    "key": "hull-126",
+    "rawBytes": 534100,
+    "gzipBytes": 140520
+   },
+   {
+    "key": "hull-128",
+    "rawBytes": 533508,
+    "gzipBytes": 137830
+   },
+   {
+    "key": "hull-129",
+    "rawBytes": 538984,
+    "gzipBytes": 132809
+   },
+   {
+    "key": "hull-163",
+    "rawBytes": 546832,
+    "gzipBytes": 160362
+   },
+   {
+    "key": "hull-133",
+    "rawBytes": 535492,
+    "gzipBytes": 125686
+   },
+   {
+    "key": "hull-155",
+    "rawBytes": 535492,
+    "gzipBytes": 125686
+   },
+   {
+    "key": "hull-125",
+    "rawBytes": 548436,
+    "gzipBytes": 127137
+   },
+   {
+    "key": "hull-124",
+    "rawBytes": 548436,
+    "gzipBytes": 127137
+   },
+   {
+    "key": "hull-138",
+    "rawBytes": 542408,
+    "gzipBytes": 131661
+   },
+   {
+    "key": "hull-137",
+    "rawBytes": 542408,
+    "gzipBytes": 131661
+   },
+   {
+    "key": "hull-136",
+    "rawBytes": 542408,
+    "gzipBytes": 131661
+   },
+   {
+    "key": "hull-57",
+    "rawBytes": 549904,
+    "gzipBytes": 139865
+   },
+   {
+    "key": "hull-147",
+    "rawBytes": 538412,
+    "gzipBytes": 163820
+   },
+   {
+    "key": "hull-118",
+    "rawBytes": 538412,
+    "gzipBytes": 163820
+   },
+   {
+    "key": "hull-141",
+    "rawBytes": 549904,
+    "gzipBytes": 139865
+   },
+   {
+    "key": "hull-140",
+    "rawBytes": 549904,
+    "gzipBytes": 139865
+   },
+   {
+    "key": "hull-143",
+    "rawBytes": 536048,
+    "gzipBytes": 120834
+   },
+   {
+    "key": "hull-146",
+    "rawBytes": 547544,
+    "gzipBytes": 147497
+   },
+   {
+    "key": "hull-144",
+    "rawBytes": 539608,
+    "gzipBytes": 131128
+   },
+   {
+    "key": "hull-142",
+    "rawBytes": 537128,
+    "gzipBytes": 135607
+   },
+   {
+    "key": "hull-145",
+    "rawBytes": 541776,
+    "gzipBytes": 104517
+   },
+   {
+    "key": "hull-77",
+    "rawBytes": 665320,
+    "gzipBytes": 250025
+   },
+   {
+    "key": "hull-178",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-177",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-157",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-193",
+    "rawBytes": 74108,
+    "gzipBytes": 25489
+   },
+   {
+    "key": "hull-230",
+    "rawBytes": 143178,
+    "gzipBytes": 47202
+   },
+   {
+    "key": "hull-181",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-180",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-179",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-184",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-183",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-182",
+    "rawBytes": 745952,
+    "gzipBytes": 281072
+   },
+   {
+    "key": "hull-229",
+    "rawBytes": 90080,
+    "gzipBytes": 35645
+   },
+   {
+    "key": "hull-186",
+    "rawBytes": 823510,
+    "gzipBytes": 318056
+   },
+   {
+    "key": "hull-185",
+    "rawBytes": 823510,
+    "gzipBytes": 318056
+   },
+   {
+    "key": "hull-189",
+    "rawBytes": 670440,
+    "gzipBytes": 239266
+   },
+   {
+    "key": "hull-188",
+    "rawBytes": 670440,
+    "gzipBytes": 239266
+   },
+   {
+    "key": "hull-187",
+    "rawBytes": 670440,
+    "gzipBytes": 239266
+   },
+   {
+    "key": "hull-192",
+    "rawBytes": 690304,
+    "gzipBytes": 249750
+   },
+   {
+    "key": "hull-191",
+    "rawBytes": 690304,
+    "gzipBytes": 249750
+   },
+   {
+    "key": "hull-190",
+    "rawBytes": 690304,
+    "gzipBytes": 249750
+   },
+   {
+    "key": "hull-201",
+    "rawBytes": 673512,
+    "gzipBytes": 240805
+   },
+   {
+    "key": "hull-200",
+    "rawBytes": 673512,
+    "gzipBytes": 240805
+   },
+   {
+    "key": "hull-199",
+    "rawBytes": 683088,
+    "gzipBytes": 245782
+   },
+   {
+    "key": "hull-198",
+    "rawBytes": 683088,
+    "gzipBytes": 245782
+   },
+   {
+    "key": "hull-197",
+    "rawBytes": 689000,
+    "gzipBytes": 248294
+   },
+   {
+    "key": "hull-246",
+    "rawBytes": 720900,
+    "gzipBytes": 276640
+   },
+   {
+    "key": "hull-205",
+    "rawBytes": 690304,
+    "gzipBytes": 249750
+   },
+   {
+    "key": "hull-206",
+    "rawBytes": 679092,
+    "gzipBytes": 243597
+   },
+   {
+    "key": "hull-207",
+    "rawBytes": 679092,
+    "gzipBytes": 243597
+   },
+   {
+    "key": "hull-196",
+    "rawBytes": 689000,
+    "gzipBytes": 248294
+   },
+   {
+    "key": "hull-195",
+    "rawBytes": 689000,
+    "gzipBytes": 248294
+   },
+   {
+    "key": "hull-203",
+    "rawBytes": 689000,
+    "gzipBytes": 248294
+   },
+   {
+    "key": "hull-202",
+    "rawBytes": 689000,
+    "gzipBytes": 248294
+   },
+   {
+    "key": "hull-209",
+    "rawBytes": 693848,
+    "gzipBytes": 262923
+   },
+   {
+    "key": "hull-213",
+    "rawBytes": 823510,
+    "gzipBytes": 318056
+   },
+   {
+    "key": "hull-219",
+    "rawBytes": 693848,
+    "gzipBytes": 262923
+   },
+   {
+    "key": "hull-224",
+    "rawBytes": 693848,
+    "gzipBytes": 262923
+   },
+   {
+    "key": "hull-247",
+    "rawBytes": 712716,
+    "gzipBytes": 268530
+   },
+   {
+    "key": "hull-226",
+    "rawBytes": 693848,
+    "gzipBytes": 262923
+   },
+   {
+    "key": "hull-227",
+    "rawBytes": 721992,
+    "gzipBytes": 272478
+   },
+   {
+    "key": "hull-240",
+    "rawBytes": 670440,
+    "gzipBytes": 239266
+   },
+   {
+    "key": "hull-241",
+    "rawBytes": 690304,
+    "gzipBytes": 249750
+   },
+   {
+    "key": "hull-242",
+    "rawBytes": 673512,
+    "gzipBytes": 240805
+   },
+   {
+    "key": "hull-243",
+    "rawBytes": 683088,
+    "gzipBytes": 245782
+   },
+   {
+    "key": "hull-232",
+    "rawBytes": 160890,
+    "gzipBytes": 52356
+   },
+   {
+    "key": "hull-733",
+    "rawBytes": 2145052,
+    "gzipBytes": 680483
+   },
+   {
+    "key": "hull-785",
+    "rawBytes": 2145052,
+    "gzipBytes": 680483
+   },
+   {
+    "key": "hull-710",
+    "rawBytes": 2145052,
+    "gzipBytes": 680483
+   },
+   {
+    "key": "hull-788",
+    "rawBytes": 2139568,
+    "gzipBytes": 764860
+   },
+   {
+    "key": "hull-714",
+    "rawBytes": 2139568,
+    "gzipBytes": 764860
+   },
+   {
+    "key": "hull-715",
+    "rawBytes": 2137964,
+    "gzipBytes": 764099
+   },
+   {
+    "key": "hull-786",
+    "rawBytes": 2181618,
+    "gzipBytes": 856366
+   },
+   {
+    "key": "hull-711",
+    "rawBytes": 2181618,
+    "gzipBytes": 856366
+   },
+   {
+    "key": "hull-781",
+    "rawBytes": 2146356,
+    "gzipBytes": 828656
+   },
+   {
+    "key": "hull-712",
+    "rawBytes": 2144528,
+    "gzipBytes": 827908
+   },
+   {
+    "key": "hull-705",
+    "rawBytes": 2144528,
+    "gzipBytes": 827908
+   },
+   {
+    "key": "hull-790",
+    "rawBytes": 2161160,
+    "gzipBytes": 508312
+   },
+   {
+    "key": "hull-732",
+    "rawBytes": 2139568,
+    "gzipBytes": 764860
+   },
+   {
+    "key": "hull-720",
+    "rawBytes": 2181618,
+    "gzipBytes": 856366
+   },
+   {
+    "key": "hull-734",
+    "rawBytes": 2181618,
+    "gzipBytes": 856366
+   },
+   {
+    "key": "hull-789",
+    "rawBytes": 2161160,
+    "gzipBytes": 508312
+   },
+   {
+    "key": "hull-704",
+    "rawBytes": 2161160,
+    "gzipBytes": 508312
+   },
+   {
+    "key": "hull-793",
+    "rawBytes": 2161160,
+    "gzipBytes": 508312
+   },
+   {
+    "key": "hull-795",
+    "rawBytes": 2161160,
+    "gzipBytes": 508312
+   },
+   {
+    "key": "hull-703",
+    "rawBytes": 2152160,
+    "gzipBytes": 852522
+   },
+   {
+    "key": "hull-787",
+    "rawBytes": 2221442,
+    "gzipBytes": 888760
+   },
+   {
+    "key": "hull-727",
+    "rawBytes": 2219694,
+    "gzipBytes": 1143918
+   },
+   {
+    "key": "hull-791",
+    "rawBytes": 2197872,
+    "gzipBytes": 884146
+   },
+   {
+    "key": "hull-792",
+    "rawBytes": 2197872,
+    "gzipBytes": 884146
+   },
+   {
+    "key": "hull-722",
+    "rawBytes": 2402040,
+    "gzipBytes": 972869
+   },
+   {
+    "key": "hull-726",
+    "rawBytes": 2219694,
+    "gzipBytes": 1143918
+   },
+   {
+    "key": "hull-725",
+    "rawBytes": 2219694,
+    "gzipBytes": 1143918
+   },
+   {
+    "key": "hull-716",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-717",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-719",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-736",
+    "rawBytes": 2130780,
+    "gzipBytes": 837301
+   },
+   {
+    "key": "hull-737",
+    "rawBytes": 2130780,
+    "gzipBytes": 837301
+   },
+   {
+    "key": "hull-738",
+    "rawBytes": 2130780,
+    "gzipBytes": 837301
+   },
+   {
+    "key": "hull-718",
+    "rawBytes": 43652,
+    "gzipBytes": 15839
+   },
+   {
+    "key": "hull-772",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-771",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-770",
+    "rawBytes": 2130780,
+    "gzipBytes": 837302
+   },
+   {
+    "key": "hull-744",
+    "rawBytes": 540776,
+    "gzipBytes": 170829
+   },
+   {
+    "key": "hull-833",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-885",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-810",
+    "rawBytes": 568068,
+    "gzipBytes": 156828
+   },
+   {
+    "key": "hull-888",
+    "rawBytes": 597460,
+    "gzipBytes": 144801
+   },
+   {
+    "key": "hull-814",
+    "rawBytes": 597460,
+    "gzipBytes": 144801
+   },
+   {
+    "key": "hull-815",
+    "rawBytes": 2137964,
+    "gzipBytes": 764099
+   },
+   {
+    "key": "hull-886",
+    "rawBytes": 612698,
+    "gzipBytes": 188302
+   },
+   {
+    "key": "hull-811",
+    "rawBytes": 612698,
+    "gzipBytes": 188302
+   },
+   {
+    "key": "hull-881",
+    "rawBytes": 2146356,
+    "gzipBytes": 828656
+   },
+   {
+    "key": "hull-812",
+    "rawBytes": 2144528,
+    "gzipBytes": 827908
+   },
+   {
+    "key": "hull-805",
+    "rawBytes": 2144528,
+    "gzipBytes": 827908
+   },
+   {
+    "key": "hull-890",
+    "rawBytes": 614260,
+    "gzipBytes": 212018
+   },
+   {
+    "key": "hull-832",
+    "rawBytes": 597460,
+    "gzipBytes": 144801
+   },
+   {
+    "key": "hull-820",
+    "rawBytes": 612698,
+    "gzipBytes": 188302
+   },
+   {
+    "key": "hull-834",
+    "rawBytes": 612698,
+    "gzipBytes": 188302
+   },
+   {
+    "key": "hull-889",
+    "rawBytes": 614260,
+    "gzipBytes": 212018
+   },
+   {
+    "key": "hull-804",
+    "rawBytes": 614260,
+    "gzipBytes": 212018
+   },
+   {
+    "key": "hull-893",
+    "rawBytes": 572832,
+    "gzipBytes": 174993
+   },
+   {
+    "key": "hull-895",
+    "rawBytes": 572832,
+    "gzipBytes": 174993
+   },
+   {
+    "key": "hull-827",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-896",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-897",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-898",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-899",
+    "rawBytes": 175982,
+    "gzipBytes": 73139
+   },
+   {
+    "key": "hull-826",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-825",
+    "rawBytes": 2276388,
+    "gzipBytes": 615730
+   },
+   {
+    "key": "hull-816",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-817",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-819",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-836",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-837",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-838",
+    "rawBytes": 578424,
+    "gzipBytes": 203208
+   },
+   {
+    "key": "hull-818",
+    "rawBytes": 43652,
+    "gzipBytes": 15839
+   },
+   {
+    "key": "hull-872",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-871",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-870",
+    "rawBytes": 556680,
+    "gzipBytes": 183264
+   },
+   {
+    "key": "hull-830",
+    "rawBytes": 143178,
+    "gzipBytes": 47202
+   },
+   {
+    "key": "hull-844",
+    "rawBytes": 133552,
+    "gzipBytes": 34480
+   },
+   {
+    "key": "effect-exp22bmp",
+    "rawBytes": 15728756,
+    "gzipBytes": 2024216
+   },
+   {
+    "key": "effect-fx18bmp",
+    "rawBytes": 8388720,
+    "gzipBytes": 624251
+   }
+  ],
+  "hullModels": 179,
+  "coveredHullModels": 179,
+  "missing": [],
+  "effects": "Original bytes only. exp22bmp is 15360 pixels wide: task B must tile it before GPU upload. No effect renderer is added here."
+ },
+ "sampleCount": 160
+}

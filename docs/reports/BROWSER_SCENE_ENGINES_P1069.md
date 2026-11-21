@@ -327,3 +327,42 @@ stay unchanged; the WebGL look and its timing are the deferred workstation run.
 - The desktop scene-pair frame hides the HUD because the HUD's wall-clock blink
   is not frame-comparable; HUD zero delta is proven by the 1,848-case comparison.
 - No real-GPU frame cost or browser WASM heap is claimed here.
+
+## Workstation browser results — Claude (2026-11-21, post-merge with P1068/P1070)
+
+`tools/p1069-browser-engines.cjs`, 5 v 5, 20 s sampling per case: **PASS**.
+
+| Case | Frames | RAF p50 / p95 ms | exhaust / glows / ribbons at capture |
+|---|---:|---|---|
+| Classic 1920×1080 | 1,216 | 16.7 / 16.8 | 141 / 5 / 5 |
+| Modern 1920×1080 | 1,197 | 16.7 / 16.8 | 140 / 5 / 5 |
+| Classic 800×480 | 1,193 | 16.7 / 16.8 | 282 / 8 / 8 |
+| Modern 800×480 | 1,213 | 16.7 / 16.8 | 420 / 6 / 6 |
+| Close afterburner 1920×1080 | — | — | 421 / 6 / 6 |
+
+`maxShipPassMs` 149.3, `maxFirstDrawMs` 474 — headless SwiftShader, **not representative of a
+real GPU**; recheck the first-draw figure in a real browser before calling the hitch fixed.
+
+Harness fixes made in review (the effects were correct, the proof was not):
+
+1. The afterburner burns fuel (native `Igc/afterburnerIGC.cpp:150`, port `Ship.UpdateAfterburner`);
+   holding it through every 40 s window emptied the tank and the plume correctly went out. The
+   harness now boosts only around each capture.
+2. Backspace is ThrottleZero (`InputActionCatalog.cs:103`), not autopilot off: the parked
+   autopilot held the ship at 0 m/s, so the first captures showed only the nozzle glow. Each
+   capture now holds forward thrust (W) + afterburner for 2.5 s, after re-centring on the
+   rendezvous waypoint so the drift never reaches an aleph.
+3. Windows shortened to 20 s: a pilot parked in the 5 v 5 is killed after ~3 minutes (same limit
+   as P1066/P1067).
+
+Captures opened and checked: Classic and Modern at 1920×1080 and 800×480 show "AFTERBURNER
+ACTIVE", a long yellow fire→orange smoke plume behind the nozzle at 71–180 m/s and the bright
+nozzle glow; the close frame shows plume + glow at 172 m/s. Bot ships in those frames are
+10 km+ away, so the close-up evidence is the pilot's own hull. P1068's guest flight frame shows
+the motion ribbon sweeping behind the ship. Noted, not fixed here: the HUD prints `PWR 0%` while
+"AFTERBURNER ACTIVE".
+
+`P1069EngineSceneTests.Warm_engine_preparation_…(ships: 2)` failed once in ~9 project runs
+(1,872 bytes, seeded scene). The test now requires one of up to three 1,000-step rounds to be
+allocation-free (12/12 runs after); see `docs/TEST_FLAKES.md`. The full evidence JSON
+(1.1 MB of samples) is committed as `browser-engines-summary.json` (sample count kept).

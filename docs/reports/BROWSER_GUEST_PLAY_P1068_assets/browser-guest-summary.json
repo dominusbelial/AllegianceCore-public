@@ -1,0 +1,56 @@
+{
+ "browser": "153.0.8010.0",
+ "captures": [
+  {
+   "file": "guest-disclosure.jpg",
+   "bytes": 46989
+  },
+  {
+   "file": "guest-flight-classic.jpg",
+   "bytes": 68163
+  },
+  {
+   "file": "guest-flight-modern.jpg",
+   "bytes": 82395
+  }
+ ],
+ "errors": [],
+ "guests": [
+  {
+   "callsign": "Pilot-M1SN161BYD",
+   "entry": "/"
+  },
+  {
+   "callsign": "Pilot-MTTKG2CFN5",
+   "entry": "/identity.html"
+  }
+ ],
+ "refusals": {
+  "duplicate": "That callsign is already in use in this mission. Try another name.",
+  "reserved": "That callsign is registered. Sign in to use it, or try another name."
+ },
+ "visualDescriptions": "for Claude; images not viewed in this lane",
+ "pageOpenToFlyingMs": 11040,
+ "manualFlight": {
+  "before": "Vector3 { X = 4.7042513, Y = 358.63348, Z = 113.77317 }",
+  "after": "Vector3 { X = 4.9050198, Y = 461.03412, Z = 113.77143 }"
+ },
+ "conflictRetry": {
+  "callsign": "Pilot-MH33D6YPZQ",
+  "state": "Sides"
+ },
+ "ordinaryMenuChoice": true,
+ "disabledOffers": [
+  "/",
+  "/identity.html",
+  "/play/menu.html?online=1"
+ ],
+ "imageBytes": 197547,
+ "requestCount": 1950,
+ "consoleMessageKinds": {
+  "debug": 81,
+  "error": 11,
+  "warning": 6
+ },
+ "run": "workstation, post-merge (Claude review)"
+}
