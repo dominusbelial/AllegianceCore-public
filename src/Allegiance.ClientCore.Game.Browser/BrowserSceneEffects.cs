@@ -21,6 +21,16 @@ public sealed class BrowserSceneEffects
     public List<WarpSparkView> Sparks { get; } = new(512);
     public List<DataWarpIGC> Warps { get; } = new(16);
     public List<GlimpseTarget> Glimpses { get; } = new(16);
+    /// <summary>P1069 — the desktop P358/P363 pools: exhaust particles and the
+    /// per-ship ribbon history, plus this frame's gathered emitter inputs.</summary>
+    public ShipEngineTrailParticles Engines { get; } = new();
+    public ShipMotionTrailRibbons Motion { get; } = new();
+    public List<EngineTrailShip> EngineTrailShips { get; } = new(64);
+    public List<EngineGlowView> Glows { get; } = new(64);
+    /// <summary>P1069 — the browser-only reduced-effect decision (P1066
+    /// FullEffectLoad). Exhaust goes off first; glow and ribbons stay.</summary>
+    public bool FullEffectLoad { get; set; } = true;
+    private readonly Dictionary<short, float> _thrustPower = new(64);
     private readonly List<AlephTransitSignal> _signals = new(16);
     private readonly Dictionary<short, short> _lastSector = new(64);
     private readonly Dictionary<short, (SimVec Position, long Frame)> _lastPosition = new(64);
@@ -42,6 +52,7 @@ public sealed class BrowserSceneEffects
         _generation = _viewGeneration = -1; _sector = _own = null; _warpCount = _clusterCount = -1;
         Flash.Reset(); Particles.Reset(); Pulses.Reset(); _lastSector.Clear(); _lastPosition.Clear();
         Warps.Clear(); Glimpses.Clear(); Strobes.Clear(); Sparks.Clear(); _signals.Clear();
+        Engines.Reset(); Motion.Reset(); EngineTrailShips.Clear(); Glows.Clear(); _thrustPower.Clear();
         _burst = null; _accumulator = 0; _emitterCount = 0; _frame = 0;
     }
 
@@ -58,6 +69,8 @@ public sealed class BrowserSceneEffects
             // Same per-view reset as desktop GatherRenderPoses: an old sighting
             // in another view is not evidence that this ship just arrived here.
             Particles.Reset(); Pulses.Reset(); _lastPosition.Clear(); _lastSector.Clear();
+            // P1069 — desktop FlightEffectPools.BeginView clears the same way.
+            Engines.Reset(); Motion.Reset(); EngineTrailShips.Clear(); Glows.Clear(); _thrustPower.Clear();
             _accumulator = 0; _burst = null; warpRenderer?.ResetTransits();
         }
         if (_warpCount != world.Warps.Count || _clusterCount != world.Clusters.Count)
@@ -68,6 +81,12 @@ public sealed class BrowserSceneEffects
             _warpCount = world.Warps.Count; _clusterCount = world.Clusters.Count;
         }
         Strobes.Clear(); _emitterCount = 0;
+        EngineTrailShips.Clear(); Glows.Clear();
+        // P1069 — reduced effect load turns exhaust off FIRST (the pool is
+        // cleared and nothing new is emitted); nozzle glow and ribbons stay.
+        // desktop FlightEffectPools.Advance ages every pool each frame.
+        if (!FullEffectLoad) Engines.Reset(); else Engines.Update(dt);
+        Motion.Advance(dt);
         Particles.Update(dt);
         if (_burst is { } burst)
         {
@@ -130,6 +149,41 @@ public sealed class BrowserSceneEffects
         if (until >= 0 && _emitterCount < _emitters.Length)
             _emitters[_emitterCount++] = new(ship.ShipId, position, frameVelocity,
                 orientation.GetForward(), orientation.GetRight(), radius, until);
+    }
+
+    /// <summary>P1069 — gather one roster ship's three engine effects for this
+    /// frame, exactly as the desktop pose pass does: the afterburner power ramp
+    /// (every frame, so a camera-culled ship still decays), the nozzle glow and
+    /// the ribbon anchor. Native: AddThrustParticles thinggeo.cpp:758-917;
+    /// RenderGlow thinggeo.cpp:1419-1443; TrailGeo efgeo.cpp:492-661.
+    /// A ship without a mesh (stand-in) supplies its hull half-length radius, so
+    /// the glow/exhaust sit at the radius-based aft anchor; <paramref name="aftWorldOffset"/>
+    /// is non-null only when the native hull mesh is loaded (P566).</summary>
+    public void GatherEngines(ClientWorld world, ShipEntity ship, SimVec position, SimVec velocity, Orientation orientation,
+        DataHullTypeIGC? hull, float dtSec, SimVec? aftWorldOffset = null)
+    {
+        float radius = (hull?.Length ?? 2) * .5f;
+        int stateM = ship.Latest?.StateM ?? 0;
+        float throttle = ship.Latest?.Controls.Throttle ?? 0f;
+        // Browser has no granted loadout for remote ships (and no shop session for
+        // the own ship): the desktop's remote path is the documented
+        // StateM-afterburner-bit approximation; lifepods still never boost.
+        bool lifepod = hull?.HasCapability(DataHullTypeIGC.HabmLifepod) == true;
+        bool mounted = ShipEffectRules.HasAfterburner(false, false, lifepod);
+        float power = NativeScene.ThrustPower(mounted,
+            (stateM & ShipControlState.AfterburnerButton) != 0, _thrustPower.GetValueOrDefault(ship.ShipId), dtSec);
+        _thrustPower[ship.ShipId] = power;
+        if (FullEffectLoad && power > 0f)
+            EngineTrailShips.Add(new EngineTrailShip(ship.ShipId, position, velocity, orientation, radius, power));
+        float glow = NativeScene.NozzleGlow(mounted, stateM, throttle);
+        if (glow > 0f && radius > 0f)
+            Glows.Add(NativeScene.GlowView(position, orientation, radius, glow, aftWorldOffset));
+        if (!world.TryGetSideColor(ship.SideId, out float r, out float g, out float b))
+        {
+            // No roster colour yet — native's absent-side gray (desktop fallback).
+            r = 0.5f; g = 0.5f; b = 0.5f;
+        }
+        NativeScene.AppendMotionTrail(Motion, ship.ShipId, position, orientation, radius, r, g, b);
     }
 
     public void FinishParticles(float dt)

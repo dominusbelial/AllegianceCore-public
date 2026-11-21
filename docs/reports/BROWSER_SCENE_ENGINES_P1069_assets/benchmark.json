@@ -1,0 +1,74 @@
+{
+  "runtime": ".NET Release JIT, actual browser-source engine preparation; no WASM/GPU claim",
+  "iterations": 20000,
+  "tieredCompilation": "0",
+  "before": "P1065 roster selection, cluster light and the P1066 B1 gather in reused buffers",
+  "b2Full": "Before plus per-ship thrust ramp, exhaust emitter/particle emission, HSB glow value/view and ribbon anchor/colour",
+  "b2Reduced": "Same preparation with FullEffectLoad=false: exhaust pool cleared and no emission; glow and ribbons stay",
+  "excluded": "Camera/prediction, original asset decoding, WebGL uploads/drawing, HUD rendering and JavaScript frame pacing",
+  "results": [
+    {
+      "ships": 2,
+      "before": {
+        "microsecondsPerPass": 0.43946499999999994,
+        "bytesPerPass": 0
+      },
+      "b2Full": {
+        "microsecondsPerPass": 1.1667299999999998,
+        "bytesPerPass": 0
+      },
+      "b2Reduced": {
+        "microsecondsPerPass": 0.24716999999999997,
+        "bytesPerPass": 0
+      },
+      "exhaustParticles": 282,
+      "glows": 2,
+      "ribbons": 2,
+      "reducedExhaust": 0,
+      "reducedGlows": 2,
+      "reducedRibbons": 2
+    },
+    {
+      "ships": 10,
+      "before": {
+        "microsecondsPerPass": 1.957695,
+        "bytesPerPass": 0
+      },
+      "b2Full": {
+        "microsecondsPerPass": 5.849825,
+        "bytesPerPass": 0
+      },
+      "b2Reduced": {
+        "microsecondsPerPass": 1.1001049999999999,
+        "bytesPerPass": 0
+      },
+      "exhaustParticles": 1410,
+      "glows": 10,
+      "ribbons": 10,
+      "reducedExhaust": 0,
+      "reducedGlows": 10,
+      "reducedRibbons": 10
+    },
+    {
+      "ships": 20,
+      "before": {
+        "microsecondsPerPass": 3.78251,
+        "bytesPerPass": 0
+      },
+      "b2Full": {
+        "microsecondsPerPass": 10.273795,
+        "bytesPerPass": 0
+      },
+      "b2Reduced": {
+        "microsecondsPerPass": 2.238235,
+        "bytesPerPass": 0
+      },
+      "exhaustParticles": 2048,
+      "glows": 20,
+      "ribbons": 20,
+      "reducedExhaust": 0,
+      "reducedGlows": 20,
+      "reducedRibbons": 20
+    }
+  ]
+}

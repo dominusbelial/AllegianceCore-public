@@ -109,6 +109,7 @@ public sealed partial class Game1
     private MouseDeflection _browserAutoMouseBaseline;
     private ProjectileRenderer? _flightBolts;
     private WarpRenderer? _flightWarps;
+    private BrowserHullUploads? _hullUploads;
     private readonly BrowserRockSpins _browserSpins = new();
     private DockedScreenRenderer? _flightDocked;
     private readonly HashSet<short> _seenShotLaunchers = new();
@@ -149,6 +150,9 @@ public sealed partial class Game1
     public int DrawnStandIns { get; private set; }
     public int CulledRocks { get; private set; }
     public double ShipPassMilliseconds { get; private set; }
+    /// <summary>P1069 — worst ship-pass time since flight start (the hull-upload
+    /// hitch metric the harness reads).</summary>
+    public double MaxShipPassMilliseconds { get; private set; }
     public string[] VisibleShipNames => _visibleShipNames.ToArray();
     private DataAsteroidIGC[] RocksInSector(ClientWorld world, short sector)
     {
@@ -175,7 +179,12 @@ public sealed partial class Game1
         sky = SectorSkyMetrics, scene = SceneMetrics,
         battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
             standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
-            culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds },
+            culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds, maxShipPassMs = MaxShipPassMilliseconds,
+            // P1069 — first-draw hitch accounting: how long a promoted hull waited
+            // for its budgeted decode/upload, the queue depth and the last upload.
+            firstDrawMs = _hullUploads?.LastFirstDrawMs ?? 0, maxFirstDrawMs = _hullUploads?.MaxFirstDrawMs ?? 0,
+            hullUploadMs = _hullUploads?.LastUploadMs ?? 0, hullQueued = _hullUploads?.PendingCount ?? 0,
+            hullUploaded = _hullUploads?.UploadedCount ?? 0 },
         // P1067 — Watch provenance: the seed makes a capture reproducible, the
         // planner state names the shot framed, and the subject categories come
         // from the same snapshot the camera used this frame.
@@ -211,6 +220,7 @@ public sealed partial class Game1
         _battleScene = new(_shopCatalog!.Core!.HullTypes);
         _sectorRocks.Clear(); _browserSpins.Clear(); _rockCount = -1; _rockMissionGeneration = -1;
         _ownSimSeeded = false; _ownSimHullId = -1; _ownSimLastSectorId = -1;
+        MaxShipPassMilliseconds = 0;
         _ownSim.Freeze();
         _ownServerClock.Reset();
         _ownClockConnectionGeneration = -1; _ownClockInitialPingSent = false; _shipSendCadence.Reset();
@@ -346,14 +356,48 @@ public sealed partial class Game1
         _ownShipSendArmed = true;
         StepOwnShipSimulation(_flightElapsedSeconds, command.Controls, command.StateM);
         MaybeSendOwnShipUpdate();
+        // P1069 — the frame's hull decode/upload budget runs in the update path,
+        // never on the draw path; a hull observed last draw is uploaded here and
+        // replaces its stand-in in this frame's ship pass.
+        _hullUploads?.Step(ClientNowMilliseconds);
         _ = RocksInSector(world, own.SectorId); // Register discoveries only when the spatial set changes.
         _browserSpins.Advance(own.SectorId, _flightElapsedSeconds * world.TimeScale);
         _lastFlightKeys = keys;
     }
+    /// <summary>P1069 — decode a hull's original mesh and upload its GPU
+    /// buffers/texture (the exact NativeShipRenderer calls the draw path already
+    /// caches). Runs off the draw path, one hull per frame. Returns false when
+    /// the model is unreadable; the ship then keeps its stand-in.</summary>
+    private bool UploadHull(short hullId)
+    {
+        if (_battleScene?.Hull(hullId) is not { } hull || string.IsNullOrEmpty(hull.ModelName)) return false;
+        if (_flightShips!.MeshFor(hull.ModelName) is null) return false;
+        if (_flightShips.TextureStemFor(hull.ModelName, hull.TextureName) is { } texture)
+            _flightShips.TextureFor(texture);
+        return true;
+    }
+
+    /// <summary>P1069 — the native aft-nozzle world offset (P566) for a hull whose
+    /// mesh is uploaded. Null for a stand-in or a model with no authored
+    /// rocket/thrust/smoke frame → the shared radius-based aft-centre anchor.</summary>
+    private SimVec? EngineAftOffset(short hullId, DataHullTypeIGC? hull, Orientation orientation)
+    {
+        if (hull is not { } known || string.IsNullOrEmpty(known.ModelName) || _hullUploads?.Uploaded(hullId) != true) return null;
+        var geo = _flightShips!.MeshFor(known.ModelName);
+        if (geo is null) return null;
+        float scale = NativeShipResolver.NativeScaleForLength(known.Length, geo.MeshRadius);
+        return NativeScene.AftWorldOffset(_flightShips.FramesFor(known.ModelName), scale, orientation);
+    }
+
     private void LoadFlightRenderers()
     {
         if (_flightLoaded) return;
         _flightShips = new NativeShipRenderer(GraphicsDevice, _assets) { HdTexturesEnabled = false };
+        // P1069 — decode/upload a newly promoted hull's mesh off the draw path,
+        // one hull per frame; the ship keeps its stand-in until then.
+        _hullUploads = new BrowserHullUploads(
+            hullId => _battleScene?.MeshBytesReady(hullId, (Allegiance.ClientCore.Browser.Assets.StagedAssetSource)_assets) == true,
+            UploadHull);
         _flightStations = new NativeStationRenderer(GraphicsDevice, _assets);
         _flightRocks = new NativeAsteroidRenderer(GraphicsDevice, _assets);
 
@@ -439,6 +483,7 @@ public sealed partial class Game1
         _visibleShipNames.Clear(); _flightContacts.Clear();
         _battleScene!.Gather(world, own.SectorId, RequestBattlePack);
         SectorShipCount = world.ShipsInSector(own.SectorId).Count;
+        long nowMs = ClientNowMilliseconds;
         foreach (var ship in _battleScene.Ships)
         {
             var pose = ship.Latest!;
@@ -455,14 +500,22 @@ public sealed partial class Game1
                 Shield: pose.ShieldFraction, Hull: pose.HullFraction, IsSelf: ship.ShipId == id, IsSameSide: ship.SideId == own.SideId,
                 IsEnemy: ship.SideId != own.SideId && !world.AreAllied(own.SideId, ship.SideId)));
             var matrix = PoseConverter.ToXnaWorldRelative(V(p), o, eye);
-            if (_battleScene.MeshBytesReady(ship.HullId, (Allegiance.ClientCore.Browser.Assets.StagedAssetSource)_assets) &&
-                hull is { } h && _flightShips!.MeshFor(h.ModelName) is { } mesh)
+            // P1069 — queue a newly promoted hull (once) and keep its stand-in
+            // until the budgeted decode/upload has completed.
+            _hullUploads!.Observe(ship.HullId, nowMs);
+            // P1069 — the engine effects for every drawn roster ship, stand-ins
+            // included: exhaust/glow/ribbon at the radius-based aft anchor until
+            // the native mesh (and its authored nozzle frame) is resident.
+            _sceneEffects.GatherEngines(world, ship, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity,
+                o, hull, (float)_flightElapsedSeconds, EngineAftOffset(ship.HullId, hull, o));
+            if (_hullUploads.Uploaded(ship.HullId) && hull is { } h && _flightShips!.MeshFor(h.ModelName) is { } mesh)
             {
                 string? texture = _flightShips.TextureStemFor(h.ModelName, h.TextureName);
                 _flightShips.Draw(mesh, texture is null ? null : _flightShips.TextureFor(texture), matrix, view, projection,
                     NativeScene.Opacity(CloakVisual.IsCloaked(pose.StateM), _nowSeconds),
                     NativeShipResolver.NativeScaleForLength(h.Length, mesh.MeshRadius), _sceneLighting, h.ModelName, texture, false);
                 DrawnMeshes++;
+                _hullUploads.NoteDrawn(ship.HullId, nowMs);
             }
             else
             {
@@ -474,10 +527,14 @@ public sealed partial class Game1
             }
             if (BattleShipScene.RockInView(V(p) - eye, (hull?.Length ?? 2) * .5f, _rockFrustum))
                 _sceneEffects.GatherShip(world, ship, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity,
-                    o, hull, (float)_flightElapsedSeconds, ClientNowMilliseconds, _flightWarps);
+                    o, hull, (float)_flightElapsedSeconds, nowMs, _flightWarps);
             DrawnShips++; _visibleShipNames.Add(ship.CharacterName ?? $"Ship {ship.ShipId}");
         }
+        // P1069 — ribbons for ships that left the drawn roster vanish at once
+        // (desktop _motionTrail.PruneUntouched after the pose gather).
+        _sceneEffects.Motion.PruneUntouched();
         ShipPassMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(shipPassStart).TotalMilliseconds;
+        if (ShipPassMilliseconds > MaxShipPassMilliseconds) MaxShipPassMilliseconds = ShipPassMilliseconds;
         foreach (var station in world.Stations.Values)
         {
             if (station.ClusterId != own.SectorId || _shopCatalog?.StationTypes?.GetValueOrDefault(station.StationTypeId) is not { } type) continue;

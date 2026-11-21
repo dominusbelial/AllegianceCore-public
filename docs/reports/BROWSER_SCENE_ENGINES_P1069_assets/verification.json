@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "lane": "MS-A2 Debian 13 container; no Chromium (browser runs for Claude)",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "command": "dotnet build AllegianceCore.slnx --disable-build-servers -nodeReuse:false -p:UseSharedCompilation=false"
+  },
+  "buildTools": {
+    "projects": 152,
+    "warnings": 0,
+    "errors": 0
+  },
+  "newTestsAloneTimes3": {
+    "P1069EngineSceneTests": {
+      "cases": 11,
+      "runs": [
+        11,
+        11,
+        11
+      ],
+      "passed": true
+    },
+    "P1069EngineExtractionTests": {
+      "cases": 6,
+      "runs": [
+        6,
+        6,
+        6
+      ],
+      "passed": true
+    },
+    "tools/test-p1066-scene-packs.py": {
+      "cases": 3,
+      "runs": [
+        "OK",
+        "OK",
+        "OK"
+      ],
+      "passed": true
+    },
+    "tools/p1066-frame-tests.cjs": {
+      "cases": 2,
+      "runs": [
+        2
+      ],
+      "passed": true
+    }
+  },
+  "projects": {
+    "tests/Allegiance.ClientCore.Game.Browser.Tests": 178,
+    "tests/Allegiance.ClientCore.Browser.Tests": 49
+  },
+  "desktopZeroDelta": {
+    "hudCases": 1848,
+    "hudPixelDifferences": 0,
+    "hudSemanticDifferences": 0,
+    "hudAnimationOnly": 83,
+    "desktopFiles": {
+      "baseline": 753,
+      "current": 753,
+      "identical": true
+    },
+    "scenePairByteIdentical": true,
+    "scenePairSha256": "3dd8e912ff0055fca1d5986c762f6a5cf3e7fc43a5ebe95b86137f12ffbcb0aa"
+  },
+  "managedProofs": {
+    "benchmark": "docs/reports/BROWSER_SCENE_ENGINES_P1069_assets/benchmark.json",
+    "promotion": "docs/reports/BROWSER_SCENE_ENGINES_P1069_assets/promotion.json",
+    "note": "Release JIT preparation and CPU mesh-decode only; no WASM/GPU/RAF claim"
+  },
+  "browserRun": "not executed on this lane (no Chromium); tools/p1069-browser-engines.cjs syntax-checked, commands in the report",
+  "fastTier": {
+    "cases": 15889,
+    "passed": 15881,
+    "failed": 1,
+    "notExecuted": 7,
+    "timingOffenders": 4,
+    "seconds": 644.3,
+    "calibratedLimitSeconds": 12.09,
+    "failure": "WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange passed 3/3 alone",
+    "timingRows": "four existing families passed whole theories 3/3 alone (max isolated case 6.84 s)"
+  }
+}

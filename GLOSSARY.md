@@ -164,6 +164,21 @@ list in **reverse**.
   `FullEffectLoad` decision. Proof: `tools/p1066-scene-proof/Program.cs`,
   `tools/p1066-browser-scene.cjs`; parity: `docs/parity/p1066-browser-scene.csv`;
   report: `docs/reports/BROWSER_SCENE_LIGHT_SKY_P1066.md`. No new game/wire rule.
+- **Browser engine effects (P1069, B2)** — `Rendering/NativeScene.cs` now also
+  owns the GPU-free engine preparation both clients call: `ThrustPower` (P358
+  ramp), `NozzleGlow`/`GlowView` (P365 HSB tint + P566 authored aft nozzle),
+  `AftWorldOffset` and `AppendMotionTrail` (P363 ribbon anchor/right/colour).
+  `src/Allegiance.ClientCore.Game.Browser/BrowserSceneEffects.cs` gathers them for
+  the drawn scanner-visible current-sector roster (stand-ins included) and owns
+  the exhaust/ribbon pools; `Game1.Scene.cs` draws exhaust → glow → strobes →
+  ribbons with the unchanged desktop renderers, and reduced `FullEffectLoad`
+  clears exhaust first while glow/ribbons stay. `BrowserHullUploads.cs` decodes and
+  uploads a newly promoted hull at most one per frame off the draw path, keeping
+  the radius-sized stand-in until then, and exposes `firstDrawMs`/`maxShipPassMs`.
+  `tools/p1066-scene-packs.py` adds the `scene-engines` closure (e_fire/e_smoke
+  originals). Proof: `tools/p1069-scene-proof/Program.cs`,
+  `tools/p1069-browser-engines.cjs`; parity: `docs/parity/p1069-browser-engines.csv`;
+  report: `docs/reports/BROWSER_SCENE_ENGINES_P1069.md`. No new game/wire rule.
 - **Browser Watch camera (P1067)** — `src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`
   builds the browser `DirectorSnapshot` from the P1065 sector index
   (`ClientWorld.ShipsInSector`, `ShipEntity.CanDrawInSector`) and feeds the

@@ -18,6 +18,15 @@ public sealed partial class Game1
     private WarpTransitParticleRenderer? _sceneSparks;
     private BuildingEffectRenderer? _sceneBuildings;
     private AlephGlimpseRenderer? _sceneGlimpses;
+    // P1069 — the desktop production renderers for exhaust, nozzle glow and
+    // side-coloured ribbons (unchanged desktop classes; KNI/WebGL-safe paths).
+    private ShipEngineTrailRenderer? _sceneEngineTrail;
+    private EngineNozzleGlowRenderer? _sceneNozzleGlow;
+    private ShipMotionTrailRenderer? _sceneRibbons;
+    private readonly List<TrailParticleView> _sceneEngineViews = new(512);
+    private readonly List<ShipTrailStrip> _sceneTrailStrips = new(64);
+    private readonly ITrailRandom _sceneRandom = new RandomTrailSource(1069);
+    private bool _sceneEnginesReady;
     private SectorLighting _sceneLighting;
     private double _sceneGameSeconds;
     private bool _fullEffectLoad = true, _sceneNativeReady;
@@ -29,6 +38,9 @@ public sealed partial class Game1
     public bool SceneAssetsReady => _sceneNativeReady;
     public object SceneMetrics => new { ready = SceneAssetsReady, effectLoad = _fullEffectLoad ? "full" : "reduced",
         dust = _sceneDustViews.Count, strobes = _sceneEffects.Strobes.Count, sparks = _sceneEffects.Sparks.Count,
+        // P1069 — live engine effect counts the harness samples.
+        exhaust = _sceneEffects.Engines.ActiveCount, glows = _sceneEffects.Glows.Count,
+        ribbons = _sceneEffects.Motion.RibbonCount, enginesReady = _sceneEnginesReady,
         glimpses = _sceneGlimpses?.LoadedTargetCount ?? 0, skyTier = "black",
         paintingsReady = BattlePackReady?.Invoke("scene-paintings") == true,
         constructionReady = BattlePackReady?.Invoke("scene-build") == true };
@@ -36,6 +48,8 @@ public sealed partial class Game1
     private void ResetScene()
     {
         _sceneEffects.Reset(); _sceneDust.Reset(); _sceneDebris.Clear(); _sceneDustViews.Clear();
+        _sceneEngineViews.Clear(); _sceneTrailStrips.Clear();
+        _hullUploads?.Reset();
         _sceneGlimpses?.InvalidateAll();
         _skyTextureRevision = -1;
         _sceneMotion.Reset(); _sceneGameSeconds = 0; _sceneMissionGeneration = -1; _skySector = -1;
@@ -53,6 +67,25 @@ public sealed partial class Game1
             _sceneTextures = NativeEffectTextures.Load(GraphicsDevice, _assets);
             _sceneStrobes = new(GraphicsDevice, _sceneTextures);
             _sceneGlimpses = new(GraphicsDevice, () => _flightSky) { Visuals = _visuals };
+            // P1069 — exhaust and nozzle glow draw with the real desktop
+            // renderers and native effect art (e_fire/e_smoke/f101); the ribbon
+            // renderer owns its generated soft-strip texture. Missing art falls
+            // back to the shared soft sprite, never an invisible effect.
+            _sceneEngineTrail = new(GraphicsDevice, _sceneTextures);
+            _sceneNozzleGlow = new(GraphicsDevice, _sceneTextures);
+            _sceneRibbons = new(GraphicsDevice);
+        }
+        // P1069 — the tiny engine-art pack (e_fire/e_smoke + their PNGs) is
+        // requested through the P1066 verified scene-pack path and decoded once.
+        if (!_sceneEnginesReady)
+        {
+            RequestBattlePack?.Invoke("scene-engines");
+            if (BattlePackReady?.Invoke("scene-engines") == true && _sceneTextures is not null)
+            {
+                _ = _sceneTextures.TextureFor(NativeEffectTextures.FireStem);
+                _ = _sceneTextures.TextureFor(NativeEffectTextures.SmokeStem);
+                _sceneEnginesReady = true;
+            }
         }
         if (_sceneNativeReady || BattlePackReady?.Invoke("scene-b1") != true) return;
         if (hadSky)
@@ -74,6 +107,8 @@ public sealed partial class Game1
         { ResetScene(); _sceneMissionGeneration = world.MissionGeneration; }
         EnsureSceneRenderers();
         _sceneLighting = NativeScene.Light(world.Clusters.TryGetValue(own.SectorId, out var cluster) ? cluster : null);
+        // P1069 — the browser-only reduced-effect decision gates exhaust only.
+        _sceneEffects.FullEffectLoad = _fullEffectLoad;
         _sceneEffects.BeginFrame(world, own, (float)_flightElapsedSeconds, _nowSeconds, _flightWarps);
         var frame = _sceneMotion.Step(_visuals, view, eye, _nowSeconds,
             ((long)own.SectorId << 32) ^ ((long)_cameraMode << 16) ^ 1L);
@@ -104,7 +139,25 @@ public sealed partial class Game1
     {
         _sceneEffects.FinishParticles((float)_flightElapsedSeconds);
         _sceneSparks?.Draw(_sceneEffects.Sparks, eye, view, projection);
+        // P1069 — desktop pass order, after the teleport sparks: afterburner
+        // exhaust (AddThrustParticles), then the nozzle glow decal (RenderGlow),
+        // then ship strobes (already below), then the motion ribbons (TrailGeo).
+        if (_sceneEngineTrail is not null && _fullEffectLoad)
+        {
+            for (int i = 0; i < _sceneEffects.EngineTrailShips.Count; i++)
+                _sceneEffects.Engines.Emit(_sceneEffects.EngineTrailShips[i], (float)_flightElapsedSeconds, _sceneRandom);
+            _sceneEngineViews.Clear();
+            _sceneEngineViews.AddRange(_sceneEffects.Engines.Enumerate());
+            _sceneEngineTrail.Draw(_sceneEngineViews, eye, view, projection, _sceneLighting);
+        }
+        _sceneNozzleGlow?.Draw(_sceneEffects.Glows, eye, view, projection);
         _sceneStrobes?.Draw(_sceneEffects.Strobes, eye, view, projection);
+        if (_sceneRibbons is not null)
+        {
+            _sceneTrailStrips.Clear();
+            _sceneTrailStrips.AddRange(_sceneEffects.Motion.Enumerate());
+            _sceneRibbons.Draw(_sceneTrailStrips, eye, view, projection);
+        }
         long now = ClientNowMilliseconds;
         world.PruneExpiredBuildingEffects(now);
         var effects = _visuals.IsOn(VisualFlags.ConstructionHandoffKey) ? world.ConstructionVisuals : world.BuildingEffects;
@@ -132,5 +185,6 @@ public sealed partial class Game1
     {
         _sceneDustRenderer?.Dispose(); _sceneStrobes?.Dispose(); _sceneSparks?.Dispose();
         _sceneBuildings?.Dispose(); _sceneGlimpses?.Dispose(); _sceneTextures?.Dispose();
+        _sceneEngineTrail?.Dispose(); _sceneNozzleGlow?.Dispose(); _sceneRibbons?.Dispose();
     }
 }

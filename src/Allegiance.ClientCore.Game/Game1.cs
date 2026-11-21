@@ -2066,8 +2066,10 @@ public sealed partial class Game1 : Game
     // 137-144; native uses per-afterburner core data onRate/offRate — these
     // representative values reach full power in ~0.17s and drain in ~0.33s, so
     // the trail appears promptly on boost and visibly thins over ~⅓s after the
-    // afterburner button is released before stopping).
-    private const float ThrustPowerOnRate = 6f, ThrustPowerOffRate = 3f;
+    // afterburner button is released before stopping). P1069 — the single copy
+    // now lives in Rendering/NativeScene so the browser computes the same ramp.
+    private const float ThrustPowerOnRate = Rendering.NativeScene.ThrustPowerOnRate,
+        ThrustPowerOffRate = Rendering.NativeScene.ThrustPowerOffRate;
 
 
 

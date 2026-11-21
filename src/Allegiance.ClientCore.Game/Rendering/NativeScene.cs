@@ -155,4 +155,64 @@ public static class NativeScene
                     e.Radius, e.TimeUntilTeleport, clock, random);
             }
     }
+
+    // ── B2 engine effects (P358 exhaust, P365 nozzle glow, P363 ribbons) ──────
+
+    /// <summary>Native afterburner power ramp rates (CafterburnerIGC::Update,
+    /// Igc/afterburnerIGC.cpp:133-146; the port's documented ramp constants).</summary>
+    public const float ThrustPowerOnRate = 6f, ThrustPowerOffRate = 3f;
+
+    /// <summary>The ribbon's half-width per side as a fraction of hull radius:
+    /// native <c>SetOrientation</c> stores <c>GetRight()·m_radius·0.25</c>
+    /// (effect/thinggeo.cpp:1149-1183; trail width used at efgeo.cpp:492-661).</summary>
+    public const float TrailWidthFraction = 0.25f;
+
+    /// <summary>P358 — one frame of a ship's afterburner power ramp. Native
+    /// <c>AddThrustParticles</c> emits only while <c>m_fThrustPower &gt; 0</c>
+    /// (effect/thinggeo.cpp:760); a ship with no mounted afterburner is pinned
+    /// to zero (native WinTrek.cpp:8005-8006).</summary>
+    public static float ThrustPower(bool hasAfterburner, bool thrusting, float previous, float dtSec)
+        => ShipEffectRules.ThrustPower(hasAfterburner, thrusting, previous, dtSec, ThrustPowerOnRate, ThrustPowerOffRate);
+
+    /// <summary>P365 — native <c>UpdateGlow</c> input: full while the afterburner
+    /// is engaged, otherwise the ordinary throttle glow (effect/thinggeo.cpp:440-455).</summary>
+    public static float NozzleGlow(bool hasAfterburner, int stateM, float throttle)
+        => ShipEffectRules.NozzleGlow(hasAfterburner, (stateM & ShipControlState.AfterburnerButton) != 0, throttle);
+
+    /// <summary>P566 — the world-space aft nozzle offset from the model's authored
+    /// "rocket"/"thrust"/"smoke" frame: native RY(π) flip negates X and Z
+    /// (effect/thinggeo.cpp:1501-1503), then the uniform native scale and the ship
+    /// orientation. Null when the model has no such frame (caller uses the
+    /// radius-based aft-centre anchor).</summary>
+    public static SimVec? AftWorldOffset(IReadOnlyList<MdlFrame>? frames, float nativeScale, Orientation orientation)
+    {
+        if (frames is null) return null;
+        var local = NativeShipResolver.AftNozzleLocalOffset(frames, 0f);
+        if (local == Vector3.Zero) return null;
+        var flipped = new Vector3(-local.X, local.Y, -local.Z) * nativeScale;
+        var x = Vector3.Transform(flipped, PoseConverter.ToXnaRotation(orientation));
+        return new SimVec(x.X, x.Y, x.Z);
+    }
+
+    /// <summary>P365 — one glow decal: native HSB tint/scale from the live thrust
+    /// value (effect/thinggeo.cpp:440-460), anchored at the authored nozzle when
+    /// the hull mesh is loaded, else at the documented radius-based aft centre.
+    /// Render gate <c>m_scaleGlow &gt; 0</c> is the caller's value&gt;0 check.</summary>
+    public static EngineGlowView GlowView(SimVec position, Orientation orientation, float radius, float value,
+        SimVec? aftWorldOffset)
+    {
+        var (r, g, b, scale) = EngineNozzleGlow.Compute(value);
+        SimVec anchor = aftWorldOffset is { } offset
+            ? position + offset
+            : position + (orientation.GetBackward() * (radius * EngineNozzleGlowRenderer.AftCenterFraction));
+        return new EngineGlowView(anchor, scale * radius * EngineNozzleGlowRenderer.GlowSizeFactor, new Vector3(r, g, b));
+    }
+
+    /// <summary>P363 — feed one ship's ribbon anchor/right/colour to the pool.
+    /// Anchor is the ship centre (documented port substitution, see
+    /// ShipMotionTrailRibbons); right is <c>GetRight()·radius·0.25</c>; colour is
+    /// the real side colour (caller supplies the neutral grey fallback).</summary>
+    public static void AppendMotionTrail(ShipMotionTrailRibbons trail, short shipId, SimVec position,
+        Orientation orientation, float radius, float r, float g, float b)
+        => trail.SetAnchor(shipId, position, orientation.GetRight() * (radius * TrailWidthFraction), r, g, b);
 }

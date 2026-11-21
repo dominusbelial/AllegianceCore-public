@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "baseline": "independent git archive HEAD (978250f4) built in ignored lane scratch",
+  "compared": 1848,
+  "pixelDifferences": 0,
+  "semanticDifferences": 0,
+  "animationOnlyDifferences": 83,
+  "corruptGoldens": 0,
+  "pass": true,
+  "animationOnly": [
+    "identical outside the animation mask; the animated badge pixels differ (988 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (494 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (988 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (494 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (988 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (494 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (988 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (494 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (988 px region)",
+    "identical outside the animation mask; the animated badge pixels differ (494 px region)"
+  ]
+}

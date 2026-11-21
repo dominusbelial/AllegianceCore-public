@@ -143,8 +143,7 @@ public sealed partial class Game1
         Allegiance.Core.Collision.Vector3 velocity, Allegiance.Core.Sim.Orientation orientation,
         float radius, float dtSec, bool visible)
     {
-        float power = _shipThrustPower.GetValueOrDefault(id);
-        power = ShipEffectRules.ThrustPower(hasAfterburner, thrusting, power, dtSec, ThrustPowerOnRate, ThrustPowerOffRate);
+        float power = NativeScene.ThrustPower(hasAfterburner, thrusting, _shipThrustPower.GetValueOrDefault(id), dtSec);
         _shipThrustPower[id] = power;
         if (visible && power > 0f)
             _engineTrailEmitters[id] = new EngineTrailEmitter(position, velocity, orientation, radius);
@@ -180,8 +179,7 @@ public sealed partial class Game1
             _nozzleGlowEmitters.Remove(id);
             return;
         }
-        float value = ShipEffectRules.NozzleGlow(hasAfterburner,
-            (stateM & ShipControlState.AfterburnerButton) != 0, throttle);
+        float value = NativeScene.NozzleGlow(hasAfterburner, stateM, throttle);
         if (value > 0f)
             _nozzleGlowEmitters[id] = new EngineNozzleGlowEmitter(position, orientation, radius, value);
         else
@@ -208,8 +206,7 @@ public sealed partial class Game1
             // No roster colour yet — neutral gray (native's absent-side gray).
             r = 0.5f; g = 0.5f; b = 0.5f;
         }
-        var right = orientation.GetRight() * (radius * TrailWidthFraction);
-        _motionTrail.SetAnchor(id, position, right, r, g, b);
+        NativeScene.AppendMotionTrail(_motionTrail, id, position, orientation, radius, r, g, b);
     }
 
     /// <summary>
@@ -1537,23 +1534,15 @@ public sealed partial class Game1
                 foreach (var kv in _nozzleGlowEmitters)
                 {
                     var ng = kv.Value;
-                    var (nr, ng_, nb, scale) = Rendering.EngineNozzleGlow.Compute(ng.Value);
-                    var backward = ng.Orientation.GetBackward();
                     // P566 — anchor the glow at the REAL native engine-nozzle frame
                     // when this ship renders natively (the .mdl FrameData rocket/
-                    // thrust/smoke point), instead of the guessed aft-centre. Transforms
-                    // the model-space frame through the native RY(π) flip + scale + the
-                    // ship's orientation to a world offset. Falls back to the guessed
-                    // aft-centre when no native art/frame exists.
-                    Allegiance.Core.Collision.Vector3 glowPos;
-                    if (ShipsNativeFor(kv.Key) && _nativeShipRefById.TryGetValue(kv.Key, out var ngRef) && ngRef is not null
-                        && NativeAftWorldOffset(ngRef, ng.Orientation) is { } nwo)
-                        glowPos = ng.Position + nwo;
-                    else
-                        glowPos = ng.Position + (backward * (ng.Radius * Rendering.EngineNozzleGlowRenderer.AftCenterFraction));
-                    float half = scale * ng.Radius * Rendering.EngineNozzleGlowRenderer.GlowSizeFactor;
-                    _drawNozzleGlows.Add(new Rendering.EngineGlowView(
-                        glowPos, half, new Vector3(nr, ng_, nb)));
+                    // thrust/smoke point), instead of the guessed aft-centre. The
+                    // shared NativeScene helper applies the native RY(π) flip +
+                    // scale + ship orientation exactly as this site used to.
+                    Allegiance.Core.Collision.Vector3? aft =
+                        ShipsNativeFor(kv.Key) && _nativeShipRefById.TryGetValue(kv.Key, out var ngRef) && ngRef is not null
+                            ? NativeAftWorldOffset(ngRef, ng.Orientation) : null;
+                    _drawNozzleGlows.Add(NativeScene.GlowView(ng.Position, ng.Orientation, ng.Radius, ng.Value, aft));
                 }
                 _nozzleGlowRenderer.Draw(_drawNozzleGlows, cameraEye, view, proj);
 
@@ -5083,18 +5072,10 @@ public sealed partial class Game1
     /// <see cref="NativeShipResolver.AftNozzleLocalOffset"/>) transformed through
     /// the native RY(π) flip + uniform scale + the ship's orientation. Returns null
     /// when the model has no such frame (or no native art) → the caller uses the
-    /// pre-P566 guessed aft-centre anchor.</summary>
+    /// pre-P566 guessed aft-centre anchor. The transform is the shared
+    /// <see cref="NativeScene.AftWorldOffset"/>.</summary>
     private Allegiance.Core.Collision.Vector3? NativeAftWorldOffset(NativeShipRef nref, Allegiance.Core.Sim.Orientation orient)
-    {
-        var frames = _nativeShipRenderer.FramesFor(nref.ModelStem!);
-        if (frames is null) return null;
-        var local = NativeShipResolver.AftNozzleLocalOffset(frames, 0f);
-        if (local == Vector3.Zero) return null;                 // no thrust frame authored
-        // Native RY(π) flip (thinggeo.cpp:1501-1503) negates X and Z; then uniform scale.
-        var flipped = new Vector3(-local.X, local.Y, -local.Z) * nref.NativeScale;
-        var x = Vector3.Transform(flipped, PoseConverter.ToXnaRotation(orient));
-        return new Allegiance.Core.Collision.Vector3(x.X, x.Y, x.Z);
-    }
+        => NativeScene.AftWorldOffset(_nativeShipRenderer.FramesFor(nref.ModelStem!), nref.NativeScale, orient);
 
     /// <summary>Resolve a ship's side id to a manifest civ key via the real
     /// side roster, or null when unknown (no roster, or a civ with no art).</summary>
