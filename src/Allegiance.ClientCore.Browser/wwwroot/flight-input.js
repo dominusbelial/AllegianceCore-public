@@ -52,7 +52,8 @@
       catch { pointerPending = false; }
     };
     const fullscreen = () => {
-      const request = document.fullscreenElement ? document.exitFullscreen() : canvas.requestFullscreen();
+      // Keep guest identity and the Sign in link visible with the flight toolbar.
+      const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
       request?.catch(() => console.info('[browser] Fullscreen request refused; try another gesture.'));
     };
     on(window, 'keydown', event => {

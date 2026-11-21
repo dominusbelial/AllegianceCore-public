@@ -21,6 +21,10 @@ const offerReady = fetch('/api/browser')
   .then(res => res.ok ? res.json() : null)
   .then(offer => offer && offer.enabled === true && typeof offer.prefix === 'string' && offer.prefix ? offer : null)
   .catch(() => null);
+offerReady.then(offer => {
+  const play = document.getElementById('play-now');
+  if (play && offer) { play.href = offer.prefix + '/menu.html?online=1'; play.hidden = false; }
+});
 
 function cell(text) {
   const td = document.createElement('td');
@@ -30,7 +34,7 @@ function cell(text) {
 }
 
 // The browser link opens the same listing entry the desktop Join link names, with
-// that server preselected; the browser client still requires sign-in and a ticket.
+// that server preselected; the browser client offers guest play only when the server advertises it.
 function browserCell(server, offer) {
   const td = document.createElement('td');
   if (!offer || typeof server.webSocketUrl !== 'string' || server.webSocketUrl.length === 0) return td;

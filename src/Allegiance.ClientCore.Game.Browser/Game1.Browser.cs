@@ -16,7 +16,14 @@ public sealed partial class Game1 : Game
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _whitePixel = null!;
     private SpriteFont _hudSmall = null!, _hudBig = null!;
-    private readonly IdentityScreenModel _identityScreen = new() { Status = "Browser preview - loopback online slice available." };
+    // Browser head owns identity; the shared intro reads this adapter in both styles.
+    private readonly BrowserIdentityModel _identityScreen = new();
+    public void SetBrowserIdentity(Allegiance.Core.Identity.IdentityAccount? account, string? guest)
+    {
+        _identityScreen.Account = account; _identityScreen.Guest = guest;
+        _pilotBuf.Clear().Append(account?.Callsign ?? guest ?? "");
+        _introEditingPilot = false;
+    }
     private readonly StringBuilder _pilotBuf = new();
     private static readonly string[] IntroMainLabels = IntroScreenModel.MainLabels;
     private int _introIndex;
@@ -81,7 +88,7 @@ public sealed partial class Game1 : Game
         IsMouseVisible = true;
         Content = new ResidentContentManager(Services, assets) { RootDirectory = "Content" };
         var prefs = IntroPreferences.Load();
-        _pilotBuf.Append(prefs.Pilot);
+        _introEditingPilot = false;
         MouseOptions.Apply(_mouseFlight, prefs);
         _visuals = VisualOptions.Resolve(prefs.Visuals, null, out _);
         _chatFilterChatsToAll = prefs.FilterChatsToAll;
@@ -129,10 +136,9 @@ public sealed partial class Game1 : Game
 
     public void InputText(string text)
     {
-        if (_flightSession is not null || !_keyboardFocus || _introView != IntroView.Main || !_introEditingPilot) return;
-        if (text == "Backspace") { if (_pilotBuf.Length > 0) _pilotBuf.Length--; }
-        else if (text.Length == 1 && IntroScreenModel.TypesPilotName(text[0], _introEditingPilot) && _pilotBuf.Length < 24) _pilotBuf.Append(text);
-        var prefs = IntroPreferences.Load(); prefs.Pilot = _pilotBuf.ToString(); prefs.Save();
+        // Identity is edited in the disclosed HTML guest panel or the lobby account page.
+        // Keep this callback for the shared input adapter; canvas typing cannot create a second identity.
+        _introEditingPilot = false;
     }
 
     public void SetKeyboardFocus(bool focused)

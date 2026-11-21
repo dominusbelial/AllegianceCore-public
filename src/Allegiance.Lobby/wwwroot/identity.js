@@ -34,6 +34,7 @@ const offerReady = (async () => {
   // The playable page of the generation: /play/menu.html, which opens the online
   // panel by itself when `online=1` is present.
   el('play-browser').href = offer.enabled ? (offer.returnTarget || offer.prefix + '/menu.html?online=1') : '';
+  el('play-now').href = el('play-browser').href;
   return offer;
 })();
 // The round trip: a signed-in player who came from the browser client returns to
@@ -48,6 +49,7 @@ async function showAccount(account) {
   el('pilot').textContent = account?.callsign || '';
   el('account-id').textContent = account ? 'Account ID: ' + account.id : '';
   el('play-browser').hidden = !(account && offer.enabled);
+  el('play-now').hidden = !!account || !offer.enabled;
   el('approve').hidden = true;
 }
 async function passkey(register) {

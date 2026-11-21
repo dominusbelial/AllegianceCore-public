@@ -72,7 +72,8 @@ internal sealed record ServerListing(
     /// (<c>FedSrv/FedSrv.CPP:648-661</c>). Default off keeps every pre-P970
     /// payload meaning "no password advertised".</summary>
     bool PasswordRequired = false,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool AcceptsGuests = false);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -138,7 +139,8 @@ public sealed record ServerListingDto(
     /// ask for the password up front. The password value never leaves the server;
     /// this is the same read-only fact class as the game settings above.</summary>
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool PasswordRequired = false,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool AcceptsGuests = false);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -302,6 +304,9 @@ public sealed class RegisterRequest
     /// advertised, byte-identical to a pre-P970 payload.</summary>
     public bool PasswordRequired { get; set; }
 
+    /// <summary>P1068 — admission fact only; absent means sign-in only.</summary>
+    public bool AcceptsGuests { get; set; }
+
     /// <summary>The ownership token; null/blank means "new registration".</summary>
     public string? Token { get; set; }
 }
@@ -375,6 +380,7 @@ public sealed class MissionListingRequest
     public GameParamsRequest? Game { get; set; }
     /// <summary>P970 — this game demands a password. Optional; omitted = none.</summary>
     public bool PasswordRequired { get; set; }
+
 }
 
 public sealed record RegisterResponse(string Id, string Token);
