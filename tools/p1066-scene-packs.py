@@ -55,6 +55,10 @@ def build(root, artwork):
             paths[name] = p
     native = ['moonbmp.mdl', 'moon7bmp.mdl', 'moonnebbmp.mdl', 'f104bmp.mdl',
               'f105bmp.mdl', 'f106bmp.mdl', 'f101bmp.mdl', 'debris1bmp.mdl', 'e_telebmp.mdl']
+    # P1069 B2 — the afterburner fire/smoke art the desktop exhaust renderer
+    # decodes (e_firebmp.mdl / e_smokebmp.mdl scripts import e_fire/e_smoke.png).
+    # The nozzle glow already uses f101bmp.mdl from scene-b1.
+    engines = ['e_smokebmp.mdl', 'e_firebmp.mdl']
     paintings = sorted(n for n in paths if n.startswith(('p589obj/', 'p589gal/')) and n.endswith('.png'))
     giant_sectors = []
     giants = []
@@ -100,7 +104,8 @@ def build(root, artwork):
         return selected
 
     scene_packs = [dict(key=key, sources=sorted(closure(roots)))
-                   for key, roots in [('scene-b1', native), ('scene-paintings', paintings),
+                   for key, roots in [('scene-b1', native), ('scene-engines', engines),
+                                      ('scene-paintings', paintings),
                                       ('scene-build', ['build.mdl']), ('scene-giants', giants)] if roots]
     all_sources = {n for pack in scene_packs for n in pack['sources']}
     index['assets'] = sorted(entries.values(), key=lambda a: a['source'])

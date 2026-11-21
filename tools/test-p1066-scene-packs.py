@@ -38,6 +38,11 @@ class ScenePacksTests(unittest.TestCase):
                 (art / (name + '.mdl')).write_text('fixture ' + name)
             (art / 'e_telebmp.mdl').write_text('use "model"; ImageFromFile("e_tele.png", false);')
             (art / 'e_tele.png').write_bytes(b'fixture original teleport')
+            # P1069 B2 — exhaust art closure (scripts import their PNGs).
+            (art / 'e_smokebmp.mdl').write_text('use "model"; ImageFromFile("e_smoke.png", false);')
+            (art / 'e_smoke.png').write_bytes(b'fixture original smoke')
+            (art / 'e_firebmp.mdl').write_text('use "model"; ImageFromFile("e_fire.png", false);')
+            (art / 'e_fire.png').write_bytes(b'fixture original fire')
             (art / 'p589obj').mkdir(); (art / 'p589obj/helix-nebula.png').write_bytes(b'fixture processed painting')
             (art / 'giantobj').mkdir(); (art / 'giantobj/milkyway_terra.png').write_bytes(b'fixture processed giant')
             (art / 'giant-objects.json').write_text('{"objects":[{"image":"milkyway_terra.png","cluster_id":1057}]}')
@@ -54,6 +59,11 @@ class ScenePacksTests(unittest.TestCase):
             self.assertFalse(any(n.startswith('p589') for n in native['sources']))
             self.assertEqual([1057], index['sceneGiantSectors'])
             self.assertIn('e_tele.png', names); self.assertIn('giant-objects.json', names)
+            # P1069 B2 — the exhaust pack is its own verified closure and carries
+            # the scripts' imported PNGs (original bytes only).
+            engine = next(p for p in index['packs'] if p['key'] == 'scene-engines')
+            self.assertEqual(['e_fire.png', 'e_firebmp.mdl', 'e_smoke.png', 'e_smokebmp.mdl'], engine['sources'])
+            self.assertNotIn('e_tele.png', engine['sources'])
             for a in index['assets']:
                 data = (root / a['path']).read_bytes()
                 self.assertEqual(data, (art / a['source']).read_bytes())

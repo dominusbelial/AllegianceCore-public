@@ -1,0 +1,1155 @@
+{
+  "runtime": ".NET Release JIT CPU decode (MdlFile.Parse); GPU buffer/texture upload is the same budgeted step in the browser, not measured here",
+  "hullModels": 179,
+  "decoded": 179,
+  "totalDecodeMs": 7.683,
+  "maxSingleHullDecodeMs": 1.7,
+  "perHull": [
+    {
+      "model": "acs01",
+      "bytes": 11740,
+      "meshes": 1,
+      "decodeMs": 0.016
+    },
+    {
+      "model": "acs02",
+      "bytes": 13772,
+      "meshes": 2,
+      "decodeMs": 0.029
+    },
+    {
+      "model": "acs41",
+      "bytes": 2732,
+      "meshes": 1,
+      "decodeMs": 0.002
+    },
+    {
+      "model": "acs63",
+      "bytes": 10768,
+      "meshes": 1,
+      "decodeMs": 0.009
+    },
+    {
+      "model": "bom01b",
+      "bytes": 88294,
+      "meshes": 2,
+      "decodeMs": 0.084
+    },
+    {
+      "model": "bom03",
+      "bytes": 75328,
+      "meshes": 2,
+      "decodeMs": 0.066
+    },
+    {
+      "model": "bom04",
+      "bytes": 45274,
+      "meshes": 2,
+      "decodeMs": 0.048
+    },
+    {
+      "model": "bom05b",
+      "bytes": 70062,
+      "meshes": 1,
+      "decodeMs": 0.061
+    },
+    {
+      "model": "bom07b",
+      "bytes": 89856,
+      "meshes": 2,
+      "decodeMs": 0.078
+    },
+    {
+      "model": "bom20",
+      "bytes": 60208,
+      "meshes": 1,
+      "decodeMs": 0.053
+    },
+    {
+      "model": "bom30",
+      "bytes": 52394,
+      "meshes": 2,
+      "decodeMs": 0.045
+    },
+    {
+      "model": "bom400",
+      "bytes": 24032,
+      "meshes": 1,
+      "decodeMs": 0.021
+    },
+    {
+      "model": "cap01",
+      "bytes": 86752,
+      "meshes": 2,
+      "decodeMs": 0.075
+    },
+    {
+      "model": "cap02a",
+      "bytes": 70810,
+      "meshes": 2,
+      "decodeMs": 0.063
+    },
+    {
+      "model": "cap03",
+      "bytes": 58134,
+      "meshes": 2,
+      "decodeMs": 0.052
+    },
+    {
+      "model": "cap04",
+      "bytes": 44794,
+      "meshes": 2,
+      "decodeMs": 0.04
+    },
+    {
+      "model": "cap06a",
+      "bytes": 55240,
+      "meshes": 2,
+      "decodeMs": 0.05
+    },
+    {
+      "model": "cap07",
+      "bytes": 64324,
+      "meshes": 2,
+      "decodeMs": 0.059
+    },
+    {
+      "model": "cap08",
+      "bytes": 62378,
+      "meshes": 2,
+      "decodeMs": 0.056
+    },
+    {
+      "model": "cap09",
+      "bytes": 56210,
+      "meshes": 2,
+      "decodeMs": 0.049
+    },
+    {
+      "model": "cap100",
+      "bytes": 69072,
+      "meshes": 1,
+      "decodeMs": 0.064
+    },
+    {
+      "model": "cap101",
+      "bytes": 63538,
+      "meshes": 1,
+      "decodeMs": 0.058
+    },
+    {
+      "model": "cap102",
+      "bytes": 49144,
+      "meshes": 1,
+      "decodeMs": 0.046
+    },
+    {
+      "model": "cap103",
+      "bytes": 53306,
+      "meshes": 1,
+      "decodeMs": 0.049
+    },
+    {
+      "model": "cap20",
+      "bytes": 45906,
+      "meshes": 1,
+      "decodeMs": 0.043
+    },
+    {
+      "model": "cap21",
+      "bytes": 59628,
+      "meshes": 1,
+      "decodeMs": 0.055
+    },
+    {
+      "model": "cap300",
+      "bytes": 59984,
+      "meshes": 2,
+      "decodeMs": 0.054
+    },
+    {
+      "model": "cap301",
+      "bytes": 66414,
+      "meshes": 2,
+      "decodeMs": 0.06
+    },
+    {
+      "model": "cap302",
+      "bytes": 60118,
+      "meshes": 2,
+      "decodeMs": 0.056
+    },
+    {
+      "model": "cap303",
+      "bytes": 64278,
+      "meshes": 2,
+      "decodeMs": 0.06
+    },
+    {
+      "model": "cap400",
+      "bytes": 25500,
+      "meshes": 3,
+      "decodeMs": 0.026
+    },
+    {
+      "model": "cap401",
+      "bytes": 14008,
+      "meshes": 1,
+      "decodeMs": 0.014
+    },
+    {
+      "model": "cap403",
+      "bytes": 12724,
+      "meshes": 3,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "cap404",
+      "bytes": 11644,
+      "meshes": 2,
+      "decodeMs": 0.014
+    },
+    {
+      "model": "cap405",
+      "bytes": 15204,
+      "meshes": 1,
+      "decodeMs": 0.017
+    },
+    {
+      "model": "cap406",
+      "bytes": 23140,
+      "meshes": 5,
+      "decodeMs": 0.022
+    },
+    {
+      "model": "cap415",
+      "bytes": 17372,
+      "meshes": 2,
+      "decodeMs": 0.017
+    },
+    {
+      "model": "cap500",
+      "bytes": 47928,
+      "meshes": 3,
+      "decodeMs": 0.045
+    },
+    {
+      "model": "cap501",
+      "bytes": 52146,
+      "meshes": 3,
+      "decodeMs": 0.048
+    },
+    {
+      "model": "cap502",
+      "bytes": 63508,
+      "meshes": 2,
+      "decodeMs": 0.058
+    },
+    {
+      "model": "cap503",
+      "bytes": 45692,
+      "meshes": 1,
+      "decodeMs": 0.039
+    },
+    {
+      "model": "cap504",
+      "bytes": 46016,
+      "meshes": 2,
+      "decodeMs": 0.044
+    },
+    {
+      "model": "crus2",
+      "bytes": 75328,
+      "meshes": 2,
+      "decodeMs": 0.066
+    },
+    {
+      "model": "dcrus",
+      "bytes": 33740,
+      "meshes": 1,
+      "decodeMs": 0.034
+    },
+    {
+      "model": "dminr",
+      "bytes": 8636,
+      "meshes": 1,
+      "decodeMs": 0.009
+    },
+    {
+      "model": "dn_fadrshcon",
+      "bytes": 21944,
+      "meshes": 14,
+      "decodeMs": 0.021
+    },
+    {
+      "model": "dn_fadrshfig",
+      "bytes": 35702,
+      "meshes": 29,
+      "decodeMs": 0.036
+    },
+    {
+      "model": "dn_fadrshstl",
+      "bytes": 31444,
+      "meshes": 26,
+      "decodeMs": 0.033
+    },
+    {
+      "model": "dn_faphshbmb",
+      "bytes": 33400,
+      "meshes": 2,
+      "decodeMs": 0.03
+    },
+    {
+      "model": "dn_faphshbmbs",
+      "bytes": 23492,
+      "meshes": 2,
+      "decodeMs": 0.021
+    },
+    {
+      "model": "dn_faphshcar",
+      "bytes": 36718,
+      "meshes": 3,
+      "decodeMs": 0.034
+    },
+    {
+      "model": "dn_faphshcrs",
+      "bytes": 66392,
+      "meshes": 2,
+      "decodeMs": 0.057
+    },
+    {
+      "model": "dn_faphshdst",
+      "bytes": 38248,
+      "meshes": 2,
+      "decodeMs": 0.034
+    },
+    {
+      "model": "dn_faphshfig",
+      "bytes": 34704,
+      "meshes": 2,
+      "decodeMs": 0.033
+    },
+    {
+      "model": "dn_faphshfrg",
+      "bytes": 57116,
+      "meshes": 2,
+      "decodeMs": 0.048
+    },
+    {
+      "model": "dn_faphshint",
+      "bytes": 27488,
+      "meshes": 2,
+      "decodeMs": 0.023
+    },
+    {
+      "model": "dn_faphshmnr",
+      "bytes": 90352,
+      "meshes": 2,
+      "decodeMs": 0.079
+    },
+    {
+      "model": "dn_faphshpod",
+      "bytes": 9720,
+      "meshes": 2,
+      "decodeMs": 0.01
+    },
+    {
+      "model": "dn_faphshrpb",
+      "bytes": 24428,
+      "meshes": 2,
+      "decodeMs": 0.026
+    },
+    {
+      "model": "dn_faphshsct",
+      "bytes": 14840,
+      "meshes": 2,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "dn_faphshstl",
+      "bytes": 17912,
+      "meshes": 2,
+      "decodeMs": 0.018
+    },
+    {
+      "model": "dn_faphshvng",
+      "bytes": 65300,
+      "meshes": 2,
+      "decodeMs": 0.057
+    },
+    {
+      "model": "dn_fateshbmb",
+      "bytes": 13474,
+      "meshes": 1,
+      "decodeMs": 0.013
+    },
+    {
+      "model": "dregcar",
+      "bytes": 100732,
+      "meshes": 1,
+      "decodeMs": 0.088
+    },
+    {
+      "model": "dreghpod",
+      "bytes": 3980,
+      "meshes": 1,
+      "decodeMs": 0.008
+    },
+    {
+      "model": "dregtt",
+      "bytes": 47928,
+      "meshes": 3,
+      "decodeMs": 0.043
+    },
+    {
+      "model": "drgas",
+      "bytes": 7782,
+      "meshes": 1,
+      "decodeMs": 0.008
+    },
+    {
+      "model": "drgmf",
+      "bytes": 63750,
+      "meshes": 2,
+      "decodeMs": 0.3
+    },
+    {
+      "model": "drgtow",
+      "bytes": 33588,
+      "meshes": 1,
+      "decodeMs": 1.7
+    },
+    {
+      "model": "faohshafig",
+      "bytes": 42296,
+      "meshes": 1,
+      "decodeMs": 0.027
+    },
+    {
+      "model": "faohshass",
+      "bytes": 124170,
+      "meshes": 1,
+      "decodeMs": 0.086
+    },
+    {
+      "model": "faohshbmb",
+      "bytes": 63888,
+      "meshes": 1,
+      "decodeMs": 0.038
+    },
+    {
+      "model": "faohshcar",
+      "bytes": 122422,
+      "meshes": 1,
+      "decodeMs": 0.112
+    },
+    {
+      "model": "faohshcon",
+      "bytes": 33508,
+      "meshes": 1,
+      "decodeMs": 0.02
+    },
+    {
+      "model": "faohshcrs",
+      "bytes": 304768,
+      "meshes": 1,
+      "decodeMs": 0.196
+    },
+    {
+      "model": "faohshcrv",
+      "bytes": 54888,
+      "meshes": 1,
+      "decodeMs": 0.032
+    },
+    {
+      "model": "faohshdev",
+      "bytes": 100600,
+      "meshes": 1,
+      "decodeMs": 0.058
+    },
+    {
+      "model": "faohshfig",
+      "bytes": 40692,
+      "meshes": 1,
+      "decodeMs": 0.024
+    },
+    {
+      "model": "faohshhint",
+      "bytes": 49084,
+      "meshes": 1,
+      "decodeMs": 0.028
+    },
+    {
+      "model": "faohshint",
+      "bytes": 47256,
+      "meshes": 1,
+      "decodeMs": 0.027
+    },
+    {
+      "model": "faohshmnr",
+      "bytes": 33508,
+      "meshes": 1,
+      "decodeMs": 0.021
+    },
+    {
+      "model": "faohshpod",
+      "bytes": 16368,
+      "meshes": 1,
+      "decodeMs": 0.011
+    },
+    {
+      "model": "faohshsctb",
+      "bytes": 47780,
+      "meshes": 1,
+      "decodeMs": 0.029
+    },
+    {
+      "model": "faohshstl",
+      "bytes": 84346,
+      "meshes": 1,
+      "decodeMs": 0.05
+    },
+    {
+      "model": "fig02ops1",
+      "bytes": 73052,
+      "meshes": 2,
+      "decodeMs": 0.046
+    },
+    {
+      "model": "fig03",
+      "bytes": 41714,
+      "meshes": 1,
+      "decodeMs": 0.027
+    },
+    {
+      "model": "fig04",
+      "bytes": 49302,
+      "meshes": 2,
+      "decodeMs": 0.032
+    },
+    {
+      "model": "fig05",
+      "bytes": 46742,
+      "meshes": 2,
+      "decodeMs": 0.031
+    },
+    {
+      "model": "fig05ops1",
+      "bytes": 58800,
+      "meshes": 2,
+      "decodeMs": 0.039
+    },
+    {
+      "model": "fig07",
+      "bytes": 70788,
+      "meshes": 2,
+      "decodeMs": 0.045
+    },
+    {
+      "model": "fig12",
+      "bytes": 60118,
+      "meshes": 2,
+      "decodeMs": 0.039
+    },
+    {
+      "model": "fig13",
+      "bytes": 43664,
+      "meshes": 2,
+      "decodeMs": 0.028
+    },
+    {
+      "model": "fig15",
+      "bytes": 41916,
+      "meshes": 2,
+      "decodeMs": 0.027
+    },
+    {
+      "model": "fig17",
+      "bytes": 94438,
+      "meshes": 1,
+      "decodeMs": 0.057
+    },
+    {
+      "model": "fig21",
+      "bytes": 47608,
+      "meshes": 1,
+      "decodeMs": 0.032
+    },
+    {
+      "model": "fig22",
+      "bytes": 53180,
+      "meshes": 1,
+      "decodeMs": 0.035
+    },
+    {
+      "model": "fig23",
+      "bytes": 32058,
+      "meshes": 1,
+      "decodeMs": 0.022
+    },
+    {
+      "model": "fig25",
+      "bytes": 61394,
+      "meshes": 2,
+      "decodeMs": 0.046
+    },
+    {
+      "model": "fig30",
+      "bytes": 53676,
+      "meshes": 2,
+      "decodeMs": 0.035
+    },
+    {
+      "model": "fig31",
+      "bytes": 46660,
+      "meshes": 2,
+      "decodeMs": 0.031
+    },
+    {
+      "model": "fig32",
+      "bytes": 45930,
+      "meshes": 2,
+      "decodeMs": 0.03
+    },
+    {
+      "model": "fig34",
+      "bytes": 55206,
+      "meshes": 1,
+      "decodeMs": 0.036
+    },
+    {
+      "model": "quizbbrv2",
+      "bytes": 33960,
+      "meshes": 2,
+      "decodeMs": 0.022
+    },
+    {
+      "model": "quizfigv2",
+      "bytes": 16524,
+      "meshes": 2,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "quizintv2",
+      "bytes": 32896,
+      "meshes": 2,
+      "decodeMs": 0.021
+    },
+    {
+      "model": "quizscoutv2",
+      "bytes": 18456,
+      "meshes": 2,
+      "decodeMs": 0.017
+    },
+    {
+      "model": "quizsfv2",
+      "bytes": 19516,
+      "meshes": 2,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "raincarr",
+      "bytes": 191184,
+      "meshes": 2,
+      "decodeMs": 0.116
+    },
+    {
+      "model": "rainfigv2",
+      "bytes": 35442,
+      "meshes": 1,
+      "decodeMs": 0.022
+    },
+    {
+      "model": "rainintv2",
+      "bytes": 123088,
+      "meshes": 1,
+      "decodeMs": 0.073
+    },
+    {
+      "model": "rainscoutv2",
+      "bytes": 50764,
+      "meshes": 1,
+      "decodeMs": 0.034
+    },
+    {
+      "model": "rainsfv2",
+      "bytes": 80176,
+      "meshes": 1,
+      "decodeMs": 0.066
+    },
+    {
+      "model": "rescuedrone",
+      "bytes": 11518,
+      "meshes": 1,
+      "decodeMs": 0.008
+    },
+    {
+      "model": "ss20",
+      "bytes": 17228,
+      "meshes": 1,
+      "decodeMs": 0.011
+    },
+    {
+      "model": "tecdev",
+      "bytes": 29702,
+      "meshes": 1,
+      "decodeMs": 0.02
+    },
+    {
+      "model": "tfcon",
+      "bytes": 8750,
+      "meshes": 1,
+      "decodeMs": 0.006
+    },
+    {
+      "model": "tfdron",
+      "bytes": 3504,
+      "meshes": 1,
+      "decodeMs": 0.003
+    },
+    {
+      "model": "tffig",
+      "bytes": 15180,
+      "meshes": 1,
+      "decodeMs": 0.011
+    },
+    {
+      "model": "tfflagship",
+      "bytes": 9112,
+      "meshes": 1,
+      "decodeMs": 0.007
+    },
+    {
+      "model": "tfmnr",
+      "bytes": 8014,
+      "meshes": 1,
+      "decodeMs": 0.007
+    },
+    {
+      "model": "tfpod",
+      "bytes": 2908,
+      "meshes": 1,
+      "decodeMs": 0.002
+    },
+    {
+      "model": "tfsb2",
+      "bytes": 102524,
+      "meshes": 2,
+      "decodeMs": 0.073
+    },
+    {
+      "model": "tftransport",
+      "bytes": 3908,
+      "meshes": 1,
+      "decodeMs": 0.006
+    },
+    {
+      "model": "utl01b",
+      "bytes": 42222,
+      "meshes": 2,
+      "decodeMs": 0.028
+    },
+    {
+      "model": "utl05",
+      "bytes": 11990,
+      "meshes": 1,
+      "decodeMs": 0.009
+    },
+    {
+      "model": "utl100",
+      "bytes": 4628,
+      "meshes": 1,
+      "decodeMs": 0.004
+    },
+    {
+      "model": "utl101",
+      "bytes": 17710,
+      "meshes": 1,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "utl102",
+      "bytes": 20466,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "utl103",
+      "bytes": 43852,
+      "meshes": 2,
+      "decodeMs": 0.029
+    },
+    {
+      "model": "utl105",
+      "bytes": 29702,
+      "meshes": 1,
+      "decodeMs": 0.02
+    },
+    {
+      "model": "utl11",
+      "bytes": 32276,
+      "meshes": 1,
+      "decodeMs": 0.023
+    },
+    {
+      "model": "utl14a",
+      "bytes": 24876,
+      "meshes": 1,
+      "decodeMs": 0.022
+    },
+    {
+      "model": "utl17a",
+      "bytes": 76336,
+      "meshes": 2,
+      "decodeMs": 0.054
+    },
+    {
+      "model": "utl18a",
+      "bytes": 60624,
+      "meshes": 2,
+      "decodeMs": 0.038
+    },
+    {
+      "model": "utl19",
+      "bytes": 54020,
+      "meshes": 2,
+      "decodeMs": 0.034
+    },
+    {
+      "model": "utl200",
+      "bytes": 51904,
+      "meshes": 2,
+      "decodeMs": 0.035
+    },
+    {
+      "model": "utl201",
+      "bytes": 57862,
+      "meshes": 2,
+      "decodeMs": 0.038
+    },
+    {
+      "model": "utl202",
+      "bytes": 57678,
+      "meshes": 2,
+      "decodeMs": 0.038
+    },
+    {
+      "model": "utl203",
+      "bytes": 11344,
+      "meshes": 2,
+      "decodeMs": 0.01
+    },
+    {
+      "model": "utl205",
+      "bytes": 33588,
+      "meshes": 1,
+      "decodeMs": 0.032
+    },
+    {
+      "model": "utl22",
+      "bytes": 2364,
+      "meshes": 1,
+      "decodeMs": 0.004
+    },
+    {
+      "model": "utl25",
+      "bytes": 8456,
+      "meshes": 1,
+      "decodeMs": 0.009
+    },
+    {
+      "model": "utl27b",
+      "bytes": 48428,
+      "meshes": 2,
+      "decodeMs": 0.031
+    },
+    {
+      "model": "utl400",
+      "bytes": 18004,
+      "meshes": 1,
+      "decodeMs": 0.013
+    },
+    {
+      "model": "utl403",
+      "bytes": 9696,
+      "meshes": 1,
+      "decodeMs": 0.008
+    },
+    {
+      "model": "utl666",
+      "bytes": 2932,
+      "meshes": 1,
+      "decodeMs": 0.002
+    },
+    {
+      "model": "utl90",
+      "bytes": 18532,
+      "meshes": 2,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "utl91",
+      "bytes": 15532,
+      "meshes": 2,
+      "decodeMs": 0.011
+    },
+    {
+      "model": "utl92a",
+      "bytes": 38634,
+      "meshes": 2,
+      "decodeMs": 0.025
+    },
+    {
+      "model": "utl93b",
+      "bytes": 18256,
+      "meshes": 1,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "utl94",
+      "bytes": 14824,
+      "meshes": 1,
+      "decodeMs": 0.01
+    },
+    {
+      "model": "utl95",
+      "bytes": 76288,
+      "meshes": 2,
+      "decodeMs": 0.06
+    },
+    {
+      "model": "utl99",
+      "bytes": 2996,
+      "meshes": 1,
+      "decodeMs": 0.002
+    },
+    {
+      "model": "wc_beomni",
+      "bytes": 22682,
+      "meshes": 4,
+      "decodeMs": 0.016
+    },
+    {
+      "model": "wc_bifig",
+      "bytes": 20634,
+      "meshes": 1,
+      "decodeMs": 0.014
+    },
+    {
+      "model": "wc_gcbmbx",
+      "bytes": 29126,
+      "meshes": 1,
+      "decodeMs": 0.018
+    },
+    {
+      "model": "wc_gcfig",
+      "bytes": 22698,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "wc_gcfigx",
+      "bytes": 22706,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "wc_gchttx",
+      "bytes": 18072,
+      "meshes": 1,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "wc_gchvy",
+      "bytes": 25708,
+      "meshes": 1,
+      "decodeMs": 0.017
+    },
+    {
+      "model": "wc_gchvyx",
+      "bytes": 25716,
+      "meshes": 1,
+      "decodeMs": 0.023
+    },
+    {
+      "model": "wc_gcint",
+      "bytes": 23260,
+      "meshes": 1,
+      "decodeMs": 0.018
+    },
+    {
+      "model": "wc_gtadv",
+      "bytes": 22428,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "wc_gtcon",
+      "bytes": 13964,
+      "meshes": 1,
+      "decodeMs": 0.01
+    },
+    {
+      "model": "wc_gtfig",
+      "bytes": 19772,
+      "meshes": 1,
+      "decodeMs": 0.013
+    },
+    {
+      "model": "wc_gthvy",
+      "bytes": 21068,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "wc_gtint",
+      "bytes": 17872,
+      "meshes": 1,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "wc_gtmnr",
+      "bytes": 20500,
+      "meshes": 1,
+      "decodeMs": 0.014
+    },
+    {
+      "model": "wc_gtpod",
+      "bytes": 7680,
+      "meshes": 1,
+      "decodeMs": 0.006
+    },
+    {
+      "model": "wc_gtpt",
+      "bytes": 9104,
+      "meshes": 1,
+      "decodeMs": 0.007
+    },
+    {
+      "model": "wc_gtsct",
+      "bytes": 17484,
+      "meshes": 1,
+      "decodeMs": 0.012
+    },
+    {
+      "model": "wc_gtsf",
+      "bytes": 11088,
+      "meshes": 1,
+      "decodeMs": 0.008
+    },
+    {
+      "model": "wc_gtstang",
+      "bytes": 14580,
+      "meshes": 1,
+      "decodeMs": 0.015
+    },
+    {
+      "model": "wc_icadv",
+      "bytes": 25780,
+      "meshes": 1,
+      "decodeMs": 0.023
+    },
+    {
+      "model": "wc_icbmb",
+      "bytes": 39572,
+      "meshes": 1,
+      "decodeMs": 0.029
+    },
+    {
+      "model": "wc_icfig",
+      "bytes": 22264,
+      "meshes": 1,
+      "decodeMs": 0.014
+    },
+    {
+      "model": "wc_ichvy",
+      "bytes": 20358,
+      "meshes": 1,
+      "decodeMs": 0.013
+    },
+    {
+      "model": "wc_icint",
+      "bytes": 17076,
+      "meshes": 1,
+      "decodeMs": 0.016
+    },
+    {
+      "model": "wc_icsf",
+      "bytes": 29316,
+      "meshes": 1,
+      "decodeMs": 0.023
+    }
+  ],
+  "promotions": [
+    {
+      "promoted": 2,
+      "oldSingleFrameMs": 0.044,
+      "framesToUpload": 2,
+      "perFrameMs": [
+        0.016,
+        0.029
+      ],
+      "newMaxPerFrameMs": 0.029
+    },
+    {
+      "promoted": 5,
+      "oldSingleFrameMs": 0.139,
+      "framesToUpload": 5,
+      "perFrameMs": [
+        0.016,
+        0.029,
+        0.002,
+        0.009,
+        0.084
+      ],
+      "newMaxPerFrameMs": 0.084
+    },
+    {
+      "promoted": 10,
+      "oldSingleFrameMs": 0.445,
+      "framesToUpload": 10,
+      "perFrameMs": [
+        0.016,
+        0.029,
+        0.002,
+        0.009,
+        0.084,
+        0.066,
+        0.048,
+        0.061,
+        0.078,
+        0.053
+      ],
+      "newMaxPerFrameMs": 0.084
+    },
+    {
+      "promoted": 20,
+      "oldSingleFrameMs": 0.955,
+      "framesToUpload": 20,
+      "perFrameMs": [
+        0.016,
+        0.029,
+        0.002,
+        0.009,
+        0.084,
+        0.066,
+        0.048,
+        0.061,
+        0.078,
+        0.053,
+        0.045,
+        0.021,
+        0.075,
+        0.063,
+        0.052,
+        0.04,
+        0.05,
+        0.059,
+        0.056,
+        0.049
+      ],
+      "newMaxPerFrameMs": 0.084
+    }
+  ],
+  "note": "Old promotion decodes every newly resident hull in the frame it is drawn; BrowserHullUploads decodes at most one hull per frame in the update path and the ship keeps its stand-in until then."
+}

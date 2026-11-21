@@ -81,6 +81,34 @@ No assertion, timeout, tier, quarantine policy, simulation rule or timing thresh
 timing only.** Raw evidence: `TestResults/tiers-20261121T103132.065320Z/` and ignored `.scratch/p1067/fast-isolated/`.
 
 
+## P1069 — Browser engine effects (B2): final Fast, run last (2026-11-21)
+
+P1069 adds the browser-only engine preparation/gather (`Rendering/NativeScene.cs`,
+`BrowserSceneEffects.cs`, `Game1.Scene.cs`, `BrowserHullUploads.cs`, `Game1.Flight.cs`),
+a pure desktop extraction of the P358/P365/P363 math and the `scene-engines` pack. The
+final Fast sweep on the final source exited **1**: **15,889 cases in 644.3 s**,
+**15,881 passed / 1 failed / 7 not executed**, **9 infrastructure checks passed**,
+calibrated case limit **12.090 s**, **4 timing offenders**. Browser projects were green
+(Browser 49, Browser game 178), Lobby 326, MonoGame 6,007 with 4 not executed.
+
+The single assertion failure is outside this task: `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange`
+observed only the same-sector `SHIP_STATUS` entries for ship 8098 (line 146) and passed
+**3/3** in fresh isolated processes (363–368 ms each). The timing-only rows are the
+existing chronic load-sensitive families:
+
+| Method (sweep row) | Sweep seconds | Three isolated outcomes | Isolated max case |
+|---|---:|---|---:|
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | 13.518 | 3/0/0 ×3 (whole theory) | 6.84 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 14.382 | 1/0/0 ×3 | 3.93 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | 16.626 | 2/0/0 ×3 | 5.17 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | 19.223 | 10/0/0 ×3 | 5.71 s |
+
+All **13 fresh processes passed** with zero failures or skips. No assertion, timeout, tier,
+quarantine rule, simulation rule or timing threshold changed. **Fast remains red** for one
+load-sensitive assertion and timing only. Raw evidence: `~/allegiance-evidence/P1069/fast-tier/`
+and `~/allegiance-evidence/P1069/fast-isolated/`.
+
+
 ## P1064 — Controls capacity and background bot send resolved (2026-11-20)
 
 The two P1060 follow-ups below are fixed in product code; full evidence and

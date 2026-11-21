@@ -1,0 +1,7 @@
+{
+  "baseline": "independent git archive HEAD build in ignored lane scratch",
+  "baselineCommit": "978250f4 (git archive HEAD)",
+  "currentFiles": 753,
+  "baselineFiles": 753,
+  "identical": true
+}

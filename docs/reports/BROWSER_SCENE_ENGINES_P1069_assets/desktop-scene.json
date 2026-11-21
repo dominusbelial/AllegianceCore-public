@@ -1,0 +1,20 @@
+{
+  "frame": 100,
+  "width": 640,
+  "height": 360,
+  "deterministicControls": "fixed 20 Hz update step, frozen loopback world, fixed particle seeds, constant session clocks, HUD hidden (the HUD's wall-clock blink is separately proven by the 1,848-case comparison)",
+  "engineEmitters": 1,
+  "glowEmitters": 1,
+  "ribbons": 1,
+  "byteIdentical": true,
+  "files": {
+    "desktop-scene-after.png": {
+      "bytes": 128380,
+      "sha256": "3dd8e912ff0055fca1d5986c762f6a5cf3e7fc43a5ebe95b86137f12ffbcb0aa"
+    },
+    "desktop-scene-before.png": {
+      "bytes": 128380,
+      "sha256": "3dd8e912ff0055fca1d5986c762f6a5cf3e7fc43a5ebe95b86137f12ffbcb0aa"
+    }
+  }
+}
