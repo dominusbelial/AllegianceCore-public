@@ -152,6 +152,26 @@ list in **reverse**.
   Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
   parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
   `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
+- **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
+  about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
+  `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the
+  browser client's round trip, a `returnTarget` only after
+  `BrowserReturnTarget.Normalize` (same-origin, path-only, under `prefix + "/"`;
+  absolute URLs, `//host`, schemes, backslashes, percent-encoded variants, fragments
+  and dot segments are refused, never repaired). `wwwroot/identity.html` +
+  `identity.js` show "Play in browser" only when signed in **and** enabled, and return
+  to the client in the same tab (`location.replace`); the external-provider callback
+  keeps a validated target in the data-protected authentication state
+  (`Identity/ExternalProviders.cs`). The lobby server list (`wwwroot/index.html`,
+  `app.js`) adds one "Play in browser" link per listed game that advertises a
+  `webSocketUrl`, naming the same listing id as the desktop Join link. The client
+  (`src/Allegiance.ClientCore.Browser/Pages/BrowserEntry.cs`, `Menu.razor`,
+  `Menu.Online.cs`) reads `?online=1` (open the signed-in server list by itself) and
+  `?server=` (show and mark that listing entry first). Proof:
+  `tools/p1062-browser-signin.cjs` (lobby home → sign in → play → join → flight; the
+  reverse from the client; the server-list link); parity:
+  `docs/parity/p1062-browser-signin-offer.csv`. Report:
+  `docs/reports/BROWSER_SIGNIN_OFFER_P1062.md`.
 - **Browser sector visuals (P1054)** — `tools/p1051-flight-opens/Program.cs`
   records ordinary waypoint/aleph travel through all sectors in both HUDs;
   `tools/p1054-sector-analysis.py` attributes verified desktop opens. The

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Allegiance.Lobby.BrowserPreview;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -36,8 +37,8 @@ public static class ExternalProviders
     };
     public static void MapExternalProviders(this RouteGroupBuilder group, IdentitySettings settings)
     {
-        group.MapGet("/external/{provider}", (string provider) => Enabled(settings, provider)
-            ? Results.Challenge(new AuthenticationProperties { RedirectUri = "/identity.html", Items = { ["provider"] = provider } }, [provider])
+        group.MapGet("/external/{provider}", (string provider, BrowserPreviewSettings preview, HttpContext context) => Enabled(settings, provider)
+            ? Results.Challenge(new AuthenticationProperties { RedirectUri = IdentityPage(preview, context), Items = { ["provider"] = provider } }, [provider])
             : Results.NotFound());
         group.MapPost("/external/complete", async (RegisterOptionsRequest req, HttpContext ctx, IdentityStore store) =>
         {
@@ -51,4 +52,11 @@ public static class ExternalProviders
             return Results.Ok(account);
         });
     }
+
+    /// <summary>P1062 — the provider callback lands on the identity page again. The
+    /// browser client's return target rides in the server-set redirect URI only after
+    /// the closed path-only rule; the authentication state is data-protected, so the
+    /// client cannot substitute a different destination.</summary>
+    private static string IdentityPage(BrowserPreviewSettings preview, HttpContext context) =>
+        preview.Enabled ? BrowserReturnTarget.IdentityPage(context.Request.Query["return"], preview.Prefix) : "/identity.html";
 }

@@ -7,5 +7,7 @@
     <Using Include="Xunit" />
     <!-- Pure loader source, no browser runtime or graphics dependencies. -->
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="PreviewAssets.cs" />
+    <!-- P1062 pure URL contract (no Blazor/HTTP types), shared with the menu. -->
+    <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserEntry.cs" Link="BrowserEntry.cs" />
   </ItemGroup>
 </Project>

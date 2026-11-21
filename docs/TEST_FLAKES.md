@@ -10654,3 +10654,23 @@ index branches compile only for BROWSER; these desktop/server timing methods ret
 behavior. **Fast remains red for timing**, despite zero failed assertions. [Sweep receipt](reports/BROWSER_BATTLE_SHIPS_P1065_assets/fast-summary.json),
 [isolated outcomes/durations and TRX hashes](reports/BROWSER_BATTLE_SHIPS_P1065_assets/fast-isolated.json).
 Raw logs/TRX remain in ignored `.scratch/p1065/fast/` and `.scratch/p1065/fast-isolated/`.
+## P1062 — final Fast, run last (2026-11-20)
+
+P1062 adds a lobby config answer (`/api/browser`), the browser client's URL contract and its tests, and
+the lobby pages' offer markup; it changes no shared simulation, server dispatch, ticket/identity rule or
+desktop rendering. The final Fast sweep on the final source exited **1**: **15,761 passed / 1 failed / 7
+not executed**, **15,769 total**, **564.9 s**; all **9 infrastructure checks passed**, calibrated case
+limit **11.540 s**. Browser head **39/0/0**, browser game **91/0/0**, lobby **325/0/0** inside the sweep.
+An earlier sweep of the same source shape (before the last provider-helper refactor) had 0 failures.
+
+| Method | Sweep observation | Three isolated outcomes (passed/failed/skipped) |
+|---|---|---|
+| `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | "enemy must take the single round's damage" (6 s) | **1/0/0, 1/0/0, 1/0/0** (1 s each) — existing e2e gun-damage live family, not P1062 code |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | passed in **13.813 s** (timing gate only) | **2/0/0, 2/0/0, 2/0/0** (7 s suite each, both theory rows) |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in **13.394 s** (timing gate only) | **1/0/0, 1/0/0, 1/0/0** (3 s suite each) |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | passed in **13.064 s** (timing gate only) | not re-selected: passing case, timing gate only |
+
+These are existing load-sensitive gun-damage and selection families, not P1062 code; no assertion,
+timeout, tier, quarantine policy, throttle, privilege, simulation or wire rule was changed. Ignored raw
+evidence: `TestResults/tiers-20261121T043242.263060Z/` (TRX + logs + summary.json).
+

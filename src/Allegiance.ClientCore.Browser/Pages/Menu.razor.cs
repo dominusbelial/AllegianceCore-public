@@ -74,6 +74,10 @@ public partial class Menu
             _reference ??= DotNetObjectReference.Create(this);
             await JsRuntime.InvokeVoidAsync("menuText", _reference);
             await JsRuntime.InvokeVoidAsync("preview.startFrames", _reference);
+            // P1062 — a player sent back by the lobby's identity/server list lands
+            // on the online panel by itself (signed in, no manual refresh).
+            try { await OpenEntryAsync(); }
+            catch (Exception error) { Console.Error.WriteLine("[browser] Online entry: " + error.Message); }
         }
         catch (OperationCanceledException) when (_disposed) { }
         catch (Exception error)
@@ -174,7 +178,7 @@ public partial class Menu
     [JSInvokable]
     public object Metrics() => new { screen = _game?.Screen, optionsPage = _game?.OptionsPage,
         invertMouseY = _game?.InvertMouseY, menuSoundEnabled = _game?.MenuSoundEnabled, managedHeapBytes = _game?.ManagedHeapBytes,
-        residentBytes = _assets?.ResidentBytes, battlePacks = new { completed = _battleStreamer?.CompletedPacks, retries = _battleStreamer?.RetryCount, promotedBytes = _battleStreamer?.PromotedBytes }, sectors = new { active = _sectorStreamer?.ActiveSector, retries = _sectorStreamer?.RetryCount, completed = _sectorStreamer?.CompletedPacks, status = SectorStatus }, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, dev = _dev, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
+        residentBytes = _assets?.ResidentBytes, battlePacks = new { completed = _battleStreamer?.CompletedPacks, retries = _battleStreamer?.RetryCount, promotedBytes = _battleStreamer?.PromotedBytes }, sectors = new { active = _sectorStreamer?.ActiveSector, retries = _sectorStreamer?.RetryCount, completed = _sectorStreamer?.CompletedPacks, status = SectorStatus }, settingsPending = _flushPending, style = _style.ToString(), gameStyle = _game?.HudStyleName, dev = _dev, entry = new { autoOnline = Entry.Online, preselected = _preselectServerId }, online = new { state = _onlineState, pendingJoins = _pendingJoins, decoderReady = _briefingDecoder is not null, shipId = _session?.World.MyShipId, resumeSuccesses = _session?.ResumeSuccesses, resumeAttempts = _session?.ResumeAttempts, reconnecting = _session?.Reconnecting, malformed = _session?.MalformedMessageCount },
         launch = new { busy = _onlineBusy, guard = _launchGuard, readySends = _readySends, shipId = _session?.World.MyShipId,
             sideId = _session?.World.MySideId, stage = _session?.World.Mission?.Stage, inGame = _session?.World.InGame,
             joinedShipId = _session?.World.JoinedShipId,

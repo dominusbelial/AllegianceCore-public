@@ -13,6 +13,15 @@ const table = document.getElementById('servers');
 const tbody = table.tBodies[0];
 const statusEl = document.getElementById('status');
 
+// P1062 — the browser build's offer, read once from the lobby's own config answer.
+// Enabled means every listed game that advertises a WebSocket route can be opened
+// in the browser at the served prefix; a game without one shows no browser link.
+// A failed/disabled answer leaves the column empty (the desktop Join link stays).
+const offerReady = fetch('/api/browser')
+  .then(res => res.ok ? res.json() : null)
+  .then(offer => offer && offer.enabled === true && typeof offer.prefix === 'string' && offer.prefix ? offer : null)
+  .catch(() => null);
+
 function cell(text) {
   const td = document.createElement('td');
   // textContent only — never a markup string — so a hostile Name can't become markup.
@@ -20,7 +29,20 @@ function cell(text) {
   return td;
 }
 
+// The browser link opens the same listing entry the desktop Join link names, with
+// that server preselected; the browser client still requires sign-in and a ticket.
+function browserCell(server, offer) {
+  const td = document.createElement('td');
+  if (!offer || typeof server.webSocketUrl !== 'string' || server.webSocketUrl.length === 0) return td;
+  const play = document.createElement('a');
+  play.textContent = 'Play in browser';
+  play.href = offer.prefix + '/menu.html?online=1&server=' + encodeURIComponent(server.id);
+  td.appendChild(play);
+  return td;
+}
+
 async function refresh() {
+  const offer = await offerReady;
   let servers;
   try {
     const res = await fetch('/api/servers');
@@ -30,7 +52,7 @@ async function refresh() {
     tbody.textContent = '';
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 9;
+    td.colSpan = 10;
     td.className = 'empty';
     td.textContent = 'Could not reach the lobby directory (' + err.message + ')';
     tr.appendChild(td);
@@ -44,7 +66,7 @@ async function refresh() {
   if (!Array.isArray(servers) || servers.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 9;
+    td.colSpan = 10;
     td.className = 'empty';
     td.textContent = 'No servers online right now.';
     tr.appendChild(td);
@@ -69,6 +91,7 @@ async function refresh() {
         '&id=' + encodeURIComponent(s.id) + '&v=1';
       joinCell.appendChild(join);
       tr.appendChild(joinCell);
+      tr.appendChild(browserCell(s, offer));
       tbody.appendChild(tr);
     }
   }
