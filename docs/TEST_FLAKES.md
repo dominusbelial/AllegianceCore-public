@@ -6,6 +6,16 @@ at the end).
 
 
 
+## P1069 review — warm engine preparation allocation check (2026-11-21, Claude)
+
+`P1069EngineSceneTests.Warm_engine_preparation_for_thrusting_ships_allocates_no_steady_state_bytes(ships: 2)`
+failed once in about nine full runs of `Allegiance.ClientCore.Game.Browser.Tests` on the workstation
+(**1,872 bytes** over a 1,000-step window; seeded scene, so not a data difference). A real per-frame
+allocation repeats every window; a one-off runtime allocation (tiered-JIT promotion landing in the
+window) does not. The test now measures up to three 1,000-step rounds and requires one to be zero,
+reporting every round on failure. After the change: **12/12** full-project runs passed.
+
+
 ## P1068 — Browser guest play: broad sweep follow-up (2026-11-21)
 
 P1068 changes browser guest entry/identity UI and advertises the server's existing

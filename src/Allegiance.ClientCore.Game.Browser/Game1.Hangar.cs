@@ -102,9 +102,14 @@ public sealed partial class Game1
                 blockerText = HangarLaunchText.For(hangar?.LastReadiness.Blocker ?? HangarLaunch.Blocker.NoSession),
                 money = shop?.MyMoney,
                 hull = shop?.EffectiveHullId,
-                hullName = shop?.EffectiveHull?.Name,
+                // What the screen draws: the view model resolves the docked hull from the full
+                // catalogue even when this station does not offer it (P1014), the shop does not.
+                hullName = hangar?.ViewModel?.EffectiveHull?.Name,
                 currentHull = shop?.CurrentHullId,
                 parts = shop?.ChosenParts.Count ?? 0,
+                // The pending loadout itself (part id @ mount), so a harness sees a part
+                // replaced in an occupied slot, not only a part added to an empty one.
+                chosen = shop is null ? "" : string.Join(",", shop.ChosenParts.Select(p => p.PartId + "@" + p.MountId)),
                 offeredHulls = shop?.BuyableHulls.Count ?? 0,
                 offeredParts = shop?.Catalog.Parts.Count ?? 0,
                 cost = shop?.Cost ?? 0,
@@ -113,8 +118,8 @@ public sealed partial class Game1
                 launchEnabled = shop?.LaunchEnabled == true,
                 state = shop?.State.ToString() ?? "Unknown",
                 blockReason = shop?.BlockReason,
-                slots = shop?.Slots.Count ?? 0,
-                offers = shop is null || shop.OpenSlot is not { } open ? 0 : shop.SlotOffers(open).Count,
+                slots = hangar?.ViewModel?.SlotRows.Count ?? 0,
+                offers = hangar?.ViewModel is not { } vm || shop?.OpenSlot is not { } open ? 0 : vm.OffersFor(open).Count,
                 // Live mesh readiness of the previewed hull: the P1065 streamer
                 // request is made every docked frame and the preview shows a
                 // stand-in until the verified pack lands.
@@ -124,11 +129,12 @@ public sealed partial class Game1
                 // pointer hit test and the renderer use, so a harness clicks exactly
                 // where the button is drawn.
                 verbs = hangar?.Active != true ? [] : HangarControls.Actions(hangar.Developments)
-                    .Select(action => new
+                    .Select(action =>
                     {
-                        action = action.ToString(),
-                        bounds = HangarControls.Bounds(GraphicsDevice.Viewport.Width,
-                            GraphicsDevice.Viewport.Height, action),
+                        // XNA Rectangle keeps X/Y/Width/Height in fields, which JSON
+                        // interop skips; project them like the loadout targets below.
+                        var r = HangarControls.Bounds(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, action);
+                        return new { action = action.ToString(), bounds = new { x = r.X, y = r.Y, width = r.Width, height = r.Height } };
                     }).ToArray(),
                 // The loadout screen's drawn hit targets, at the layout this frame drew
                 // (draw == hit): the harness clicks a hull row, a slot, an offer and the
@@ -143,8 +149,10 @@ public sealed partial class Game1
                         index = element.Index,
                         bounds = new
                         {
-                            x = element.Bounds.X, y = element.Bounds.Y,
-                            width = element.Bounds.Width, height = element.Bounds.Height,
+                            // Canvas space: a window under the layout's 640x480 minimum draws
+                            // the loadout scaled down by _loadoutScale (see UpdateLoadoutScreen).
+                            x = element.Bounds.X / _loadoutScale, y = element.Bounds.Y / _loadoutScale,
+                            width = element.Bounds.Width / _loadoutScale, height = element.Bounds.Height / _loadoutScale,
                         },
                     }).ToArray(),
                 },
@@ -356,13 +364,45 @@ public sealed partial class Game1
     private void UpdateLoadoutScreen(BrowserHangarModel hangar, ClientWorld world, ShipEntity own,
         HangarLaunch.Readiness readiness, bool missionStarted, Viewport vp)
     {
+        // LoadoutV2Layout supports 640x480 and up (LoadoutV2Layout.Compute); the desktop
+        // window never goes below that, a browser canvas can (800x480 page minus the
+        // toolbar is 800x369). Lay out and draw at the smallest same-aspect size that
+        // meets the minimum, offscreen, then scale it onto the canvas; the pointer is
+        // scaled the same way, so draw == hit still holds. Desktop code is unchanged.
+        _loadoutScale = MathF.Max(1f, MathF.Max(640f / Math.Max(1, vp.Width), 480f / Math.Max(1, vp.Height)));
+        if (_loadoutScale <= 1f) { UpdateLoadoutScreenAt(hangar, world, own, readiness, missionStarted, vp); return; }
+        int w = (int)MathF.Ceiling(vp.Width * _loadoutScale), h = (int)MathF.Ceiling(vp.Height * _loadoutScale);
+        if (_loadoutTarget is null || _loadoutTarget.Width != w || _loadoutTarget.Height != h)
+        {
+            _loadoutTarget?.Dispose();
+            _loadoutTarget = new RenderTarget2D(GraphicsDevice, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        }
+        GraphicsDevice.SetRenderTarget(_loadoutTarget);
+        GraphicsDevice.Clear(Color.Black);
+        try { UpdateLoadoutScreenAt(hangar, world, own, readiness, missionStarted, new Viewport(0, 0, w, h)); }
+        finally
+        {
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Viewport = vp;
+        }
+        _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.LinearClamp);
+        _spriteBatch.Draw(_loadoutTarget, new Rectangle(0, 0, vp.Width, vp.Height), Color.White);
+        _spriteBatch.End();
+    }
+
+    private float _loadoutScale = 1f;
+    private RenderTarget2D? _loadoutTarget;
+
+    private void UpdateLoadoutScreenAt(BrowserHangarModel hangar, ClientWorld world, ShipEntity own,
+        HangarLaunch.Readiness readiness, bool missionStarted, Viewport vp)
+    {
         var router = _loadoutV2InputState ??= new LoadoutV2Input();
         hangar.Prepare(world, own);
         bool live = !hangar.LaunchSent && !hangar.LaunchPending && !hangar.QuitConfirm;
         bool control = _hangarKeys.IsKeyDown(Keys.LeftControl) || _hangarKeys.IsKeyDown(Keys.RightControl);
         var keys = LoadoutV2Input.Keys(action => ActionDown(_hangarKeys, action), control);
         var pointer = _hangarPointerX >= 0
-            ? new LoadoutV2Pointer(_hangarPointerX, _hangarPointerY, _hangarPointerDown, _hangarWheel)
+            ? new LoadoutV2Pointer((int)(_hangarPointerX * _loadoutScale), (int)(_hangarPointerY * _loadoutScale), _hangarPointerDown, _hangarWheel)
             : (LoadoutV2Pointer?)null;
         var result = router.Step(hangar.ViewModel, _loadoutV2Layout, live, keys, pointer);
         // Native Escape closes the open picker first, then leaves the loadout for the

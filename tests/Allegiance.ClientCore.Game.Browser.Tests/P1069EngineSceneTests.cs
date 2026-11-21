@@ -276,9 +276,18 @@ public sealed class P1069EngineSceneTests
         var random = new RandomTrailSource(3);
         double now = 0;
         for (int i = 0; i < 300; i++) Step();
-        long bytes = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 1000; i++) Step();
-        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - bytes);
+        // A real steady-state allocation repeats in every round; a one-off runtime
+        // allocation (tiered-JIT promotion landing mid-window, seen once in ~9 runs
+        // at 1,872 bytes) does not. So the claim is: some full round allocates zero.
+        var rounds = new List<long>(3);
+        for (int round = 0; round < 3; round++)
+        {
+            long bytes = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 1000; i++) Step();
+            rounds.Add(GC.GetAllocatedBytesForCurrentThread() - bytes);
+            if (rounds[^1] == 0) break;
+        }
+        Assert.True(rounds[^1] == 0, "allocated bytes per 1000-step round: " + string.Join(", ", rounds));
 
         void Step()
         {

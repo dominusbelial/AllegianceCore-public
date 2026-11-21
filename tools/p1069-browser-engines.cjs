@@ -56,13 +56,15 @@ async function main(){
   // Wait until the engine effects are actually live (both the pilot and any
   // boosting bot contribute), never capture an empty effect set.
   await until(async()=>{const s=(await page.evaluate(()=>gameMenu.metrics())).flight.scene;return s.exhaust>0&&s.glows>0&&s.ribbons>0},'exhaust particles, nozzle glows and ribbons are live',240000);
+  // Afterburner burns fuel (native afterburnerIGC.cpp:150, port Ship.UpdateAfterburner) and the
+  // tank empties in ~20 s, so boost only around each capture, never through a sampling window.
+  await page.keyboard.up('ShiftLeft');
   const timing=[];
   for(const [style,width,height]of [['Classic',1920,1080],['Modern',1920,1080],['Classic',800,480],['Modern',800,480]]){
    await page.setViewportSize({width,height});await page.getByRole('button',{name:style,exact:true}).click();await delay(800);
    // Clicking the HUD style button moves DOM focus off the canvas; re-acquire
    // it and hold the afterburner again so the captured frame really is boosting.
-   await page.locator('#theCanvas').focus();await page.keyboard.down('ShiftLeft');
-   await until(async()=>{const s=(await page.evaluate(()=>gameMenu.metrics())).flight.scene;return s.exhaust>0&&s.glows>0&&s.ribbons>0},`engine effects live for ${style} ${width}x${height}`,60000);
+   await page.locator('#theCanvas').focus();
    await page.evaluate(()=>{window.engineSample={intervals:[],active:true};let previous;const tick=now=>{if(previous!==undefined)engineSample.intervals.push(now-previous);previous=now;if(engineSample.active)requestAnimationFrame(tick)};requestAnimationFrame(tick)});
    const end=Date.now()+sampleSeconds*1000;
    while(Date.now()<end){
@@ -78,14 +80,25 @@ async function main(){
    const latest=samples.at(-1).metrics.flight;
    // Do not silently save an empty/home/dead frame as combat evidence.
    assert.equal(latest.sectorId,target);assert.ok(latest.flying);assert.ok(latest.battle.contacts>=Math.min(3,size*2-1));
+   // Boost now, for the capture only (see the fuel note above).
+   // Re-centre on the rendezvous first: each boosted capture carries the hull several
+   // hundred metres, and the drift otherwise ends in an aleph by the fourth capture.
+   await page.locator('#flight-waypoint').click();for(const axis of ['x','y','z'])await type(page,'#waypoint-'+axis,axis==='y'?550:0);await page.locator('#waypoint-go').click();
+   await delay(8000);
+   // Held forward thrust (W) takes manual control from the parked autopilot, so the hull
+   // really moves and the plume/ribbon stretch behind it instead of pooling at the nozzle.
+   await page.locator('#theCanvas').focus();await page.keyboard.down('KeyW');await page.keyboard.down('ShiftLeft');
+   await until(async()=>{const s=(await page.evaluate(()=>gameMenu.metrics())).flight.scene;return s.exhaust>0&&s.glows>0&&s.ribbons>0},`engine effects live for ${style} ${width}x${height}`,30000);
+   await delay(2500);Object.assign(latest,await page.evaluate(()=>gameMenu.metrics().flight));
    assert.ok(latest.scene.exhaust>0,'exhaust particles live');assert.ok(latest.scene.glows>0,'nozzle glows live');assert.ok(latest.scene.ribbons>0,'motion ribbons live');
    // Chase camera = close behind the own afterburning hull; the plume trails it.
    const file=`engines-5-${style.toLowerCase()}-${width}x${height}.jpg`;await page.screenshot({path:path.join(out,file),type:'jpeg',quality:80});
-   assert.ok(fs.statSync(path.join(out,file)).size<=2*1024*1024,'each JPEG <=2 MiB');captures.push({file,style,width,height,battle:latest.battle,scene:latest.scene});
+   assert.ok(fs.statSync(path.join(out,file)).size<=2*1024*1024,'each JPEG <=2 MiB');captures.push({file,style,width,height,battle:latest.battle,scene:latest.scene});await page.keyboard.up('ShiftLeft');await page.keyboard.up('KeyW');await delay(1500);
   }
   // One dedicated close-behind-afterburner frame at the default viewport.
   await page.setViewportSize({width:1920,height:1080});await page.getByRole('button',{name:'Classic',exact:true}).click();await delay(800);
-  await page.locator('#theCanvas').focus();await page.keyboard.down('ShiftLeft');await delay(1200);
+  await page.locator('#flight-waypoint').click();for(const axis of ['x','y','z'])await type(page,'#waypoint-'+axis,axis==='y'?550:0);await page.locator('#waypoint-go').click();await delay(8000);
+  await page.locator('#theCanvas').focus();await page.keyboard.down('KeyW');await page.keyboard.down('ShiftLeft');await delay(2500);
   const close=await page.evaluate(()=>gameMenu.metrics().flight);
   assert.ok(close.scene.exhaust>0&&close.flying&&close.sectorId===target,'close capture is a live afterburning combat frame');
   const closeFile='engines-close-afterburner-1920x1080.jpg';await page.screenshot({path:path.join(out,closeFile),type:'jpeg',quality:80});

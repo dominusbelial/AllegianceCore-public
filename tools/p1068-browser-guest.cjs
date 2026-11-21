@@ -70,7 +70,11 @@ async function main() {
     await join(first); await first.locator('#online-panel[data-state="Sides"]').waitFor();
     await first.locator('.online-side').first().click(); await first.locator('#online-panel[data-state="Hangar"]').waitFor();
     assert.ok(await first.locator('#online-identity').isVisible(), 'guest label in hangar');
-    await first.locator('#online-launch').click(); await first.locator('#online-panel[data-state="Flight"]').waitFor();
+    // P1070 moved the HTML launch control behind ?dev=1; a player visit launches from the
+    // game window's own hangar Launch pane (gameMenu.launch). Retry until the hangar is drawn.
+    await first.waitForFunction(() => gameMenu.hangar().visible, null, { timeout: 120000 });
+    await first.waitForFunction(() => { gameMenu.launch(); return document.getElementById('online-panel')?.dataset.state === 'Flight'; },
+      null, { timeout: 120000, polling: 1000 });
     await first.waitForFunction(() => gameMenu.metrics().flight.frames > 3);
     evidence.pageOpenToFlyingMs = Date.now() - pilot.opened;
     await until(() => readState().ships.some(s => s.Name === pilot.callsign && s.StationId == null), 'authoritative guest in flight');

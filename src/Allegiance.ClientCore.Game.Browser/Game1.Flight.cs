@@ -445,6 +445,11 @@ public sealed partial class Game1
             DrawBrowserHangar();
             return;
         }
+        // Undocked: the hangar model only updates from DrawBrowserHangar, so leave the dock
+        // here. Without this a launched pilot kept the old shop, and the next dock (respawn,
+        // re-dock) skipped EnterDock and showed that stale shop (desktop: Game1.Panes.cs:127-206
+        // builds a fresh shop on every dock).
+        if (_hangarField is { Active: true } leftDock) leftDock.Reset();
         var orientation = _ownSim.Orientation;
         var position = V(_ownSim.Position);
         var forward = V(orientation.GetForward()); var above = V(orientation.GetUp());

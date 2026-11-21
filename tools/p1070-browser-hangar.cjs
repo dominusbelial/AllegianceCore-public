@@ -49,10 +49,10 @@ async function run() {
   const chromium = (await import(require('node:url').pathToFileURL(path.join(modules, '@sparticuz/chromium/build/index.js')).href)).default;
   const browser = await playwright.launch({
     executablePath: await chromium.executablePath(), headless: true,
-    args: [...chromium.args.filter(a => !['--disable-web-security', '--allow-running-insecure-content'].includes(a)),
+    args: [...chromium.args.filter(a => !['--disable-web-security', '--allow-running-insecure-content', '--single-process'].includes(a)),
       '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost', '--ignore-certificate-errors'],
   });
-  const errors = [], captures = [], cases = [], noDev = {};
+  const errors = [], captures = [], cases = [], noDev = {}, consoleLines = [];
   const password = fs.readFileSync(path.join(stateDir, 'game-password'), 'utf8').trim();
   try {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true });
@@ -64,6 +64,7 @@ async function run() {
       return route.continue();
     });
     page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => { consoleLines.push(new Date().toISOString().slice(11, 23) + ' ' + message.type() + ': ' + message.text()); if (consoleLines.length > 400) consoleLines.shift(); });
     page.pointer = (x, y, down) => page.evaluate(([cx, cy, pressed]) => gameMenu.pointer(cx, cy, pressed, 0), [x, y, down]);
     const clickAt = async (bounds, label) => {
       const point = centre(bounds);
@@ -113,7 +114,7 @@ async function run() {
     await clickAt(await verb('Loadout'), 'loadout pane');
     await until(async () => (await hangar(page)).loadoutOpen, 'the loadout screen is open', 30000);
     const loadoutOpened = await hangar(page);
-    assert.ok(loadoutOpened.slots > 0, 'the loadout lists the hull\'s slots (' + loadoutOpened.slots + ')');
+    assert.ok(loadoutOpened.slots > 0, 'the loadout lists the hull\'s slots: ' + JSON.stringify({ ...loadoutOpened, verbs: undefined }));
 
     // A different hull, then a part in a slot, then a buy — all by drawn row.
     const hullRows = (await hangar(page)).loadout.elements.filter(e => e.kind === 'Hull');
@@ -131,8 +132,10 @@ async function run() {
     const offers = (await hangar(page)).loadout.elements.filter(e => e.kind === 'Offer');
     const offer = offers[offers.length - 1];
     assert.ok(offer, 'the opened slot offers parts (' + offers.length + ' rows)');
+    const chosenBefore = (await hangar(page)).chosen;
     await clickAt(offer.bounds, 'offer row ' + offer.index);
-    await until(async () => (await hangar(page)).parts > chosenHull.parts, 'a part was mounted in the pending loadout', 30000);
+    // An occupied slot is replaced (same count), an empty one gains a part: either changes the pending loadout.
+    await until(async () => (await hangar(page)).chosen !== chosenBefore, 'a part was mounted in the pending loadout', 30000);
     const chosen = await hangar(page);
     // Buy: the request goes out through the shared BUY_LOADOUT path; the server's
     // acknowledgement then moves the wallet and the shop follows it.
@@ -157,7 +160,12 @@ async function run() {
       // Loadout first, then back to the hangar, so both screens are one state apart.
       if (!(await hangar(page)).loadoutOpen) {
         await clickAt(await verb('Loadout'), style + ' loadout pane');
-        await until(async () => (await hangar(page)).loadoutOpen, style + ' loadout open', 30000);
+        try { await until(async () => (await hangar(page)).loadoutOpen, style + ' loadout open', 30000); }
+        catch (error) {
+          const h = await hangar(page), m = await page.evaluate(() => gameMenu.metrics());
+          throw new Error(error.message + ' ' + JSON.stringify({ hangar: { ...h, loadout: undefined }, presentation: m.presentation ?? m.flight?.presentation,
+            canvas: await page.evaluate(() => { const c = document.getElementById('theCanvas'); const b = c.getBoundingClientRect(); return { w: c.width, h: c.height, cssW: b.width, cssH: b.height }; }) }));
+        }
       }
       await delay(1200);
       const loadoutFile = `hangar-loadout-${style.toLowerCase()}-${width}x${height}.jpg`;
@@ -204,7 +212,12 @@ async function run() {
     assert.ok(redocked.visible, 'the hangar is drawn again');
 
     // ── the run WITHOUT ?dev=1: no HTML launch controls at all ─────────────
-    const plain = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true });
+    // A fresh context only isolates localStorage (the remembered dev switch) when
+    // Chromium is not in --single-process mode, which is dropped at launch above.
+    // Same signed-in pilot (cookies + storage), minus the remembered dev switch.
+    const signedIn = await page.context().storageState();
+    for (const origin of signedIn.origins) origin.localStorage = origin.localStorage.filter(item => item.name !== 'allegiance.dev');
+    const plain = await browser.newContext({ viewport: { width: 1920, height: 1080 }, ignoreHTTPSErrors: true, storageState: signedIn });
     const bare = await plain.newPage();
     bare.setDefaultTimeout(120000);
     await plain.route('**/*', route => {
@@ -265,7 +278,7 @@ async function run() {
   } catch (error) {
     fs.mkdirSync(out, { recursive: true });
     fs.writeFileSync(path.join(out, 'failure.json'), JSON.stringify({
-      error: error.message, stack: error.stack, errors, cases, captures, noDev,
+      error: error.message, stack: error.stack, errors, cases, captures, noDev, consoleLines,
     }, null, 2) + '\n');
     throw error;
   } finally {
