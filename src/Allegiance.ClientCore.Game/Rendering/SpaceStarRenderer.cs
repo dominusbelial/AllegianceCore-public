@@ -52,8 +52,14 @@ public sealed class SpaceStarRenderer(GraphicsDevice device) : IDisposable
         _effect.View = rotation;
         _effect.Projection = projection;
         if (drawPoints && stars.Length > 0)
+#if BROWSER
+            for (int passIndex = 0; passIndex < _effect.CurrentTechnique.Passes.Count; passIndex++)
+            {
+                var pass = _effect.CurrentTechnique.Passes[passIndex];
+#else
             foreach (var pass in _effect.CurrentTechnique.Passes)
             {
+#endif
                 pass.Apply();
                 device.DrawUserPrimitives(PrimitiveType.PointList, _points, 0, _points.Length);
             }
@@ -61,8 +67,14 @@ public sealed class SpaceStarRenderer(GraphicsDevice device) : IDisposable
         {
             _effect.View = Matrix.Identity;
             _effect.Projection = Matrix.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0, 1);
+#if BROWSER
+            for (int passIndex = 0; passIndex < _effect.CurrentTechnique.Passes.Count; passIndex++)
+            {
+                var pass = _effect.CurrentTechnique.Passes[passIndex];
+#else
             foreach (var pass in _effect.CurrentTechnique.Passes)
             {
+#endif
                 pass.Apply();
                 device.DrawUserPrimitives(PrimitiveType.LineList, _lines, 0, LastTailCount);
             }

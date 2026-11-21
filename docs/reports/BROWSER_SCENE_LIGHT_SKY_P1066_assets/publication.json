@@ -1,0 +1,39 @@
+{
+  "base": {
+    "files": 601,
+    "uniqueFiles": 577,
+    "rawBytes": 32536380,
+    "gzipBytes": 7564835
+  },
+  "runtimeGzipBytes": 6193260,
+  "totalTransferBytes": 13758095,
+  "budgetBytes": 14680064,
+  "joinManifestSha256": "cb4afbf642b238d77deee2a04eab18b743527db98905cc81e735e5c9a4e91426",
+  "sceneJoinUnchanged": true,
+  "scenePacks": [
+    {
+      "key": "scene-b1",
+      "sources": 10,
+      "rawBytes": 2364624,
+      "gzipBytes": 573472
+    },
+    {
+      "key": "scene-paintings",
+      "sources": 239,
+      "rawBytes": 9952488,
+      "gzipBytes": 9958228
+    },
+    {
+      "key": "scene-build",
+      "sources": 2,
+      "rawBytes": 8399684,
+      "gzipBytes": 5886448
+    },
+    {
+      "key": "scene-giants",
+      "sources": 2,
+      "rawBytes": 8469859,
+      "gzipBytes": 8363070
+    }
+  ]
+}

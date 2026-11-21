@@ -89,6 +89,10 @@ public sealed class AmbientDustRenderer : IDisposable
     /// <summary>The square edge-length (px) of the fallback generated sprite.</summary>
     private const int SpriteSize = 32;
 
+#if BROWSER
+    private VertexPositionColorTexture[] _vertices = [];
+    private short[] _indices = [];
+#endif
     private readonly Texture2D _softSprite;
     private readonly BasicEffect _effect;
     private readonly BlendState _additiveSoft;
@@ -153,12 +157,23 @@ public sealed class AmbientDustRenderer : IDisposable
         var camRight = new Vector3(view.M11, view.M12, view.M13);
         var camUp = new Vector3(view.M21, view.M22, view.M23);
 
+#if BROWSER
+        if (_vertices.Length < grains.Count * 4)
+        {
+            _vertices = new VertexPositionColorTexture[grains.Count * 4];
+            _indices = new short[grains.Count * 6];
+        }
+        var verts = _vertices;
+        var indices = _indices;
+#else
         var verts = new VertexPositionColorTexture[grains.Count * 4];
         var indices = new short[grains.Count * 6];
+#endif
 
         int v = 0, idxBase = 0;
-        foreach (var g in grains)
+        for (int i = 0; i < grains.Count; i++)
         {
+            var g = grains[i];
             var centre = new Vector3(g.Position.X, g.Position.Y, g.Position.Z) - cameraEye;
             float half = g.HalfExtent;
             // Solid tint at alpha 1 — the soft sprite's own alpha falloff provides
@@ -197,7 +212,7 @@ public sealed class AmbientDustRenderer : IDisposable
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;   // test, never write (P339 B2)
         gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, grains.Count * 2);
+            PrimitiveType.TriangleList, verts, 0, grains.Count * 4, indices, 0, grains.Count * 2);
 
         // Restore all three states (P339 B2 — ExplosionRenderer's exact pattern).
         gd.BlendState = BlendState.Opaque;

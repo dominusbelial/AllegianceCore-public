@@ -23,6 +23,9 @@ public sealed class NavStrobeRenderer : IDisposable
 {
     private readonly NativeEffectTextures _native;
     private readonly ParticleBillboardBatcher _batcher;
+#if BROWSER
+    private readonly List<ParticleBillboard> _items = new(128);
+#endif
 
     public NavStrobeRenderer(GraphicsDevice gd, NativeEffectTextures native)
     {
@@ -40,9 +43,14 @@ public sealed class NavStrobeRenderer : IDisposable
     {
         if (lights.Count == 0) return;
 
+#if BROWSER
+        var items = _items; items.Clear();
+#else
         var items = new List<ParticleBillboard>(lights.Count);
-        foreach (var l in lights)
+#endif
+        for (int i = 0; i < lights.Count; i++)
         {
+            var l = lights[i];
             var centre = new XnaVec(l.Position.X, l.Position.Y, l.Position.Z) - cameraEye;
             items.Add(new ParticleBillboard(centre, l.HalfExtent, new Color(l.Rgb.X, l.Rgb.Y, l.Rgb.Z, l.Alpha), 0f));
         }

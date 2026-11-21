@@ -208,6 +208,7 @@ public sealed partial class Game1 : Game
         if (disposing)
         {
             _sectorTextures?.Dispose();
+            DisposeScene();
             _menuAudio?.Dispose(); _modernFlightHud?.Dispose();
             _flightShips?.Dispose(); _flightStations?.Dispose(); _flightRocks?.Dispose(); _flightSky?.Dispose(); _flightBolts?.Dispose(); _flightWarps?.Dispose();
         }
@@ -216,7 +217,7 @@ public sealed partial class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(new Color(5, 12, 20));
+        GraphicsDevice.Clear(_flightSession is not null ? Color.Black : new Color(5, 12, 20));
         if (_flightSession is not null) { DrawOnlineFlight(); base.Draw(gameTime); return; }
         var vp = GraphicsDevice.Viewport;
         var title = new Color(HudColor.TealAccent.R, HudColor.TealAccent.G, HudColor.TealAccent.B);

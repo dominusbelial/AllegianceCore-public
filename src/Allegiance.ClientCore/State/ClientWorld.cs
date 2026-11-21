@@ -3876,6 +3876,20 @@ public sealed partial class ClientWorld
     /// the same gate lock guarding the other world reads, before gathering the
     /// live set to render — the exact shape of
     /// <see cref="PruneExpiredProjectiles"/>.</summary>
+#if BROWSER
+    private readonly List<short> _expiredBuildings = new();
+    public void PruneExpiredBuildingEffects(long nowLocalMs)
+    {
+        _expiredBuildings.Clear();
+        foreach (var kv in _buildingEffects)
+            if (kv.Value.ProgressFraction(nowLocalMs) >= 1f) _expiredBuildings.Add(kv.Key);
+        for (int i = 0; i < _expiredBuildings.Count; i++) _buildingEffects.Remove(_expiredBuildings[i]);
+        _expiredBuildings.Clear();
+        foreach (var kv in _constructionVisuals)
+            if (kv.Value.Phase(nowLocalMs).Expired) _expiredBuildings.Add(kv.Key);
+        for (int i = 0; i < _expiredBuildings.Count; i++) _constructionVisuals.Remove(_expiredBuildings[i]);
+    }
+#else
     public void PruneExpiredBuildingEffects(long nowLocalMs)
     {
         foreach (var kv in _buildingEffects.ToArray())
@@ -3885,6 +3899,8 @@ public sealed partial class ClientWorld
             if (kv.Value.Phase(nowLocalMs).Expired)
                 _constructionVisuals.Remove(kv.Key);
     }
+
+#endif
 
     /// <summary>Retain TREASURE's original trajectory and predict its motion,
     /// just as native CtreasureIGC does after export/import.</summary>
@@ -6127,6 +6143,16 @@ public sealed partial class ClientWorld
         _alephTransits.Clear();
         return copy;
     }
+
+#if BROWSER
+    /// <summary>Event-loop scene drain into caller-owned storage.</summary>
+    public void DrainAlephTransits(List<AlephTransitSignal> destination)
+    {
+        destination.Clear();
+        destination.AddRange(_alephTransits);
+        _alephTransits.Clear();
+    }
+#endif
 
     /// <summary>
     /// P585 — the client-side transit-attribution radius for a warp: native

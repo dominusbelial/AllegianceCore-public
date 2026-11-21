@@ -215,9 +215,14 @@ public static class VisualFlags
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
     public static VisualFlag? Find(string key)
     {
-        foreach (var definition in Definitions)
+        // Indexed lookup avoids boxing the read-only list enumerator on every
+        // default scene-option read in the browser interpreter (P1066).
+        for (int i = 0; i < Definitions.Count; i++)
+        {
+            var definition = Definitions[i];
             if (string.Equals(definition.Key, key, StringComparison.OrdinalIgnoreCase))
                 return definition;
+        }
         return null;
     }
 }

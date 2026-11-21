@@ -22,6 +22,8 @@ public sealed class SpaceVisualMotion
     private Matrix _view;
     private Vector3 _eye;
 
+    public void Reset() => _ready = false;
+
     public SpaceVisualFrame Step(VisualOptions options, Matrix view, Vector3 eye, double seconds, long identity)
     {
         float dt = (float)(seconds - _seconds);

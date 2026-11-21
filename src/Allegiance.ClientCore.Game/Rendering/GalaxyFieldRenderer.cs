@@ -99,6 +99,9 @@ public sealed class GalaxyFieldRenderer : IDisposable
         if (_atlas is null || _verts.Length == 0) return;
         var gd = _gd;
         gd.BlendState = BlendState.AlphaBlend;
+#if BROWSER
+        var effect = BrowserSkyBuffers.For(gd).Prepare(_atlas, Vector3.One, view, projection);
+#else
         using var effect = new BasicEffect(gd)
         {
             TextureEnabled = true,
@@ -109,8 +112,15 @@ public sealed class GalaxyFieldRenderer : IDisposable
             Projection = projection,
             World = Matrix.Identity,
         };
+#endif
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, _verts, 0, _verts.Length, _indices, 0, _indices.Length / 3);
         }

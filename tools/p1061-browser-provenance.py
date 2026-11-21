@@ -28,6 +28,11 @@ def manifest(root, name):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def notice_path(root, name):
+    mapping = manifest(root, 'app-manifest.json') or {}
+    return mapping.get('files', {}).get(name, name)
+
+
 def load(root):
     packs, seen = [], set()
     sources = [('starter', manifest(root, 'starter-manifest.json'))]
@@ -49,7 +54,7 @@ def load(root):
             if sha in seen:
                 continue
             seen.add(sha)
-            provenance = asset.get('provenance', '')
+            provenance = asset.get('provenance', '').replace('scene-NOTICE.txt', notice_path(root, 'scene-NOTICE.txt'))
             record = dict(source=asset.get('source'), path=asset.get('path'), sha256=sha,
                           byteSize=asset.get('byteSize'), contentType=asset.get('contentType'),
                           provenance=provenance)
@@ -67,8 +72,13 @@ def main():
     args = parser.parse_args()
     document = {
         'schema': 1,
-        'artwork': dict(ARTWORK, packs=load(args.root)),
-        'framework': FRAMEWORK,
+        'artwork': dict(ARTWORK, notice=notice_path(args.root, ARTWORK['notice']), packs=load(args.root)),
+        'additionalArtwork': ([{'component': 'Existing desktop B1 astronomical paintings',
+                                'licenses': ['CC BY 4.0', 'Public domain US Government work'],
+                                'notice': notice_path(args.root, 'scene-NOTICE.txt'),
+                                'note': 'Per-file provenance overrides the native artwork MIT default.'}]
+                              if (args.root / notice_path(args.root, 'scene-NOTICE.txt')).exists() else []),
+        'framework': [dict(row, notice=notice_path(args.root, row['notice'])) for row in FRAMEWORK],
         'javascriptThirdParty': [],
         'redistribution': 'Artwork and engine notices are retained in the published bundle; '
                           'conversion or repacking does not change the original licence.',

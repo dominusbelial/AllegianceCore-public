@@ -69,6 +69,10 @@ public readonly record struct GlimpseTarget(
 /// </summary>
 public sealed class AlephGlimpseRenderer : IDisposable
 {
+#if BROWSER
+    private readonly List<GlimpseTarget> _ordered = new(16);
+    private readonly List<Visible> _shown = new(MaxGlimpses);
+#endif
     /// <summary>Maximum number of simultaneously-glimpsed alephs (nearest first).</summary>
     public const int MaxGlimpses = 6;
 
@@ -289,7 +293,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
         _frame++;
 
         // Nearest-first, bounded (cost: at most MaxGlimpses composite quads).
+#if BROWSER
+        var ordered = _ordered; ordered.Clear();
+#else
         var ordered = new List<GlimpseTarget>(Math.Min(targets.Count, MaxGlimpses));
+#endif
         for (int i = 0; i < targets.Count; i++) ordered.Add(targets[i]);
         ordered.Sort(static (a, b) => a.DistSq.CompareTo(b.DistSq));
         if (ordered.Count > MaxGlimpses) ordered.RemoveRange(MaxGlimpses, ordered.Count - MaxGlimpses);
@@ -300,7 +308,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
 
         // ── pass 1: what shows this frame, and prepare the destination skies ──
         // (all render-target switches happen here, before the composite)
+#if BROWSER
+        var shown = _shown; shown.Clear();
+#else
         var shown = new List<Visible>(ordered.Count);
+#endif
         var sky = _sky?.Invoke();
         bool switched = false;
         try
@@ -392,8 +404,14 @@ public sealed class AlephGlimpseRenderer : IDisposable
                 // Per-vertex alpha: radial edge-fade × the (approach/pulse) opacity.
                 FillQuad(center, right, upv, half, v.Opacity);
                 var effect = QuadEffect(v.Target, view, projection);
+#if BROWSER
+                for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+                {
+                    var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
                 foreach (var pass in effect.CurrentTechnique.Passes)
                 {
+#endif
                     pass.Apply();
                     _gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, _quad, 0, _quad.Length, QuadIndices, 0, 2);
                 }
@@ -605,8 +623,14 @@ public sealed class AlephGlimpseRenderer : IDisposable
         _quad[1] = new VertexPositionColorTexture(new Vector3(center.X + halfW, center.Y - halfH, 0), color, new Vector2(1, 0));
         _quad[2] = new VertexPositionColorTexture(new Vector3(center.X - halfW, center.Y + halfH, 0), color, new Vector2(0, 1));
         _quad[3] = new VertexPositionColorTexture(new Vector3(center.X + halfW, center.Y + halfH, 0), color, new Vector2(1, 1));
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             _gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, _quad, 0, _quad.Length, QuadIndices, 0, 2);
         }
@@ -646,6 +670,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
     }
 
     /// <summary>Drop the cache entry for a sector (e.g. on sector change).</summary>
+    public void InvalidateAll()
+    {
+        foreach (var entry in _cache.Values) entry.Rendered = false;
+    }
+
     public void Invalidate(short destination)
     {
         if (_cache.Remove(destination, out var e)) e.Target.Dispose();
