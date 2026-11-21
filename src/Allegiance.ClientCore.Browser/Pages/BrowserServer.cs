@@ -6,7 +6,7 @@ namespace Allegiance.ClientCore.Browser.Pages;
 // Deliberately only the public discovery fields required by this slice.
 public sealed record BrowserServer(string Id, string Name, int Port, string MissionName, string CoreFile,
     bool Verified, string? IdentityServerId, string? WebSocketUrl, bool PasswordRequired = false,
-    string? MinClientVersion = null, BrowserMission[]? Missions = null)
+    string? MinClientVersion = null, BrowserMission[]? Missions = null, bool AcceptsGuests = false)
 {
     // P1052/P1051: the raw optional field is kept; every use goes through Route(),
     // which applies the directory's rule (strict public WSS, or loopback routes

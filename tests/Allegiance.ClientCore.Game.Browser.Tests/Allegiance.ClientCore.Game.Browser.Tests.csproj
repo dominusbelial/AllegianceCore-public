@@ -9,6 +9,7 @@
     <!-- Exercise the actual source-generated browser listing contract. -->
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserServer.cs" Link="BrowserServer.cs" />
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserJoinPolicy.cs" Link="BrowserJoinPolicy.cs" />
+    <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserJoinFailure.cs" Link="BrowserJoinFailure.cs" />
     <ProjectReference Include="../../src/Allegiance.ClientCore.Game.Browser/Allegiance.ClientCore.Game.Browser.csproj" />
 
   </ItemGroup>

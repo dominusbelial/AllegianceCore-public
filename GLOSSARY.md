@@ -176,6 +176,20 @@ list in **reverse**.
   `ALLEGIANCE_DIRECTOR_SEED`. Proof: `tools/p1067-browser-watch.cjs`; parity:
   `docs/parity/p1067-browser-director-watch.csv`; report:
   `docs/reports/BROWSER_DIRECTOR_WATCH_P1067.md`. No desktop source changed.
+- **Browser guest play (P1068)** — `AcceptsGuests` in
+  `src/Allegiance.Server/LobbyHeartbeat.cs` mirrors standalone / `identity.allowAnonymous`
+  admission, defaults closed when absent in `src/Allegiance.Lobby/ServerListing.cs` and
+  `src/Allegiance.ClientCore.Browser/Pages/BrowserServer.cs`. Guest joins relax only the
+  identity prerequisite in `Pages/BrowserJoinPolicy.cs` in that browser project;
+  `Pages/Menu.Online.cs` supplies no ticket. `wwwroot/guest-identity.js` owns crypto-random,
+  editable browser-local callsigns and blocked-storage fallback. `Pages/Menu.razor`
+  discloses account limits and keeps the Guest / Sign in label in both HUD styles;
+  `wwwroot/flight-input.js` keeps that page chrome in fullscreen;
+  `src/Allegiance.ClientCore.Game.Browser/BrowserIdentityModel.cs` supplies the shared
+  canvas intro/hangar identity without changing desktop code. Existing registered-name,
+  duplicate, password and version gates remain authoritative. Proof:
+  `tools/p1068-browser-guest.cjs`; report: `docs/reports/BROWSER_GUEST_PLAY_P1068.md`;
+  parity: `docs/parity/p1068-browser-guest.csv`.
 - **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
   about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
   `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the

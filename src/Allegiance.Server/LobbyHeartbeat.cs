@@ -85,6 +85,9 @@ public sealed class LobbyHeartbeat : IDisposable
     private const double DirtyIntervalSeconds = 10; // FedSrv/fsmission.cpp:21,5606-5621
 
 
+    /// <summary>P1068 — mirrors BindIdentity: standalone or AllowAnonymous.</summary>
+    public bool AcceptsGuests { get; set; }
+
     // Ownership token/id from the last successful register. Cleared on a 409 so the
     // next tick re-registers fresh (a rejected token means the server-side listing
     // is gone — retrying it forever would be pointless).
@@ -248,7 +251,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 _location, Allegiance.Core.LobbyProtocol.Version, UdpPort,              // P894 — location + stated lobby protocol version
                 // P970 — "a password is required": the advertised form of the
                 // refusal the game server already sends at the join.
-                PasswordRequired: missions?.Any(m => m.PasswordRequired) ?? false, WebSocketUrl: WebSocketUrl);
+                PasswordRequired: missions?.Any(m => m.PasswordRequired) ?? false, WebSocketUrl: WebSocketUrl, AcceptsGuests: AcceptsGuests);
 
 
             HttpResponseMessage resp;
@@ -683,7 +686,8 @@ internal sealed record LobbyRegisterRequest(
     // bytes are unchanged.
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     bool PasswordRequired = false,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? WebSocketUrl = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool AcceptsGuests = false);
 
 public sealed record LobbyMissionListing(uint Cookie, string Name, int PlayerCount, LobbyGameParams Game,
     /// <summary>P970 — this game demands a mission password (the per-game lock the

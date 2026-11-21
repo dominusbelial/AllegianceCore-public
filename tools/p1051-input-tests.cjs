@@ -9,7 +9,9 @@ function fixture({delayedResume=false}={}){
  document.getElementById=id=>id==='theCanvas'?canvas:{dataset:{state:'Flight'}};
  canvas.focus=()=>document.activeElement=canvas;
  canvas.requestPointerLock=()=>{lockCalls++;return Promise.reject(Error('fixture refusal'))};
- canvas.requestFullscreen=()=>{fullCalls++;order.push('fullscreen');document.fullscreenElement=canvas;return Promise.resolve()};
+ document.documentElement=new Bus();
+ canvas.requestFullscreen=()=>{throw Error('Canvas-only fullscreen hides the guest disclosure label')};
+ document.documentElement.requestFullscreen=()=>{fullCalls++;order.push('fullscreen');document.fullscreenElement=document.documentElement;return Promise.resolve()};
  document.exitFullscreen=()=>{document.fullscreenElement=null;return Promise.resolve()};
  document.exitPointerLock=()=>{document.pointerLockElement=null;document.dispatch('pointerlockchange')};
  vm.runInNewContext(fs.readFileSync('src/Allegiance.ClientCore.Browser/wwwroot/flight-input.js','utf8'),{window,document,navigator,console:{info(){}},Set,Promise});
@@ -23,8 +25,13 @@ test('pointer refusal retries only on a later fresh gesture and Escape releases 
  assert.equal(f.document.pointerLockElement,null);assert.ok(f.calls.some(c=>c[0]==='ReleaseFlightInput'));f.detach();
 });
 test('Alt+Enter requests fullscreen inside the real event and never during installation',()=>{
- const f=fixture();assert.equal(f.fullCalls,0);f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true});assert.equal(f.fullCalls,1);assert.equal(f.order[0],'fullscreen');
+ const f=fixture();assert.equal(f.fullCalls,0);f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true});assert.equal(f.fullCalls,1);assert.equal(f.order[0],'fullscreen');assert.equal(f.document.fullscreenElement,f.document.documentElement);
  f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true,repeat:true});assert.equal(f.fullCalls,1);f.detach();
+});
+test('toolbar fullscreen keeps the page chrome and the same control can exit',()=>{
+ const f=fixture(),button={closest:selector=>selector==='[data-flight-fullscreen]'?{}:null};
+ f.document.dispatch('click',{target:button});assert.equal(f.document.fullscreenElement,f.document.documentElement);assert.equal(f.fullCalls,1);
+ f.document.dispatch('click',{target:button});assert.equal(f.document.fullscreenElement,null);assert.equal(f.fullCalls,1);f.detach();
 });
 test('blur and hidden tab clear every held key/button, exit capture and suspend audio',async()=>{
  const f=fixture(),audio=new f.window.AudioContext();await flushAudio();assert.equal(audio.state,'suspended');

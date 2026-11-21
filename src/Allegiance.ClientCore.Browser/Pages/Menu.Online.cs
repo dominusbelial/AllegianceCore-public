@@ -24,6 +24,55 @@ public partial class Menu
     private BrowserMission? _pendingMission;
     private string? _onlineError;
     private IdentityAccount? _account;
+    private bool _guest, _guestPersistent, _nameConflict, _browserEnabled;
+    private string _guestName = "", _guestEdit = "";
+    private string IdentityLabel => _account is { } account ? "Signed in · " + account.Callsign
+        : _guest ? "Guest · " + _guestName : "Not signed in";
+    private void SyncBrowserIdentity() => _game?.SetBrowserIdentity(_account, _guest ? _guestName : null);
+    private async Task PlayGuestAsync()
+    {
+        if (!_browserEnabled || _onlineBusy) return;
+        try
+        {
+            _guestName = await JsRuntime.InvokeAsync<string>("guestIdentity.load");
+            _guestEdit = _guestName;
+            _guestPersistent = await JsRuntime.InvokeAsync<bool>("guestIdentity.persistent");
+            _guest = true;
+            await OpenOnlineAsync();
+        }
+        catch (Exception error) { _onlineError = error.Message; }
+    }
+    private async Task SaveGuestNameAsync(bool roll = false)
+    {
+        if (_onlineBusy || _session is not null) return;
+        try
+        {
+            if (!roll && !JoinTokens.ValidCallsign(_guestEdit))
+            { _onlineError = "Use 1–24 printable Latin-1 characters, without outer spaces or invisible characters."; return; }
+            _guestName = roll ? await JsRuntime.InvokeAsync<string>("guestIdentity.roll")
+                : await JsRuntime.InvokeAsync<string>("guestIdentity.save", _guestEdit);
+            _guestEdit = _guestName;
+            _guestPersistent = await JsRuntime.InvokeAsync<bool>("guestIdentity.persistent");
+            _onlineError = null; _nameConflict = false;
+            SyncBrowserIdentity();
+        }
+        catch (Exception error) { _onlineError = error.Message; }
+    }
+    private async Task ForgetGuestAsync()
+    {
+        if (_onlineBusy || _session is not null) return;
+        bool forgotten = await JsRuntime.InvokeAsync<bool>("guestIdentity.forget");
+        _guest = false; _guestName = _guestEdit = ""; _guestPersistent = false;
+        _onlineState = "Login"; _nameConflict = false;
+        _onlineError = forgotten ? null : "This page forgot the guest identity, but browser storage could not be cleared. Clear site data to remove the saved name.";
+        SyncBrowserIdentity();
+    }
+    private async Task TryAnotherNameAsync()
+    {
+        if (!_guest || _pendingServer is not { } server || _onlineBusy) return;
+        await SaveGuestNameAsync(roll: true);
+        if (_onlineError is null) await JoinServerAsync(server, _pendingMission);
+    }
     private BrowserServer[] _servers = [];
     private ConnectionSession? _session;
     private string _onlineState = "Login", _onlineName = "";
@@ -55,20 +104,32 @@ public partial class Menu
         if (_entryOpened || !Entry.Online) return;
         _entryOpened = true;
         await OpenOnlineAsync();
+        // The lobby's Play now link already expresses the guest choice. Keep it
+        // one click to the disclosed server list; the ordinary menu button still
+        // presents Play now beside Sign in before generating a guest identity.
+        if (_account is null && _browserEnabled && _onlineState == "Login" && _onlineError is null)
+            await PlayGuestAsync();
     }
 
     private async Task OpenOnlineAsync()
     {
         if (_onlineBusy || _assets is null) return;
-        _online = true; _onlineBusy = true; _onlineError = null;
+        _online = true; _onlineBusy = true; _onlineError = null; _nameConflict = false;
         try
         {
             if (!Http.BaseAddress!.IsLoopback && Http.BaseAddress.Scheme != Uri.UriSchemeHttps)
                 throw new NotSupportedException("Online play needs the HTTPS lobby page.");
             using var response = await Http.GetAsync(LobbyUri("api/identity/me"), _lifetime.Token);
-            if (response.StatusCode == HttpStatusCode.Unauthorized) { _account = null; _onlineState = "Login"; return; }
-            response.EnsureSuccessStatusCode();
-            _account = await response.Content.ReadFromJsonAsync(IdentityJsonContext.Default.IdentityAccount, _lifetime.Token);
+            if (response.StatusCode == HttpStatusCode.Unauthorized) _account = null;
+            else
+            {
+                response.EnsureSuccessStatusCode();
+                _account = await response.Content.ReadFromJsonAsync(IdentityJsonContext.Default.IdentityAccount, _lifetime.Token);
+            }
+            await ReadBrowserOfferAsync();
+            if (_account is not null) _guest = false;
+            SyncBrowserIdentity();
+            if (_account is null && (!_guest || !_browserEnabled)) { _onlineState = "Login"; return; }
             await EnsureClientVersionAsync(_lifetime.Token);
             var listed = await Http.GetFromJsonAsync(LobbyUri("api/servers"), BrowserJoinJson.Default.BrowserServerArray, _lifetime.Token) ?? [];
             // P1062 — the entry the lobby's "Play in browser" link named is offered
@@ -82,12 +143,28 @@ public partial class Menu
         catch (Exception ex) { _onlineError = ex.Message; }
         finally { _onlineBusy = false; StateHasChanged(); }
     }
+    private async Task ReadBrowserOfferAsync()
+    {
+        // A failed/disabled offer never enables guest play. It does not block the
+        // existing signed-in ticket flow.
+        _browserEnabled = false;
+        try
+        {
+            using var offer = await Http.GetAsync(LobbyUri("api/browser"), _lifetime.Token);
+            if (!offer.IsSuccessStatusCode) return;
+            using var json = System.Text.Json.JsonDocument.Parse(await offer.Content.ReadAsStringAsync(_lifetime.Token));
+            _browserEnabled = json.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && json.RootElement.TryGetProperty("enabled", out var enabled)
+                && enabled.ValueKind == System.Text.Json.JsonValueKind.True;
+        }
+        catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or NotSupportedException) { }
+    }
     // The online menu uses the directory rule for the page it is served from: a
     // loopback lobby may list its own loopback route; a public page needs the strict
     // public WSS route. BrowserJoinPolicy then requires that route to be this origin.
     private bool LoopbackDirectory => Http.BaseAddress?.IsLoopback == true;
     private string? Unavailable(BrowserServer server) =>
-        Http.BaseAddress is { } page ? BrowserJoinPolicy.Refusal(page, server, _clientVersion is not null) : "Online play is unavailable.";
+        Http.BaseAddress is { } page ? BrowserJoinPolicy.Refusal(page, server, _clientVersion is not null, guest: _account is null) : "Online play is unavailable.";
     /// <summary>Fetch the published generation's build identity once. Absent/unreadable
     /// means "not reported"; a server that enforces a minimum client version then refuses
     /// with that reason — the server check is never bypassed.</summary>
@@ -136,14 +213,14 @@ public partial class Menu
     }
     private async Task JoinServerAsync(BrowserServer server, BrowserMission? mission)
     {
-        if (_onlineBusy || _assets is null || _account is null || !_servers.Contains(server) || Unavailable(server) is not null) return;
+        if (_onlineBusy || _assets is null || (_account is null && !_guest) || !_servers.Contains(server) || Unavailable(server) is not null) return;
         bool passwordRequired = RequiresPassword(server, mission);
         if (passwordRequired && _joinPassword.Length == 0)
         { _onlineError = "This game needs its password."; StateHasChanged(); return; }
         long generation = ++_onlineGeneration; ++_pendingJoins;
         ConnectionSession? ownedSession = null;
         _pendingServer = server; _pendingMission = mission;
-        _onlineBusy = true; _onlineError = null;
+        _onlineBusy = true; _onlineError = null; _nameConflict = false;
         try
         {
             if (_platform is null) throw new InvalidOperationException("Asset storage is not ready.");
@@ -188,12 +265,13 @@ public partial class Menu
             session.World.MissionCoreResolver = name => string.Equals(Path.GetFileNameWithoutExtension(name), Path.GetFileNameWithoutExtension(server.CoreFile), StringComparison.OrdinalIgnoreCase) ? core : null;
             // The complete verified starter snapshot already exists. Fetch a fresh
             // ticket now; keep it only inside the owned LOGONREQ, never in storage/URLs.
-            var refusal = await session.JoinAsync((ushort)server.Port, _account.Callsign,
-                new LogonRequest { CharacterName = _account.Callsign, FedsrvVer = LogonRequest.MsgVer,
+            string callsign = _account?.Callsign ?? _guestName;
+            var refusal = await session.JoinAsync((ushort)server.Port, callsign,
+                new LogonRequest { CharacterName = callsign, FedsrvVer = LogonRequest.MsgVer,
                     CrcFileList = -1, DwCookie = mission?.Cookie ?? uint.MaxValue, Time = 1,
                     ClientVersion = _clientVersion,
                     MissionPassword = passwordRequired ? _joinPassword : null },
-                identityTicket: async ct =>
+                identityTicket: _account is null ? null : async ct =>
                 {
                     using var reply = await Http.PostAsJsonAsync(LobbyUri("api/identity/join-token"),
                         new JoinTokenRequest(server.IdentityServerId!), IdentityJsonContext.Default.JoinTokenRequest, ct);
@@ -201,7 +279,7 @@ public partial class Menu
                     return (await reply.Content.ReadFromJsonAsync(IdentityJsonContext.Default.JoinTokenResponse, ct))!.Token;
                 }, cancellationToken: _lifetime.Token);
             if (generation != _onlineGeneration) throw new OperationCanceledException("The join was retired.");
-            if (refusal is not null) throw new InvalidOperationException("The server refused this mission join.");
+            if (refusal is not null) throw new InvalidOperationException(BrowserJoinFailure.From("The server refused this mission join: " + refusal.Reason, refusal.Reason).Message);
             if (session.World.JoinError is { } error) throw new InvalidOperationException(error);
             _onlineName = mission?.Name ?? server.MissionName;
             _onlineState = "Sides";
@@ -211,10 +289,11 @@ public partial class Menu
         {
             if (generation == _onlineGeneration)
             {
-                _onlineError = ex.Message;
+                var failure = BrowserJoinFailure.From(ex.Message);
+                _onlineError = failure.Message; _nameConflict = _account is null && failure.NameConflict;
                 // A refusal from the server (password, version, mission) is answered on
                 // the join screen, so the player can correct the password and retry.
-                if (ownedSession?.Ack is not null) _onlineState = "Servers";
+                _onlineState = "Servers";
                 if (ReferenceEquals(_session, ownedSession)) _session = null;
             }
             if (ownedSession is not null) { await ownedSession.LeaveBrowserAsync(); await ownedSession.DisposeAsync(); }
@@ -375,7 +454,7 @@ public partial class Menu
         finally
         {
             _online = false; _onlineState = "Login"; _onlineError = null; _onlineBusy = false; _onlineClosing = false;
-            _joinPassword = "";
+            _joinPassword = ""; _nameConflict = false;
         }
     }
     private void RefreshOnline()

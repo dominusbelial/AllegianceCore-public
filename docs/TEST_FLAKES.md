@@ -5,6 +5,54 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+
+## P1068 — Browser guest play: broad sweep follow-up (2026-11-21)
+
+P1068 changes browser guest entry/identity UI and advertises the server's existing
+anonymous admission fact. It changes no NPC autopilot, loadout, research or map
+rule. The first broad sweep completed **15,898 results in 606.7 s**:
+**15,890 passed / 1 failed / 7 not executed**, all nine infrastructure checks
+passed; calibrated limit **11.548 s**. It overlapped final tool/publication work;
+a separate final sweep runs after all builders and browsers have exited.
+
+The failure and four passing timing offenders are existing ledger families. Each
+method was repeated in three fresh isolated processes with artwork; **all passed
+3/3**, with no production/test/quarantine/timing-policy changes made for them.
+Theory rows below report the slowest case in each isolated run.
+
+| Method | First sweep observation | Isolated results ×3 | Slowest isolated seconds |
+|---|---|---|---|
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` | Expected 16, got 528; same existing throttle-state family | 1 passed ×3 | 0.442 / 0.420 / 0.428 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 13.905 s | 2 passed ×3 | 4.467 / 4.374 / 4.306 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civ 35 passed in 11.606 s | 3 passed ×3 | 5.648 / 5.796 / 5.804 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 13.349 s | 1 passed ×3 | 3.347 / 3.300 / 3.295 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | passed in 12.571 s | 1 passed ×3 | 1.609 / 1.550 / 1.563 |
+
+The **closing sweep (09:35–09:45 local)** ran after all builders/browser hosts
+exited: **15,898 results in 572.7 s**, **15,891 passed / 0 failed / 7 not executed**;
+**9/9 infrastructure checks pass**, calibrated limit **11.608 s**. Exit **1 for
+timing only**. The earlier wingman assertion is green in this sweep. All five
+closing timing methods were then repeated in three fresh isolated processes;
+**all passed 3/3**, including all theory rows:
+
+| Existing method | Closing sweep seconds | Isolated results ×3 | Slowest isolated seconds |
+|---|---|---|---|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 16.397 | 2 passed ×3 | 4.096 / 4.053 / 4.301 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 12.612 | 3 passed ×3 | 5.293 / 5.383 / 5.368 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 16.529 | 1 passed ×3 | 3.121 / 3.109 / 3.075 |
+| `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable` | 12.495 | 10 passed ×3 | 0.950 / 1.034 / 0.957 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 16.127 | 10 passed ×3 | 4.423 / 4.468 / 4.870 |
+
+These are existing load-sensitive families, with no P1068 assertion or timing
+failure. No limits, quarantine, traits, native behavior or test assertions were
+changed to make the gate green. The timing guard remains red and is reported.
+Report: `docs/reports/BROWSER_GUEST_PLAY_P1068.md`.
+Scratch evidence: `.scratch/p1068/fast/fast/summary.json` and
+`.scratch/p1068/pre-final-isolation/summary.json`,
+`.scratch/p1068/fast-final/fast/summary.json` and
+`.scratch/p1068/final-isolation/summary.json` (ignored, no public credentials).
+
+
 ## P1067 — Browser Watch camera: final Fast, run last (2026-11-21)
 
 P1067 adds the browser-only director snapshot/glue (`src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`,

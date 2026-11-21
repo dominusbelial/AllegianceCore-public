@@ -13,11 +13,13 @@
     tr:nth-child(even) td { background: #22262d; }
     .empty { color: #8a93a3; }
     code { background: #262b33; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .primary { display: inline-block; background: #76e6cc; color: #102622; padding: .6rem 1rem; border-radius: .3rem; font-weight: bold; }
+    [hidden] { display: none !important; }
     #status { color: #8a93a3; font-size: 0.85rem; }
   </style>
 </head>
 <body>
-  <p><a href="/identity.html">Player sign-in / approve a device</a> &middot; <a href="/ladder.html">Career ladder</a> &middot; <a href="/squads.html">Squads</a> &middot; <a href="/events.html">Zone Events</a></p>
+  <p><a id="play-now" class="primary" hidden>Play now</a> &middot; <a href="/identity.html">Sign in / approve a device</a> &middot; <a href="/ladder.html">Career ladder</a> &middot; <a href="/squads.html">Squads</a> &middot; <a href="/events.html">Zone Events</a></p>
   <h1>Allegiance Lobby — Live Servers</h1>
   <p>Install the client first from <a href="https://github.com/dominusbelial/AllegianceCore-public/releases">Releases</a>, then choose Join and confirm in the client.</p>
   <p id="status">Auto-refreshing…</p>

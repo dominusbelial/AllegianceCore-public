@@ -47,3 +47,9 @@ footer { height: 18px; padding: 2px 6px; font-size: 9px; }
 #sector-progress { position:fixed; z-index:29; top:calc(var(--game-top, 32px) + 24px); right:8px; max-width:calc(100vw - 32px); padding:3px 7px; font-size:11px; color:#c6e2dc; background:#081822dd; pointer-events:none; }
 #online-panel select { max-width:150px; color:#c6e2dc; background:#081822; font-size:11px; }
 #online-panel input[type=number] { width:72px; color:#c6e2dc; background:#081822; font-size:11px; }
+/* Identity remains visible in the compact Hangar/Flight chrome in both HUD styles. */
+#online-panel #online-identity { display: block; margin: 3px 6px; }
+#online-identity a { margin-left: 10px; }
+#guest-disclosure { border: 1px solid #385458; padding: 12px; margin: 10px 0; }
+#guest-disclosure input { max-width: 100%; }
+#online-panel .primary { background: #124e4c; border-color: #40d7cc; font-weight: bold; }

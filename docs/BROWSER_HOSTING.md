@@ -56,6 +56,50 @@ committing the base manifest, so an otherwise warm base commit does not purge
 streamed visuals. Bounded eviction still applies after a larger sector tour;
 zero-byte warm reload is qualified for the fitting base + entry working set.
 
+## Play now and guest admission (P1068)
+
+Players can open **Play now** on the lobby home or identity page, or open
+`/play/menu.html?online=1` directly. The browser online panel offers **Play now**
+next to **Sign in** when `/api/browser` reports an enabled build. Play now opens a
+short guest disclosure and the server list directly from the lobby link. Entering
+through the browser menu itself offers the guest/sign-in choice before creating a name. Signing in or creating an account
+remains optional and uses the existing identity flow.
+
+A guest gets a crypto-random `Pilot-` callsign saved only in this browser's
+`localStorage` (`allegiance.guest.callsign`). The panel lets the player edit,
+roll or forget it. Blocked storage still allows play with a page-session name.
+The callsign is sent to game servers; it is not a reserved account name. Guest
+play adds no account career/ladder record and supplies no account squad membership.
+Team-level match/squad results can still be recorded; guest play does not disable
+ordinary match scoring. Signing in later does not claim or transfer a guest name.
+The Guest label and Sign in link stay visible in the online panel, hangar and flight
+in Classic and Modern, including fullscreen (the whole page enters fullscreen). Clearing site data or using another browser/device starts
+with another pilot.
+
+The listing's `acceptsGuests` fact is derived from actual server admission:
+identity omitted means standalone guest admission; otherwise it mirrors
+`identity.allowAnonymous`. An absent listing field means **sign-in only**, even
+though older standalone servers might accept anonymous connections. Sign-in-only
+servers remain listed with disabled joins. The server's reserved-name cache
+continues to reject registered names on identity-enabled servers (its existing
+unreachable-lobby fail-open behavior is unchanged). Name conflicts offer a one-click
+**Try another name** reroll and retry. Password and version checks still run on
+the server, and guest routes retain the browser's origin/WSS/core/version gates.
+The lobby still publishes WebSocket routes only for verified registrations.
+
+To turn guests off, an operator with identity configured sets
+`identity.allowAnonymous` to `false` in the server's existing JSON configuration
+and restarts the server. Keep its issuer/public key/audience or enrollment settings.
+The next heartbeat advertises `acceptsGuests: false` (or omits the false field),
+and a no-ticket logon is refused by the server. Omitting the identity block runs
+standalone admission and cannot turn guests off. Defaults are unchanged.
+No new service, port, environment variable or compose setting is required.
+
+For loopback proof only, `p1051-browser-host ... --guests 1` enables guests;
+its default remains sign-in-only. `tools/p1068-browser-guest.cjs` exercises the
+real lobby and server without a virtual authenticator. See the
+[P1068 report](reports/BROWSER_GUEST_PLAY_P1068.md) for commands and captures.
+
 ## Developer/proof switch (P1059)
 
 The flight toolbar has three controls that exist for the proof harnesses, not for a player:

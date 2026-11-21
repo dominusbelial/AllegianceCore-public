@@ -395,7 +395,7 @@ public sealed partial class Game1
         if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
         if (own.StationId >= 0)
         {
-            _flightDocked!.Draw(GraphicsDevice.Viewport, [new(ShopLayout.Kind.Title, "HANGAR"), new(ShopLayout.Kind.Section, own.CharacterName),
+            _flightDocked!.Draw(GraphicsDevice.Viewport, [new(ShopLayout.Kind.Title, "HANGAR"), new(ShopLayout.Kind.Section, _identityScreen.PilotLabel(own.CharacterName ?? "")),
                 new(ShopLayout.Kind.Info, "Station " + own.StationId), new(ShopLayout.Kind.Hint, "Use Ready and launch to fly")], money: world.MyMoney);
             return;
         }

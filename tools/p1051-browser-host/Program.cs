@@ -80,7 +80,7 @@ server.Boot(new ServerConfig
         AdminCheats = new() { Enabled = true, AllowNames = ["mcp-*"] },
     },
     Reconnect = new() { Enabled = true, GraceSeconds = 10 },
-    Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = false },
+    Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = options.Guests },
     Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
     Games = [new() { Name = "P1061 public mission", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
         Password = GamePassword, AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
@@ -136,6 +136,7 @@ var listingInfo = new { id = listing.GetProperty("id").GetString(), address = li
     port = listing.GetProperty("port").GetInt32(), webSocketUrl = listing.TryGetProperty("webSocketUrl", out var webRoute) ? webRoute.GetString() : null,
     passwordRequired = listing.TryGetProperty("passwordRequired", out var lockFlag) && lockFlag.GetBoolean(),
     minClientVersion = listing.TryGetProperty("minClientVersion", out var minimum) ? minimum.GetString() : null,
+    acceptsGuests = listing.TryGetProperty("acceptsGuests", out var guestFlag) && guestFlag.GetBoolean(),
     verified = listing.GetProperty("verified").GetBoolean() };
 // Fail-closed version gate, proved on the real listener with the production
 // signer. The attempt starts before the loop; the server's own tick has to drain
@@ -330,7 +331,7 @@ try
         lock (desktop.Gate) desktopState = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId, s.HullId, s.PoseSectorId, visible = s.CanDrawInSector(desktop.World.MyShipId is { } ownShip && desktop.World.Ships.TryGetValue(ownShip, out var viewer) ? viewer.SectorId : (short)-1) }).ToArray(), desktopShotsReceived };
-        var state = new { battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = true, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
+        var state = new { battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
             { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
         // No credentials in proof evidence.

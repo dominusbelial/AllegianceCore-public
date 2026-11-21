@@ -31,16 +31,31 @@
 {
     <section id="online-panel" class="@(_onlineState == "Flight" ? "flight-toolbar" : "panel")" aria-live="polite" data-state="@_onlineState">
         <p class="eyebrow">ALLEGIANCE · BROWSER GAME · @_style</p>
-        <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Sign in")</h2>
+        <p id="online-identity">@IdentityLabel @if (_account is null) { <a href="@SignInHref()">Sign in / create account</a> }</p>
+        <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Play online")</h2>
         @if (_onlineState == "Login")
         {
-            <p>Sign in to the lobby; you come back to this tab already signed in.</p>
+            <p>Play as a guest, or sign in or create an account. Signing in is optional.</p>
+            @if (_browserEnabled) { <button id="online-play-now" class="primary" disabled="@_onlineBusy" @onclick="PlayGuestAsync">Play now</button> }
             <a id="online-signin" href="@SignInHref()">Sign in in this tab</a>
             <button id="online-refresh" disabled="@_onlineBusy" @onclick="OpenOnlineAsync">Refresh identity and servers</button>
         }
         else
         {
-            <p>Signed in as @_account?.Callsign</p>
+            @if (_guest && _onlineState == "Servers")
+            {
+                <article id="guest-disclosure">
+                    <h3>Playing as a guest</h3>
+                    <p>Your guest identity starts with a random callsign, saved only in this browser. Servers see your callsign while you play. Clearing site data or using another browser or device gives you a different pilot.</p>
+                    <p>Your name is not reserved for you. Registered callsigns cannot be used as a guest on identity-enabled servers. Guest play does not add career or ladder stats to an account and gives you no account squad membership or reserved name.</p>
+                    <p>You can sign in or create an account at any time. Signing in is optional.</p>
+                    @if (!_guestPersistent) { <p id="guest-session-only">Browser storage is unavailable. This callsign lasts only for this page session.</p> }
+                    <label>Guest callsign <input id="guest-callsign" maxlength="24" @bind="_guestEdit" @bind:event="oninput" disabled="@_onlineBusy" /></label>
+                    <button id="guest-save" disabled="@_onlineBusy" @onclick="() => SaveGuestNameAsync()">Use this name</button>
+                    <button id="guest-roll" disabled="@_onlineBusy" @onclick="() => SaveGuestNameAsync(true)">Roll a new name</button>
+                    <button id="guest-forget" disabled="@_onlineBusy" @onclick="ForgetGuestAsync">Forget guest identity</button>
+                </article>
+            }
             @if (_onlineState == "Staging")
             { <progress max="100" value="@_progress"></progress><p>@_status</p>
               @if (_onlineError is not null) { <button id="join-retry" disabled="@_onlineBusy" @onclick="RetryStagingAsync">Retry</button> } }
@@ -55,7 +70,7 @@
                     <article class="online-server" data-preselected="@(server.Id == _preselectServerId ? "true" : null)">
                         <strong>@server.Name</strong>
                         @if (server.Id == _preselectServerId) { <p class="preselected">Opened from the server list</p> }
-                        @if (Unavailable(server) is { } reason) { <p>@reason</p> }
+                        @if (Unavailable(server) is { } reason) { <p>@reason</p><button class="online-join" disabled>@(reason == "Sign in to join" ? reason : "Join unavailable")</button> }
                         else if (server.Missions is { Length: > 0 } missions)
                         {
                             @foreach (var mission in missions)
@@ -138,6 +153,7 @@
         }
         @if (_onlineBusy) { <p id="launch-status" role="status">@BusyStatus()</p> }
         @if (_onlineError is not null) { <p role="alert">@_onlineError</p> }
+        @if (_nameConflict) { <button id="guest-try-another" disabled="@_onlineBusy" @onclick="TryAnotherNameAsync">Try another name</button> }
         <button id="online-close" @onclick="CloseOnlineAsync">Disconnect and return to menu</button>
     </section>
 }
