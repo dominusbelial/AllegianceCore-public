@@ -5,6 +5,34 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1067 — Browser Watch camera: final Fast, run last (2026-11-21)
+
+P1067 adds the browser-only director snapshot/glue (`src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`,
+`Game1.Flight.cs`), the `#flight-watch` toolbar toggle, the dev-only `director-seed` URL contract and their tests; no
+shared simulation, server dispatch, wire, identity or desktop rendering file changed. The final Fast sweep on the
+final source exited **1**: **15,841 tests, 604.0 s**, **0 failed assertions**, **7 not executed**, every project
+green (Browser 49/0/0, Browser game 148/0/0, Lobby 325/0/0), all **9 infrastructure checks passed**, calibrated case
+limit **11.520 s**. The red is **timing only**: 10 passing executions above the limit from nine existing
+load-sensitive methods.
+
+| Method (sweep row) | Sweep seconds | Three isolated outcomes (fresh process) | Isolated durations |
+|---|---:|---|---|
+| `SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass` | 14.056 | 1/0/0 ×3 | 1.177 / 1.188 / 1.196 s |
+| `P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production` (civ 5) | 14.203 | 3/0/0 ×3 (whole theory) | 5.210 / 5.121 / 5.278 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, civ 3) | 19.968 / 11.611 | 2/0/0 ×3 (both rows) | 7.403 / 7.282 / 7.183 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | 12.704 | 3/0/0 ×3 (whole theory) | 13.564 / 13.368 / 13.334 s |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 14.195 | 1/0/0 ×3 | 1.496 / 1.464 / 1.507 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 22.564 | 1/0/0 ×3 | 3.267 / 3.233 / 3.220 s |
+| `P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch` | 11.654 | 1/0/0 ×3 | 0.786 / 0.777 / 0.801 s |
+| `P987RecordedBotDecisionCorpusTests.Recorded_inputs_replay_to_the_same_outputs` | 11.922 | 1/0/0 ×3 | 0.827 / 0.817 / 0.808 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | 15.409 | 10/0/0 ×3 (whole theory) | 33.807 / ~35 / ~34 s per 10-row suite |
+
+All **27 fresh processes passed** with zero failures or skips. `P703ResearchCommanderTests` and
+`P987RecordedBotDecisionCorpusTests` are new to this ledger; the other seven are chronic families recorded above.
+No assertion, timeout, tier, quarantine policy, simulation rule or timing threshold changed. **Fast remains red for
+timing only.** Raw evidence: `TestResults/tiers-20261121T103132.065320Z/` and ignored `.scratch/p1067/fast-isolated/`.
+
+
 ## P1064 — Controls capacity and background bot send resolved (2026-11-20)
 
 The two P1060 follow-ups below are fixed in product code; full evidence and

@@ -57,4 +57,24 @@ public static class BrowserEntry
 
     /// <summary>The lobby identity page that carries the return target back here.</summary>
     public static string SignInHref(string returnTarget) => "/identity.html?return=" + Uri.EscapeDataString(returnTarget);
+
+    /// <summary>
+    /// P1067 — the browser equivalent of the desktop's <c>ALLEGIANCE_DIRECTOR_SEED</c>
+    /// (a WASM app has no process environment): <c>?dev=1&amp;director-seed=N</c>
+    /// makes the Watch camera's shot sequence reproducible for evidence, and is
+    /// ignored unless developer controls are on. Null means "use a fresh seed".
+    /// </summary>
+    public static int? DirectorSeed(string? query, bool dev)
+    {
+        if (!dev) return null;
+        string? seed = null;
+        if (!string.IsNullOrEmpty(query))
+            foreach (string pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                int separator = pair.IndexOf('=');
+                if (separator > 0 && pair[..separator] == "director-seed") seed = pair[(separator + 1)..];
+            }
+        return seed is { Length: > 0 and <= 11 } && int.TryParse(seed, System.Globalization.NumberStyles.AllowLeadingSign,
+            System.Globalization.CultureInfo.InvariantCulture, out int value) ? value : null;
+    }
 }
