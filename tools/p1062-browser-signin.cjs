@@ -77,7 +77,10 @@ async function main() {
     await page.locator('#online-panel[data-state="Sides"]').waitFor({ timeout: 90000 });
     await page.locator('.online-side').first().click();
     await page.locator('#online-panel[data-state="Hangar"]').waitFor({ timeout: 60000 });
-    await page.locator('#online-launch').click();
+    // P1070 — the HTML launch button is a dev-only control now (no ?dev=1 here), so
+    // launch through the game window's own hangar Launch verb.
+    assert.equal(await page.locator('#online-launch').count(), 0, label + ': the hangar has no HTML launch control for a player');
+    await page.evaluate(() => gameMenu.launch());
     await page.locator('#online-panel[data-state="Flight"]').waitFor({ timeout: 120000 });
     await page.waitForFunction(() => gameMenu.metrics().flight.frames > 3, null, { timeout: 60000 });
     const shipId = (await metrics()).online.shipId;

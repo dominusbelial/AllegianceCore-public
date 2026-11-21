@@ -131,6 +131,15 @@ Harnesses that click a developer/proof control open the page with `?dev=1`
 `p1054-browser-sectors.cjs` and `p1058-browser-launch.cjs`). Classification and native citations:
 `docs/reports/BROWSER_DEV_CONTROLS_P1059.md`.
 
+P1070 adds the docked hangar's HTML launch controls to the same switch: in the Hangar state
+`#online-launch`, `#launch-status` and `#launch-reason` render only with `?dev=1`, because the hangar and the full
+ship loadout are drawn and driven in the game window (`docs/reports/BROWSER_HANGAR_LOADOUT_P1070.md`). The pane's
+other controls (server list, password, sides, briefing, flight toolbar, disconnect) are untouched. A harness that
+needs to launch without the switch uses the game window's own verbs through the JS hooks
+`window.gameMenu.hangar()`, `window.gameMenu.pointer(x, y, down, wheel)` and `window.gameMenu.launch()`;
+`tools/p1070-browser-hangar.cjs` is the reference and `p1059-browser-devcases.cjs` / `p1062-browser-signin.cjs` were
+moved onto them.
+
 ## Client build identity and the game password
 
 The server advertises `minimumClientVersion` and **enforces it at LOGONREQ**. The browser bundle
