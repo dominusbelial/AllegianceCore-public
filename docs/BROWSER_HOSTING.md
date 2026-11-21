@@ -185,7 +185,8 @@ curl -sI https://<public-origin>/play/menu.html | grep -Ei 'HTTP/|cache-control'
 # CSP carries wasm-unsafe-eval and exactly the same-origin wss route
 curl -sI https://<public-origin>/play/ | grep -i 'content-security-policy'
 # WSS upgrade through the origin (101 Switching Protocols; no second port)
-curl -si -o /dev/null -w '%{http_code}\n' \
+# --http1.1: a plain Upgrade over an HTTP/2 connection is refused with 400.
+curl -si --http1.1 --max-time 4 -o /dev/null -w '%{http_code}\n' \
   -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
   -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Protocol: allegiance-fed-v1' \
   -H 'Origin: https://<public-origin>' https://<public-origin>/game
