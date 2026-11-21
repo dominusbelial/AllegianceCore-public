@@ -1,0 +1,57 @@
+{
+  "passed": true,
+  "browser": "153.0.8010.0",
+  "callsign": "Browser1062796823",
+  "directions": {
+    "identityOffer": {
+      "autoOnline": true,
+      "state": "Servers",
+      "flight": {
+        "shipId": 8114,
+        "ships": [
+          {
+            "id": 8114,
+            "stationId": null,
+            "sectorId": 1053
+          }
+        ]
+      }
+    },
+    "roundTrip": {
+      "autoOnline": true,
+      "noManualRefresh": true,
+      "flight": {
+        "shipId": 8117,
+        "ships": [
+          {
+            "id": 8117,
+            "stationId": null,
+            "sectorId": 1053
+          }
+        ]
+      }
+    },
+    "serverList": {
+      "preselected": "229b0789e4764929a69888438e2c424b",
+      "flight": {
+        "shipId": 8120,
+        "ships": [
+          {
+            "id": 8120,
+            "stationId": null,
+            "sectorId": 1053
+          }
+        ]
+      }
+    }
+  },
+  "visibleText": {
+    "server-list": "Player sign-in / approve a device · Career ladder · Squads · Zone Events\n\nAllegiance Lobby — Live Servers\n\nInstall the client first from Releases, then choose Join and confirm in the client.\n\nUpdated 10:29:56 PM\n\nName\tAddress\tPort\tPlayers\tMission\tCore\tVersion\tLast seen\tJoin\tPlay in browser\nP1061 loopback [verified]\t127.0.0.1\t45631\t0 / 200\tP1061 public mission 🔒\tPCore001.igc\t990051329\t11/20/2026, 10:29:32 PM\tJoin\tPlay in browser",
+    "identity-signed-out": "← Server directory\n\nALLEGIANCE / PLAYER ACCOUNTS\n\nYour callsign.\nYour identity.\n\nSign in with a passkey, then approve the code shown in your game. Your passkey stays on your device.\n\nCallsign\n\n1–24 printable Latin-1 characters. Callsigns are unique, ignoring case.\n\nCreate account with a passkey\nSign in with a passkey\nApprove a device\n\nOnly approve a code from a game or server you started. Check the purpose before continuing.\n\nCode shown on your device\nReview device\n\nAnonymous play remains available on servers that allow it. Signing out in the game revokes that game’s session.",
+    "identity-signed-in": "← Server directory\n\nALLEGIANCE / PLAYER ACCOUNTS\n\nYour callsign.\nYour identity.\n\nSign in with a passkey, then approve the code shown in your game. Your passkey stays on your device.\n\nSIGNED IN\n\nBrowser1062796823\n\nAccount ID: 28d412a216eb4392ac547284335f6f03\n\nPlay in browser\nSign out of this browser\nApprove a device\n\nOnly approve a code from a game or server you started. Check the purpose before continuing.\n\nCode shown on your device\nReview device\n\nSigned in. Enter the code shown in your game to continue.\n\nAnonymous play remains available on servers that allow it. Signing out in the game revokes that game’s session.",
+    "flight-from-identity": "Running slow · audio paused\nLoading Ceto visuals · 0%\nBrowser game · Classic · Preferences saved\nClassic\nModern\nPlay online\nMenu sound on\nDownload screenshot\nMission briefing View nearby shipsDock at home station StarmapAleph \nSelect destination\nDeucalion\nFullscreenDisconnect and return to menu\nBrowser game · Artwork © 2017 FreeAllegiance · MIT · Artwork licence · Font licence · Framework notices · Pack provenance",
+    "flight-round-trip": "Running slow · audio paused\nLoading Ceto visuals · 0%\nBrowser game · Classic · Preferences saved\nClassic\nModern\nPlay online\nMenu sound on\nDownload screenshot\nMission briefing View nearby shipsDock at home station StarmapAleph \nSelect destination\nFullscreenDisconnect and return to menu\nBrowser game · Artwork © 2017 FreeAllegiance · MIT · Artwork licence · Font licence · Framework notices · Pack provenance",
+    "client-preselected": "Browser game · Classic · Preferences in memory\nClassic\nModern\nPlay online\nEnable menu sound\nDownload screenshot\n\nALLEGIANCE · BROWSER GAME · Classic\n\nServer list\n\nSigned in as Browser1062796823\n\nGame password \nP1061 loopback\n\nOpened from the server list\n\nJoin P1061 public mission\nDisconnect and return to menu\nBrowser game · Artwork © 2017 FreeAllegiance · MIT · Artwork licence · Font licence · Framework notices · Pack provenance",
+    "flight-from-server-list": "Running slow · audio paused\nLoading Ceto visuals · 0%\nBrowser game · Classic · Preferences saved\nClassic\nModern\nPlay online\nMenu sound on\nDownload screenshot\nMission briefing View nearby shipsDock at home station StarmapAleph \nSelect destination\nFullscreenDisconnect and return to menu\nBrowser game · Artwork © 2017 FreeAllegiance · MIT · Artwork licence · Font licence · Framework notices · Pack provenance"
+  }
+}

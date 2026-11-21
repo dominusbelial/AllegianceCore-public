@@ -2,6 +2,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
+@inject NavigationManager Nav
 
 <span id="pacing-note" hidden role="status">Running slow · audio paused</span>
 @if (SectorStatus.Length > 0) { <span id="sector-progress" role="status">@SectorStatus</span> }
@@ -33,8 +34,8 @@
         <h2>@(_onlineState == "Servers" ? "Server list" : _onlineState == "Sides" ? "Choose a side" : _onlineState == "Flight" ? "In game" : _onlineState == "Hangar" ? "Hangar" : "Sign in")</h2>
         @if (_onlineState == "Login")
         {
-            <p>Sign in to the lobby, then return to this tab.</p>
-            <a href="/identity.html" target="_blank" rel="noopener">Open lobby sign-in</a>
+            <p>Sign in to the lobby; you come back to this tab already signed in.</p>
+            <a id="online-signin" href="@SignInHref()">Sign in in this tab</a>
             <button id="online-refresh" disabled="@_onlineBusy" @onclick="OpenOnlineAsync">Refresh identity and servers</button>
         }
         else
@@ -51,8 +52,9 @@
                 }
                 @foreach (var server in _servers)
                 {
-                    <article class="online-server">
+                    <article class="online-server" data-preselected="@(server.Id == _preselectServerId ? "true" : null)">
                         <strong>@server.Name</strong>
+                        @if (server.Id == _preselectServerId) { <p class="preselected">Opened from the server list</p> }
                         @if (Unavailable(server) is { } reason) { <p>@reason</p> }
                         else if (server.Missions is { Length: > 0 } missions)
                         {

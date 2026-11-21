@@ -8,6 +8,9 @@ footer { padding: 2px 6px; font-size: 9px; }
 #online-panel { z-index: 20; width: min(640px, calc(100vw - 56px)); max-height: calc(100vh - 90px); overflow: auto; background: #081822; border: 1px solid #40d7cc; }
 #online-panel button { margin: 6px; }
 .online-server { border-top: 1px solid #385458; padding: 12px 0; }
+/* P1062 — the listing entry the lobby's "Play in browser" link named. */
+.online-server[data-preselected="true"] { border-left: 2px solid #40d7cc; padding-left: 10px; }
+.online-server .preselected { margin: 4px 0; color: #40d7cc; font-size: 11px; }
 #online-pose { overflow-wrap: anywhere; }
 #online-panel { top: 50%; transform: translate(-50%, -50%); }
 .flight-toolbar { position:fixed; bottom:0; left:0; z-index:3; color:#a4c5bc; background:#051014cc; font:11px sans-serif; max-width:100%; }

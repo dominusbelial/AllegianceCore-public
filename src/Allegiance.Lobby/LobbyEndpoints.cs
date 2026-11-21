@@ -1,3 +1,4 @@
+using Allegiance.Lobby.BrowserPreview;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -134,6 +135,17 @@ public static class LobbyEndpoints
             MinimumVersion = NullIfEmpty(cfg.MinimumClientVersion),
             FeedUrl = NullIfEmpty(cfg.UpdateFeedUrl),
         }));
+
+        // P1062 — the browser build's presence for the lobby's own pages: the
+        // identity page's "Play in browser" action and the server list's per-game
+        // link. A read-only config answer like /api/update/info (enabled + served
+        // prefix; no origin, token or secret). When the caller supplies a `return`
+        // target, it is answered only through the closed same-origin, path-only
+        // rule (BrowserReturnTarget) — a hostile value yields null and the page
+        // falls back to the plain browser entry instead of redirecting.
+        app.MapGet("/api/browser", (BrowserPreviewSettings preview, HttpContext context) =>
+            Results.Ok(new BrowserOffer(preview.Enabled, preview.Enabled ? preview.Prefix : "",
+                preview.Enabled ? BrowserReturnTarget.Normalize(context.Request.Query["return"], preview.Prefix) : null)));
     }
 
     /// <summary>An unconfigured optional field is advertised as absent (null),

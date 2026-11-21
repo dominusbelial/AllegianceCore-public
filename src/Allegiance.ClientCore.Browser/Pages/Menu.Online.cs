@@ -30,11 +30,32 @@ public partial class Menu
     private bool _showBriefing;
     private string _pose = "Waiting for authoritative updates";
     private long _lastOnlineRefresh;
+    // P1062 — the browser client's own URL contract (?online=1, ?server=): parsed
+    // once, the round trip opens the online panel by itself, and the listing entry
+    // the lobby's "Play in browser" link named is shown first and marked.
+    private BrowserEntryState? _entry;
+    private bool _entryOpened;
+    private string? _preselectServerId;
     // The published generation's build identity and the game password are held only
     // in memory: never in storage, a URL, a log or the asset cache.
     private string? _clientVersion;
     private string _joinPassword = "";
     private Uri LobbyUri(string path) => new(new Uri(Http.BaseAddress!, "/"), path);
+
+    private BrowserEntryState Entry => _entry ??= BrowserEntry.Parse(new Uri(Nav.Uri).Query);
+    /// <summary>P1062 — the identity page that brings the player back here already
+    /// signed in. The target is this client's own path plus its entry flags; the
+    /// lobby validates it again before redirecting.</summary>
+    private string SignInHref() => BrowserEntry.SignInHref(BrowserEntry.ReturnTarget(new Uri(Nav.Uri).PathAndQuery, Entry.Server));
+    /// <summary>P1062 — the lobby home page or identity page sends the player back
+    /// with <c>?online=1</c>; open the online panel once, by itself, so the player
+    /// lands on the signed-in server list with no extra click or refresh.</summary>
+    private async Task OpenEntryAsync()
+    {
+        if (_entryOpened || !Entry.Online) return;
+        _entryOpened = true;
+        await OpenOnlineAsync();
+    }
 
     private async Task OpenOnlineAsync()
     {
@@ -49,7 +70,13 @@ public partial class Menu
             response.EnsureSuccessStatusCode();
             _account = await response.Content.ReadFromJsonAsync(IdentityJsonContext.Default.IdentityAccount, _lifetime.Token);
             await EnsureClientVersionAsync(_lifetime.Token);
-            _servers = await Http.GetFromJsonAsync(LobbyUri("api/servers"), BrowserJoinJson.Default.BrowserServerArray, _lifetime.Token) ?? [];
+            var listed = await Http.GetFromJsonAsync(LobbyUri("api/servers"), BrowserJoinJson.Default.BrowserServerArray, _lifetime.Token) ?? [];
+            // P1062 — the entry the lobby's "Play in browser" link named is offered
+            // first and marked; other listed games stay selectable.
+            _preselectServerId = Entry.Server;
+            _servers = _preselectServerId is { } preselect
+                ? [.. listed.OrderBy(server => string.Equals(server.Id, preselect, StringComparison.Ordinal) ? 0 : 1)]
+                : listed;
             _onlineState = "Servers";
         }
         catch (Exception ex) { _onlineError = ex.Message; }
