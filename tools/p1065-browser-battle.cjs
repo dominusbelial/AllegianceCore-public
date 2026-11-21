@@ -14,7 +14,8 @@ async function until(test,label,timeout=180000){const end=Date.now()+timeout;whi
 async function type(page,selector,value){await page.locator(selector).evaluate((input,text)=>{input.value=text;input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}))},String(value))}
 async function main(){
  fs.mkdirSync(out,{recursive:true});
- await until(()=>state().battle.ready,'capped bots authenticated and pilot slot reserved');
+ // The host writes state.json only after it boots; a missing or mid-swap file is not ready yet.
+ await until(()=>{try{return state().battle.ready}catch(e){if(e.code==='ENOENT'||e instanceof SyntaxError)return false;throw e}},'capped bots authenticated and pilot slot reserved',600000);
  const size=state().battle.size;assert.ok([1,5,10].includes(size));
  const target=state().chart.find(w=>w.ClusterId===1053&&w.Name===state().battle.targetSector)?.destinationSectorId;
  // Native authored chart: the target is an actual adjacent sector, never home.
@@ -48,7 +49,7 @@ async function main(){
   await page.locator('#theCanvas').focus();await page.keyboard.press('Backspace',{delay:100});
   // Fly into the rendezvous with ordinary waypoint input, then park the pilot.
   await page.locator('#flight-waypoint').click();for(const axis of ['x','y','z'])await type(page,'#waypoint-'+axis,axis==='y'?550:0);await page.locator('#waypoint-go').click();
-  await until(async()=>{const m=await page.evaluate(()=>gameMenu.metrics());return m.flight.battle.contacts>=Math.min(3,size*2)},'several real visible contacts in battle',240000);
+  await until(async()=>{const m=await page.evaluate(()=>gameMenu.metrics());return m.flight.battle.contacts>=Math.min(3,size*2-1)},'several real visible contacts in battle',240000);
   await page.locator('#theCanvas').focus();await page.keyboard.press('Backspace',{delay:100});
   await until(async()=>{const m=await page.evaluate(()=>gameMenu.metrics());return m.flight.battle.standIns>0},'visible contacts survive held mesh fetches');
   const held=await page.evaluate(()=>gameMenu.metrics());assert.equal(held.flight.battle.contacts,held.flight.battle.meshes+held.flight.battle.standIns);
@@ -71,19 +72,19 @@ async function main(){
    const intervals=await page.evaluate(()=>{battleSample.active=false;return battleSample.intervals});timing.push({style,width,height,frames:intervals.length,p50Ms:percentile(intervals,.5),p95Ms:percentile(intervals,.95),headlessGpuRepresentative:false});
    const latest=samples.at(-1).metrics.flight;
    // Do not silently save empty/home-sector frames as combat evidence.
-   assert.equal(latest.sectorId,target);assert.ok(latest.flying);assert.ok(latest.battle.contacts>=Math.min(3,size*2));
+   assert.equal(latest.sectorId,target);assert.ok(latest.flying);assert.ok(latest.battle.contacts>=Math.min(3,size*2-1));
    if(size>=5)assert.ok(latest.battle.hullIds.length>=2,'multiple hull types actually visible');
    await page.locator('#flight-contact').click();await delay(200);
-   const file=`battle-${size}-${style.toLowerCase()}-${width}x${height}.png`;await page.screenshot({path:path.join(out,file)});captures.push({file,style,width,height,battle:latest.battle});await page.locator('#flight-contact').click();
+   const file=`battle-${size}-${style.toLowerCase()}-${width}x${height}.jpg`;await page.screenshot({path:path.join(out,file),type:'jpeg',quality:80});captures.push({file,style,width,height,battle:latest.battle});await page.locator('#flight-contact').click();
   }
   assert.ok(samples.every(s=>s.wasmLinearBytes>0),'WASM linear memory was measured');
   assert.ok(samples.some(s=>s.metrics.flight.battle.meshes>1),'real remote meshes drew');
   assert.deepEqual(errors,[]);
-  const pngBytes=captures.reduce((n,c)=>n+fs.statSync(path.join(out,c.file)).size,0);assert.ok(pngBytes<=2*1024*1024,'capture set <=2 MiB');
-  const report={size,browserVersion:browser.version(),headlessGpuRepresentative:false,held,swapped,forcedFetchFailure:failedOnce,wasmHeapNote:'Memory constructor instrumentation runs before the runtime; wasmMemoryBuffers reports each actual WebAssembly.Memory buffer, summed by wasmLinearBytes. managedHeapBytes is the .NET managed portion.',samples,timing,captures,pngBytes,packRequests:requests,manifest:JSON.parse(fs.readFileSync(path.join(generation,'battle-receipt.json')))};
+  const imageBytes=captures.reduce((n,c)=>n+fs.statSync(path.join(out,c.file)).size,0);assert.ok(imageBytes<=2*1024*1024,'capture set <=2 MiB');
+  const report={size,browserVersion:browser.version(),headlessGpuRepresentative:false,held,swapped,forcedFetchFailure:failedOnce,wasmHeapNote:'Memory constructor instrumentation runs before the runtime; wasmMemoryBuffers reports each actual WebAssembly.Memory buffer, summed by wasmLinearBytes. managedHeapBytes is the .NET managed portion.',samples,timing,captures,imageBytes,packRequests:requests,manifest:JSON.parse(fs.readFileSync(path.join(generation,'battle-receipt.json')))};
   fs.writeFileSync(path.join(out,'browser-battle.json'),JSON.stringify(report,null,2));
-  await page.locator('#online-close').click();await page.locator('#online-panel').waitFor({state:'detached'});console.log('BROWSER_BATTLE_PASS',size,pngBytes);
- }catch(error){if(page){fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({error:String(error),errors,samples},null,2))}throw error}
+  await page.locator('#online-close').click();await page.locator('#online-panel').waitFor({state:'detached'});console.log('BROWSER_BATTLE_PASS',size,imageBytes);
+ }catch(error){if(page){fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({error:String(error),errors,samples,lastMetrics:await page.evaluate(()=>gameMenu.metrics()).catch(e=>String(e))},null,2))}throw error}
  finally{releasePacks();await browser.close()}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

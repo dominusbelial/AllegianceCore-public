@@ -192,3 +192,48 @@ python3 tools/p1061-deploy-check.py
 **Native intent:** show only current scanner-visible ships in the viewed sector, preserve their radar eligibility independently of artwork, and size hull presentation from the native half-length radius. Reuse the existing shared visibility and spin rules, with the native citations and parity rows above.
 
 **Modern approach:** keep the join small, deliver verified original visual closures asynchronously, preserve a contact and a simple solid stand-in through failures, and keep frame work proportional to the viewed sector. Desktop rendering/HUD behavior and production authentication stay unchanged. Browser combat rendering, pacing, heap and screenshot review remain explicitly **for Claude** because this lane has no Chromium.
+
+## Workstation browser results — Claude, 2026-11-20 22:20–23:10 (America/Bogota)
+
+Chromium (playwright 1.65.1 + @sparticuz/chromium, headless, WebGL2, **not GPU-representative**) on the workstation,
+using the commands above. Summary: [browser-battle-summary.json](BROWSER_BATTLE_SHIPS_P1065_assets/browser/browser-battle-summary.json).
+
+**Harness fixes made during review** (`tools/p1065-browser-battle.cjs`):
+- The first wait read `state.json` before the host had written it and crashed on ENOENT; it now treats a missing or
+  half-swapped file as "not ready" (10-minute limit).
+- The contact threshold `min(3, 2N)` cannot be met at 1 v 1 (the pilot's only other ship is one enemy); it is now
+  `min(3, 2N−1)`. **Not yet re-run at 1 v 1.**
+- Captures are JPEG q80 instead of PNG: four 1920×1080/800×480 PNGs were ~3.9 MB, over the 2 MiB set cap.
+- A failure now records the last `gameMenu.metrics()` so a timeout says what the browser saw.
+
+**10 v 10: PASS** (second attempt). Peak 19 ships in the battle sector on the server, 18 browser contacts.
+Held mesh fetches showed 9 contacts = 2 meshes + 7 stand-ins (no contact lost while waiting); the forced 503 retried and
+every capture then drew original meshes with 0 stand-ins. WASM linear memory 64 MiB, managed heap ≤ 125 MiB.
+
+| Capture | Contacts | Meshes | Stand-ins | Hull types | RAF p50 / p95 |
+|---|---:|---:|---:|---:|---|
+| Classic 1920×1080 | 16 | 16 | 0 | 13 | 16.7 / 16.7 ms |
+| Modern 1920×1080 | 14 | 14 | 0 | 11 | 16.7 / 16.7 ms |
+| Classic 800×480 | 11 | 11 | 0 | 10 | 16.7 / 16.8 ms |
+| Modern 800×480 | 10 | 10 | 0 | 8 | 16.7 / 16.7 ms |
+
+**Ship-pass hitches (follow-up, not a blocker):** `shipPassMs` p50 0.9, p95 1.3, p99 1.5 ms over 475 samples, but three
+samples took 46, 296 and 299 ms, each when a new hull closure had just been promoted. Most likely the first draw of a new
+hull decodes/uploads its mesh in one frame. Spread that work across frames (decode off the draw path, a per-frame upload
+budget) in a later task.
+
+**5 v 5:** the first attempt passed every functional assertion (up to 9 server ships = 9 contacts, 9 hull types, all
+meshes, one stand-in during fetch) and failed only on the old PNG size cap. The second attempt lost the pilot in the
+last 60-second window (pod → home sector 1053, hangar), which the harness correctly refuses as combat evidence.
+The first 10 v 10 attempt ended the same way (screenshots kept in ignored scratch). **1 v 1 was not completed.**
+
+**Captures** (opened and checked by Claude; ships are 2–3.5 km away, so they show as small models, name labels and
+edge range markers rather than close-ups; the harness does not move the camera to a ship):
+- `battle-10-classic-1920x1080.jpg`: Ixion with the nebula sky and rocks; a small fighter mesh beside the label of
+  bot b014 and two more bot labels (b012, b010) to the right, the pilot's own label on the left; off-screen contacts as
+  range markers on the left, right and bottom edges (1,383–3,614 m); pilot parked at 0 mps.
+- `battle-10-modern-1920x1080.jpg`: the same moment in the Modern HUD; small contact squares near the top and right
+  edges and one selected contact; labels faded with range; shield reads 0 % with a warning (P1063 H7, still open).
+- `battle-10-classic-800x480.jpg`: Classic HUD at 800×480; labels for bots b010, b014, b008 and the pilot, edge range
+  markers (1,888 m) fit without clipping.
+- `battle-10-modern-800x480.jpg`: Modern HUD at 800×480; about ten contact squares across the view, one selected.
