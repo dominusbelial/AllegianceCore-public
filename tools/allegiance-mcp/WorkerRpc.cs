@@ -50,6 +50,8 @@ internal sealed class ProcessWorker : IWorker
         if (Path.GetFileNameWithoutExtension(info.FileName).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
             info.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
         foreach (var arg in new[] { host, port.ToString(), "--worker", $"{index + 1}/{count}", "--parent", Environment.ProcessId.ToString() }) info.ArgumentList.Add(arg);
+        if (BotLogonIdentity.FilePath is { } logonFile)
+        { info.ArgumentList.Add("--logon-file"); info.ArgumentList.Add(logonFile); }
         return new(info, index, Path.Combine(Environment.CurrentDirectory, $"err.worker-{index + 1}.log"));
     }
 

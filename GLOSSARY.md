@@ -136,6 +136,22 @@ list in **reverse**.
 
 - **Public browser host (P1061)** — production `/play/` generation served by the lobby with the host cache contract, a scoped CSP whose `connect-src` adds exactly the same-origin `wss` route, and extensionless `packs/<sha256>` files (`src/Allegiance.Lobby/BrowserPreview/BrowserPreviewSettings.cs`, `BrowserPreviewHosting.cs`). The browser join decision (`src/Allegiance.ClientCore.Browser/Pages/BrowserJoinPolicy.cs`) requires the page's own HTTPS origin, a verified identity server and a reported build identity when the server enforces `minimumClientVersion`; the game password is typed and sent in `MissionPassword`, and the server's existing gates stay authoritative. Publication adds `client-version.json` and a per-pack `artwork-provenance.json` (`tools/p1053-browser-publish.py`, `tools/p1061-browser-provenance.py`). The public stack is `docker/public/docker-compose.yml` with `docker/public/Caddyfile`, `docker/public/server.example.json` and `docker/public/lobby.env.example`; deploy/rollback checks are in `docs/BROWSER_HOSTING.md`, and `tools/p1061-deploy-check.py` statically validates the compose shape, Caddy routes, server JSON and Dockerfile COPY sources. Report: `docs/reports/BROWSER_PUBLIC_HOST_P1061.md`.
   Report: `docs/reports/BROWSER_DEV_CONTROLS_P1059.md`.
+- **Browser battle ships (P1065)** — `src/Allegiance.ClientCore.Game.Browser/BattleShipScene.cs`
+  gathers the browser-only wire-maintained sector index through the existing
+  `ShipEntity.CanDrawInSector` visibility rule. `Game1.Flight.cs` in that project
+  creates contacts before geometry, reuses HUD buffers, culls rock spheres and
+  draws a half-hull-length cube stand-in until original meshes arrive.
+  `src/Allegiance.ClientCore.Game.Browser/BrowserRockSpins.cs` preserves culled
+  rock phase from one advancing sector clock.
+  `src/Allegiance.ClientCore.Game.Browser/Assets/BattleManifest.cs` and
+  `Assets/BattlePackStreamer.cs` in that project verify and atomically promote
+  per-hull/missile/effect closures from `tools/p1065-battle-packs.py`, keeping the
+  P1054 join unchanged. `tools/p1051-browser-host/BattleBots.cs` drives capped
+  MCP battles in Ixion, with lobby-account tickets through the local fixture
+  in `tools/allegiance-mcp/BotLogonIdentity.cs`; anonymous admission stays off.
+  Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
+  parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
+  `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
 - **Browser sector visuals (P1054)** — `tools/p1051-flight-opens/Program.cs`
   records ordinary waypoint/aleph travel through all sectors in both HUDs;
   `tools/p1054-sector-analysis.py` attributes verified desktop opens. The

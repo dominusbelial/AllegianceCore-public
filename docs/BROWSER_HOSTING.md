@@ -223,3 +223,39 @@ an already-open page; entry pages are `no-store`, so a reload always picks the n
 
 The local proof proxy continues to send `no-cache` for HTTP files (it predates these hosting headers);
 warm zero pack transfer is provided by the verified browser Cache API independently of them.
+
+
+## Local battle proof (P1065)
+
+`p1051-browser-host ARTWORK GENERATION SCRATCH --bots N --seconds 900` accepts
+0–10 combat seats per side, with zero/off as the default. It spawns an N v N
+scenario through the existing MCP driver, targets Ixion (one actual aleph from
+Alpha's home), then removes one friendly bot to reserve the browser pilot's
+seat. With the pilot aboard the battle is N v N, including at N=1. The MCP
+probe remains docked and is excluded from flying combat counts. All fleet
+purchases use the existing explicit proof-host wallet/tech grants.
+
+The host keeps anonymous admission disabled. A local filesystem broker creates
+lobby fixture accounts and issues normal signed join tickets for each bot; the
+MCP `--logon-file` option supplies its build version, mission password and broker
+path, and refuses non-loopback hosts. This broker is in the proof tool only,
+absent from production server/lobby binaries. The deploy checker rejects its
+flags or paths in public deployment placeholders. The host handles its stop
+file, SIGINT, SIGTERM and optional time limit, then waits for the exact owned
+MCP-driver and proxy PIDs to exit; the driver/MCP own their child PIDs.
+
+Publish scripts also generate `battle-manifest.json` and `battle-receipt.json`.
+They declare original hull/missile mesh and texture closures plus the missing
+`exp22bmp`/`fx18bmp` effect surfaces. Verified per-hull requests begin only for
+visible current-sector ships; contacts and radius-sized stand-ins continue
+through cold loads or failures. Missile files share the mechanism; their scene
+pass and explosion-film tiling/upload belong to task B. The join manifest is
+unchanged. Original files keep `packs/<sha256>` URLs, the 64 MiB/1,024-entry
+persistent cache rules, and per-file size/SHA verification. The served artwork
+provenance includes these on-demand files.
+
+Use `tools/p1065-browser-battle.cjs` with the preinstalled P1051 harness modules
+for contact/draw counts, 1/5/10 frame pacing, actual WASM memory-buffer sizes and
+both HUD styles/sizes. This is headless correctness evidence, not a GPU speed
+qualification. Exact build/publish/run commands and the lane's browser
+availability are in [the P1065 report](reports/BROWSER_BATTLE_SHIPS_P1065.md).

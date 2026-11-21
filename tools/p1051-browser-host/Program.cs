@@ -23,9 +23,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
-if (args.Length != 3) throw new ArgumentException("p1051-browser-host ARTWORK PUBLISHED_WWWROOT SCRATCH");
-string art = Path.GetFullPath(args[0]), assets = Path.GetFullPath(args[1]), scratch = Path.GetFullPath(args[2]);
+var options = BattleOptions.Parse(args);
+string art = Path.GetFullPath(options.Artwork), assets = Path.GetFullPath(options.Assets), scratch = Path.GetFullPath(options.Scratch);
 Directory.CreateDirectory(scratch);
+string brokerDirectory = Path.Combine(scratch, "identity-broker");
+Directory.CreateDirectory(brokerDirectory);
+File.Delete(Path.Combine(scratch, "battle-ready"));
+await using var battleBots = new BattleBots(scratch);
+long finishAt = options.Seconds == 0 ? long.MaxValue : Environment.TickCount64 + options.Seconds * 1000L;
+bool stopping = false;
+Console.CancelKeyPress += (_, e) => { e.Cancel = true; stopping = true; };
+using var terminate = OperatingSystem.IsWindows() ? null : PosixSignalRegistration.Create(PosixSignal.SIGTERM, signal => { signal.Cancel = true; stopping = true; });
 using var freePort = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
 freePort.Start(); int tcpPort = ((System.Net.IPEndPoint)freePort.LocalEndpoint).Port; freePort.Stop();
 File.Delete(Path.Combine(scratch, "stop"));
@@ -64,6 +72,13 @@ server.Boot(new ServerConfig
     Discovery = new() { Enabled = false },
     WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = [Origin],
         KnownProxies = ["127.0.0.1"], AllowLoopbackDevelopment = false, PublicUrl = "wss://localhost:8443/game" },
+    LiveSettings = options.Bots == 0 ? new() : new()
+    {
+        DebugMode = true,
+        TestHarness = new() { Enabled = true, CharacterNamePrefix = "mcp-", Money = 500000, IgnoreTechGate = true },
+        TestUnlock = new() { Enabled = true, AllTech = true, Money = 500000 },
+        AdminCheats = new() { Enabled = true, AllowNames = ["mcp-*"] },
+    },
     Reconnect = new() { Enabled = true, GraceSeconds = 10 },
     Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = false },
     Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
@@ -77,6 +92,26 @@ using var keeper = new ConnectionSession();
 var desktopAccount = identities.CreateAccount("DesktopPilot");
 var keeperAccount = identities.CreateAccount("KeeperPilot");
 var signing = lobby.Services.GetRequiredService<IdentitySigningKey>();
+var botAccounts = new Dictionary<string, IdentityAccount>(StringComparer.Ordinal);
+void AnswerBotIdentityRequests()
+{
+    foreach (string request in Directory.EnumerateFiles(brokerDirectory, "*.request"))
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(request));
+        string name = document.RootElement.GetProperty("name").GetString()!;
+        if (!name.StartsWith("mcp-", StringComparison.Ordinal)) throw new InvalidDataException("Only proof bot names may use this broker.");
+        if (!botAccounts.TryGetValue(name, out var botAccount))
+        {
+            string callsign = name.Length <= 24 ? name : name[..15] + "-" + Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(name)))[..8];
+            botAccounts[name] = botAccount = identities.CreateAccount(callsign);
+        }
+        string token = signing.Issue(botAccount, approved.ServerId, DateTimeOffset.UtcNow);
+        string reply = Path.ChangeExtension(request, ".reply");
+        File.WriteAllText(reply + ".tmp", JsonSerializer.Serialize(new { Callsign = botAccount.Callsign, Token = token }));
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(reply + ".tmp", UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        File.Move(reply + ".tmp", reply, true); File.Delete(request);
+    }
+}
 var core = StaticCore.Load(IgcReader.Parse(File.ReadAllBytes(Path.Combine(art, "PCore001.igc"))));
 desktop.World.MissionCoreResolver = _ => core;
 keeper.World.MissionCoreResolver = _ => core;
@@ -117,6 +152,16 @@ var chart = navigationWarps.Values.Select(w => new { w.WarpId, w.ClusterId, w.Na
     destinationSectorId = navigationWarps[w.DestinationId].ClusterId }).ToArray();
 Task? desktopJoin = null;
 Task? keeperJoin = null;
+string battleSector = "Ixion";
+if (options.Bots > 0)
+{
+    var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(art, "XXV_simple.igc")));
+    short home = map.Stations.First(s => s.SideId == 0).ClusterId;
+    short target = map.Clusters.Single(c => c.Name == battleSector).ClusterId;
+    if (!map.Warps.Any(w => w.ClusterId == home && navigationWarps[w.DestinationId].ClusterId == target))
+        throw new InvalidDataException("Battle rendezvous must be one aleph from home.");
+    battleBots.Start(options.Bots, tcpPort, ClientVersion, GamePassword, brokerDirectory, battleSector);
+}
 bool keeperSeated = false;
 bool desktopSeated = false, desktopLaunched = false;
 int desktopApproach = 0;
@@ -129,9 +174,11 @@ var lastControls = new Dictionary<short, (ControlData, int)>();
 try
 {
     Console.WriteLine("P1051_HOST_READY");
-    while (!File.Exists(Path.Combine(scratch, "stop")))
+    while (!stopping && Environment.TickCount64 < finishAt && !File.Exists(Path.Combine(scratch, "stop")))
     {
         server.TickSim();
+        if (options.Bots > 0) AnswerBotIdentityRequests();
+        if (battleBots.Error is { } botError) throw new IOException("Battle startup failed: " + botError);
         if (staleJoin.IsCompleted && oldVersionRefusal is null)
             oldVersionRefusal = staleJoin.IsFaulted
                 ? staleJoin.Exception!.GetBaseException().Message
@@ -162,7 +209,7 @@ try
                 host: listingInfo.address!);
         }
         if (desktopJoin?.IsCompletedSuccessfully == true && !desktopSeated)
-        { desktop.SendPositionReq(1); desktopSeated = true; }
+        { desktop.SendPositionReq(options.Bots > 0 ? (short)0 : (short)1); desktopSeated = true; }
         if (File.Exists(Path.Combine(scratch, "keeper-join")) && keeperJoin is null)
         {
             keeper.ClientVersion = ClientVersion;
@@ -173,89 +220,92 @@ try
                 host: listingInfo.address!);
         }
         if (keeperJoin?.IsCompletedSuccessfully == true && !keeperSeated) { keeper.SendPositionReq(0); keeperSeated = true; }
-        if (desktop.World.MySideId == 1 && desktop.World.MyShipId is { } desktopId
-            && desktop.World.Ships.TryGetValue(desktopId, out var desktopShip))
+        lock (desktop.Gate)
         {
-            if (desktop.World.MissionGeneration != desktopReadyGeneration)
-            { desktop.SendPlayerReady(true, desktopId); desktopReadyGeneration = desktop.World.MissionGeneration; }
-            if (desktopShip.StationId >= 0 && desktop.World.Mission?.Stage == MissionStageMessage.StageStarted
-                && Environment.TickCount64 >= desktopNextLaunch)
-            { desktop.SendDocked(); desktopNextLaunch = Environment.TickCount64 + 1000; }
-            desktopLaunched = desktopShip.StationId < 0;
-            if (desktopLaunched && desktopShip.Latest is { } pose)
+            if (desktop.World.MySideId == (options.Bots > 0 ? 0 : 1) && desktop.World.MyShipId is { } desktopId
+                && desktop.World.Ships.TryGetValue(desktopId, out var desktopShip))
             {
-                // An opposing player crosses the real aleph, respecting team
-                // balance and scanner visibility. No server-side repositioning.
-                var goalSector = desktop.World.Clusters.Values.FirstOrDefault(c => c.Name == "Ceto").ClusterId;
-                // Follow only the browser pose actually visible in this client's world.
-                // Rotated matches may launch from the opposite station bay.
-                var observedPilot = desktop.World.Ships.Values.FirstOrDefault(s => s.ShipId != desktopId
-                    && s.SectorId == desktopShip.SectorId && s.StationId < 0 && s.Latest is not null
-                    && s.CharacterName?.StartsWith("Browser1051", StringComparison.Ordinal) == true);
-                float baySide = observedPilot?.Latest?.Position.Y < 0 ? -1 : 1;
-                SimVec goal = observedPilot?.Latest is { } observedPose
-                    ? observedPose.Position + new SimVec(-75, baySide * 130, -10) : new(-75, 550, 100);
-                if (desktopShip.SectorId != goalSector) desktopApproach = 0;
-                else if (desktopApproach < 2)
+                if (desktop.World.MissionGeneration != desktopReadyGeneration)
+                { desktop.SendPlayerReady(true, desktopId); desktopReadyGeneration = desktop.World.MissionGeneration; }
+                if (desktopShip.StationId >= 0 && desktop.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && Environment.TickCount64 >= desktopNextLaunch)
+                { desktop.SendDocked(); desktopNextLaunch = Environment.TickCount64 + 1000; }
+                desktopLaunched = desktopShip.StationId < 0;
+                if (desktopLaunched && desktopShip.Latest is { } pose)
                 {
-                    SimVec clearance = desktopApproach == 0 ? new(-1800, -1000, 1500) : new(-700, baySide * 1000, 300);
-                    if ((clearance - pose.Position).Length() < 150) desktopApproach++;
-                    else goal = clearance;
-                }
-                bool routed = false;
-                if (desktopShip.SectorId != goalSector)
-                {
-                    var queue = new Queue<(short Sector, short First)>();
-                    var visited = new HashSet<short> { desktopShip.SectorId };
-                    queue.Enqueue((desktopShip.SectorId, -1));
-                    short route = -1;
-                    while (queue.Count > 0 && route < 0)
+                    // An opposing player crosses the real aleph, respecting team
+                    // balance and scanner visibility. No server-side repositioning.
+                    var goalSector = desktop.World.Clusters.Values.FirstOrDefault(c => c.Name == (options.Bots > 0 ? battleSector : "Ceto")).ClusterId;
+                    // Follow only the browser pose actually visible in this client's world.
+                    // Rotated matches may launch from the opposite station bay.
+                    var observedPilot = desktop.World.Ships.Values.FirstOrDefault(s => s.ShipId != desktopId
+                        && s.SectorId == desktopShip.SectorId && s.StationId < 0 && s.Latest is not null
+                        && s.CharacterName?.StartsWith("Browser1051", StringComparison.Ordinal) == true);
+                    float baySide = observedPilot?.Latest?.Position.Y < 0 ? -1 : 1;
+                    SimVec goal = observedPilot?.Latest is { } observedPose
+                        ? observedPose.Position + new SimVec(-75, baySide * 130, -10) : new(-75, 550, 100);
+                    if (desktopShip.SectorId != goalSector) desktopApproach = 0;
+                    else if (desktopApproach < 2)
                     {
-                        var current = queue.Dequeue();
-                        foreach (var warp in navigationWarps.Values.Where(w => w.ClusterId == current.Sector))
+                        SimVec clearance = desktopApproach == 0 ? new(-1800, -1000, 1500) : new(-700, baySide * 1000, 300);
+                        if ((clearance - pose.Position).Length() < 150) desktopApproach++;
+                        else goal = clearance;
+                    }
+                    bool routed = false;
+                    if (desktopShip.SectorId != goalSector)
+                    {
+                        var queue = new Queue<(short Sector, short First)>();
+                        var visited = new HashSet<short> { desktopShip.SectorId };
+                        queue.Enqueue((desktopShip.SectorId, -1));
+                        short route = -1;
+                        while (queue.Count > 0 && route < 0)
                         {
-                            if (!navigationWarps.TryGetValue(warp.DestinationId, out var destination) || !visited.Add(destination.ClusterId)) continue;
-                            short first = current.First < 0 ? warp.WarpId : current.First;
-                            if (destination.ClusterId == goalSector) { route = first; break; }
-                            queue.Enqueue((destination.ClusterId, first));
+                            var current = queue.Dequeue();
+                            foreach (var warp in navigationWarps.Values.Where(w => w.ClusterId == current.Sector))
+                            {
+                                if (!navigationWarps.TryGetValue(warp.DestinationId, out var destination) || !visited.Add(destination.ClusterId)) continue;
+                                short first = current.First < 0 ? warp.WarpId : current.First;
+                                if (destination.ClusterId == goalSector) { route = first; break; }
+                                queue.Enqueue((destination.ClusterId, first));
+                            }
                         }
+                        if (route >= 0)
+                        {
+                            var warp = navigationWarps[route];
+                            goal = new(warp.Position[0], warp.Position[1], warp.Position[2]); routed = true;
+                        }
+                        desktopNavigation = routed ? "warp approach" : "waiting for known route";
                     }
-                    if (route >= 0)
+                    else desktopNavigation = "rendezvous";
+                    // The proof pilot navigates real hazards too. Reuse the existing
+                    // client Dodge feed (common.cpp:1692-1790,2000-2018), with only
+                    // client-visible bodies and real static-core hull/radius data.
+                    // This changes ordinary pilot input, never a world position.
+                    SimVec? avoidanceGoal = null;
+                    lock (desktop.Gate)
+                        if (core.HullTypes.TryGetValue(desktopShip.HullId, out var moverHull)
+                            && ClientAutopilotDodge.TryComputeDodgeGoal(desktop.World, desktopId, desktopShip.SideId,
+                                pose.Position, pose.Velocity, new(moverHull.Length, moverHull.Thrust, moverHull.Mass), true,
+                                id => core.HullTypes.TryGetValue(id, out var h) ? h.Length : null,
+                                id => core.StationTypes.TryGetValue(id, out var st) ? st.Radius : null,
+                                null, out var dodgeGoal)) avoidanceGoal = dodgeGoal;
+                    var controls = avoidanceGoal is { } escape ? AutopilotSteering.Pursue(pose.Position, pose.Orientation, escape)
+                        : routed ? AutopilotSteering.Pursue(pose.Position, pose.Orientation, goal)
+                        : AutopilotSteering.SteerToward(pose.Position, pose.Orientation, goal, pose.Velocity);
+                    bool reached = !routed && desktopApproach == 2 && desktopShip.SectorId == goalSector && (goal - pose.Position).Length() < 65;
+                    bool firing = File.Exists(Path.Combine(scratch, "desktop-fire"));
+                    if (reached)
                     {
-                        var warp = navigationWarps[route];
-                        goal = new(warp.Position[0], warp.Position[1], warp.Position[2]); routed = true;
+                        // Aim into empty space for the receipt, rather than at the
+                        // other pilot. This is still ordinary turn/fire input.
+                        var away = pose.Position + new SimVec(0, 0, 1000);
+                        controls = AutopilotSteering.SteerToward(pose.Position, pose.Orientation, away, pose.Velocity) with { Throttle = -1 };
+                        desktopNavigation = "on station";
                     }
-                    desktopNavigation = routed ? "warp approach" : "waiting for known route";
+                    desktop.CommandControls(controls, firing ? ShipControlState.AllWeapons : 0);
+                    desktopShotsReceived = Math.Max(desktopShotsReceived, desktop.World.Diag.TotalReceived);
+                    foreach (var shot in desktop.World.Projectiles) desktopShotLaunchers.Add(shot.LauncherId);
                 }
-                else desktopNavigation = "rendezvous";
-                // The proof pilot navigates real hazards too. Reuse the existing
-                // client Dodge feed (common.cpp:1692-1790,2000-2018), with only
-                // client-visible bodies and real static-core hull/radius data.
-                // This changes ordinary pilot input, never a world position.
-                SimVec? avoidanceGoal = null;
-                lock (desktop.Gate)
-                    if (core.HullTypes.TryGetValue(desktopShip.HullId, out var moverHull)
-                        && ClientAutopilotDodge.TryComputeDodgeGoal(desktop.World, desktopId, desktopShip.SideId,
-                            pose.Position, pose.Velocity, new(moverHull.Length, moverHull.Thrust, moverHull.Mass), true,
-                            id => core.HullTypes.TryGetValue(id, out var h) ? h.Length : null,
-                            id => core.StationTypes.TryGetValue(id, out var st) ? st.Radius : null,
-                            null, out var dodgeGoal)) avoidanceGoal = dodgeGoal;
-                var controls = avoidanceGoal is { } escape ? AutopilotSteering.Pursue(pose.Position, pose.Orientation, escape)
-                    : routed ? AutopilotSteering.Pursue(pose.Position, pose.Orientation, goal)
-                    : AutopilotSteering.SteerToward(pose.Position, pose.Orientation, goal, pose.Velocity);
-                bool reached = !routed && desktopApproach == 2 && desktopShip.SectorId == goalSector && (goal - pose.Position).Length() < 65;
-                bool firing = File.Exists(Path.Combine(scratch, "desktop-fire"));
-                if (reached)
-                {
-                    // Aim into empty space for the receipt, rather than at the
-                    // other pilot. This is still ordinary turn/fire input.
-                    var away = pose.Position + new SimVec(0, 0, 1000);
-                    controls = AutopilotSteering.SteerToward(pose.Position, pose.Orientation, away, pose.Velocity) with { Throttle = -1 };
-                    desktopNavigation = "on station";
-                }
-                desktop.CommandControls(controls, firing ? ShipControlState.AllWeapons : 0);
-                desktopShotsReceived = Math.Max(desktopShotsReceived, desktop.World.Diag.TotalReceived);
-                foreach (var shot in desktop.World.Projectiles) desktopShotLaunchers.Add(shot.LauncherId);
             }
         }
         foreach (var ship in server.Missions.SelectMany(m => m.GetShips()))
@@ -276,18 +326,20 @@ try
             poseReceipts.Add(new { ship.Id, accepted = Read("Accepted"), rejected = Read("Rejected"),
                 lastClientTime = Read("LastClientTime"), lastPoseAt = Read("LastPoseAt") is double poseAt && double.IsFinite(poseAt) ? (double?)poseAt : null });
         }
-        var state = new { sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
+        object desktopState;
+        lock (desktop.Gate) desktopState = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
-            ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId }).ToArray(), desktopShotsReceived },
+            ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId, s.HullId, s.PoseSectorId, visible = s.CanDrawInSector(desktop.World.MyShipId is { } ownShip && desktop.World.Ships.TryGetValue(ownShip, out var viewer) ? viewer.SectorId : (short)-1) }).ToArray(), desktopShotsReceived };
+        var state = new { battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = true, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
-            { s.Id, s.Name, s.SideId, s.StationId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
+            { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
         // No credentials in proof evidence.
         string temp = Path.Combine(scratch, "state.tmp");
         await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(state)); File.Move(temp, Path.Combine(scratch, "state.json"), true);
         await Task.Delay(50);
     }
 }
-finally { stale.Dispose(); if (!proxy.HasExited) { proxy.Kill(); await proxy.WaitForExitAsync(); } }
+finally { await battleBots.DisposeAsync(); stale.Dispose(); if (!proxy.HasExited) { proxy.Kill(); await proxy.WaitForExitAsync(); } }
 
 // Proof-only TLS material for the loopback proxy. The certificate is discarded with
 // the scratch directory; Chromium ignores this specific self-signed origin.

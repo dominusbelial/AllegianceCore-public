@@ -1,0 +1,98 @@
+{
+  "runtime": ".NET Release JIT; no browser/WASM/GPU claim",
+  "tieredCompilation": "0",
+  "iterations": 20000,
+  "measuredWork": "Ship selection, hull lookup, contact/name collection only. Excludes projection, prediction and drawing. Before assumes all meshes exist to isolate allocation/lookup cost.",
+  "results": [
+    {
+      "perSide": 1,
+      "inSector": 2,
+      "offSector": 0,
+      "before": {
+        "microsecondsPerPass": 0.727725,
+        "bytesPerPass": 1072
+      },
+      "after": {
+        "microsecondsPerPass": 0.1341,
+        "bytesPerPass": 0
+      },
+      "contacts": 2,
+      "checksum": 17336000
+    },
+    {
+      "perSide": 1,
+      "inSector": 2,
+      "offSector": 500,
+      "before": {
+        "microsecondsPerPass": 4.782885,
+        "bytesPerPass": 13072
+      },
+      "after": {
+        "microsecondsPerPass": 0.12152,
+        "bytesPerPass": 0
+      },
+      "contacts": 2,
+      "checksum": 17336000
+    },
+    {
+      "perSide": 5,
+      "inSector": 10,
+      "offSector": 0,
+      "before": {
+        "microsecondsPerPass": 7.43623,
+        "bytesPerPass": 6160
+      },
+      "after": {
+        "microsecondsPerPass": 0.5793550000000001,
+        "bytesPerPass": 0
+      },
+      "contacts": 10,
+      "checksum": 176616000
+    },
+    {
+      "perSide": 5,
+      "inSector": 10,
+      "offSector": 500,
+      "before": {
+        "microsecondsPerPass": 11.84511,
+        "bytesPerPass": 18160
+      },
+      "after": {
+        "microsecondsPerPass": 0.5365449999999999,
+        "bytesPerPass": 0
+      },
+      "contacts": 10,
+      "checksum": 176616000
+    },
+    {
+      "perSide": 10,
+      "inSector": 20,
+      "offSector": 0,
+      "before": {
+        "microsecondsPerPass": 26.137604999999997,
+        "bytesPerPass": 12800
+      },
+      "after": {
+        "microsecondsPerPass": 1.09684,
+        "bytesPerPass": 0
+      },
+      "contacts": 20,
+      "checksum": 250140000
+    },
+    {
+      "perSide": 10,
+      "inSector": 20,
+      "offSector": 500,
+      "before": {
+        "microsecondsPerPass": 30.6845,
+        "bytesPerPass": 24800
+      },
+      "after": {
+        "microsecondsPerPass": 1.076635,
+        "bytesPerPass": 0
+      },
+      "contacts": 20,
+      "checksum": 250140000
+    }
+  ]
+}

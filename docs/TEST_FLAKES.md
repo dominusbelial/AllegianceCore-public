@@ -10629,3 +10629,28 @@ Each failing method was selected in **three separate fresh processes** with artw
 No assertion, timeout, tier, quarantine policy, throttle, privilege, simulation or wire rule was changed.
 **Fast remains red** for these three families. Ignored raw evidence: `<lane evidence dir>/fast/` (TRX +
 logs) and the isolated runs recorded in the P1061 report.
+
+## P1065 — final Fast timing-only result (2026-11-20, 22:00 local UTC−5)
+
+The single final Fast sweep ran after implementation, publication, the original-asset audit,
+repeated task tests, full browser/lobby suites and the desktop HUD comparison. It recorded
+**15,726 passed / 0 failed assertions / 7 not executed**, **15,733 total**, **557.5 s**. All
+**9 infrastructure checks passed**. The gate remains **red solely for three passing tests exceeding
+the calibrated 11.521 s limit**; no quarantine failure or flake was recorded. Browser preview/game
+were **12/0/0** and **118/0/0**, and all 284 Fast lobby cases passed.
+
+All three methods are existing ledgered timing families (see P1047/P1053/P1061-era entries above).
+Each was selected in **three fresh isolated processes** with artwork, after the sweep:
+
+| Method | Sweep observation | Three isolated results |
+|---|---|---|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | assertions passed, **13.925 s** | **2/0/0 ×3**; both theory cases repeated each time; per-case durations 2.928–3.974 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | assertions passed, **12.411 s** | **1/0/0 ×3**, 3.100 / 3.077 / 3.076 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | assertions passed, **12.987 s** | **1/0/0 ×3**, 1.437 / 1.438 / 1.500 s |
+
+All **12 isolated test rows passed**, below the same limit. No assertion, timeout, tier,
+quarantine policy, simulation rule or performance threshold changed. P1065's shared client-core
+index branches compile only for BROWSER; these desktop/server timing methods retain their existing
+behavior. **Fast remains red for timing**, despite zero failed assertions. [Sweep receipt](reports/BROWSER_BATTLE_SHIPS_P1065_assets/fast-summary.json),
+[isolated outcomes/durations and TRX hashes](reports/BROWSER_BATTLE_SHIPS_P1065_assets/fast-isolated.json).
+Raw logs/TRX remain in ignored `.scratch/p1065/fast/` and `.scratch/p1065/fast-isolated/`.

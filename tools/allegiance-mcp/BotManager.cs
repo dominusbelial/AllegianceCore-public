@@ -264,14 +264,19 @@ internal sealed partial class BotManager : IDisposable
 
     // ── Startup probe (server validation + side roster) ────────────────────
 
-    private static LogonRequest Request(string name) => new()
+    private static LogonRequest Request(string name)
     {
-        CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
-        CDKey = Environment.GetEnvironmentVariable("ALLEGIANCE_PRIVILEGE_SECRET") ?? "ABCDEFGHIJKL", MissionPassword = Environment.GetEnvironmentVariable("ALLEGIANCE_LAN_PASSWORD") ?? "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = uint.MaxValue,
-        CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
-        SteamID = 76000000000000000ul, DrmHash = "allegiance-mcp",
-    };
+        var request = new LogonRequest
+        {
+            CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+            CDKey = Environment.GetEnvironmentVariable("ALLEGIANCE_PRIVILEGE_SECRET") ?? "ABCDEFGHIJKL", MissionPassword = Environment.GetEnvironmentVariable("ALLEGIANCE_LAN_PASSWORD") ?? "pw",
+            FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = uint.MaxValue,
+            CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
+            SteamID = 76000000000000000ul, DrmHash = "allegiance-mcp",
+        };
+        BotLogonIdentity.Apply(request, name);
+        return request;
+    }
 
     /// <summary>Connect the probe to the real server and seat it before serving
     /// any tool call, exactly like <c>AttachMain</c> seats its spectator. Throws

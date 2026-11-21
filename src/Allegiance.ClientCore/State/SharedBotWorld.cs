@@ -77,17 +77,49 @@ internal sealed class BotShipTable : IReadOnlyDictionary<short, ShipEntity>
         }
         return Shared.TryGetValue(key, out value!);
     }
+#if BROWSER
+    // Browser sessions have private tables (no shared bot view). Membership is
+    // updated at wire-application time; RAF never scans off-sector rosters.
+    private readonly Dictionary<short, List<ShipEntity>> _sectors = new();
+    internal IReadOnlyList<ShipEntity> InSector(short sector) => _sectors.TryGetValue(sector, out var ships) ? ships : Array.Empty<ShipEntity>();
+    private void SectorChanged(ShipEntity ship, short previous)
+    {
+        if (_sectors.TryGetValue(previous, out var old)) old.Remove(ship);
+        if (!_sectors.TryGetValue(ship.SectorId, out var next)) _sectors[ship.SectorId] = next = new();
+        next.Add(ship);
+    }
+#endif
     internal void Add(short key, ShipEntity value)
     {
+#if BROWSER
+        value.SectorChanged = SectorChanged;
+        if (!_sectors.TryGetValue(value.SectorId, out var members)) _sectors[value.SectorId] = members = new();
+        members.Add(value);
+#endif
         if (_world is not null && key == OwnId) _own = value;
         else Shared.Add(key, value);
     }
     internal bool Remove(short key)
     {
+#if BROWSER
+        if (TryGetValue(key, out var removed))
+        {
+            removed.SectorChanged = null;
+            if (_sectors.TryGetValue(removed.SectorId, out var members)) members.Remove(removed);
+        }
+#endif
         if (_own?.ShipId == key) { _own = null; return true; }
         return Shared.Remove(key);
     }
-    internal void Clear() { Shared.Clear(); _own = null; }
+    internal void Clear()
+    {
+#if BROWSER
+        foreach (var members in _sectors.Values)
+            foreach (var ship in members) ship.SectorChanged = null;
+        _sectors.Clear();
+#endif
+        Shared.Clear(); _own = null;
+    }
     public IEnumerator<KeyValuePair<short, ShipEntity>> GetEnumerator()
     {
         foreach (var pair in Shared)

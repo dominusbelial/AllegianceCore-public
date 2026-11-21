@@ -137,9 +137,16 @@ def parse_yaml(path):
 
 
 failures = []
+checks = 0
+
+
+def has_proof_fixture(text):
+    return bool(re.search(r'--bots|--logon-file|BrokerDirectory|p1051-browser-host|identity-broker', text, re.I))
 
 
 def check(condition, message):
+    global checks
+    checks += 1
     if not condition:
         failures.append(message)
 
@@ -210,6 +217,8 @@ def main():
     for file in ('docker/public/docker-compose.yml', 'docker/public/Caddyfile',
                  'docker/public/server.example.json', 'docker/public/lobby.env.example'):
         text = (ROOT / file).read_text()
+        check(not has_proof_fixture(text),
+              f'{file}: no loopback battle/identity fixture in production')
         for pattern, label in [(r'192\.168\.\d+\.\d+', 'private IP'), (r'\b\d{1,3}(?:\.\d{1,3}){3}\b', 'IP literal'),
                                (r'[\w.+-]+@[\w-]+\.[a-z]{2,}', 'email'), (r'https://(?!<public-origin>)[a-z0-9-]+\.[a-z]{2,}', 'real origin')]:
             for hit in re.findall(pattern, text):
@@ -223,7 +232,7 @@ def main():
     print(json.dumps({'passed': True, 'composeServices': sorted(public['services']),
                       'baseComposeServices': sorted(base['services']),
                       'caddyRoutes': ['/game -> 127.0.0.1:6080', 'everything else -> 127.0.0.1:8080'],
-                      'checks': 40}, indent=2))
+                      'checks': checks}, indent=2))
     return 0
 
 

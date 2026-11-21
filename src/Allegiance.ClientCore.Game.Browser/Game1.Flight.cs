@@ -82,7 +82,7 @@ public sealed partial class Game1
     private MouseDeflection _browserAutoMouseBaseline;
     private ProjectileRenderer? _flightBolts;
     private WarpRenderer? _flightWarps;
-    private readonly Dictionary<short, AsteroidSpin> _browserSpins = new();
+    private readonly BrowserRockSpins _browserSpins = new();
     private DockedScreenRenderer? _flightDocked;
     private readonly HashSet<short> _seenShotLaunchers = new();
     private long _drawnProjectiles;
@@ -108,7 +108,36 @@ public sealed partial class Game1
     public long FlightFrames { get; private set; }
     public long AppliedResets => _shipResetCount;
     public int DrawnShips { get; private set; }
-    public string[] VisibleShipNames { get; private set; } = [];
+    private BattleShipScene? _battleScene;
+    private readonly List<string> _visibleShipNames = new(32);
+    private readonly List<HudContact> _flightContacts = new(32);
+    private readonly HudSnapshotBuffers _flightHudBuffers = new();
+    private readonly BoundingFrustum _rockFrustum = new(Matrix.Identity);
+    private readonly Dictionary<short, DataAsteroidIGC[]> _sectorRocks = new();
+    private long _rockMissionGeneration = -1;
+    private int _rockCount = -1;
+    public Action<string>? RequestBattlePack { get; set; }
+    public int SectorShipCount { get; private set; }
+    public int DrawnMeshes { get; private set; }
+    public int DrawnStandIns { get; private set; }
+    public int CulledRocks { get; private set; }
+    public double ShipPassMilliseconds { get; private set; }
+    public string[] VisibleShipNames => _visibleShipNames.ToArray();
+    private DataAsteroidIGC[] RocksInSector(ClientWorld world, short sector)
+    {
+        if (_rockMissionGeneration != world.MissionGeneration || _rockCount != world.Asteroids.Count)
+        {
+            if (_rockMissionGeneration != world.MissionGeneration) _browserSpins.Clear();
+            _sectorRocks.Clear();
+            foreach (var group in world.Asteroids.Values.GroupBy(r => r.ClusterId))
+            {
+                var rocks = group.ToArray(); _sectorRocks[group.Key] = rocks;
+                foreach (var rock in rocks) _browserSpins.Register(rock);
+            }
+            _rockMissionGeneration = world.MissionGeneration; _rockCount = world.Asteroids.Count;
+        }
+        return _sectorRocks.GetValueOrDefault(sector) ?? [];
+    }
     public object FlightMetrics => new {
         viewport = new { width = GraphicsDevice.Viewport.Width, height = GraphicsDevice.Viewport.Height },
         controls = new { yaw = _ownSim.Controls.Yaw, pitch = _ownSim.Controls.Pitch, throttle = _ownSim.Controls.Throttle, stateM = _ownSim.StateM },
@@ -117,6 +146,9 @@ public sealed partial class Game1
         textures = SectorTextureMetrics, starmapOpen = StarmapOpen, selectedMapSector = SelectedMapSector,
         drawnRockSurfaces = _drawnRockSurfaces,
         sky = SectorSkyMetrics,
+        battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
+            standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
+            culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds },
         flying = Flying, frames = FlightFrames, drawnShips = DrawnShips,
         ships = VisibleShipNames, appliedResets = AppliedResets, position = _ownSim.Position.ToString(),
         selectedMount = _selectedMount, fixedMountCount = _flightSession is null ? 0 : FixedMountCount(),
@@ -138,6 +170,8 @@ public sealed partial class Game1
         _flightSession = session;
         if (session is null) return;
         _shopCatalog ??= ShopCatalog.TryLoad(_assets);
+        _battleScene = new(_shopCatalog!.Core!.HullTypes);
+        _sectorRocks.Clear(); _browserSpins.Clear(); _rockCount = -1; _rockMissionGeneration = -1;
         _ownSimSeeded = false; _ownSimHullId = -1; _ownSimLastSectorId = -1;
         _ownSim.Freeze();
         _ownServerClock.Reset();
@@ -258,11 +292,8 @@ public sealed partial class Game1
         _ownShipSendArmed = true;
         StepOwnShipSimulation(_flightElapsedSeconds, command.Controls, command.StateM);
         MaybeSendOwnShipUpdate();
-        foreach (var rock in world.Asteroids.Values.Where(a => a.ClusterId == own.SectorId))
-        {
-            if (!_browserSpins.TryGetValue(rock.AsteroidId, out var spin)) _browserSpins[rock.AsteroidId] = spin = AsteroidSpin.FromWire(rock.Rotation);
-            spin.Advance((float)(_flightElapsedSeconds * world.TimeScale));
-        }
+        _ = RocksInSector(world, own.SectorId); // Register discoveries only when the spatial set changes.
+        _browserSpins.Advance(own.SectorId, _flightElapsedSeconds * world.TimeScale);
         _lastFlightKeys = keys;
     }
     private void LoadFlightRenderers()
@@ -307,13 +338,13 @@ public sealed partial class Game1
         var orientation = _ownSim.Orientation;
         var position = V(_ownSim.Position);
         var forward = V(orientation.GetForward()); var above = V(orientation.GetUp());
-        var ownHull = _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == own.HullId);
+        var ownHull = _battleScene?.Hull(own.HullId);
         float length = ownHull?.Length ?? 1;
         var (view, projection) = _browserChase.Matrices(position, PoseConverter.ToXnaRotation(orientation),
             GraphicsDevice.Viewport.AspectRatio, (float)_flightElapsedSeconds, out var eye, shipRadius: length * .5f);
         if (_cameraMode == CameraMode.ExternalFlyBy)
         {
-            var viewContacts = world.Ships.Values.Where(s => s.ShipId != id && s.SectorId == own.SectorId && s.StationId < 0 && !s.IsNotVisible && s.Latest is not null)
+            var viewContacts = world.ShipsInSector(own.SectorId).Where(s => s.ShipId != id && s.CanDrawInSector(own.SectorId) && s.StationId < 0)
                 .OrderBy(s => (s.Latest!.Position - _ownSim.Position).LengthSquared()).Take(1).ToArray();
             if (viewContacts.Length != 0)
             {
@@ -324,7 +355,7 @@ public sealed partial class Game1
         }
         if (_viewRock)
         {
-            var rocks = world.Asteroids.Values.Where(r => r.ClusterId == own.SectorId)
+            var rocks = RocksInSector(world, own.SectorId)
                 .OrderBy(r => (Vec(r.Position) - _ownSim.Position).LengthSquared()).Take(1).ToArray();
             if (rocks.Length != 0)
             {
@@ -337,32 +368,45 @@ public sealed partial class Game1
             (_skySector != own.SectorId || _skyTextureRevision != (_sectorTextures?.Revision ?? 0)))
         { _flightSky!.SetCluster(cluster); _skySector = own.SectorId; _skyTextureRevision = _sectorTextures?.Revision ?? 0; }
         _flightSky!.Draw(view, projection, eye);
-        DrawnShips = 0;
-        var names = new List<string>();
-        var contacts = new List<HudContact>();
-        foreach (var ship in world.Ships.Values)
+        long shipPassStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        DrawnShips = DrawnMeshes = DrawnStandIns = 0;
+        _visibleShipNames.Clear(); _flightContacts.Clear();
+        _battleScene!.Gather(world, own.SectorId, RequestBattlePack);
+        SectorShipCount = world.ShipsInSector(own.SectorId).Count;
+        foreach (var ship in _battleScene.Ships)
         {
-            if (ship.SectorId != own.SectorId || ship.StationId >= 0 || ship.IsNotVisible || ship.Latest is not { } pose) continue;
-            var hull = _shopCatalog?.Hulls.FirstOrDefault(h => h.HullId == ship.HullId);
-            if (hull is not { } h || string.IsNullOrEmpty(h.ModelName)) continue;
-            if (_flightShips!.MeshFor(h.ModelName) is not { } mesh) continue;
+            var pose = ship.Latest!;
+            var hull = _battleScene.Hull(ship.HullId);
             var p = ship.ShipId == id ? _ownSim.Position : pose.Position;
             var o = ship.ShipId == id ? orientation : pose.Orientation;
             if (ship.ShipId != id && world.TryGetRenderPose(ship.ShipId, world.NowSeconds(), out var remotePosition, out var remoteOrientation))
             { p = remotePosition; o = remoteOrientation; }
-            string? texture = _flightShips.TextureStemFor(h.ModelName, h.TextureName);
-            var matrix = PoseConverter.ToXnaWorldRelative(V(p), o, eye);
-            _flightShips.Draw(mesh, texture is null ? null : _flightShips.TextureFor(texture), matrix, view, projection,
-                1, NativeShipResolver.NativeScaleForLength(h.Length, mesh.MeshRadius), null, h.ModelName, texture, false);
-            DrawnShips++; names.Add(ship.CharacterName ?? $"Ship {ship.ShipId}");
+            // Contact first: asset failure must never suppress a visible ship.
             var site = RadarProjection.Project(V(p), eye, view, projection, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 12, _hudSettings.RoundRadar);
             HudColor? sideColor = world.TryGetSideColor(ship.SideId, out float red, out float green, out float blue) ? new HudColor(red, green, blue) : null;
-            contacts.Add(new(HudContactKind.Ship, new(site.Point.X, site.Point.Y), site.Placement == RadarBracketLayout.RadarPlacement.OnScreen,
+            _flightContacts.Add(new(HudContactKind.Ship, new(site.Point.X, site.Point.Y), site.Placement == RadarBracketLayout.RadarPlacement.OnScreen,
                 1, sideColor, false, false, Name: ship.CharacterName, Range: (int)((p - _ownSim.Position).Length() + .5f),
                 Shield: pose.ShieldFraction, Hull: pose.HullFraction, IsSelf: ship.ShipId == id, IsSameSide: ship.SideId == own.SideId,
                 IsEnemy: ship.SideId != own.SideId && !world.AreAllied(own.SideId, ship.SideId)));
+            var matrix = PoseConverter.ToXnaWorldRelative(V(p), o, eye);
+            if (_battleScene.MeshBytesReady(ship.HullId, (Allegiance.ClientCore.Browser.Assets.StagedAssetSource)_assets) &&
+                hull is { } h && _flightShips!.MeshFor(h.ModelName) is { } mesh)
+            {
+                string? texture = _flightShips.TextureStemFor(h.ModelName, h.TextureName);
+                _flightShips.Draw(mesh, texture is null ? null : _flightShips.TextureFor(texture), matrix, view, projection,
+                    1, NativeShipResolver.NativeScaleForLength(h.Length, mesh.MeshRadius), null, h.ModelName, texture, false);
+                DrawnMeshes++;
+            }
+            else
+            {
+                float side = BattleShipScene.StandInSide(hull?.Length ?? 2);
+                _flightBolts!.Draw(Matrix.CreateScale(side) * matrix,
+                    sideColor is { } color ? new Vector3(color.R, color.G, color.B) : new Vector3(.6f, .8f, 1), view, projection);
+                DrawnStandIns++;
+            }
+            DrawnShips++; _visibleShipNames.Add(ship.CharacterName ?? $"Ship {ship.ShipId}");
         }
-        VisibleShipNames = names.ToArray();
+        ShipPassMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(shipPassStart).TotalMilliseconds;
         foreach (var station in world.Stations.Values)
         {
             if (station.ClusterId != own.SectorId || _shopCatalog?.StationTypes?.GetValueOrDefault(station.StationTypeId) is not { } type) continue;
@@ -374,14 +418,14 @@ public sealed partial class Game1
             _flightStations.Draw(mesh, texture is null ? null : _flightStations.TextureFor(texture), matrix, view, projection,
                 (type.Radius / Math.Max(.001f, mesh.MeshRadius)), null, type.ModelName, texture);
         }
-        _drawnRockSurfaces.Clear();
-        foreach (var rock in world.Asteroids.Values)
+        _drawnRockSurfaces.Clear(); CulledRocks = 0;
+        _rockFrustum.Matrix = view * projection;
+        foreach (var rock in RocksInSector(world, own.SectorId))
         {
-            if (rock.ClusterId != own.SectorId) continue;
+            if (!BattleShipScene.RockInView(V(rock.Position) - eye, rock.Radius, _rockFrustum)) { CulledRocks++; continue; }
             if (_flightRocks!.GeometryFor(rock.ModelName) is not { } mesh) continue;
             string? texture = _flightRocks.TextureStemFor(rock.ModelName, rock.TextureName);
-            var spin = _browserSpins.GetValueOrDefault(rock.AsteroidId);
-            var rotation = spin is null ? Matrix.Identity : Matrix.CreateFromAxisAngle(V(spin.Axis), spin.Angle);
+            var rotation = _browserSpins.Rotation(rock.AsteroidId);
             var surface = texture is null ? null : _flightRocks.TextureFor(texture);
             if (texture is not null && !_drawnRockSurfaces.ContainsKey(texture)) _drawnRockSurfaces[texture] = [surface?.Width ?? 0, surface?.Height ?? 0];
             _flightRocks.Draw(mesh, surface, rotation * Matrix.CreateTranslation(V(rock.Position) - eye), view, projection,
@@ -411,7 +455,7 @@ public sealed partial class Game1
             (_ownSim.StateM & ShipControlState.WeaponsMask) != 0, _groupFire, _selectedMount, false, 0, false, _cloakToggled,
             world.KillBonusPercent, up.Orientation.GetRollDegrees(), [], false, 0, world.MyMoney, TurnYaw: _ownSim.Controls.Yaw, TurnPitch: _ownSim.Controls.Pitch, AutopilotEngaged: _browserAutoTarget is not null, WarningMask: world.ShipWarnings.Mask, TimeDilationPercent: (float)world.TimeScale * 100);
         var hud = _hudSettings.Style == HudStyle.Classic ? _classicFlightHud! : _modernFlightHud!;
-        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: contacts), GraphicsDevice.Viewport);
+        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: _flightContacts, buffers: _flightHudBuffers), GraphicsDevice.Viewport);
         DrawBrowserStarmap(own.SectorId);
         FlightFrames++;
     }

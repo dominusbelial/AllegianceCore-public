@@ -42,6 +42,14 @@ public sealed class AssetStager(HttpClient http, IImmutableAssetCache cache,
         return manifest;
     }
 
+    public async Task<BattleManifest> ReadBattleManifestAsync(StagedManifest resident, CancellationToken token)
+    {
+        var manifest = System.Text.Json.JsonSerializer.Deserialize(await ReadManifestBytesAsync("battle-manifest.json", token), BattleJson.Default.BattleManifest)
+            ?? throw new InvalidDataException("Missing battle manifest.");
+        manifest.Validate(resident);
+        return manifest;
+    }
+
     private async Task<byte[]> ReadManifestBytesAsync(string manifestPath, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, manifestPath);

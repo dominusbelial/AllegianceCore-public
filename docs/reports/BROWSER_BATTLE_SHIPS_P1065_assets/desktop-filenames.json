@@ -1,0 +1,10 @@
+{
+  "baseline": "HEAD archive; no task edits",
+  "baselineFiles": 753,
+  "currentFiles": 753,
+  "added": [],
+  "removed": [],
+  "baselineFilenameSha256": "0b12486ad16813658f8d58678ca369d0fe27ea1252cc9f7aa9faabf8951295ce",
+  "currentFilenameSha256": "0b12486ad16813658f8d58678ca369d0fe27ea1252cc9f7aa9faabf8951295ce",
+  "equal": true
+}
