@@ -1,0 +1,7645 @@
+{
+  "proof": "Real TCP headless desktop session against P1061 TLS/lobby/WS battle host; no browser renderer/frame/heap claim",
+  "identityRequired": true,
+  "botAccounts": 21,
+  "listing": {
+    "id": "0ad0ebcb912843edae5a76de6f4db375",
+    "address": "127.0.0.1",
+    "port": 35447,
+    "webSocketUrl": "wss://localhost:8443/game",
+    "passwordRequired": true,
+    "minClientVersion": "2.0.0",
+    "verified": true
+  },
+  "oldVersionRefusal": "your client (0.0.0) is older than this server's minimum (2.0.0) - update the client and reconnect; the lobby's update feed installs it",
+  "samples": [
+    {
+      "sampledAt": 781784450,
+      "ready": true,
+      "viewerSector": null,
+      "navigation": "waiting",
+      "sectorShips": 0,
+      "visibleContacts": 0,
+      "visibleHullIds": [],
+      "serverHullIds": [],
+      "flyingPerSide": {
+        "0": 9,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781785476,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 9,
+      "visibleContacts": 9,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781786432,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 9,
+      "visibleContacts": 9,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781787480,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 9,
+      "visibleContacts": 9,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781788455,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 9,
+      "visibleContacts": 9,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781789487,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 9,
+      "visibleContacts": 9,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781790494,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 8,
+      "visibleContacts": 8,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781791513,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 8,
+      "visibleContacts": 8,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781792534,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 8,
+      "visibleContacts": 8,
+      "visibleHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        90,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781793496,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 7,
+      "visibleContacts": 7,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781794512,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 7,
+      "visibleContacts": 7,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781795530,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 7,
+      "visibleContacts": 7,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781796500,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 7,
+      "visibleContacts": 7,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201,
+        733
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781797519,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 6,
+      "visibleContacts": 6,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781798540,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781799509,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781800529,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781801549,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781802519,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781803536,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781804561,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781805528,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781806549,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 5,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781807571,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 4,
+      "visibleContacts": 5,
+      "visibleHullIds": [
+        13,
+        86,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781808539,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 4,
+      "visibleContacts": 4,
+      "visibleHullIds": [
+        13,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781809564,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 4,
+      "visibleContacts": 4,
+      "visibleHullIds": [
+        13,
+        132,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        132,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781810589,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781811553,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781812574,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781813590,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781814557,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781815576,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781816598,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 3,
+      "visibleContacts": 3,
+      "visibleHullIds": [
+        13,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        13,
+        151,
+        201
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781817568,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781818594,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781819559,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781820584,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781821606,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781822574,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781823593,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781824613,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781825588,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781826615,
+      "ready": true,
+      "viewerSector": 1053,
+      "navigation": "warp approach",
+      "sectorShips": 2,
+      "visibleContacts": 2,
+      "visibleHullIds": [
+        13,
+        151
+      ],
+      "serverHullIds": [
+        13,
+        151
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781827582,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 11,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        90,
+        132,
+        201,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 0
+    },
+    {
+      "sampledAt": 781828618,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 11
+    },
+    {
+      "sampledAt": 781829591,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 23
+    },
+    {
+      "sampledAt": 781830614,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 24
+    },
+    {
+      "sampledAt": 781831593,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 4,
+      "receivedProjectiles": 28
+    },
+    {
+      "sampledAt": 781832618,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 37
+    },
+    {
+      "sampledAt": 781833642,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 37
+    },
+    {
+      "sampledAt": 781834614,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 37
+    },
+    {
+      "sampledAt": 781835638,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 48
+    },
+    {
+      "sampledAt": 781836616,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 56
+    },
+    {
+      "sampledAt": 781837649,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 70
+    },
+    {
+      "sampledAt": 781838627,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 30,
+      "receivedProjectiles": 102
+    },
+    {
+      "sampledAt": 781839657,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 55,
+      "receivedProjectiles": 159
+    },
+    {
+      "sampledAt": 781840649,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 62,
+      "receivedProjectiles": 231
+    },
+    {
+      "sampledAt": 781841629,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 43,
+      "receivedProjectiles": 293
+    },
+    {
+      "sampledAt": 781842663,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 36,
+      "receivedProjectiles": 349
+    },
+    {
+      "sampledAt": 781843643,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 45,
+      "receivedProjectiles": 397
+    },
+    {
+      "sampledAt": 781844676,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 38,
+      "receivedProjectiles": 444
+    },
+    {
+      "sampledAt": 781845653,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 488
+    },
+    {
+      "sampledAt": 781846682,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 533
+    },
+    {
+      "sampledAt": 781847658,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 30,
+      "receivedProjectiles": 573
+    },
+    {
+      "sampledAt": 781848644,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 26,
+      "receivedProjectiles": 607
+    },
+    {
+      "sampledAt": 781849681,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 21,
+      "receivedProjectiles": 646
+    },
+    {
+      "sampledAt": 781850662,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 38,
+      "receivedProjectiles": 706
+    },
+    {
+      "sampledAt": 781851648,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 37,
+      "receivedProjectiles": 773
+    },
+    {
+      "sampledAt": 781852685,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 17,
+      "receivedProjectiles": 817
+    },
+    {
+      "sampledAt": 781853665,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 18,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 24,
+      "receivedProjectiles": 864
+    },
+    {
+      "sampledAt": 781854695,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 24,
+      "receivedProjectiles": 902
+    },
+    {
+      "sampledAt": 781855671,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 30,
+      "receivedProjectiles": 940
+    },
+    {
+      "sampledAt": 781856703,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 6,
+      "receivedProjectiles": 954
+    },
+    {
+      "sampledAt": 781857676,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 963
+    },
+    {
+      "sampledAt": 781858707,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 17,
+      "receivedProjectiles": 991
+    },
+    {
+      "sampledAt": 781859687,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 18,
+      "receivedProjectiles": 1021
+    },
+    {
+      "sampledAt": 781860719,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 14,
+      "receivedProjectiles": 1049
+    },
+    {
+      "sampledAt": 781861694,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 10,
+      "receivedProjectiles": 1075
+    },
+    {
+      "sampledAt": 781862721,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 1116
+    },
+    {
+      "sampledAt": 781863695,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 1156
+    },
+    {
+      "sampledAt": 781864726,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 19,
+      "receivedProjectiles": 1189
+    },
+    {
+      "sampledAt": 781865707,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 26,
+      "receivedProjectiles": 1226
+    },
+    {
+      "sampledAt": 781866740,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 20,
+      "receivedProjectiles": 1266
+    },
+    {
+      "sampledAt": 781867723,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 17,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 12,
+      "receivedProjectiles": 1303
+    },
+    {
+      "sampledAt": 781868709,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 6,
+      "receivedProjectiles": 1331
+    },
+    {
+      "sampledAt": 781869739,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 7,
+      "receivedProjectiles": 1350
+    },
+    {
+      "sampledAt": 781870711,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 2,
+      "receivedProjectiles": 1357
+    },
+    {
+      "sampledAt": 781871738,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        132,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 1367
+    },
+    {
+      "sampledAt": 781872711,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 3,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781873735,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781874761,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781875728,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781876749,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781877771,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781878741,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781879765,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781880738,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781881763,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781882783,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781883749,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781884768,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1376
+    },
+    {
+      "sampledAt": 781885790,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 4,
+      "receivedProjectiles": 1379
+    },
+    {
+      "sampledAt": 781886764,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 1391
+    },
+    {
+      "sampledAt": 781887789,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 23,
+      "receivedProjectiles": 1415
+    },
+    {
+      "sampledAt": 781888762,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 1455
+    },
+    {
+      "sampledAt": 781889792,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 20,
+      "receivedProjectiles": 1489
+    },
+    {
+      "sampledAt": 781890762,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 1501
+    },
+    {
+      "sampledAt": 781891781,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 1504
+    },
+    {
+      "sampledAt": 781892804,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 2,
+      "receivedProjectiles": 1505
+    },
+    {
+      "sampledAt": 781893775,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 18,
+      "receivedProjectiles": 1528
+    },
+    {
+      "sampledAt": 781894806,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 22,
+      "receivedProjectiles": 1556
+    },
+    {
+      "sampledAt": 781895782,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 35,
+      "receivedProjectiles": 1595
+    },
+    {
+      "sampledAt": 781896805,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 1641
+    },
+    {
+      "sampledAt": 781897781,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 40,
+      "receivedProjectiles": 1690
+    },
+    {
+      "sampledAt": 781898810,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 33,
+      "receivedProjectiles": 1735
+    },
+    {
+      "sampledAt": 781899786,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 33,
+      "receivedProjectiles": 1778
+    },
+    {
+      "sampledAt": 781900811,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 35,
+      "receivedProjectiles": 1825
+    },
+    {
+      "sampledAt": 781901785,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 35,
+      "receivedProjectiles": 1869
+    },
+    {
+      "sampledAt": 781902839,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 35,
+      "receivedProjectiles": 1912
+    },
+    {
+      "sampledAt": 781903837,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 1955
+    },
+    {
+      "sampledAt": 781904864,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 35,
+      "receivedProjectiles": 1997
+    },
+    {
+      "sampledAt": 781905845,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 40,
+      "receivedProjectiles": 2041
+    },
+    {
+      "sampledAt": 781906819,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 18,
+      "visibleContacts": 16,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 47,
+      "receivedProjectiles": 2093
+    },
+    {
+      "sampledAt": 781907846,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        13,
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 52,
+      "receivedProjectiles": 2160
+    },
+    {
+      "sampledAt": 781908823,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 46,
+      "receivedProjectiles": 2219
+    },
+    {
+      "sampledAt": 781909854,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 29,
+      "receivedProjectiles": 2261
+    },
+    {
+      "sampledAt": 781910883,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 18,
+      "receivedProjectiles": 2287
+    },
+    {
+      "sampledAt": 781911855,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        87,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 16,
+      "receivedProjectiles": 2307
+    },
+    {
+      "sampledAt": 781912878,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 2328
+    },
+    {
+      "sampledAt": 781913853,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 2348
+    },
+    {
+      "sampledAt": 781914878,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 2368
+    },
+    {
+      "sampledAt": 781915846,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 15,
+      "receivedProjectiles": 2387
+    },
+    {
+      "sampledAt": 781916871,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        733,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 22,
+      "receivedProjectiles": 2413
+    },
+    {
+      "sampledAt": 781917898,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 10,
+      "receivedProjectiles": 2434
+    },
+    {
+      "sampledAt": 781918865,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2434
+    },
+    {
+      "sampledAt": 781919887,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2434
+    },
+    {
+      "sampledAt": 781920908,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2434
+    },
+    {
+      "sampledAt": 781921873,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 4,
+      "receivedProjectiles": 2434
+    },
+    {
+      "sampledAt": 781922898,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 3,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781923872,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781924896,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781925919,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781926886,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781927914,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781928936,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781929902,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781930916,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2439
+    },
+    {
+      "sampledAt": 781931937,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 10,
+      "receivedProjectiles": 2446
+    },
+    {
+      "sampledAt": 781932920,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "rendezvous",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 25,
+      "receivedProjectiles": 2478
+    },
+    {
+      "sampledAt": 781933957,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 2520
+    },
+    {
+      "sampledAt": 781934931,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 15,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 2563
+    },
+    {
+      "sampledAt": 781935954,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 34,
+      "receivedProjectiles": 2609
+    },
+    {
+      "sampledAt": 781936924,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 25,
+      "receivedProjectiles": 2641
+    },
+    {
+      "sampledAt": 781937951,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 18,
+      "receivedProjectiles": 2667
+    },
+    {
+      "sampledAt": 781938976,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 19,
+      "receivedProjectiles": 2692
+    },
+    {
+      "sampledAt": 781939942,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 19,
+      "receivedProjectiles": 2716
+    },
+    {
+      "sampledAt": 781940957,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 19,
+      "receivedProjectiles": 2742
+    },
+    {
+      "sampledAt": 781941935,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 19,
+      "receivedProjectiles": 2766
+    },
+    {
+      "sampledAt": 781942960,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 16,
+      "receivedProjectiles": 2791
+    },
+    {
+      "sampledAt": 781943980,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 13,
+      "receivedProjectiles": 2816
+    },
+    {
+      "sampledAt": 781944946,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 6,
+      "receivedProjectiles": 2837
+    },
+    {
+      "sampledAt": 781945960,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 6,
+      "receivedProjectiles": 2850
+    },
+    {
+      "sampledAt": 781946977,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 9,
+      "receivedProjectiles": 2862
+    },
+    {
+      "sampledAt": 781947990,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 10,
+      "receivedProjectiles": 2875
+    },
+    {
+      "sampledAt": 781949009,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2882
+    },
+    {
+      "sampledAt": 781949970,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2882
+    },
+    {
+      "sampledAt": 781950988,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2882
+    },
+    {
+      "sampledAt": 781952011,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 2,
+      "receivedProjectiles": 2884
+    },
+    {
+      "sampledAt": 781952983,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 17,
+      "receivedProjectiles": 2903
+    },
+    {
+      "sampledAt": 781953999,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 12,
+      "receivedProjectiles": 2918
+    },
+    {
+      "sampledAt": 781955015,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 14,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 6,
+      "receivedProjectiles": 2928
+    },
+    {
+      "sampledAt": 781955980,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781957002,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781958017,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781959031,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 15,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781960000,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        113,
+        151,
+        201,
+        256
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781961020,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781962038,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781963005,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781964032,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781965055,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781966024,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781967043,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781968072,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781969041,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        15,
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781970062,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 0,
+      "receivedProjectiles": 2934
+    },
+    {
+      "sampledAt": 781971039,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 17,
+      "visibleContacts": 13,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 3,
+      "receivedProjectiles": 2945
+    },
+    {
+      "sampledAt": 781972066,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 4,
+      "receivedProjectiles": 2959
+    },
+    {
+      "sampledAt": 781973042,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 8,
+      "receivedProjectiles": 2974
+    },
+    {
+      "sampledAt": 781974066,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 5,
+      "receivedProjectiles": 2989
+    },
+    {
+      "sampledAt": 781975092,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 11,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 4,
+      "receivedProjectiles": 3005
+    },
+    {
+      "sampledAt": 781976063,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 11,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 2,
+      "receivedProjectiles": 3019
+    },
+    {
+      "sampledAt": 781977089,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 11,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 3,
+      "receivedProjectiles": 3034
+    },
+    {
+      "sampledAt": 781978059,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 11,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 7,
+      "receivedProjectiles": 3053
+    },
+    {
+      "sampledAt": 781978329,
+      "ready": true,
+      "viewerSector": 1058,
+      "navigation": "on station",
+      "sectorShips": 16,
+      "visibleContacts": 12,
+      "visibleHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        151,
+        201,
+        256,
+        833
+      ],
+      "serverHullIds": [
+        33,
+        85,
+        86,
+        88,
+        89,
+        90,
+        93,
+        113,
+        151,
+        201,
+        256,
+        833,
+        886
+      ],
+      "flyingPerSide": {
+        "0": 10,
+        "1": 10
+      },
+      "projectiles": 8,
+      "receivedProjectiles": 3059
+    }
+  ]
+}

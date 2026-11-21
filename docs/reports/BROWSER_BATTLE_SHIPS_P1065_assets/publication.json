@@ -1,0 +1,40 @@
+{
+  "join": {
+    "files": 601,
+    "uniqueFiles": 577,
+    "rawBytes": 32536380,
+    "gzipBytes": 7564835
+  },
+  "runtimeGzipBytes": 6182705,
+  "joinAndRuntimeGzipBytes": 13747540,
+  "budgetBytes": 14680064,
+  "onDemand": {
+    "files": 391,
+    "uniqueFiles": 391,
+    "rawBytes": 166834430,
+    "gzipBytes": 49164045
+  },
+  "hullModels": 179,
+  "coveredHullModels": 179,
+  "joinUnchangedByBattleBuilder": true,
+  "battleManifestBytes": 237446,
+  "manifestSha256": "926b7f22e27cd23676133ccdb920dc2a3f3409f0d69fe2028ace893cd7897d0e",
+  "packs": {
+    "hull": 447,
+    "missile": 56,
+    "effect": 2
+  },
+  "effects": [
+    {
+      "key": "effect-exp22bmp",
+      "rawBytes": 15728756,
+      "gzipBytes": 2024216
+    },
+    {
+      "key": "effect-fx18bmp",
+      "rawBytes": 8388720,
+      "gzipBytes": 624251
+    }
+  ],
+  "missing": []
+}

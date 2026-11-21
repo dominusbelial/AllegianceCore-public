@@ -1,0 +1,119 @@
+{
+  "freshProcesses": 9,
+  "runs": [
+    {
+      "file": "asteroid-1.trx",
+      "sha256": "8fe48cd2b4150a49450e0d8b0c75775f02a7a4f6cc256fbb9921403ed4147bbb",
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.4368539
+        }
+      ]
+    },
+    {
+      "file": "asteroid-2.trx",
+      "sha256": "91f36d1f3bd290dd61fc6f3b665bea8ad423d1f4f4783a76310199dd51149229",
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.4375436
+        }
+      ]
+    },
+    {
+      "file": "asteroid-3.trx",
+      "sha256": "b3849375cec5e888348f09a5177fa9a07b68515be37df89616cadca4c1164f1e",
+      "rows": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.5003629
+        }
+      ]
+    },
+    {
+      "file": "gunner-1.trx",
+      "sha256": "ebfe85cf1b1cfe2dd13c377c20a887c866f6a37badaeec62e4e1df90c4f0293e",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.0995597
+        }
+      ]
+    },
+    {
+      "file": "gunner-2.trx",
+      "sha256": "7d8b32478f86801eb60e2d0cb303d7edc18043b4e58b1462c843f31e632f5d7b",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.0771411
+        }
+      ]
+    },
+    {
+      "file": "gunner-3.trx",
+      "sha256": "2b9e7b289a75addc62c91fc7292bfac8be523f5c3c9be953d0064ccfef78245b",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 3.0760017
+        }
+      ]
+    },
+    {
+      "file": "nanite-1.trx",
+      "sha256": "1ec44993315967879639582b8cf434a6e808d66f275b3c81b62ca067660cc07c",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 3.9696233
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9380734
+        }
+      ]
+    },
+    {
+      "file": "nanite-2.trx",
+      "sha256": "88ec952f2571654192c8e3689d8ba870c4acca92088ebf99496b558f83fc9d32",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9278963
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 3.9726543
+        }
+      ]
+    },
+    {
+      "file": "nanite-3.trx",
+      "sha256": "4f5d8ac51efc604de7d64493465ce6c700966bad7bccdbe0c8308f3617a4e497",
+      "rows": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 3.974116
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.9383944
+        }
+      ]
+    }
+  ]
+}

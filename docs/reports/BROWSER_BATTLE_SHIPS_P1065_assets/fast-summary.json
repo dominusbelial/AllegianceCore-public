@@ -1,0 +1,87 @@
+{
+  "tier": "fast",
+  "seconds": 557.5422212820267,
+  "projects": {
+    "Allegiance.ClientCore.Browser.Tests": {
+      "count": 12,
+      "outcomes": {
+        "Passed": 12
+      }
+    },
+    "Allegiance.ClientCore.Game.Browser.Tests": {
+      "count": 118,
+      "outcomes": {
+        "Passed": 118
+      }
+    },
+    "Allegiance.Lobby.Tests": {
+      "count": 284,
+      "outcomes": {
+        "Passed": 284
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 55,
+      "outcomes": {
+        "Passed": 55
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 5994,
+      "outcomes": {
+        "Passed": 5990,
+        "NotExecuted": 4
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2476,
+      "outcomes": {
+        "Passed": 2476
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 6794,
+      "outcomes": {
+        "Passed": 6791,
+        "NotExecuted": 3
+      }
+    }
+  },
+  "calibration": {
+    "factor": 1.1521485411140584,
+    "referenceMs": 4.3436,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 11.521485411140585
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 13.9250334
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 12.4114938
+    },
+    {
+      "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "outcome": "Passed",
+      "seconds": 12.9868572
+    }
+  ],
+  "errors": [
+    "3 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.034613878931850195,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

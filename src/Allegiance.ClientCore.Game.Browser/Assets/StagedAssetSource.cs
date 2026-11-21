@@ -10,6 +10,7 @@ public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource
     internal StagedAssetSource(Dictionary<string, byte[]> files) => _files = files;
     public IReadOnlySet<string>? StreamedSources { get; set; }
     public long TextureRevision { get; set; }
+    public long ContentRevision { get; private set; }
     public Func<string, bool, (bool Handled, Microsoft.Xna.Framework.Graphics.Texture2D? Texture)>? TextureLookup { get; set; }
     public bool TryGetTexture(string stem, bool colorKey, out Microsoft.Xna.Framework.Graphics.Texture2D? texture)
     {
@@ -31,6 +32,7 @@ public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource
     public void Merge(StagedAssetSource additional)
     {
         foreach (var (name, bytes) in additional._files) _files[name] = bytes;
+        ContentRevision++;
     }
     public long ResidentBytes => _files.Values.Sum(b => (long)b.Length);
 }

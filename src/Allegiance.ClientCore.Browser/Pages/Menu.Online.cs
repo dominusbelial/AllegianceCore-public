@@ -127,7 +127,9 @@ public partial class Menu
             _joinManifest = joinManifest;
             _sectorManifest ??= await stager.ReadSectorManifestAsync(joinManifest, _lifetime.Token);
             if (generation != _onlineGeneration) return;
-            stager.RetainedHashes = _sectorManifest.RetainedHashes(joinManifest);
+            _battleManifest ??= await stager.ReadBattleManifestAsync(joinManifest, _lifetime.Token);
+            if (generation != _onlineGeneration) return;
+            stager.RetainedHashes = _sectorManifest.RetainedHashes(joinManifest).Concat(_battleManifest.RetainedHashes()).Distinct(StringComparer.Ordinal).ToArray();
             if (!_joinStaged)
             {
                 var pack = await stager.StageAsync(joinManifest, (percent, status) =>

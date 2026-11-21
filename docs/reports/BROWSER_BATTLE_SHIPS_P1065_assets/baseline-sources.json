@@ -1,0 +1,19 @@
+{
+  "source": "HEAD archive built independently",
+  "files": [
+    {
+      "file": "src/Allegiance.ClientCore/State/ShipEntity.cs",
+      "headSha256": "6344f3ff392ca3e952108710698b7d2bb8e944a786061ff198b006ce46bafec4",
+      "baselineSha256": "6344f3ff392ca3e952108710698b7d2bb8e944a786061ff198b006ce46bafec4",
+      "baselineEqualsHead": true
+    },
+    {
+      "file": "src/Allegiance.ClientCore/State/SharedBotWorld.cs",
+      "headSha256": "9b0f613ea3b86826ee51d7da02212635b125ceabc017fa2660671c74941058d4",
+      "baselineSha256": "9b0f613ea3b86826ee51d7da02212635b125ceabc017fa2660671c74941058d4",
+      "baselineEqualsHead": true
+    }
+  ],
+  "desktopSceneDiffEmpty": true,
+  "hudTestsDiffEmpty": true
+}

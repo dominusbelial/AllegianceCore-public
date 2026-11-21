@@ -1,0 +1,903 @@
+{
+  "manifestValidated": true,
+  "filesVerified": 391,
+  "uniqueHullModels": 179,
+  "geometry": [
+    {
+      "model": "ss20",
+      "triangles": 430,
+      "unsupported": []
+    },
+    {
+      "model": "fig05ops1",
+      "triangles": 453,
+      "unsupported": []
+    },
+    {
+      "model": "fig05",
+      "triangles": 453,
+      "unsupported": []
+    },
+    {
+      "model": "fig12",
+      "triangles": 456,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gcfigx",
+      "triangles": 463,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gcfig",
+      "triangles": 463,
+      "unsupported": []
+    },
+    {
+      "model": "fig17",
+      "triangles": 541,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gchvyx",
+      "triangles": 568,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gchvy",
+      "triangles": 568,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gcint",
+      "triangles": 528,
+      "unsupported": []
+    },
+    {
+      "model": "bom05b",
+      "triangles": 647,
+      "unsupported": []
+    },
+    {
+      "model": "fig07",
+      "triangles": 479,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gcbmbx",
+      "triangles": 647,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gchttx",
+      "triangles": 430,
+      "unsupported": []
+    },
+    {
+      "model": "utl93b",
+      "triangles": 430,
+      "unsupported": []
+    },
+    {
+      "model": "utl18a",
+      "triangles": 540,
+      "unsupported": []
+    },
+    {
+      "model": "cap502",
+      "triangles": 860,
+      "unsupported": []
+    },
+    {
+      "model": "cap20",
+      "triangles": 436,
+      "unsupported": []
+    },
+    {
+      "model": "utl17a",
+      "triangles": 580,
+      "unsupported": []
+    },
+    {
+      "model": "cap01",
+      "triangles": 742,
+      "unsupported": []
+    },
+    {
+      "model": "utl14a",
+      "triangles": 604,
+      "unsupported": []
+    },
+    {
+      "model": "utl91",
+      "triangles": 396,
+      "unsupported": []
+    },
+    {
+      "model": "acs01",
+      "triangles": 290,
+      "unsupported": []
+    },
+    {
+      "model": "fig21",
+      "triangles": 490,
+      "unsupported": []
+    },
+    {
+      "model": "wc_bifig",
+      "triangles": 633,
+      "unsupported": []
+    },
+    {
+      "model": "fig23",
+      "triangles": 373,
+      "unsupported": []
+    },
+    {
+      "model": "fig22",
+      "triangles": 540,
+      "unsupported": []
+    },
+    {
+      "model": "bom20",
+      "triangles": 494,
+      "unsupported": []
+    },
+    {
+      "model": "utl103",
+      "triangles": 452,
+      "unsupported": []
+    },
+    {
+      "model": "cap103",
+      "triangles": 540,
+      "unsupported": []
+    },
+    {
+      "model": "cap503",
+      "triangles": 512,
+      "unsupported": []
+    },
+    {
+      "model": "cap101",
+      "triangles": 548,
+      "unsupported": []
+    },
+    {
+      "model": "cap102",
+      "triangles": 470,
+      "unsupported": []
+    },
+    {
+      "model": "cap100",
+      "triangles": 554,
+      "unsupported": []
+    },
+    {
+      "model": "utl102",
+      "triangles": 601,
+      "unsupported": []
+    },
+    {
+      "model": "utl101",
+      "triangles": 513,
+      "unsupported": []
+    },
+    {
+      "model": "utl100",
+      "triangles": 56,
+      "unsupported": []
+    },
+    {
+      "model": "fig13",
+      "triangles": 343,
+      "unsupported": []
+    },
+    {
+      "model": "wc_icadv",
+      "triangles": 560,
+      "unsupported": []
+    },
+    {
+      "model": "wc_icfig",
+      "triangles": 498,
+      "unsupported": []
+    },
+    {
+      "model": "wc_icsf",
+      "triangles": 612,
+      "unsupported": []
+    },
+    {
+      "model": "wc_ichvy",
+      "triangles": 655,
+      "unsupported": []
+    },
+    {
+      "model": "wc_icint",
+      "triangles": 556,
+      "unsupported": []
+    },
+    {
+      "model": "wc_icbmb",
+      "triangles": 860,
+      "unsupported": []
+    },
+    {
+      "model": "fig02ops1",
+      "triangles": 584,
+      "unsupported": []
+    },
+    {
+      "model": "utl27b",
+      "triangles": 348,
+      "unsupported": []
+    },
+    {
+      "model": "cap04",
+      "triangles": 417,
+      "unsupported": []
+    },
+    {
+      "model": "cap500",
+      "triangles": 610,
+      "unsupported": []
+    },
+    {
+      "model": "cap09",
+      "triangles": 538,
+      "unsupported": []
+    },
+    {
+      "model": "cap02a",
+      "triangles": 534,
+      "unsupported": []
+    },
+    {
+      "model": "cap03",
+      "triangles": 570,
+      "unsupported": []
+    },
+    {
+      "model": "utl11",
+      "triangles": 640,
+      "unsupported": []
+    },
+    {
+      "model": "utl19",
+      "triangles": 452,
+      "unsupported": []
+    },
+    {
+      "model": "utl22",
+      "triangles": 40,
+      "unsupported": []
+    },
+    {
+      "model": "fig31",
+      "triangles": 505,
+      "unsupported": []
+    },
+    {
+      "model": "fig30",
+      "triangles": 546,
+      "unsupported": []
+    },
+    {
+      "model": "fig32",
+      "triangles": 543,
+      "unsupported": []
+    },
+    {
+      "model": "fig34",
+      "triangles": 548,
+      "unsupported": []
+    },
+    {
+      "model": "wc_beomni",
+      "triangles": 657,
+      "unsupported": []
+    },
+    {
+      "model": "bom30",
+      "triangles": 524,
+      "unsupported": []
+    },
+    {
+      "model": "utl202",
+      "triangles": 520,
+      "unsupported": []
+    },
+    {
+      "model": "cap303",
+      "triangles": 507,
+      "unsupported": []
+    },
+    {
+      "model": "cap501",
+      "triangles": 805,
+      "unsupported": []
+    },
+    {
+      "model": "cap300",
+      "triangles": 552,
+      "unsupported": []
+    },
+    {
+      "model": "cap301",
+      "triangles": 538,
+      "unsupported": []
+    },
+    {
+      "model": "cap302",
+      "triangles": 537,
+      "unsupported": []
+    },
+    {
+      "model": "utl201",
+      "triangles": 505,
+      "unsupported": []
+    },
+    {
+      "model": "utl200",
+      "triangles": 444,
+      "unsupported": []
+    },
+    {
+      "model": "utl203",
+      "triangles": 72,
+      "unsupported": []
+    },
+    {
+      "model": "fig15",
+      "triangles": 452,
+      "unsupported": []
+    },
+    {
+      "model": "fig04",
+      "triangles": 404,
+      "unsupported": []
+    },
+    {
+      "model": "fig25",
+      "triangles": 506,
+      "unsupported": []
+    },
+    {
+      "model": "fig03",
+      "triangles": 1573,
+      "unsupported": []
+    },
+    {
+      "model": "bom04",
+      "triangles": 525,
+      "unsupported": []
+    },
+    {
+      "model": "bom03",
+      "triangles": 504,
+      "unsupported": []
+    },
+    {
+      "model": "utl92a",
+      "triangles": 374,
+      "unsupported": []
+    },
+    {
+      "model": "cap21",
+      "triangles": 690,
+      "unsupported": []
+    },
+    {
+      "model": "cap504",
+      "triangles": 636,
+      "unsupported": []
+    },
+    {
+      "model": "cap06a",
+      "triangles": 431,
+      "unsupported": []
+    },
+    {
+      "model": "cap07",
+      "triangles": 554,
+      "unsupported": []
+    },
+    {
+      "model": "cap08",
+      "triangles": 489,
+      "unsupported": []
+    },
+    {
+      "model": "utl95",
+      "triangles": 940,
+      "unsupported": []
+    },
+    {
+      "model": "utl90",
+      "triangles": 568,
+      "unsupported": []
+    },
+    {
+      "model": "utl94",
+      "triangles": 84,
+      "unsupported": []
+    },
+    {
+      "model": "utl99",
+      "triangles": 60,
+      "unsupported": []
+    },
+    {
+      "model": "utl666",
+      "triangles": 60,
+      "unsupported": []
+    },
+    {
+      "model": "acs41",
+      "triangles": 80,
+      "unsupported": []
+    },
+    {
+      "model": "utl01b",
+      "triangles": 346,
+      "unsupported": []
+    },
+    {
+      "model": "utl105",
+      "triangles": 245,
+      "unsupported": []
+    },
+    {
+      "model": "acs63",
+      "triangles": 198,
+      "unsupported": []
+    },
+    {
+      "model": "utl205",
+      "triangles": 201,
+      "unsupported": []
+    },
+    {
+      "model": "acs02",
+      "triangles": 194,
+      "unsupported": []
+    },
+    {
+      "model": "quizscoutv2",
+      "triangles": 472,
+      "unsupported": []
+    },
+    {
+      "model": "quizfigv2",
+      "triangles": 494,
+      "unsupported": []
+    },
+    {
+      "model": "quizsfv2",
+      "triangles": 576,
+      "unsupported": []
+    },
+    {
+      "model": "quizintv2",
+      "triangles": 956,
+      "unsupported": []
+    },
+    {
+      "model": "quizbbrv2",
+      "triangles": 824,
+      "unsupported": []
+    },
+    {
+      "model": "dn_fadrshfig",
+      "triangles": 1061,
+      "unsupported": []
+    },
+    {
+      "model": "dn_fadrshstl",
+      "triangles": 1010,
+      "unsupported": []
+    },
+    {
+      "model": "dregtt",
+      "triangles": 610,
+      "unsupported": []
+    },
+    {
+      "model": "drgas",
+      "triangles": 151,
+      "unsupported": []
+    },
+    {
+      "model": "dregcar",
+      "triangles": 3860,
+      "unsupported": []
+    },
+    {
+      "model": "dcrus",
+      "triangles": 280,
+      "unsupported": []
+    },
+    {
+      "model": "tecdev",
+      "triangles": 245,
+      "unsupported": []
+    },
+    {
+      "model": "drgmf",
+      "triangles": 543,
+      "unsupported": []
+    },
+    {
+      "model": "crus2",
+      "triangles": 504,
+      "unsupported": []
+    },
+    {
+      "model": "dminr",
+      "triangles": 232,
+      "unsupported": []
+    },
+    {
+      "model": "drgtow",
+      "triangles": 201,
+      "unsupported": []
+    },
+    {
+      "model": "dn_fadrshcon",
+      "triangles": 608,
+      "unsupported": []
+    },
+    {
+      "model": "dreghpod",
+      "triangles": 112,
+      "unsupported": []
+    },
+    {
+      "model": "rainscoutv2",
+      "triangles": 1392,
+      "unsupported": []
+    },
+    {
+      "model": "rainfigv2",
+      "triangles": 875,
+      "unsupported": []
+    },
+    {
+      "model": "rainsfv2",
+      "triangles": 2330,
+      "unsupported": []
+    },
+    {
+      "model": "rainintv2",
+      "triangles": 2592,
+      "unsupported": []
+    },
+    {
+      "model": "dn_fateshbmb",
+      "triangles": 403,
+      "unsupported": []
+    },
+    {
+      "model": "tffig",
+      "triangles": 528,
+      "unsupported": []
+    },
+    {
+      "model": "tfsb2",
+      "triangles": 2500,
+      "unsupported": []
+    },
+    {
+      "model": "tftransport",
+      "triangles": 136,
+      "unsupported": []
+    },
+    {
+      "model": "tfflagship",
+      "triangles": 214,
+      "unsupported": []
+    },
+    {
+      "model": "raincarr",
+      "triangles": 6498,
+      "unsupported": []
+    },
+    {
+      "model": "tfmnr",
+      "triangles": 243,
+      "unsupported": []
+    },
+    {
+      "model": "tfdron",
+      "triangles": 144,
+      "unsupported": []
+    },
+    {
+      "model": "tfcon",
+      "triangles": 243,
+      "unsupported": []
+    },
+    {
+      "model": "tfpod",
+      "triangles": 120,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtmnr",
+      "triangles": 720,
+      "unsupported": []
+    },
+    {
+      "model": "utl403",
+      "triangles": 312,
+      "unsupported": []
+    },
+    {
+      "model": "cap401",
+      "triangles": 490,
+      "unsupported": []
+    },
+    {
+      "model": "rescuedrone",
+      "triangles": 445,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtcon",
+      "triangles": 446,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtpod",
+      "triangles": 244,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtsct",
+      "triangles": 644,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtadv",
+      "triangles": 814,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtfig",
+      "triangles": 702,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtsf",
+      "triangles": 388,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gthvy",
+      "triangles": 920,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtint",
+      "triangles": 782,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtpt",
+      "triangles": 288,
+      "unsupported": []
+    },
+    {
+      "model": "wc_gtstang",
+      "triangles": 520,
+      "unsupported": []
+    },
+    {
+      "model": "bom400",
+      "triangles": 792,
+      "unsupported": []
+    },
+    {
+      "model": "utl400",
+      "triangles": 574,
+      "unsupported": []
+    },
+    {
+      "model": "cap400",
+      "triangles": 900,
+      "unsupported": []
+    },
+    {
+      "model": "cap404",
+      "triangles": 422,
+      "unsupported": []
+    },
+    {
+      "model": "cap406",
+      "triangles": 684,
+      "unsupported": []
+    },
+    {
+      "model": "cap405",
+      "triangles": 476,
+      "unsupported": []
+    },
+    {
+      "model": "cap403",
+      "triangles": 472,
+      "unsupported": []
+    },
+    {
+      "model": "cap415",
+      "triangles": 598,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshpod",
+      "triangles": 186,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshmnr",
+      "triangles": 3042,
+      "unsupported": []
+    },
+    {
+      "model": "utl25",
+      "triangles": 250,
+      "unsupported": []
+    },
+    {
+      "model": "utl05",
+      "triangles": 313,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshrpb",
+      "triangles": 804,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshcar",
+      "triangles": 623,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshsct",
+      "triangles": 262,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshfig",
+      "triangles": 682,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshstl",
+      "triangles": 326,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshint",
+      "triangles": 530,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshbmb",
+      "triangles": 606,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshvng",
+      "triangles": 1302,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshbmbs",
+      "triangles": 424,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshdst",
+      "triangles": 630,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshfrg",
+      "triangles": 932,
+      "unsupported": []
+    },
+    {
+      "model": "dn_faphshcrs",
+      "triangles": 1098,
+      "unsupported": []
+    },
+    {
+      "model": "faohshsctb",
+      "triangles": 1350,
+      "unsupported": []
+    },
+    {
+      "model": "faohshafig",
+      "triangles": 1210,
+      "unsupported": []
+    },
+    {
+      "model": "faohshfig",
+      "triangles": 1156,
+      "unsupported": []
+    },
+    {
+      "model": "faohshstl",
+      "triangles": 1919,
+      "unsupported": []
+    },
+    {
+      "model": "faohshhint",
+      "triangles": 1360,
+      "unsupported": []
+    },
+    {
+      "model": "faohshint",
+      "triangles": 1306,
+      "unsupported": []
+    },
+    {
+      "model": "faohshbmb",
+      "triangles": 1750,
+      "unsupported": []
+    },
+    {
+      "model": "faohshcrv",
+      "triangles": 1442,
+      "unsupported": []
+    },
+    {
+      "model": "faohshass",
+      "triangles": 2981,
+      "unsupported": []
+    },
+    {
+      "model": "faohshcar",
+      "triangles": 2943,
+      "unsupported": []
+    },
+    {
+      "model": "faohshdev",
+      "triangles": 2386,
+      "unsupported": []
+    },
+    {
+      "model": "faohshcrs",
+      "triangles": 7030,
+      "unsupported": []
+    },
+    {
+      "model": "faohshcon",
+      "triangles": 886,
+      "unsupported": []
+    },
+    {
+      "model": "faohshmnr",
+      "triangles": 886,
+      "unsupported": []
+    },
+    {
+      "model": "faohshpod",
+      "triangles": 410,
+      "unsupported": []
+    },
+    {
+      "model": "bom01b",
+      "triangles": 664,
+      "unsupported": []
+    },
+    {
+      "model": "bom07b",
+      "triangles": 864,
+      "unsupported": []
+    }
+  ],
+  "failures": []
+}

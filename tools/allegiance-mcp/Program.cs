@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900)
+internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900, string? LogonFile = null)
 {
     internal static DriverOptions Parse(string[] args)
     {
@@ -19,6 +19,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
         int? parent = null;
         string? skirmish = null;
         double recoveryDeadline = 900;
+        string? logonFile = null;
         bool explicitWorkers = false;
         for (int i = 2; i < args.Length; i += 2)
         {
@@ -30,6 +31,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
                         || !double.IsFinite(recoveryDeadline) || recoveryDeadline <= 0 || recoveryDeadline > 86400)
                         throw new ArgumentException("--recovery-deadline-seconds requires a number greater than 0 and at most 86400");
                     break;
+                case "--logon-file": logonFile = Path.GetFullPath(args[i + 1]); break;
                 case "--skirmish": skirmish = args[i + 1]; break;
                 case "--workers":
                     if (explicitWorkers || !int.TryParse(args[i + 1], out workers) || workers < 1) throw new ArgumentException("--workers requires a positive integer");
@@ -49,7 +51,10 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
             }
         }
         if (worker is not null && explicitWorkers || skirmish is not null && worker is not null) throw new ArgumentException("--worker/--parent are internal child options; cannot combine with --workers");
-        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline);
+        if (logonFile is not null && !args[0].Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
+            !(System.Net.IPAddress.TryParse(args[0], out var address) && System.Net.IPAddress.IsLoopback(address)))
+            throw new ArgumentException("--logon-file is a loopback identity fixture only.");
+        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline, logonFile);
     }
 }
 
@@ -62,6 +67,7 @@ internal static class Program
         catch (ArgumentException ex) { Console.Error.WriteLine(ex.Message); return 2; }
         // MCP and private worker RPC use raw stdout. All bot diagnostics use stderr.
         Console.SetOut(Console.Error);
+        BotLogonIdentity.FilePath = options.LogonFile;
         ConsoleLog.Verbose = Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_VERBOSE") == "1";
         ConsoleLog.Install();
         using var stop = new CancellationTokenSource();

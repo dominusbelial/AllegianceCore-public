@@ -6,6 +6,8 @@ namespace Allegiance.ClientCore.Browser.Pages;
 
 public partial class Menu
 {
+    private BattleManifest? _battleManifest;
+    private BattlePackStreamer? _battleStreamer;
     private SectorManifest? _sectorManifest;
     private SectorPackStreamer? _sectorStreamer;
     private short? _prefetchSector;
@@ -18,6 +20,13 @@ public partial class Menu
     {
         if (_game is null || _assets is null || _platform is null || _sectorManifest is null || _sectorStreamer is not null) return;
         _game.ConfigureSectorVisuals(_sectorManifest);
+        if (_battleManifest is not null)
+        {
+            var battleStager = new AssetStager(Http, new BrowserAssetCache(_platform, _assetMemoryFallback), request =>
+            { request.SetBrowserResponseStreamingEnabled(true); request.SetBrowserRequestCache(BrowserRequestCache.Reload); }, SectorPackStreamer.VerifyCooperativelyAsync);
+            _battleStreamer = new(_battleManifest, resident, battleStager, _assets);
+            _game.RequestBattlePack = _battleStreamer.RequestPack;
+        }
         var stager = new AssetStager(Http, new BrowserAssetCache(_platform, _assetMemoryFallback), request =>
         { request.SetBrowserResponseStreamingEnabled(true); request.SetBrowserRequestCache(BrowserRequestCache.Reload); }, SectorPackStreamer.VerifyCooperativelyAsync);
         _sectorStreamer = new(_sectorManifest, resident, stager, _game.PrepareSectorVisualsAsync, _game.SectorVisualsReady);
@@ -40,9 +49,17 @@ public partial class Menu
         _sectorStreamer.SetInterest(sector, _prefetchSector);
         _game.RetainSectorVisuals(sector, _prefetchSector);
         _sectorStreamer.RequestSector(sector, priority);
+        // Stage current-sector missile visuals through the same verified path.
+        // Their scene pass and effect texture upload belong to task B.
+        if (_battleStreamer is { } battle && _session is { } session)
+            foreach (var missile in session.World.Missiles.Values)
+                if (missile.ClusterId == sector) battle.RequestPack("missile-" + missile.TypeId);
     }
     private async Task StopSectorStreamingAsync()
     {
+        if (_game is not null) _game.RequestBattlePack = null;
+        var battle = _battleStreamer; _battleStreamer = null;
+        if (battle is not null) await battle.DisposeAsync();
         var streamer = _sectorStreamer; _sectorStreamer = null;
         if (streamer is not null) { streamer.Changed -= SectorProgressChanged; await streamer.DisposeAsync(); }
         _game?.EndSectorVisuals(); _prefetchSector = null; _entryUpgradeRequested = false;

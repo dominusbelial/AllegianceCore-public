@@ -193,7 +193,22 @@ public sealed class ShipEntity
     public short HullId { get; internal set; }
 
     /// <summary>Status.GetSectorID() — the sector the ship is currently in.</summary>
+#if BROWSER
+    private short _sectorId;
+    internal Action<ShipEntity, short>? SectorChanged;
+    public short SectorId
+    {
+        get => _sectorId;
+        internal set
+        {
+            if (_sectorId == value) return;
+            short previous = _sectorId; _sectorId = value;
+            SectorChanged?.Invoke(this, previous);
+        }
+    }
+#else
     public short SectorId { get; internal set; }
+#endif
 
     /// <summary>HUD-18 — true once <see cref="SectorId"/> came from real sector
     /// telemetry (<c>SHIP_STATUS</c>'s <c>Status.GetSectorID()</c>,

@@ -1,0 +1,95 @@
+{
+  "localFinished": "2026-11-20 22:00:33 -05",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolProjects": 149,
+  "taskTestsRepeatedAlone": [
+    {
+      "file": "battle-1.trx",
+      "sha256": "bba4810feb2413f56f0ccfd6300ca7a03d16b8164b418640f26250dd20bdc2a8",
+      "outcomes": {
+        "Passed": 27
+      }
+    },
+    {
+      "file": "battle-2.trx",
+      "sha256": "85d0303aaf8f6edaafe7548024f358f7c5c0d02b53a66ebf858bc00249b969f9",
+      "outcomes": {
+        "Passed": 27
+      }
+    },
+    {
+      "file": "battle-3.trx",
+      "sha256": "640c877245ec323f53d2b709530b9e355e74fa061f72c71a3876eb4f10bd5efb",
+      "outcomes": {
+        "Passed": 27
+      }
+    },
+    {
+      "file": "identity-1.trx",
+      "sha256": "7efe7bc481344665fd0bd1f7c38bbb6a478f95242fffe515ae105ba89cd4df17",
+      "outcomes": {
+        "Passed": 5
+      }
+    },
+    {
+      "file": "identity-2.trx",
+      "sha256": "757225049d9bcf53e7b904f42cc24162e1bcba596ea7b7fb991a54ea7b7b51aa",
+      "outcomes": {
+        "Passed": 5
+      }
+    },
+    {
+      "file": "identity-3.trx",
+      "sha256": "4661dc2750e26f9a2b74ceb7d660b1df4c0f39f911f9678484c8237707a9d1e6",
+      "outcomes": {
+        "Passed": 5
+      }
+    }
+  ],
+  "pythonTestsPerRun": 3,
+  "pythonRuns": 3,
+  "browserGameSuite": {
+    "passed": 118,
+    "failed": 0
+  },
+  "browserPreviewSuite": {
+    "passed": 12,
+    "failed": 0
+  },
+  "lobbySuite": {
+    "passed": 287,
+    "failed": 0,
+    "skipped": 3
+  },
+  "fast": {
+    "passed": 15726,
+    "failed": 0,
+    "notExecuted": 7,
+    "timingOffenders": 3,
+    "result": "FAIL: timing only",
+    "seconds": 557.5422212820267
+  },
+  "hud": {
+    "compared": 1848,
+    "pixelDifferences": 0,
+    "semanticDifferences": 0,
+    "animationOnlyDifferences": 84,
+    "corruptGoldens": 0
+  },
+  "deployChecks": 45,
+  "browserAvailable": false,
+  "browserRuns": "for Claude",
+  "browserPngBytes": 0,
+  "processes": {
+    "firstHostExit": 134,
+    "firstHostIssue": "proof telemetry enumeration; corrected under session lock",
+    "finalBattleHostExit": 0,
+    "monitorExit": 0,
+    "ownedHostAndProxyAndDriverStopped": true
+  },
+  "noCommitsOrPushes": true,
+  "briefInChangeSet": false
+}

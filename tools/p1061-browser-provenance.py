@@ -37,6 +37,9 @@ def load(root):
     if sector:
         for pack in sector.get('sectors', []):
             sources.append(('sector ' + str(pack.get('name', pack.get('sectorId'))), {'assets': pack.get('assets', [])}))
+    battle = manifest(root, 'battle-manifest.json')
+    if battle:
+        sources.append(('battle on demand', {'assets': battle.get('assets', [])}))
     for name, data in sources:
         if not data:
             continue
