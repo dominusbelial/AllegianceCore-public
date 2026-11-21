@@ -35,8 +35,35 @@ public sealed partial class Game1
     private long ClientNowMilliseconds => Environment.TickCount64;
     private CameraMode _cameraMode = CameraMode.Chase;
     private readonly ChaseCamera _browserChase = new(350, 90, nearPlane: 10, farPlane: 10000, fieldOfViewDegrees: 50);
-    public void ToggleContactView() => _cameraMode = _cameraMode == CameraMode.Chase ? CameraMode.ExternalFlyBy : CameraMode.Chase;
+    public void ToggleContactView() { Watch.Stop(); _cameraMode = _cameraMode == CameraMode.Chase ? CameraMode.ExternalFlyBy : CameraMode.Chase; }
     public bool ViewingContact => _cameraMode == CameraMode.ExternalFlyBy;
+    // P1067 — the parked director b-roll camera ("Watch"): the desktop P580
+    // director over a browser battle. The shared pure Renderer.Director owns the
+    // editorial decisions; DirectorWatch owns the browser snapshot.
+    // Lazily created so a headless Game1 image (RuntimeHelpers.GetUninitializedObject,
+    // used by the browser key tests) never depends on a field initializer.
+    private DirectorWatch? _watchField;
+    private DirectorWatch Watch => _watchField ??= new();
+    private int? _watchSeedOverride;
+    public bool Watching => Watch.Active;
+    public int WatchSeed => Watch.Seed;
+    /// <summary>Dev-only deterministic seed (?dev=1&amp;director-seed=N), the
+    /// browser equivalent of the desktop's ALLEGIANCE_DIRECTOR_SEED.</summary>
+    public void ConfigureWatchSeed(int? seed) => _watchSeedOverride = seed;
+    public void ToggleWatch()
+    {
+        // The planner copies the own-ship attitude (Orientation is a mutable
+        // class) and drifts only its own copy.
+        if (!Watch.Toggle(NextWatchSeed(), _ownSim is { } sim ? sim.Orientation : null))
+            Console.WriteLine("[browser] watch OFF");
+        else
+        {
+            _cameraMode = CameraMode.Chase;   // the director owns the camera
+            Console.WriteLine($"[browser] watch ACTIVE seed={Watch.Seed}");
+        }
+    }
+    private int NextWatchSeed() => _watchSeedOverride ?? unchecked((int)DateTime.Now.Ticks ^ 0x5EED);
+
     private int _contactViewAngle;
     private static readonly Vector3[] ContactViewBackwards = [-Vector3.UnitZ, Vector3.UnitZ, -Vector3.UnitX, Vector3.UnitX, -Vector3.UnitY, Vector3.UnitY];
     public void RotateContactView() => _contactViewAngle = (_contactViewAngle + 1) % ContactViewBackwards.Length;
@@ -149,6 +176,13 @@ public sealed partial class Game1
         battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
             standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
             culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds },
+        // P1067 — Watch provenance: the seed makes a capture reproducible, the
+        // planner state names the shot framed, and the subject categories come
+        // from the same snapshot the camera used this frame.
+        watch = new { active = Watch.Active, seed = Watch.Seed, kind = Watch.Planner.Kind.ToString(),
+            shotChanges = Watch.Planner.ShotChanges, subjectIndex = Watch.Planner.SubjectIndex,
+            subjects = Watch.Subjects.Count,
+            categories = Watch.Subjects.GroupBy(s => s.Category.ToString()).ToDictionary(g => g.Key, g => g.Count()) },
         flying = Flying, frames = FlightFrames, drawnShips = DrawnShips,
         ships = VisibleShipNames, appliedResets = AppliedResets, position = _ownSim.Position.ToString(),
         selectedMount = _selectedMount, fixedMountCount = _flightSession is null ? 0 : FixedMountCount(),
@@ -157,6 +191,7 @@ public sealed partial class Game1
     public void AttachOnlineSession(ConnectionSession? session)
     {
         ReleaseFlightInput();
+        Watch.Stop();
         if (_flightSession is { } previous)
         {
             // Late packets may drain while LOGOFF is being flushed. Their world
@@ -228,11 +263,26 @@ public sealed partial class Game1
         var world = _session.World;
         if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
         UpdateOwnShipSimulation(world, own, up);
+        // P1067 — Watch needs a live flying ship: a docked hangar screen or a
+        // death view is not b-roll, so the mode ends with the flight.
+        if (Watch.Active && (!Flying || own.IsDead))
+        {
+            Watch.Stop();
+            Console.WriteLine("[browser] watch OFF (not flying)");
+        }
         if (!Flying) { _browserAutoTarget = null; return; }
         if (_browserAutoTarget is { Kind: TargetKind.Warp } warpTarget && world.Warps.TryGetValue(warpTarget.Id, out var oldWarp) && oldWarp.ClusterId != own.SectorId)
             _browserAutoTarget = null;
         var keys = _flightKeys;
         bool Edge(string action) => ActionDown(keys, action) && !ActionDown(_lastFlightKeys, action);
+        // P1067 — desktop F2 (action "Director", Game1.Director.cs:514-523).
+        if (Edge("Director")) ToggleWatch();
+        // P1067 — any flight control returns the camera (Game1.Director.cs:557-571).
+        if (Watch.CancelOnFlightInput(keys))
+        {
+            _cameraMode = CameraMode.Chase;
+            Console.WriteLine("[browser] watch cancelled by flight input -> chase");
+        }
         if (Edge("ThrottleUp")) _throttle = FlightInput.StepThrottleUp(_throttle);
         if (Edge("ThrottleDown")) _throttle = FlightInput.StepThrottleDown(_throttle);
         if (Edge("ThrottleZero")) _throttle = -1;
@@ -324,6 +374,16 @@ public sealed partial class Game1
     }
     private static Vector3 V(SimVec value) => new(value.X, value.Y, value.Z);
     private static Vector3 V(float[] value) => new(value[0], value[1], value[2]);
+    /// <summary>P1067 — advance the Watch director for this frame and return the
+    /// camera that replaces the chase view. Mirrors the desktop
+    /// <c>UpdateDirectorPose</c> (Game1.Director.cs:363-374): a gentle free
+    /// orientation drift, the browser snapshot, then the shared pure planner.</summary>
+    private (Matrix View, Matrix Proj, Vector3 Eye) UpdateWatchPose(Vector3 position, float aspect, float dt, float hullLength)
+    {
+        var snapshot = Watch.BuildSnapshot(_session.World, position);
+        var (view, proj, eye, _) = Watch.Update(dt, snapshot, hullLength * .5f, hullLength, aspect);
+        return (view, proj, eye);
+    }
     private void DrawOnlineFlight()
     {
         LoadFlightRenderers();
@@ -342,7 +402,11 @@ public sealed partial class Game1
         float length = ownHull?.Length ?? 1;
         var (view, projection) = _browserChase.Matrices(position, PoseConverter.ToXnaRotation(orientation),
             GraphicsDevice.Viewport.AspectRatio, (float)_flightElapsedSeconds, out var eye, shipRadius: length * .5f);
-        if (_cameraMode == CameraMode.ExternalFlyBy)
+        if (Watch.Active)
+        {
+            (view, projection, eye) = UpdateWatchPose(position, GraphicsDevice.Viewport.AspectRatio, (float)_flightElapsedSeconds, length);
+        }
+        else if (_cameraMode == CameraMode.ExternalFlyBy)
         {
             var viewContacts = world.ShipsInSector(own.SectorId).Where(s => s.ShipId != id && s.CanDrawInSector(own.SectorId) && s.StationId < 0)
                 .OrderBy(s => (s.Latest!.Position - _ownSim.Position).LengthSquared()).Take(1).ToArray();
@@ -353,7 +417,7 @@ public sealed partial class Game1
                 eye = camera.Eye; view = camera.View();
             }
         }
-        if (_viewRock)
+        if (_viewRock && !Watch.Active)
         {
             var rocks = RocksInSector(world, own.SectorId)
                 .OrderBy(r => (Vec(r.Position) - _ownSim.Position).LengthSquared()).Take(1).ToArray();
@@ -455,7 +519,8 @@ public sealed partial class Game1
             (_ownSim.StateM & ShipControlState.WeaponsMask) != 0, _groupFire, _selectedMount, false, 0, false, _cloakToggled,
             world.KillBonusPercent, up.Orientation.GetRollDegrees(), [], false, 0, world.MyMoney, TurnYaw: _ownSim.Controls.Yaw, TurnPitch: _ownSim.Controls.Pitch, AutopilotEngaged: _browserAutoTarget is not null, WarningMask: world.ShipWarnings.Mask, TimeDilationPercent: (float)world.TimeScale * 100);
         var hud = _hudSettings.Style == HudStyle.Classic ? _classicFlightHud! : _modernFlightHud!;
-        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: _flightContacts, buffers: _flightHudBuffers), GraphicsDevice.Viewport);
+        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: _flightContacts, buffers: _flightHudBuffers,
+            cameraLabel: Watch.Active ? DirectorWatch.HudLabel : null), GraphicsDevice.Viewport);
         DrawBrowserStarmap(own.SectorId);
         FlightFrames++;
     }

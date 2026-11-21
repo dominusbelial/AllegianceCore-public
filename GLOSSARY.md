@@ -152,6 +152,18 @@ list in **reverse**.
   Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
   parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
   `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
+- **Browser Watch camera (P1067)** — `src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`
+  builds the browser `DirectorSnapshot` from the P1065 sector index
+  (`ClientWorld.ShipsInSector`, `ShipEntity.CanDrawInSector`) and feeds the
+  shared pure desktop b-roll planner `src/Allegiance.ClientCore.Game/Rendering/Director.cs`
+  (P580: shot kinds, subject weights, dwell, smoothing). `Game1.Flight.cs` in
+  that project owns the `#flight-watch` toolbar toggle (`Pages/Menu.razor`),
+  the desktop `Director` F2 action, cancel-on-flight-input, the `WATCH` HUD
+  camera tag (Classic and Modern), and the docked/pod/dead/no-subject rules;
+  the dev-only `?dev=1&director-seed=N` query is the browser equivalent of
+  `ALLEGIANCE_DIRECTOR_SEED`. Proof: `tools/p1067-browser-watch.cjs`; parity:
+  `docs/parity/p1067-browser-director-watch.csv`; report:
+  `docs/reports/BROWSER_DIRECTOR_WATCH_P1067.md`. No desktop source changed.
 - **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
   about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
   `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the

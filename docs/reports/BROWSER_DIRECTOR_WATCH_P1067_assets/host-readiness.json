@@ -1,0 +1,47 @@
+{
+  "battle": {
+    "size": 5,
+    "targetSector": "Ixion",
+    "ready": true,
+    "error": null,
+    "driverPid": 2192783,
+    "identityRequired": true,
+    "accounts": 11
+  },
+  "gamePasswordFile": true,
+  "ixionAdjacent": [
+    {
+      "WarpId": 1069,
+      "ClusterId": 1053,
+      "Name": "Ixion",
+      "Position": [
+        2311.111,
+        -4302.222,
+        -1325.438
+      ],
+      "destinationSectorId": 1058
+    }
+  ],
+  "stateFiles": [
+    "accounts.db",
+    "battle-ready",
+    "bot-logon.json",
+    "client-version",
+    "enrollment.json",
+    "game-password",
+    "host.log",
+    "identity-broker",
+    "inventory.json",
+    "mcp_cmds.jsonl",
+    "mcp_cmds.jsonl.ready",
+    "mcp_err.log",
+    "mcp_out.log",
+    "public.pem",
+    "reserve.json",
+    "scenario.json",
+    "state.json",
+    "tls-cert.pem",
+    "tls-key.pem"
+  ],
+  "chromium": "unavailable on this lane; browser sampling and captures are for Claude"
+}
