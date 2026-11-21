@@ -8,7 +8,7 @@ The local proof host uses the same lobby route with the preview prefix; producti
 
 | URL | Served by | Notes |
 |---|---|---|
-| `/play/` | lobby (`BrowserPreview`, ASP.NET Core) | published generation, mounted read-only; outside the `/api` limiter |
+| `/play/` | lobby (`BrowserPreview`, ASP.NET Core) | published generation, mounted read-only; outside the `/api` limiter. `/play/` redirects (302, query kept) to the game at `/play/menu.html`; the P1047 art preview stays at `/play/index.html` |
 | `/api/*`, `/identity*` | the same lobby | unchanged policies, 120 req/min per IP |
 | `wss://<public-origin>/game` | game server (`webSocket`) | loopback `127.0.0.1:6080`, reached through Caddy `:443` |
 | `:6073` TCP+UDP | game server | desktop client, from the lobby listing |
@@ -178,12 +178,13 @@ past generation can be kept for rollback.
 
 ```sh
 # 200 + WASM MIME + precompressed negotiation + immutable content-addressed file
-curl -sI https://<public-origin>/play/ | grep -Ei 'HTTP/|cache-control|content-security-policy'
+curl -sI https://<public-origin>/play/ | grep -Ei 'HTTP/|location'   # 302 → /play/menu.html
+curl -sI https://<public-origin>/play/index.html | grep -Ei 'HTTP/|cache-control|content-security-policy'
 curl -sI -H 'Accept-Encoding: br' https://<public-origin>/play/_framework/<fingerprinted>.wasm \
   | grep -Ei 'HTTP/|content-type|content-encoding|vary|cache-control'
 curl -sI https://<public-origin>/play/menu.html | grep -Ei 'HTTP/|cache-control'   # no-store
 # CSP carries wasm-unsafe-eval and exactly the same-origin wss route
-curl -sI https://<public-origin>/play/ | grep -i 'content-security-policy'
+curl -sI https://<public-origin>/play/menu.html | grep -i 'content-security-policy'
 # WSS upgrade through the origin (101 Switching Protocols; no second port)
 # --http1.1: a plain Upgrade over an HTTP/2 connection is refused with 400.
 curl -si --http1.1 --max-time 4 -o /dev/null -w '%{http_code}\n' \
@@ -192,7 +193,7 @@ curl -si --http1.1 --max-time 4 -o /dev/null -w '%{http_code}\n' \
   -H 'Origin: https://<public-origin>' https://<public-origin>/game
 # Identity + listing + a browser login and join
 curl -s https://<public-origin>/api/servers | head -c 400
-# Then in Chrome: open https://<public-origin>/play/, sign in, join the game
+# Then in Chrome: open https://<public-origin>/play/ (it opens the game menu), sign in, join the game
 # (type its password), select a side, ready, launch; the desktop client joins
 # the same listing with the same password and both ships move/fire.
 ```

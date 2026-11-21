@@ -24,6 +24,24 @@ public sealed class P1046BrowserPreviewTests
     }
 
     [Fact]
+    public async Task Base_path_opens_the_game_menu_and_the_art_preview_stays_at_index_html()
+    {
+        using var fixture = new Bundle();
+        File.WriteAllText(Path.Combine(fixture.Root, "menu.html"), "<!doctype html><base href='/play/preview/'>Menu");
+        using var app = fixture.App();
+        using var client = app.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        using var root = await client.GetAsync("/play/preview/?dev=1&online=1");
+        Assert.Equal(HttpStatusCode.Found, root.StatusCode);
+        Assert.Equal("/play/preview/menu.html?dev=1&online=1", root.Headers.Location!.OriginalString);
+        using var menu = await client.GetAsync("/play/preview/menu.html");
+        Assert.Equal(HttpStatusCode.OK, menu.StatusCode);
+        Assert.Contains("Menu", await menu.Content.ReadAsStringAsync());
+        using var preview = await client.GetAsync("/play/preview/index.html");
+        Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
+        Assert.Contains("Preview", await preview.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Disabled_route_is_absent_and_existing_lobby_headers_are_unchanged()
     {
         using var app = new LobbyTestApp();

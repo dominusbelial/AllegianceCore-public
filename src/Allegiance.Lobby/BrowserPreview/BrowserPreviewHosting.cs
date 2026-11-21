@@ -103,6 +103,10 @@ public static class BrowserPreviewHosting
             if (string.Equals(path, prefix, StringComparison.OrdinalIgnoreCase))
             { context.Response.Redirect(prefix + "/", permanent: true); return; }
             var relative = path[(prefix.Length + 1)..];
+            // The base path opens the game menu; the P1047 art preview stays at index.html.
+            // Temporary redirect (the entry page may change), query string kept (?dev=1, ?online=1).
+            if (relative.Length == 0 && registry.ContainsKey("menu.html"))
+            { context.Response.Redirect(prefix + "/menu.html" + context.Request.QueryString.Value, permanent: false); return; }
             if (relative.Length == 0) relative = "index.html";
             if (!registry.TryGetValue(relative, out var asset)) { context.Response.StatusCode = 404; return; }
             var encodings = context.Request.GetTypedHeaders().AcceptEncoding;
