@@ -5,6 +5,37 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1070 — Browser hangar and loadout: final Fast, run last (2026-11-21)
+
+P1070 adds browser-only files (`src/Allegiance.ClientCore.Game.Browser/HangarLoadout.cs`, `Game1.Hangar.cs`,
+`HangarLaunchText.cs`), the Hangar-state chrome gate (`Pages/BrowserHangarChrome.cs`), the two page/JS files and their
+tests; no shared simulation, server dispatch, wire, identity or desktop file changed (`git diff --stat` over
+`Allegiance.ClientCore.Game`, `Allegiance.ClientCore`, `Allegiance.Server` and `Allegiance.Core` is empty). Two full
+Fast sweeps were run on the final source. Both are **red for existing live/transport flakiness and chronic timing
+only**; every one of the isolated re-runs passed.
+
+Final sweep (`TestResults/tiers-20261121T163917.561910Z/`): **15,893 tests, 564.2 s**, all 9 infrastructure checks
+passed, calibrated limit **11.528 s**, every project but two green (Browser 51/0/0, Browser game 186/0/0, Lobby
+326/0/0, Update 55/0/0, MonoGame 6,001 + 4 artwork skips, ClientCore 2,473 + 1, Core 6,773 + 1).
+
+| Issue (final sweep) | Sweep evidence | Three isolated outcomes (fresh process) |
+|---|---|---|
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | 1 failed assertion: the transited peer's `SHIP_STATUS` collection held the old sector under full-suite load | **1/0/0 ×3 @ 305 / 304 / 305 ms** (already ledgered above) |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | "B never saw A's death (IsDead never latched on B) after 2500 delivery polls" (3 s) | **1/0/0 ×3 @ 1 s each** (chronic, ledgered above many times) |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | 12.323 s (timing only, passed) | chronic, ledgered above (7.4 / 7.3 / 7.2 s) |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 12.984 s (timing only, passed) | chronic, ledgered above (3.27 / 3.23 / 3.22 s) |
+
+The earlier sweep on the same source (`TestResults/tiers-20261121T162801.446366Z/`): **15,893 tests, 562.1 s**, all 9
+infrastructure checks passed, calibrated limit **11.538 s**, one failure — `P855TrapHackTests.Out_of_range_wing_id_emits_one_traphack_event_and_flood_is_rate_limited`
+("expected the burst to be rate-limited to <= 8 events, got 9", a wall-clock rate-limit window) — **1/0/0 ×3 @ 437 /
+435 / 422 ms** alone (already ledgered pass/pass/pass), plus three passing over-limit rows
+(`SC2NaniteSupportTests` 12.6 s, `P814GunnerTests.P814b_TurretCarrier...` 12.2 s, `P999CivStrategyTests.Every_profile...`
+18.3 s).
+
+Six isolated processes in total, all passed with zero failures or skips. No assertion, timeout, tier, quarantine
+policy, simulation rule or timing threshold changed.
+
+
 ## P1067 — Browser Watch camera: final Fast, run last (2026-11-21)
 
 P1067 adds the browser-only director snapshot/glue (`src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`,

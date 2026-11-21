@@ -83,7 +83,11 @@ async function main() {
       await page.locator('#online-panel[data-state="Sides"]').waitFor({ timeout: 120000 });
       await page.locator('.online-side').first().click();
       await page.locator('#online-panel[data-state="Hangar"]').waitFor();
-      await page.locator('#online-launch').click();
+      // P1070 — this page is loaded without ?dev=1 on purpose (the switch is the
+      // subject), so the Hangar state has no HTML launch control: launch through the
+      // game window's own hangar Launch verb, the same path a player's click takes.
+      if (await page.locator('#online-launch').count()) await page.locator('#online-launch').click();
+      else await page.evaluate(() => gameMenu.launch());
       await page.locator('#online-panel[data-state="Flight"]').waitFor({ timeout: 120000 });
       await page.waitForFunction(() => gameMenu.metrics().flight.frames > 0, null, { timeout: 120000 });
       return await page.evaluate(() => gameMenu.metrics().dev);

@@ -13,7 +13,24 @@ window.menuViewport = () => {
 };
 window.menuText = instance => {
   window.menuDetachText?.();
-  window.gameMenu = { metrics: () => instance.invokeMethod('Metrics'), probeBrotli: bytes => instance.invokeMethodAsync('ProbeBrotli', bytes), decodeBrotli: bytes => instance.invokeMethodAsync('DecodeBrotli', bytes) };
+  window.gameMenu = {
+    metrics: () => instance.invokeMethod('Metrics'),
+    // P1070 — the docked hangar/loadout in the game window: state for a harness to
+    // wait on, a pointer feed (the canvas has no KNI mouse), and the launch verb, so
+    // future harnesses never need the dev-only HTML launch button.
+    hangar: () => instance.invokeMethod('HangarState'),
+    pointer: (x, y, down, wheel) => instance.invokeMethod('HangarPointer', x, y, !!down, wheel || 0),
+    launch: () => {
+      const panel = document.getElementById('online-panel');
+      const button = document.getElementById('online-launch');
+      if (button && panel?.dataset.state === 'Hangar') { button.click(); return 'html'; }
+      // No HTML control (a player visit): ask the game window's own hangar Launch pane.
+      instance.invokeMethod('HangarLaunchVerb');
+      return 'window';
+    },
+    probeBrotli: bytes => instance.invokeMethodAsync('ProbeBrotli', bytes),
+    decodeBrotli: bytes => instance.invokeMethodAsync('DecodeBrotli', bytes)
+  };
   const detachFlight = window.installFlightInput(instance);
   let active = true;
   const ownsKeys = () => document.hasFocus() && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');

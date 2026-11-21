@@ -162,6 +162,28 @@ public partial class Menu
     }
     [JSInvokable]
     public void FlightKeys(string[] codes) => _game?.FlightKeys(codes);
+    // P1070 — the docked screens' pointer: the canvas has no KNI mouse position, so
+    // the page forwards the same x/y/button/wheel the desktop reads from
+    // Mouse.GetState() (Game1.Hangar.cs:233, Game1.LoadoutV2Input.cs:55).
+    [JSInvokable]
+    public void HangarPointer(int x, int y, bool down, int wheel) => _game?.HangarPointer(x, y, down, wheel);
+    // P1070 — the JS proof hook's state snapshot (window.gameMenu.hangar()).
+    [JSInvokable]
+    public object HangarState() => _game?.HangarMetrics ?? new
+    {
+        visible = false, screen = "Hangar", loadoutOpen = false, status = "", lastAction = "",
+        launchSent = false, launchPending = false, blocker = "NoSession", money = (int?)null,
+        hull = (short?)-1, hullName = (string?)null, parts = 0, offeredHulls = 0, offeredParts = 0,
+        cost = 0L, shortfall = 0L, buyEnabled = false, launchEnabled = false, state = "Unknown",
+        blockReason = (string?)null, slots = 0, offers = 0, previewStreamed = false,
+        hover = "None", boardState = (int?)null, developments = true, currentHull = (short)-1,
+        blockerText = HangarLaunchText.For(Allegiance.ClientCore.State.HangarLaunch.Blocker.NoSession),
+        quitConfirm = false, verbs = Array.Empty<object>(),
+    };
+    // P1070 — the game window's own launch verb (the native hangar Launch pane), for a
+    // harness that must launch without the dev-only HTML button.
+    [JSInvokable]
+    public bool HangarLaunchVerb() => _game?.HangarLaunchVerb() == true;
     [JSInvokable]
     public void PresentationSize(int width, int height) => _game?.SetPresentationSize(width, height);
     [JSInvokable]

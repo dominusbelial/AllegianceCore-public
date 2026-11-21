@@ -176,6 +176,24 @@ list in **reverse**.
   `ALLEGIANCE_DIRECTOR_SEED`. Proof: `tools/p1067-browser-watch.cjs`; parity:
   `docs/parity/p1067-browser-director-watch.csv`; report:
   `docs/reports/BROWSER_DIRECTOR_WATCH_P1067.md`. No desktop source changed.
+- **Browser hangar and ship loadout (P1070)** — the native docked screens inside the
+  browser game window. `src/Allegiance.ClientCore.Game.Browser/HangarLoadout.cs`
+  (`BrowserHangarModel`) is the browser copy of the desktop glue: it builds the shared
+  `ShopModel` from the server's tech-filtered catalogue (`ShopCatalog.FilteredFor`),
+  reconciles it with `LoadoutBuyFlow.Sync`, and dispatches Buy / Launch / Undock / Quit
+  through the shared wire calls (`SendBuyLoadout`, `SendMoneyRequest`, `SendBoardShip`,
+  `SendDocked`, `SendQuitMission`). `Game1.Hangar.cs` in that project draws
+  `HangarScreenRenderer` (Classic and Modern, 800×600 art scaled to the window) and
+  `LoadoutV2Renderer` — hull column, every hardpoint slot, the part picker, cargo and
+  the live hull preview streamed through the P1065 battle packs — and feeds the shared
+  `LoadoutV2Input` router from the canvas pointer (`wwwroot/flight-input.js` forwards it
+  while the panel is in the Hangar state). Launch uses `HangarLaunch` readiness and its
+  blocker texts (`HangarLaunchText`), which the page's HTML control also uses. The HTML
+  Launch/status/reason controls are `?dev=1`-only (`Pages/BrowserHangarChrome.cs`); the
+  JS hooks `gameMenu.hangar()`, `gameMenu.pointer()` and `gameMenu.launch()` drive the
+  screens without them. Proof: `tools/p1070-browser-hangar.cjs`; parity:
+  `docs/parity/p1070-browser-hangar-loadout.csv`; report:
+  `docs/reports/BROWSER_HANGAR_LOADOUT_P1070.md`. No desktop source changed.
 - **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
   about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
   `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the

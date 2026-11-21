@@ -9,5 +9,7 @@
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Assets/PreviewAssets.cs" Link="PreviewAssets.cs" />
     <!-- P1062 pure URL contract (no Blazor/HTTP types), shared with the menu. -->
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserEntry.cs" Link="BrowserEntry.cs" />
+    <!-- P1070 pure Hangar-state chrome rule (the dev gate on the HTML launch controls). -->
+    <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserHangarChrome.cs" Link="BrowserHangarChrome.cs" />
   </ItemGroup>
 </Project>

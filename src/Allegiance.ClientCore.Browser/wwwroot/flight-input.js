@@ -41,7 +41,12 @@
     const canvas = document.getElementById('theCanvas'), held = new Set(), listeners = [];
     let alive = true, pointerPending = false, wantsPointer = false, padConnected = false, padIndex = null;
     const playing = () => document.getElementById('online-panel')?.dataset.state === 'Flight';
-    const owns = () => playing() && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');
+    // P1070 — the hangar and loadout are driven in the game window (the canvas), so the
+    // same key stream and a canvas pointer feed them: the desktop reads keys through the
+    // action map (confirm/back/menu) and the pointer through Mouse.GetState() for hover
+    // and click. Pointer lock, fullscreen and the audio gesture stay flight-only.
+    const docked = () => document.getElementById('online-panel')?.dataset.state === 'Hangar';
+    const owns = () => (playing() || docked()) && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');
     const invoke = (method, ...args) => { if (alive) instance.invokeMethod(method, ...args); };
     const on = (target, name, handler, options) => { target.addEventListener(name, handler, options); listeners.push(() => target.removeEventListener(name, handler, options)); };
     const release = () => { padConnected = false; padIndex = null; wantsPointer = false; held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); if (document.pointerLockElement === canvas) document.exitPointerLock(); };
@@ -59,9 +64,11 @@
       if (event.isTrusted) audio(!document.hidden, true);
       if (event.altKey && event.key === 'Enter' && playing()) { event.preventDefault(); if (!event.repeat) fullscreen(); return; }
       if (!owns()) return;
-      if (event.code === 'Escape') { release(); return; }
+      // P1070 — Escape is a real screen verb while docked (native back from the
+      // loadout), so the hangar gets the key instead of it only releasing flight input.
+      if (event.code === 'Escape') { if (docked()) { held.add('Escape'); invoke('FlightKeys', [...held]); } else release(); return; }
       if (['Tab','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace'].includes(event.code)) event.preventDefault();
-      if (event.isTrusted && !event.repeat) lock();
+      if (event.isTrusted && !event.repeat && !docked()) lock();
       held.add(event.code); invoke('FlightKeys', [...held]);
     }, true);
     on(window, 'keyup', event => { held.delete(event.code); invoke('FlightKeys', [...held]); }, true);
@@ -73,6 +80,33 @@
       event.preventDefault();
     });
     on(window, 'mouseup', event => invoke('FlightMouseButtons', event.buttons));
+    // P1070 — the docked screens' pointer. The canvas drawing buffer is the CSS box
+    // scaled by the same ratio menuViewport() uses, so the game window receives the
+    // exact pixel space HangarScreen.Rect and LoadoutV2Layout are laid out in. Wheel is
+    // the absolute accumulated value MonoGame reports (120 per notch, up-positive).
+    let hangarWheel = 0, hangarX = -1, hangarY = -1, hangarDown = false;
+    const hangarPoint = event => {
+      const box = canvas.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, 2);
+      hangarX = Math.round((event.clientX - box.left) * ratio);
+      hangarY = Math.round((event.clientY - box.top) * ratio);
+      return hangarX >= 0 && hangarY >= 0;
+    };
+    const hangarFeed = () => { if (docked()) invoke('HangarPointer', hangarX, hangarY, hangarDown, hangarWheel); };
+    on(canvas, 'mousemove', event => { if (docked() && hangarPoint(event)) hangarFeed(); });
+    on(canvas, 'mousedown', event => {
+      if (!docked()) return;
+      canvas.focus(); hangarPoint(event); hangarDown = true; hangarFeed(); event.preventDefault();
+    });
+    on(window, 'mouseup', event => {
+      if (!docked()) return;
+      if (hangarPoint(event)) { hangarDown = false; hangarFeed(); }
+    });
+    on(canvas, 'wheel', event => {
+      if (!docked()) return;
+      event.preventDefault();
+      hangarWheel += event.deltaY < 0 ? 120 : -120;
+      if (hangarPoint(event)) hangarFeed();
+    }, { passive: false });
     on(canvas, 'mousemove', event => { if (document.pointerLockElement === canvas) invoke('PointerMotion', Math.round(event.movementX), Math.round(event.movementY)); });
     on(document, 'pointerlockchange', () => {
       pointerPending = false;

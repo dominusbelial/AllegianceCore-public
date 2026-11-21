@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.JSInterop;
 using System.Net.Http.Json;
+using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.Browser.Assets;
@@ -295,16 +296,22 @@ public partial class Menu
         catch (Exception ex) { if (ReferenceEquals(_session, session)) _onlineError = RequestError(ex); }
         finally { if (ReferenceEquals(_session, session)) { _onlineBusy = false; StateHasChanged(); } }
     }
+    /// <summary>P1070 — the game window's hangar asked for the launch the page owns. The
+    /// same <see cref="LaunchOnlineAsync"/> runs (ready → <c>STAGE_STARTED</c> →
+    /// <c>DOCKED</c>, <c>Menu.Online.cs</c> above); the hangar is then told whether it
+    /// happened, with the same blocker/refusal text the HTML control would have shown,
+    /// so the game window's status line never disagrees with the page.</summary>
+    private async Task LaunchFromGameWindowAsync()
+    {
+        try { await LaunchOnlineAsync(); }
+        catch (Exception ex) { _onlineError = RequestError(ex); }
+        bool launched = !_onlineBusy && _onlineState == "Flight";
+        _game?.HangarLaunchFinished(launched, _onlineError ?? (launched ? null : LaunchBlockerText(HangarLaunch.Of(_session).Blocker)));
+    }
     /// <summary>Longest silent stretch a ready click accepts without the mission
     /// stage or its countdown moving; every observed change re-arms it.</summary>
     private const long LaunchWaitMilliseconds = 60000;
-    private static string LaunchBlockerText(HangarLaunch.Blocker blocker) => blocker switch
-    {
-        HangarLaunch.Blocker.NoSession => "Not connected to the server. Return to the list to join again.",
-        HangarLaunch.Blocker.Reconnecting => "Reconnecting to the server…",
-        HangarLaunch.Blocker.NoShipAssigned => "Waiting for the server to assign your ship…",
-        _ => "The launch cannot start yet.",
-    };
+    private static string LaunchBlockerText(HangarLaunch.Blocker blocker) => HangarLaunchText.For(blocker);
     /// <summary>The hangar button's live state and the reason it is disabled —
     /// one shared decision for Classic and Modern (they differ only in chrome).</summary>
     private (bool Enabled, string? Reason) LaunchAffordance()
@@ -383,9 +390,21 @@ public partial class Menu
         if (!_online || Environment.TickCount64 - _lastOnlineRefresh < 200) return;
         _lastOnlineRefresh = Environment.TickCount64;
         RefreshSectorStreaming();
+        // P1070 — the hangar in the game window asked for the launch this page owns
+        // (ready -> STAGE_STARTED -> DOCKED). One request per click.
+        if (_game?.TakeHangarLaunchRequest() == true) _ = LaunchFromGameWindowAsync();
         if (_session is { } session)
         {
             if (_onlineState == "Flight" && session.World.MyShipId is { } ownId && session.World.Ships.TryGetValue(ownId, out var ownShip) && ownShip.StationId >= 0) _onlineState = "Hangar";
+            // P1070 — the hangar launched from the game window with the desktop's own
+            // BUY_LOADOUT(fLaunch) (the server's SET_CLUSTER undocks); the toolbar and
+            // the flight input follow the same state change the HTML button caused.
+            if (_onlineState is "Hangar" or "Sides" && session.World.MyShipId is { } flyingId
+                && session.World.Ships.TryGetValue(flyingId, out var flying) && flying.StationId < 0 && flying.Latest is not null)
+            {
+                _onlineState = "Flight";
+                _ = JsRuntime.InvokeVoidAsync("gameFlight.activate");
+            }
             if (session.Lost) _onlineError = "The server connection was lost. Return to the list to request a fresh join.";
             if (session.World.MyShipId is { } id && session.World.Ships.TryGetValue(id, out var ship))
                 _pose = $"Ship {id} · sector {ship.SectorId} · position {ship.Latest?.Position} · {session.DecodedBytes:N0} bytes received";

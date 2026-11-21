@@ -192,6 +192,7 @@ public sealed partial class Game1
     {
         ReleaseFlightInput();
         Watch.Stop();
+        ResetBrowserHangar();   // P1070 — a new (or detached) session has no dock state
         if (_flightSession is { } previous)
         {
             // Late packets may drain while LOGOFF is being flushed. Their world
@@ -395,8 +396,9 @@ public sealed partial class Game1
         if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
         if (own.StationId >= 0)
         {
-            _flightDocked!.Draw(GraphicsDevice.Viewport, [new(ShopLayout.Kind.Title, "HANGAR"), new(ShopLayout.Kind.Section, own.CharacterName),
-                new(ShopLayout.Kind.Info, "Station " + own.StationId), new(ShopLayout.Kind.Hint, "Use Ready and launch to fly")], money: world.MyMoney);
+            // P1070 — the docked screen is the desktop hangar / loadout screen inside
+            // the game window (the browser copy of Game1.Hangar.cs/Game1.LoadoutV2.cs).
+            DrawBrowserHangar();
             return;
         }
         var orientation = _ownSim.Orientation;
