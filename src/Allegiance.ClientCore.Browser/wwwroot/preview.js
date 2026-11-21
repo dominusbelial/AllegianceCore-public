@@ -16,11 +16,15 @@
       cancelAnimationFrame(frameId);
       pacing?.reset();
       const canvas = document.getElementById('theCanvas');
-      let previous;
+      let previous, effectLoad;
       const tick = now => {
         pacing?.sample(now, document.hidden);
         window.gameFlight?.pacing(pacing?.slow ?? false);
         window.gameFlight?.frame();
+        if (window.menuLayout && effectLoad !== (pacing?.effectLoad ?? true)) {
+          effectLoad = pacing?.effectLoad ?? true;
+          instance.invokeMethod('EffectLoad', effectLoad);
+        }
         const note = document.getElementById('pacing-note');
         if (note) note.hidden = !pacing?.slow;
         window.menuLayout?.();

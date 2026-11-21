@@ -188,51 +188,6 @@ public sealed partial class Game1
             _nozzleGlowEmitters.Remove(id);
     }
 
-    /// <summary>P367 — per-ship inputs that drive one frame of its navigation
-    /// strobe lights: the visible ship's real position/orientation and its real
-    /// rendered radius (0.5 × HullType.Length). Unlike the thrust-driven effects,
-    /// strobes are always blinking, so no thrust/throttle input is needed.</summary>
-    private readonly record struct NavStrobeEmitter(
-        Allegiance.Core.Collision.Vector3 Position,
-        Allegiance.Core.Sim.Orientation Orientation,
-        float Radius);
-
-    /// <summary>P367 — gather one visible ship's strobe emitter for this frame
-    /// (native LightsGeo's per-ship scope: every visible ship the client renders,
-    /// not just the local hull). Runs under the Gate lock in the pose-gather pass;
-    /// the emitter is recorded whenever the hull is known and visible. The local
-    /// ship is gated to non-cockpit camera modes (its hull isn't drawn there),
-    /// matching P358/P365. P448b — the emitter is fed the ship's RENDER pose
-    /// (dead-reckoned for remote ships) so the strobes never detach.</summary>
-    private void UpdateNavStrobes(short id, Allegiance.Core.Collision.Vector3 position,
-        Allegiance.Core.Sim.Orientation orientation, float radius, bool visible)
-    {
-        if (!visible || radius <= 0f)
-        {
-            _navStrobeEmitters.Remove(id);
-            return;
-        }
-        _navStrobeEmitters[id] = new NavStrobeEmitter(position, orientation, radius);
-    }
-
-    /// <summary>P367 — compute each strobe anchor's current pulse (the real native
-    /// LightsGeo::Render envelope, <see cref="Rendering.NavStrobeMath.Pulse"/>) and
-    /// append a strobe decal view when the pulse is &gt; 0 (native's render gate,
-    /// efapp.cpp:208). The pulse scales the decal's SIZE only — faithful to native's
-    /// <c>0.5·value</c> decal scale (efapp.cpp:215), which never dims the colour —
-    /// normalized to real hull units by <see cref="Rendering.NavStrobeLayout.SizeFactor"/>.</summary>
-    private void AddNavStrobeAnchors(System.Collections.Generic.IReadOnlyList<Rendering.NavStrobeAnchor> anchors, float radius)
-    {
-        float clock = (float)_nowSeconds;
-        foreach (var a in anchors)
-        {
-            float pulse = Rendering.NavStrobeMath.Pulse(clock, a.Timing);
-            if (pulse <= 0f) continue;
-            float half = pulse * radius * Rendering.NavStrobeLayout.SizeFactor;
-            _drawNavStrobes.Add(new Rendering.NavStrobeView(a.Position, half, new Vector3(a.R, a.G, a.B)));
-        }
-    }
-
     /// <summary>P363 — feed one visible ship's side-coloured motion-trail ribbon
     /// for this frame: its anchor (native <c>m_vecPosition</c>), its ribbon
     /// right vector (<c>orientation.GetRight() · radius · 0.25</c>, the native
@@ -436,10 +391,8 @@ public sealed partial class Game1
                 // of them on the frame of the transition — native's per-sector
                 // lighting. Falls back to a sane fixed white light when the
                 // cluster is unknown, so objects never render black.
-                _sectorLighting = TrySceneSector(world, me, out short lightSector)
-                    && world.Clusters.TryGetValue(lightSector, out var dcLite)
-                        ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dcLite.LightDirection, dcLite.LightColor)
-                        : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
+                _sectorLighting = NativeScene.Light(TrySceneSector(world, me, out short lightSector)
+                    && world.Clusters.TryGetValue(lightSector, out var dcLite) ? dcLite : null);
 
                 // Camera selection: P211's chase (third-person) / cockpit
                 // (first-person, full orientation with roll), plus P295's two new
@@ -717,52 +670,8 @@ public sealed partial class Game1
                 // ships, over the starfield (native renders it among the geos). A
                 // >100 m camera jump (warp/teleport/sector change) clears it (the
                 // native rule), so the field never smears across a transit.
-                if (_visuals.IsOn(Rendering.VisualFlags.SubtleDustKey))
-                {
-                    _subtleDust.Step(cameraEye, _debrisGeo.Density, _spaceVisualFrame.Cut);
-                    _drawDustViews.Clear();
-                    foreach (var grain in _subtleDust.Grains)
-                    {
-                        float brightness = grain.Brightness * Rendering.SubtleDust.DistanceFade(Vector3.Distance(grain.Position, cameraEye));
-                        _drawDustViews.Add(new Rendering.AmbientDustView(
-                            new SimVec(grain.Position.X, grain.Position.Y, grain.Position.Z),
-                            grain.HalfExtent / proj.M22, new Vector3(brightness)));
-                    }
-                }
-                else
-                {
-                    _subtleDust.Reset();
-                    _debrisGeo.Step(
-                        new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z),
-                        new SimVec(-view.M31, -view.M32, -view.M33),   // camera forward
-                        new SimVec(view.M11, view.M12, view.M13),      // camera right
-                        new SimVec(view.M21, view.M22, view.M23),      // camera up
-                        proj.M22,                                      // focus = cot(vFOV/2)
-                        (float)_gameSeconds);
-                    float debrisFocus = proj.M22;
-                    _drawDustViews.Clear();
-                    foreach (var pt in _debrisGeo.Points)
-                    {
-                        float age = (float)_gameSeconds - pt.StartTime;
-                        float bright = Rendering.DebrisGeo.Brightness(age);
-                        if (bright <= 0f) continue;
-                        float rx = pt.Position.X - cameraEye.X, ry = pt.Position.Y - cameraEye.Y, rz = pt.Position.Z - cameraEye.Z;
-                        float dsq = rx * rx + ry * ry + rz * rz;
-                        // Native Render skips grains within 20 m of the camera (debrisgeo.cpp:177).
-                        if (dsq <= Rendering.DebrisGeo.NearCameraSkipSquared) continue;
-                        // P503: native DrawDecal scale = 0.1/focus is a CONSTANT world
-                        // half-extent for every grain (context.cpp:2317, debrisgeo.cpp:166);
-                        // the perspective divide then makes a grain subtend 0.1/distance of
-                        // the screen height — smaller the farther away. The P449a formula
-                        // (0.1/focus)·distance·Calibration gave every grain a constant
-                        // ~1.3% of screen height regardless of depth → the "bubbles".
-                        float half = Rendering.AmbientDustRenderer.DecalHalfExtent(debrisFocus);
-                        _drawDustViews.Add(new Rendering.AmbientDustView(
-                            pt.Position,
-                            half,
-                            new Vector3(bright * pt.Colour.X, bright * pt.Colour.Y, bright * pt.Colour.Z)));
-                    }
-                }
+                NativeScene.GatherDust(_visuals, _subtleDust, _debrisGeo, _spaceVisualFrame,
+                    cameraEye, view, proj, _gameSeconds, _drawDustViews);
                 _debrisRenderer.Draw(_drawDustViews, cameraEye, view, proj);
 
                 // P628 — per-frame LOD bookkeeping reset (counts + far sprite list).
@@ -791,9 +700,7 @@ public sealed partial class Game1
                     // elapsed wall-clock); fully solid otherwise. The server
                     // already withheld undetectable enemies, so anything here is
                     // legitimately visible to this client's side.
-                    float shipOpacity = _cloakedShips.Contains(id)
-                        ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
-                        : 1f;
+                    float shipOpacity = NativeScene.Opacity(_cloakedShips.Contains(id), gameTime.TotalGameTime.TotalSeconds);
 
                     // P628 — level-of-detail selection. The projected on-screen
                     // pixel radius (native GetImageRadius, context.cpp:1858-1871)
@@ -1060,10 +967,8 @@ public sealed partial class Game1
                         float nscale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ngeo.MeshRadius);
                         var sWorldNS = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
                         _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting, sModel, ntexStem);
-                        if (Rendering.NativeStationLights.IsVisible(sXnaPos - cameraEye, sRadius,
-                                view, proj, GraphicsDevice.Viewport.Width))
-                            Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(sModel),
-                                sRot * Matrix.CreateTranslation(sXnaPos), nscale, (float)_nowSeconds, _drawNavStrobes);
+                        NativeScene.AppendStationLights(_nativeStationRenderer, sModel, sXnaPos, sRot,
+                            sRadius, nscale, cameraEye, view, proj, GraphicsDevice.Viewport.Width, (float)_nowSeconds, _drawNavStrobes);
                     }
                     else
                     {
@@ -1084,34 +989,7 @@ public sealed partial class Game1
 
                 }
 
-                // P997: native's two rotating build.mdl shells. Native lifetime
-                // (default): the effect table itself, so the shell keeps shrinking
-                // and fading around the new station until m_timeComplete
-                // (Igc/buildingeffectigc.h:160-183, 310-358; appmsg.cpp:1692-1718)
-                // and leaves on 181, an explosive rock death or reset. The
-                // visuals.constructionHandoff flag instead draws ClientWorld's
-                // presentation table, which retires the shell at the hand-off.
-                bool instantHandoff = _visuals.IsOn(Rendering.VisualFlags.ConstructionHandoffKey);
-                _drawBuilds.Clear();
-                lock (_session.Gate)
-                {
-                    long buildNow = ClientNowMilliseconds;
-                    world.PruneExpiredBuildingEffects(buildNow);
-                    if (TrySceneSector(world, me, out short myBeSector))
-                    {
-                        foreach (var (_, be) in instantHandoff ? world.ConstructionVisuals : world.BuildingEffects)
-                        {
-                            if (be.ClusterId != myBeSector) continue;
-                            var phase = be.Phase(buildNow);
-                            _drawBuilds.Add(phase);
-                        }
-                    }
-                }
-                foreach (var phase in _drawBuilds)
-                {
-                    if (OutsideRadialView(PoseConverter.ToXna(phase.Position), cameraEye, phase.Radius)) continue;
-                    _buildingEffectRenderer.Draw(phase, cameraEye, view, proj, (float)_nowSeconds);
-                }
+                DrawSceneBuildings(world, me, cameraEye, view, proj);
 
                 // P231 + P465b — projectiles. Unlike asteroids/warps a projectile
                 // carries no ClusterId/sector on the wire, so the "sector filter"
@@ -1595,33 +1473,7 @@ public sealed partial class Game1
                 // real velocity-derived spray axes; then age every live spark
                 // and draw them additively on top of the scene — both the flash
                 // (HUD) and the particle spray thus fire together per transit.
-                if (_pendingTeleportBurst is { } burst)
-                {
-                    _pendingTeleportBurst = null;
-                    // P338 — the burst is the LOCAL ship transiting, so size the
-                    // spark spray to its real rendered radius (0.5 × HullType.Length)
-                    // instead of the fixed 50-unit stand-in; fall back when the
-                    // hull is unknown.
-                    float transitRadius = _myRenderRadius > 0f ? _myRenderRadius : Rendering.WarpTransitParticles.ShipRadiusDefault;
-                    _warpParticles.EmitBurst(
-                        burst.Position, burst.Velocity, burst.Forward, burst.Right,
-                        transitRadius,
-                        Rendering.WarpTransitParticles.EmissionClockSeconds, _trailRandom);
-                }
-
-                // P781 — the lead-up spray (native AddTeleportParticles runs every
-                // frame for every visible ripcording / aleph-closing ship,
-                // thinggeo.cpp:619-696): emit from the emitters the gate-locked
-                // pose pass gathered (_teleportEmitters), paced by the fixed 60 Hz
-                // emission accumulator (native's per-rendered-frame clock would
-                // scale the spray with fps — see WarpTransitParticles remarks).
-                EmitTeleportLeadup((float)dt);
-                _drawSparkViews.Clear();
-                _warpParticles.CopyTo(_drawSparkViews);   // P781 — non-allocating gather (was AddRange(Enumerate()))
-                // P781 — the benchmark reducer now runs AFTER the gather (it used
-                // to trim the list before it was refilled, a no-op).
-                ReduceBenchmarkEffects(_drawSparkViews);
-                _warpParticleRenderer.Draw(_drawSparkViews, cameraEye, view, proj);
+                DrawSceneTeleport(cameraEye, view, proj, (float)dt);
 
                 // P297 — the continuous damage-debris smoke stream (native
                 // AddDamageParticles, thinggeo.cpp:699-755). Emit one puff per
@@ -1715,12 +1567,7 @@ public sealed partial class Game1
                 // lights genuinely blink (ramp up → flash → ramp down → off,
                 // alternating sides), for the local hull AND every visible remote
                 // ship/structure.
-                foreach (var kv in _navStrobeEmitters)
-                {
-                    var ns = kv.Value;
-                    AddNavStrobeAnchors(Rendering.NavStrobeLayout.ShipAnchors(ns.Position, ns.Orientation, ns.Radius), ns.Radius);
-                }
-                _navStrobeRenderer.Draw(_drawNavStrobes, cameraEye, view, proj);
+                DrawSceneStrobes(cameraEye, view, proj);
 
                 // P363 — the ship side-coloured motion trail (native TrailGeo
                 // ribbon, efgeo.cpp:492-661). Advance the pool clock (the native
@@ -2357,135 +2204,6 @@ public sealed partial class Game1
         CaptureSkirmishProof();
         DrawBenchmark();
         base.Draw(gameTime);
-    }
-
-    /// <summary>
-    /// P576 — draw the native per-sector sky (or the pre-P576 parallax starfield
-    /// fallback before a cluster is known), switching the sky assets on sector
-    /// change. The sky is the backdrop, drawn behind everything (the sky renderer
-    /// pins its own depth/blend states). Also draws the optional aleph
-    /// destination-glimpse when <c>--aleph-glimpse on</c> (default OFF).
-    /// <para><b>P862 — only the ACTIVE tier resolves the new sector.</b> All three
-    /// tiers used to be told about every sector change, and each owns its own
-    /// <see cref="Rendering.PlanetPoster"/> plus its own dome/environment cache —
-    /// so one warp decoded the same 2048² <c>nebplntNNbmp.mdl</c> planet THREE
-    /// times and the inactive tiers' nebula art on top of that, all inside the
-    /// transit frame. The tier is fixed at launch (<c>--sky</c>), so the two idle
-    /// tiers now stay cold; a per-tier latch re-resolves the past sector if a tier
-    /// ever becomes active.</para>
-    /// </summary>
-    private void DrawSkyP576(Matrix view, Matrix projection, Vector3 cameraEye)
-    {
-        var world = _session.World;
-        DataClusterIGC? sky = null;
-        short skySectorId = -1;
-        if (TrySceneSector(world, RenderShipId(world) ?? -1, out short skySector)
-            && world.Clusters.TryGetValue(skySector, out var dc))
-        {
-            sky = dc;
-            skySectorId = skySector;
-        }
-
-        long spaceIdentity = ((long)skySectorId << 32) ^ ((long)_cameraMode << 16)
-            ^ (string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? 1L
-                : string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase) ? 2L : 3L);
-        _spaceVisualFrame = _spaceMotion.Step(_visuals, view, cameraEye, _nowSeconds, spaceIdentity);
-
-        // P588 — the sky tier dispatch: black (default: point stars + native
-        // planet, no dome) | native (P576 dome + planet) | hd (P577 telescope).
-        bool black = string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase);
-        bool hd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
-        if (sky is not null)
-        {
-            // P862 — tell ONLY the tier that draws (each one owns its own planet
-            // poster + dome caches; the others would decode the same art for
-            // nothing). The latch keeps a tier change working.
-            if (black)
-            {
-                if (_skySectorBlack != skySectorId) { _skySectorBlack = skySectorId; _blackSky.SetCluster(sky.Value); }
-            }
-            else if (hd)
-            {
-                if (_skySectorHd != skySectorId) { _skySectorHd = skySectorId; _hdSky.SetCluster(sky.Value); }
-            }
-            else
-            {
-                if (_skySectorNative != skySectorId) { _skySectorNative = skySectorId; _nativeSky.SetCluster(sky.Value); }
-            }
-        }
-
-        if (sky is not null && black)
-        {
-            _blackSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
-            // (The aleph destination-glimpse composites after the opaque scene —
-            // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
-            // cover it.)
-        }
-        else if (sky is not null && !hd)
-        {
-            _nativeSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
-            // (The aleph destination-glimpse composites after the opaque scene —
-            // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
-            // cover it.)
-        }
-        else if (sky is not null)
-        {
-            // P577 — the HD sky tier (real telescope data). Same per-sector
-            // structure and cluster switch as native; only the textures and the
-            // star layer differ (see HdSkyRenderer). SetCluster happens in the
-            // shared sector-change block above.
-            _hdSky.Draw(view, projection, cameraEye, _spaceVisualFrame);
-        }
-        else
-        {
-            // No cluster yet — fall back to the old parallax field so there is
-            // still a visible backdrop pre-flight.
-            _starFar.Draw(view, projection, cameraEye, _spaceVisualFrame);
-            _starMid.Draw(view, projection, cameraEye, _spaceVisualFrame);
-            _starNear.Draw(view, projection, cameraEye, _spaceVisualFrame);
-        }
-    }
-
-    /// <summary>
-    /// P576-B — gather the current sector's warps that have a resolvable
-    /// destination cluster and hand them to the glimpse renderer (which draws a
-    /// faint destination-sky view into each funnel centre). Nearest-first +
-    /// bounded by the renderer. No-op when the glimpse setting is off.
-    /// </summary>
-    private void DrawAlephGlimpses(Matrix view, Matrix projection, Vector3 cameraEye,
-        ClientWorld world, DataClusterIGC current)
-    {
-        // P862b — resolve each warp's destination SECTOR through its partner warp
-        // (native warpIGC.h:129-141, the P540c rule WarpDestinationResolver owns),
-        // never by feeding the partner WARP id into the cluster table: the two id
-        // spaces do not overlap (this map: clusters 1050-1062, warps 2150-2193), so
-        // the old lookup never matched and the glimpse drew nothing at all.
-        var targets = Rendering.AlephGlimpseRenderer.CollectTargets(
-            world.Warps, world.Clusters, current.ClusterId, cameraEye);
-        if (targets.Count == 0) return;
-        LogGlimpseResolution(targets, current);
-        // P585 — pass the per-warp transit-pulse strength (drives the glimpse
-        // open-wide + lens-flare) and the flare occlusion test (P547 depth).
-        _alephGlimpseRenderer.Visuals = _visuals;
-        _alephGlimpseRenderer.Draw(targets, cameraEye, view, projection, current,
-            wId => _warpPulses.Strength(wId, _nowSeconds),
-            TransitFlareOccluded);
-    }
-
-    /// <summary>P862b — name the glimpse's resolution once per warp: the aleph, the
-    /// partner warp it points at and the SECTOR that partner sits in. This is the
-    /// evidence that the glimpse aims at a real sector (and which one), which the
-    /// [sector-entry] / [asset] lines cannot show.</summary>
-    private void LogGlimpseResolution(List<Rendering.GlimpseTarget> targets, DataClusterIGC current)
-    {
-        foreach (var t in targets)
-        {
-            if (_glimpseLogged.TryGetValue(t.Warp.WarpId, out short known) && known == t.DestSector) continue;
-            _glimpseLogged[t.Warp.WarpId] = t.DestSector;
-            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-                $"[glimpse] warp #{t.Warp.WarpId} '{t.Warp.Name}' in {current.Name} ({current.ClusterId}) "
-                + $"-> {t.Dest.Name} ({t.DestSector}) via partner warp #{t.Warp.DestinationId}"));
-        }
     }
 
     /// <summary>
@@ -3884,48 +3602,6 @@ public sealed partial class Game1
         if (_commandee is not { } cmd) return null;
         return $"CMD {cmd.Name} (#{cmd.Id})  [Insert]";
     }
-
-    /// <summary>
-    /// P781 — emit the lead-up teleport sparks for this frame from the emitters
-    /// the gate-locked pose pass gathered (<see cref="_teleportEmitters"/>).
-    /// Native calls <c>AddTeleportParticles</c> once per rendered frame per ship
-    /// (thinggeo.cpp:503-528), which scales the spray density with the frame
-    /// rate; here a fixed <see cref="Rendering.WarpTransitParticles.EmissionClockSeconds"/>
-    /// (60 Hz) accumulator gates the emission to at most one native call's worth
-    /// of sparks per 1/60 s — a deliberate deviation (see WarpTransitParticles
-    /// remarks and the P781 report). Runs on the render thread; the emitters are
-    /// a plain snapshot (no gate needed).
-    /// </summary>
-    private void EmitTeleportLeadup(float frameSeconds)
-    {
-        const float clock = Rendering.WarpTransitParticles.EmissionClockSeconds;
-        _teleportEmitAccumulator += frameSeconds;
-        // One native call's worth per elapsed 1/60 s: a 144 Hz client emits on
-        // ~every 2nd-3rd frame, a 30 Hz client twice per frame, so the spray
-        // density is the native 60 fps density at any frame rate. A hitch is
-        // capped at MaxEmissionsPerFrame (the excess is dropped, never a burst).
-        int ticks = 0;
-        while (_teleportEmitAccumulator >= clock && ticks < MaxTeleportEmissionsPerFrame)
-        {
-            _teleportEmitAccumulator -= clock;
-            ticks++;
-        }
-        if (_teleportEmitAccumulator >= clock) _teleportEmitAccumulator %= clock;
-        if (ticks == 0) return;
-
-        int count = _teleportEmitterCount;
-        for (int tick = 0; tick < ticks; tick++)
-            for (int i = 0; i < count; i++)
-            {
-                ref readonly var e = ref _teleportEmitters[i];
-                _warpParticles.EmitTeleport(e.Position, e.FrameVelocity, e.Forward, e.Right,
-                    e.Radius, e.TimeUntilTeleport, clock, _trailRandom);
-            }
-    }
-
-    /// <summary>P781 — the most 60 Hz emission ticks one rendered frame may
-    /// catch up (a 15 fps frame); a longer hitch drops the excess.</summary>
-    private const int MaxTeleportEmissionsPerFrame = 4;
 
     /// <summary>P414/HUD-9 — the native ripcord countdown label, "Ripcord in: n",
     /// resolved from the live world ripcord state under the gate lock. Native

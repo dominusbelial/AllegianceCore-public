@@ -10674,3 +10674,42 @@ These are existing load-sensitive gun-damage and selection families, not P1062 c
 timeout, tier, quarantine policy, throttle, privilege, simulation or wire rule was changed. Ignored raw
 evidence: `TestResults/tiers-20261121T043242.263060Z/` (TRX + logs + summary.json).
 
+
+## P1066 — final Fast assertion/timing triage (2026-11-21 05:55 local UTC−5)
+
+The single final Fast sweep ran after implementation and task/desktop gates: **15,821
+passed / 2 failed / 7 not executed**, **15,830 total**, **565.1 s**. All **9
+infrastructure checks passed**, no quarantine flakes; calibrated case limit
+**11.566 s**. Browser preview/game/lobby: **39/136/325 passes**. Fast remains
+**red for two assertions and five passing timing offenders**.
+
+Each affected method was selected in **three fresh isolated processes**, serially
+with artwork and all theory rows, after the sweep:
+
+| Method | Sweep observation | Three isolated results (passed/failed/skipped) | Isolated per-case duration |
+|---|---|---|---|
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | side-export mismatch: expected −2, actual 0 (line 229) | **1/0/0, 0/1/0, 1/0/0** | 1.057–1.700 s |
+| `P990BroadcastLaneTelemetryTests.Lane_record_and_stamp_paths_allocate_nothing_after_warmup` | allocation assertion: expected 0 B, actual 3,032 B (line 167) | **1/0/0, 1/0/0, 1/0/0** | 0.009–0.010 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civ 35 passed in 12.609 s | **3/0/0, 3/0/0, 3/0/0** | 3.594–5.980 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 13.993 s | **2/0/0, 2/0/0, 2/0/0** | 3.270–4.559 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 14.017 s | **1/0/0, 1/0/0, 1/0/0** | 3.428–3.461 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | civ 5 passed in 19.833 s | **10/0/0, 10/0/0, 10/0/0** | 2.024–4.920 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | passed in 13.574 s | **1/0/0, 1/0/0, 1/0/0** | 1.550–1.929 s |
+
+`FullSessionIntegrationTests` reproduces the previously ledgered initial
+EXPORT/SideId ordering mismatch (see P955 entry above), **once in three**
+isolated runs. Its assertion compares two peers as soon as mutual EXPORT exists;
+one peer still has team-lobby side −2 and the other side 0. The telemetry
+zero-allocation failure did **not** reproduce in three runs; no runtime-cause claim
+is made from the isolated result. All five timing methods passed every isolated
+row below the sweep's limit. This is triage evidence, not a green Fast result.
+
+The two assertion test files and `Allegiance.Server/BroadcastTelemetry.cs` are
+byte-identical to HEAD (hashes in the receipt). P1066's `ClientWorld` changes are
+BROWSER-only; its non-browser preprocessed source matches HEAD. No session, server
+telemetry, simulation, assertion, threshold, timeout, tier or quarantine rule was
+changed. No second broad Fast sweep was run.
+[Sweep receipt](reports/BROWSER_SCENE_LIGHT_SKY_P1066_assets/fast-summary.json),
+[all isolated outcomes/durations, source and TRX hashes](reports/BROWSER_SCENE_LIGHT_SKY_P1066_assets/fast-isolated.json).
+Raw logs/TRX remain ignored in `.scratch/p1066/fast/` and
+`.scratch/p1066/fast-isolated/`.

@@ -53,4 +53,7 @@
     <ProjectReference Include="../../src/Allegiance.Bot/Allegiance.Bot.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../Allegiance.ClientCore.Game.Browser.Tests/P1066NativeSceneTests.cs" Link="P1066NativeSceneTests.cs" />
+  </ItemGroup>
 </Project>

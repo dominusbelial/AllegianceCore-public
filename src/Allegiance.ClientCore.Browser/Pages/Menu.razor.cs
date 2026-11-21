@@ -164,6 +164,8 @@ public partial class Menu
     [JSInvokable]
     public void PresentationSize(int width, int height) => _game?.SetPresentationSize(width, height);
     [JSInvokable]
+    public void EffectLoad(bool full) => _game?.SetEffectLoad(full);
+    [JSInvokable]
     public void FlightGamepad(float[] axes, float[] buttons) => _game?.FlightGamepad(axes, buttons);
     [JSInvokable]
     public void FlightMouseButtons(int buttons) => _game?.FlightMouseButtons(buttons);

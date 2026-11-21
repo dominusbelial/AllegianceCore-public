@@ -72,7 +72,7 @@ public sealed partial class Game1
     private NativeShipRenderer? _flightShips;
     private NativeStationRenderer? _flightStations;
     private NativeAsteroidRenderer? _flightRocks;
-    private NativeSkyRenderer? _flightSky;
+    private BlackSkyRenderer? _flightSky;
     private short _skySector = -1;
     private bool _flightLoaded;
     private readonly bool _ownShipPrediction = true;
@@ -145,7 +145,7 @@ public sealed partial class Game1
         sectorId = _flightSession?.World.MyShipId is { } sid && _flightSession.World.Ships.TryGetValue(sid, out var sectorShip) ? (short?)sectorShip.SectorId : null,
         textures = SectorTextureMetrics, starmapOpen = StarmapOpen, selectedMapSector = SelectedMapSector,
         drawnRockSurfaces = _drawnRockSurfaces,
-        sky = SectorSkyMetrics,
+        sky = SectorSkyMetrics, scene = SceneMetrics,
         battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
             standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
             culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds },
@@ -167,6 +167,9 @@ public sealed partial class Game1
                 previous.World.LifepodHullResolver = static _ => null;
             }
         }
+        // A session can retire before any renderer was loaded (including the
+        // headless lifecycle fixture). The first actual scene initializes itself.
+        if (_flightLoaded) ResetScene();
         _flightSession = session;
         if (session is null) return;
         _shopCatalog ??= ShopCatalog.TryLoad(_assets);
@@ -224,6 +227,7 @@ public sealed partial class Game1
         if (_flightSession is null || time.ElapsedGameTime <= TimeSpan.Zero) return;
         _flightElapsedSeconds = time.ElapsedGameTime.TotalSeconds;
         _nowSeconds += _flightElapsedSeconds;
+        _sceneGameSeconds += _flightElapsedSeconds * _session.World.TimeScale;
         PumpServerClock();
         var world = _session.World;
         if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
@@ -302,7 +306,7 @@ public sealed partial class Game1
         _flightShips = new NativeShipRenderer(GraphicsDevice, _assets) { HdTexturesEnabled = false };
         _flightStations = new NativeStationRenderer(GraphicsDevice, _assets);
         _flightRocks = new NativeAsteroidRenderer(GraphicsDevice, _assets);
-        _flightSky = new NativeSkyRenderer(GraphicsDevice, _assets);
+
         _flightBolts = new ProjectileRenderer(GraphicsDevice);
         _flightWarps = new WarpRenderer(GraphicsDevice, _assets);
         _flightDocked = new DockedScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
@@ -364,10 +368,8 @@ public sealed partial class Game1
                 eye = camera.Eye; view = camera.View();
             }
         }
-        if (world.Clusters.TryGetValue(own.SectorId, out var cluster) &&
-            (_skySector != own.SectorId || _skyTextureRevision != (_sectorTextures?.Revision ?? 0)))
-        { _flightSky!.SetCluster(cluster); _skySector = own.SectorId; _skyTextureRevision = _sectorTextures?.Revision ?? 0; }
-        _flightSky!.Draw(view, projection, eye);
+        _rockFrustum.Matrix = view * projection;
+        BeginScene(world, own, view, projection, eye);
         long shipPassStart = System.Diagnostics.Stopwatch.GetTimestamp();
         DrawnShips = DrawnMeshes = DrawnStandIns = 0;
         _visibleShipNames.Clear(); _flightContacts.Clear();
@@ -394,16 +396,21 @@ public sealed partial class Game1
             {
                 string? texture = _flightShips.TextureStemFor(h.ModelName, h.TextureName);
                 _flightShips.Draw(mesh, texture is null ? null : _flightShips.TextureFor(texture), matrix, view, projection,
-                    1, NativeShipResolver.NativeScaleForLength(h.Length, mesh.MeshRadius), null, h.ModelName, texture, false);
+                    NativeScene.Opacity(CloakVisual.IsCloaked(pose.StateM), _nowSeconds),
+                    NativeShipResolver.NativeScaleForLength(h.Length, mesh.MeshRadius), _sceneLighting, h.ModelName, texture, false);
                 DrawnMeshes++;
             }
             else
             {
                 float side = BattleShipScene.StandInSide(hull?.Length ?? 2);
                 _flightBolts!.Draw(Matrix.CreateScale(side) * matrix,
-                    sideColor is { } color ? new Vector3(color.R, color.G, color.B) : new Vector3(.6f, .8f, 1), view, projection);
+                    sideColor is { } color ? new Vector3(color.R, color.G, color.B) : new Vector3(.6f, .8f, 1), view, projection,
+                    NativeScene.Opacity(CloakVisual.IsCloaked(pose.StateM), _nowSeconds));
                 DrawnStandIns++;
             }
+            if (BattleShipScene.RockInView(V(p) - eye, (hull?.Length ?? 2) * .5f, _rockFrustum))
+                _sceneEffects.GatherShip(world, ship, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity,
+                    o, hull, (float)_flightElapsedSeconds, ClientNowMilliseconds, _flightWarps);
             DrawnShips++; _visibleShipNames.Add(ship.CharacterName ?? $"Ship {ship.ShipId}");
         }
         ShipPassMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(shipPassStart).TotalMilliseconds;
@@ -412,11 +419,15 @@ public sealed partial class Game1
             if (station.ClusterId != own.SectorId || _shopCatalog?.StationTypes?.GetValueOrDefault(station.StationTypeId) is not { } type) continue;
             if (_flightStations!.MeshFor(type.ModelName) is not { } mesh) continue;
             string? texture = _flightStations.TextureStemFor(type.ModelName, type.TextureName);
-            var facing = new Orientation();
+            var facing = _stationFacing; facing.Reset();
             if (station.Forward is { Length: 3 } sf && station.Up is { Length: 3 } su) facing.Set(Vec(sf), Vec(su));
             var matrix = Matrix.CreateWorld(V(station.Position) - eye, V(facing.GetForward()), V(facing.GetUp()));
             _flightStations.Draw(mesh, texture is null ? null : _flightStations.TextureFor(texture), matrix, view, projection,
-                (type.Radius / Math.Max(.001f, mesh.MeshRadius)), null, type.ModelName, texture);
+                (type.Radius / Math.Max(.001f, mesh.MeshRadius)), _sceneLighting, type.ModelName, texture);
+            if (BattleShipScene.RockInView(V(station.Position) - eye, type.Radius, _rockFrustum))
+                NativeScene.AppendStationLights(_flightStations, type.ModelName, V(station.Position),
+                    PoseConverter.ToXnaRotation(facing), type.Radius, NativeStationResolver.ScaleForRadius(type.Radius, mesh.MeshRadius),
+                    eye, view, projection, GraphicsDevice.Viewport.Width, (float)_nowSeconds, _sceneEffects.Strobes);
         }
         _drawnRockSurfaces.Clear(); CulledRocks = 0;
         _rockFrustum.Matrix = view * projection;
@@ -429,14 +440,14 @@ public sealed partial class Game1
             var surface = texture is null ? null : _flightRocks.TextureFor(texture);
             if (texture is not null && !_drawnRockSurfaces.ContainsKey(texture)) _drawnRockSurfaces[texture] = [surface?.Width ?? 0, surface?.Height ?? 0];
             _flightRocks.Draw(mesh, surface, rotation * Matrix.CreateTranslation(V(rock.Position) - eye), view, projection,
-                rock.Radius / Math.Max(.001f, mesh.MeshRadius), null, rock.ModelName, texture);
+                rock.Radius / Math.Max(.001f, mesh.MeshRadius), _sceneLighting, rock.ModelName, texture);
         }
-        foreach (var warp in world.Warps.Values.Where(w => w.ClusterId == own.SectorId))
+        foreach (var warp in _sceneEffects.Warps)
         {
-            var facing = new Orientation(); facing.Set(Vec(warp.Forward));
+            var facing = _warpFacing; facing.Set(Vec(warp.Forward));
             var matrix = PoseConverter.ToXnaRotation(facing) * Matrix.CreateScale(warp.Radius * WarpRenderer.VisualScaleMultiplier)
                 * Matrix.CreateTranslation(V(warp.Position) - eye);
-            _flightWarps!.Draw(matrix, view, projection, _flightElapsedSeconds, warp.Radius * WarpRenderer.VisualScaleMultiplier, warp.TextureName, warp.WarpId);
+            _flightWarps!.Draw(matrix, view, projection, _flightElapsedSeconds, warp.Radius * WarpRenderer.VisualScaleMultiplier, warp.TextureName, warp.WarpId, funnelBoost: 1f + (WarpRenderer.PeakFunnelBoost - 1f) * _sceneEffects.PulseStrength(warp.WarpId));
         }
         world.PruneExpiredProjectiles(ClientNowMilliseconds);
         foreach (var bolt in world.Projectiles)
@@ -450,9 +461,11 @@ public sealed partial class Game1
             _flightBolts!.Draw(matrix, new(style.R, style.G, style.B), view, projection);
             _drawnProjectiles++;
         }
+        DrawSceneExtras(world, own, view, projection, eye);
+        float warpFlash = _sceneEffects.EndFrame(own, _ownSim.Position, _ownSim.Velocity, orientation, length * .5f);
         var frame = new HudFrame(up.HullFraction, up.ShieldFraction, up.AmmoFraction, up.FuelFraction, up.EnergyFraction,
             _ownSim.Power, _ownSim.Velocity.Length(), _throttle, (_ownSim.StateM & ShipControlState.AfterburnerButton) != 0,
-            (_ownSim.StateM & ShipControlState.WeaponsMask) != 0, _groupFire, _selectedMount, false, 0, false, _cloakToggled,
+            (_ownSim.StateM & ShipControlState.WeaponsMask) != 0, _groupFire, _selectedMount, false, warpFlash, false, _cloakToggled,
             world.KillBonusPercent, up.Orientation.GetRollDegrees(), [], false, 0, world.MyMoney, TurnYaw: _ownSim.Controls.Yaw, TurnPitch: _ownSim.Controls.Pitch, AutopilotEngaged: _browserAutoTarget is not null, WarningMask: world.ShipWarnings.Mask, TimeDilationPercent: (float)world.TimeScale * 100);
         var hud = _hudSettings.Style == HudStyle.Classic ? _classicFlightHud! : _modernFlightHud!;
         hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: _flightContacts, buffers: _flightHudBuffers), GraphicsDevice.Viewport);

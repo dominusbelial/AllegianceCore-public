@@ -103,6 +103,25 @@ public sealed class ProjectileRenderer : IDisposable
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
     }
 
+#if BROWSER
+    /// <summary>The missing-mesh stand-in follows the same cloak opacity as the hull.</summary>
+    public void Draw(Matrix world, Vector3 tint, Matrix view, Matrix projection, float opacity)
+    {
+        var gd = _effect.GraphicsDevice;
+        var blend = gd.BlendState; var depth = gd.DepthStencilState;
+        try
+        {
+            bool translucent = opacity < .999f;
+            // BasicEffect premultiplies RGB by Alpha, as in NativeShipRenderer.
+            _effect.Alpha = translucent ? opacity : 1f;
+            gd.BlendState = translucent ? BlendState.AlphaBlend : BlendState.Opaque;
+            gd.DepthStencilState = translucent ? DepthStencilState.DepthRead : DepthStencilState.Default;
+            Draw(world, tint, view, projection);
+        }
+        finally { _effect.Alpha = 1; gd.BlendState = blend; gd.DepthStencilState = depth; }
+    }
+#endif
+
     public void Dispose()
     {
         _vertices.Dispose();

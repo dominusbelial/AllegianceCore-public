@@ -121,6 +121,9 @@ public sealed class LensFlareRenderer : IDisposable
         gd.BlendState = BlendState.Additive;
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 
+#if BROWSER
+        var effect = BrowserSkyBuffers.For(gd).Prepare(null, Vector3.One, Matrix.Identity, Matrix.CreateOrthographicOffCenter(0, w, h, 0, 0, 1));
+#else
         using var effect = new BasicEffect(gd)
         {
             TextureEnabled = true,
@@ -130,6 +133,7 @@ public sealed class LensFlareRenderer : IDisposable
             Projection = Matrix.CreateOrthographicOffCenter(0, w, h, 0, 0, 1),
             World = Matrix.Identity,
         };
+#endif
 
         foreach (var elem in LensFlareElements.Table)
         {
@@ -171,6 +175,15 @@ public sealed class LensFlareRenderer : IDisposable
         var bl = Rot(new Vector2(-half, +half), c, s);
         var br = Rot(new Vector2(+half, +half), c, s);
 
+#if BROWSER
+        var scratch = BrowserSkyBuffers.For(gd);
+        var verts = scratch.Quad;
+        verts[0] = new VertexPositionColorTexture(new Vector3(center + tl, 0), color, new Vector2(0, 0));
+        verts[1] = new VertexPositionColorTexture(new Vector3(center + tr, 0), color, new Vector2(1, 0));
+        verts[2] = new VertexPositionColorTexture(new Vector3(center + bl, 0), color, new Vector2(0, 1));
+        verts[3] = new VertexPositionColorTexture(new Vector3(center + br, 0), color, new Vector2(1, 1));
+        var indices = scratch.Indices;
+#else
         var verts = new[]
         {
             new VertexPositionColorTexture(new Vector3(center + tl, 0), color, new Vector2(0, 0)),
@@ -179,10 +192,17 @@ public sealed class LensFlareRenderer : IDisposable
             new VertexPositionColorTexture(new Vector3(center + br, 0), color, new Vector2(1, 1)),
         };
         var indices = new short[] { 0, 1, 2, 2, 1, 3 };
+#endif
 
         effect.Texture = tex;
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, 2);
         }

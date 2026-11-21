@@ -152,6 +152,18 @@ list in **reverse**.
   Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
   parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
   `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
+- **Shared browser scene (P1066, B1)** — desktop orchestration is extracted to
+  `src/Allegiance.ClientCore.Game/Game1.Scene.cs`; both clients compile and call
+  `src/Allegiance.ClientCore.Game/Rendering/NativeScene.cs` for light, default sky,
+  dust, strobes, cloak, construction and aleph primitives. Browser lifecycle and
+  reused effect state live in `src/Allegiance.ClientCore.Game.Browser/Game1.Scene.cs`
+  and `src/Allegiance.ClientCore.Game.Browser/BrowserSceneEffects.cs`.
+  `tools/p1066-scene-packs.py` adds verified original desktop sky/effect artwork
+  after launch without expanding the join. `wwwroot/frame-pacing.js` in the browser
+  head reduces effect load before resolution; B2 can gate exhaust with the same
+  `FullEffectLoad` decision. Proof: `tools/p1066-scene-proof/Program.cs`,
+  `tools/p1066-browser-scene.cjs`; parity: `docs/parity/p1066-browser-scene.csv`;
+  report: `docs/reports/BROWSER_SCENE_LIGHT_SKY_P1066.md`. No new game/wire rule.
 - **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
   about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
   `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the

@@ -98,6 +98,15 @@ public sealed class PlanetPoster : IDisposable
         var right = NativeSkyPlacement.BillboardRight(_dir);
         var up = NativeSkyPlacement.BillboardUp(_dir, right);
 
+#if BROWSER
+        var scratch = BrowserSkyBuffers.For(_gd);
+        var corners = scratch.Quad;
+        corners[0] = new VertexPositionColorTexture(center - right * half - up * half, XnaWhite, new Vector2(0, 1));
+        corners[1] = new VertexPositionColorTexture(center + right * half - up * half, XnaWhite, new Vector2(1, 1));
+        corners[2] = new VertexPositionColorTexture(center - right * half + up * half, XnaWhite, new Vector2(0, 0));
+        corners[3] = new VertexPositionColorTexture(center + right * half + up * half, XnaWhite, new Vector2(1, 0));
+        var indices = scratch.Indices;
+#else
         var corners = new[]
         {
             new VertexPositionColorTexture(center - right * half - up * half, XnaWhite, new Vector2(0, 1)),
@@ -106,10 +115,14 @@ public sealed class PlanetPoster : IDisposable
             new VertexPositionColorTexture(center + right * half + up * half, XnaWhite, new Vector2(1, 0)),
         };
         var indices = new short[] { 0, 1, 2, 2, 1, 3 };
+#endif
 
         var gd = _gd;
         gd.BlendState = BlendState.AlphaBlend;
 
+#if BROWSER
+        var effect = BrowserSkyBuffers.For(gd).Prepare(_texture, tint?.ToVector3() ?? Vector3.One, view, projection);
+#else
         using var effect = new BasicEffect(gd)
         {
             TextureEnabled = true,
@@ -121,8 +134,15 @@ public sealed class PlanetPoster : IDisposable
             Projection = projection,
             World = Matrix.Identity,
         };
+#endif
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             gd.DrawUserIndexedPrimitives(
                 PrimitiveType.TriangleList, corners, 0, corners.Length, indices, 0, 2);
