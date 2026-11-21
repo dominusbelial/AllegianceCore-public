@@ -50,7 +50,9 @@ def split(root, traces, artwork):
         if name.endswith('.mdl') and not data.startswith(b'\x00\xdf\xba\xde'):
             deps += [n.lower() for n in re.findall(r'ImportImageFromFile\s*\(\s*"([^"]+)"', data.decode('latin1')) if n.lower() in sources]
         asset = dict(source=name, path='packs/' + digest, byteSize=len(data), sha256=digest,
-                     contentType='image/png' if name.endswith('.png') else 'application/octet-stream',
+                     # The lobby serves every extensionless content-addressed pack as application/octet-stream
+                     # (BrowserPreviewHosting.cs) and the stager requires that exact type, so PNGs are no exception.
+                     contentType='application/octet-stream',
                      provenance='FreeAllegiance Artwork; MIT (2017 FreeAllegiance); original recorded bytes', dependencies=deps)
         originals[name] = asset
         (root / asset['path']).write_bytes(data)

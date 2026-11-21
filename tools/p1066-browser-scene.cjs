@@ -26,7 +26,7 @@ async function main(){
  let releasePacks;const packsReleased=new Promise(resolve=>releasePacks=resolve);
  const join=JSON.parse(fs.readFileSync(path.join(generation,'join-manifest.json'))),battle=JSON.parse(fs.readFileSync(path.join(generation,'battle-manifest.json')));
  const residentPaths=new Set(join.assets.map(a=>'/play/'+a.path)),deferredPaths=new Set(battle.assets.map(a=>'/play/'+a.path).filter(p=>!residentPaths.has(p)));
- let failedOnce=false,page;const errors=[],requests=[],samples=[],captures=[];
+ let failedOnce=false,page;const consoleLines=[],errors=[],requests=[],samples=[],captures=[];
  try{
   const context=await browser.newContext({viewport:{width:1920,height:1080},ignoreHTTPSErrors:true});page=await context.newPage();page.setDefaultTimeout(120000);
   await context.addInitScript(()=>{
@@ -34,7 +34,7 @@ async function main(){
    WebAssembly.Memory=new Proxy(Original,{construct(target,args,newTarget){const memory=Reflect.construct(target,args,newTarget);p1065Memories.add(memory);return memory}});
   });
   await context.route('**/*',async route=>{const u=new URL(route.request().url());if(!['localhost','127.0.0.1'].includes(u.hostname))throw Error('Non-loopback request: '+u.origin);if(deferredPaths.has(u.pathname)){await packsReleased;if(!failedOnce){failedOnce=true;await route.fulfill({status:503,body:'P1066 one failed visual fetch'});return}}await route.continue()});
-  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{const u=new URL(request.url());if(u.pathname.includes('/packs/'))requests.push(u.pathname)});
+  page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{const t=message.text();if(/\[browser\]/.test(t))consoleLines.push(t.slice(0,400))});page.on('request',request=>{const u=new URL(request.url());if(u.pathname.includes('/packs/'))requests.push(u.pathname)});
   const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
   await page.goto(origin+'/identity.html');await type(page,'#callsign','Browser1066'+Date.now().toString().slice(-7));await page.locator('#register').click();await page.locator('#account').waitFor({state:'visible'});
   await page.goto(menu);await page.waitForFunction(()=>window.preview?.measurements.firstFrameMs!=null);
@@ -88,7 +88,7 @@ async function main(){
   const report={size,browserVersion:browser.version(),headlessGpuRepresentative:false,held,swapped,forcedFetchFailure:failedOnce,wasmHeapNote:'Memory constructor instrumentation runs before the runtime; wasmMemoryBuffers reports each actual WebAssembly.Memory buffer, summed by wasmLinearBytes. managedHeapBytes is the .NET managed portion.',samples,timing,captures,imageBytes,packRequests:requests,manifest:JSON.parse(fs.readFileSync(path.join(generation,'battle-receipt.json')))};
   fs.writeFileSync(path.join(out,'browser-scene.json'),JSON.stringify(report,null,2));
   await page.locator('#online-close').click();await page.locator('#online-panel').waitFor({state:'detached'});console.log('BROWSER_SCENE_PASS',size,imageBytes);
- }catch(error){if(page){fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({error:String(error),errors,samples,lastMetrics:await page.evaluate(()=>gameMenu.metrics()).catch(e=>String(e))},null,2))}throw error}
+ }catch(error){if(page){fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({error:String(error),errors,consoleLines:consoleLines.slice(-80),packRequests:requests.slice(-80),samples,lastMetrics:await page.evaluate(()=>gameMenu.metrics()).catch(e=>String(e))},null,2))}throw error}
  finally{releasePacks();await browser.close()}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

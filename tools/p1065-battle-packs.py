@@ -80,7 +80,9 @@ def build(root, artwork):
         if any(not d.endswith(('.mdl', '.png')) for d in dependencies):
             raise ValueError('Nonvisual dependency: ' + name)
         asset = dict(source=name, path='packs/' + digest, byteSize=len(data), sha256=digest,
-                     contentType='image/png' if name.endswith('.png') else 'application/octet-stream',
+                     # The lobby serves every extensionless content-addressed pack as application/octet-stream
+                     # (BrowserPreviewHosting.cs) and the stager requires that exact type, so PNGs are no exception.
+                     contentType='application/octet-stream',
                      provenance='FreeAllegiance Artwork; MIT (2017 FreeAllegiance); original core-selected battle visual bytes',
                      dependencies=sorted(set(dependencies)))
         entries[name] = asset

@@ -148,4 +148,18 @@ public sealed class P1066BrowserSceneTests
         new BattleManifest(1, assets, [new("scene-b1", sources)]).Validate(resident);
         Assert.Throws<InvalidDataException>(() => new BattleManifest(1, assets, [new("hull-1", sources)]).Validate(resident));
     }
+
+    [Fact]
+    public void Pack_png_declared_as_image_png_is_refused_at_manifest_load_not_retried_in_flight()
+    {
+        // The lobby serves every extensionless packs/<sha256> file as application/octet-stream
+        // (BrowserPreviewHosting), and the stager compares that header with the declared type.
+        // An image/png pack (e_tele.png in scene-b1) used to fail its fetch on every retry.
+        string hash = Convert.ToHexStringLower(SHA256.HashData([5]));
+        var resident = new StagedManifest(2, [new("core.igc", "packs/" + Convert.ToHexStringLower(SHA256.HashData([1])), 1,
+            Convert.ToHexStringLower(SHA256.HashData([1])), "application/octet-stream", "test original", [])]);
+        var png = new StagedAsset("e_tele.png", "packs/" + hash, 1, hash, "image/png", "test original", []);
+        Assert.Throws<InvalidDataException>(() => new BattleManifest(1, [png], [new("scene-b1", [png.Source])]).Validate(resident));
+        new BattleManifest(1, [png with { ContentType = "application/octet-stream" }], [new("scene-b1", [png.Source])]).Validate(resident);
+    }
 }

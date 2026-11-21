@@ -88,7 +88,9 @@ def build(root, artwork):
                 dependencies += ['giantobj/' + r['image'].lower() for r in json.loads(data).get('objects', [])]
             digest = hashlib.sha256(data).hexdigest()
             asset = dict(source=name, path='packs/' + digest, sha256=digest, byteSize=len(data),
-                         contentType='image/png' if name.endswith('.png') else 'application/octet-stream',
+                         # The lobby serves every extensionless content-addressed pack as application/octet-stream
+                         # (BrowserPreviewHosting.cs) and the stager requires that exact type, so PNGs are no exception.
+                         contentType='application/octet-stream',
                          provenance=provenance(name), dependencies=sorted(set(dependencies)))
             entries[name] = asset; pending.extend(asset['dependencies'])
             (root / asset['path']).write_bytes(data)
