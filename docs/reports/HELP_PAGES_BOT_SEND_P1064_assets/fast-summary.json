@@ -1,0 +1,161 @@
+{
+  "tier": "fast",
+  "seconds": 645.406463893014,
+  "projects": {
+    "Allegiance.ClientCore.Browser.Tests": {
+      "count": 12,
+      "outcomes": {
+        "Passed": 12
+      }
+    },
+    "Allegiance.ClientCore.Game.Browser.Tests": {
+      "count": 74,
+      "outcomes": {
+        "Passed": 74
+      }
+    },
+    "Allegiance.Lobby.Tests": {
+      "count": 261,
+      "outcomes": {
+        "Passed": 261
+      }
+    },
+    "Allegiance.Update.Tests": {
+      "count": 55,
+      "outcomes": {
+        "Passed": 55
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 5994,
+      "outcomes": {
+        "Passed": 5991,
+        "NotExecuted": 3
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 2471,
+      "outcomes": {
+        "Passed": 2470,
+        "Failed": 1
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 6793,
+      "outcomes": {
+        "Passed": 6787,
+        "Failed": 3,
+        "NotExecuted": 3
+      }
+    }
+  },
+  "calibration": {
+    "factor": 1.1542175066312996,
+    "referenceMs": 4.3514,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 11.542175066312996
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "outcome": "Passed",
+      "seconds": 16.5099656
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "outcome": "Passed",
+      "seconds": 14.8990128
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 16.6776078
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "outcome": "Passed",
+      "seconds": 11.7294839
+    },
+    {
+      "name": "Allegiance.Core.Tests.DroneSpawnLoadoutTests.Spawned_wingman_defends_a_charge_and_damages_a_threat_without_manual_arming",
+      "method": "Allegiance.Core.Tests.DroneSpawnLoadoutTests.Spawned_wingman_defends_a_charge_and_damages_a_threat_without_manual_arming",
+      "outcome": "Failed",
+      "seconds": 30.7803587
+    },
+    {
+      "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "outcome": "Passed",
+      "seconds": 24.2382342
+    }
+  ],
+  "errors": [
+    "Allegiance.ClientCore.Tests: main failed",
+    "Allegiance.Core.Tests: main failed",
+    "6 Fast test executions exceeded the calibrated 10 second limit"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.038894335040822625,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  },
+  "coverage": {
+    "Allegiance.ClientCore.Browser.Tests": {
+      "expected": 12,
+      "results": 12,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.ClientCore.Game.Browser.Tests": {
+      "expected": 74,
+      "results": 74,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.Lobby.Tests": {
+      "expected": 261,
+      "results": 261,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.Update.Tests": {
+      "expected": 55,
+      "results": 55,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "expected": 5994,
+      "results": 5994,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.ClientCore.Tests": {
+      "expected": 2471,
+      "results": 2471,
+      "missing": 0,
+      "extra": 0
+    },
+    "Allegiance.Core.Tests": {
+      "expected": 6793,
+      "results": 6793,
+      "missing": 0,
+      "extra": 0
+    }
+  },
+  "startedLocal": "2026-11-20T17:44:23-05:00",
+  "endedLocal": "2026-11-20T17:55:13-05:00",
+  "exitCode": 1,
+  "overallOutcomes": {
+    "Passed": 15650,
+    "NotExecuted": 6,
+    "Failed": 4
+  }
+}

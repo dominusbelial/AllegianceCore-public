@@ -58,10 +58,15 @@ public sealed class HelpManualModel
                 "",
                 "Press " + Key("Help") + " or " + Key("CancelChat") + " to close this help.",
             ]),
-            new("hlpControls", "CONTROLS",
+            new("hlpControls", "CONTROLS: FLIGHT",
             [
-                "Every current client binding, by group. See the columns.",
+                "Flight, combat, targeting and camera. See the columns.",
                 "Mouse and wheel commands show the button native binds.",
+                "Backspace returns to the previous topic (native Back).",
+            ]),
+            new("hlpControls2", "CONTROLS: OTHER",
+            [
+                "Cargo, orders, panes, chat, lobby and system controls.",
                 "Backspace returns to the previous topic (native Back).",
             ]),
             new("hlpFlight", "FLIGHT",
@@ -114,6 +119,28 @@ public sealed class HelpManualModel
                 "better hulls, weapons and stations.",
             ]),
         ];
+    }
+
+    /// <summary>Stable Controls entry point plus its adjacent second page.</summary>
+    public static bool IsControlsTopic(string topicId) => topicId is "hlpControls" or "hlpControls2";
+
+    /// <summary>Keep complete catalogue groups together across pages. Inventory/cargo
+    /// belongs with the interface controls to balance the camera-heavy flight page.
+    /// New groups land on Other so every live binding remains discoverable.</summary>
+    public static IReadOnlyList<KeyBindingTable.Group> ControlsGroups(ActionMap map, string topicId)
+        => map.ToHelpGroups().Where(g => IsFlightGroup(g.Title) == (topicId == "hlpControls")).ToArray();
+
+    private static bool IsFlightGroup(string title) => title is
+        "MOVEMENT" or "WEAPONS" or "TARGETING / AUTOPILOT" or "CRUISE THROTTLE"
+        or "CAMERA / VIEW";
+
+    /// <summary>The catalogue also records native source identifiers for parity
+    /// audits. Keep player-facing help focused on the full action description.</summary>
+    public static string ControlsDescription(string description)
+    {
+        int nativeTag = description.IndexOf(" [TK_", System.StringComparison.Ordinal);
+        return nativeTag >= 0 && description.EndsWith("]", System.StringComparison.Ordinal)
+            ? description[..nativeTag] : description;
     }
 
     /// <summary>The topic history, newest first (native <c>m_listHistory</c>).</summary>

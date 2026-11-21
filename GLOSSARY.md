@@ -821,6 +821,14 @@ list in **reverse**.
   report: `docs/reports/R1B_SQUAD_SIDES_P1033.md`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **Late TCP client send (P1064)** — `src/Allegiance.Core/Transport/TcpTransport.cs`
+  distinguishes never successfully joined (throws) from a sender cleared after
+  connection (drop, log once). Receive callbacks and keep-alive sends racing
+  shutdown or sender failure share this policy. Real-bot regression:
+  `tests/Allegiance.Core.Tests/Transport/P1064DisconnectedSendTests.cs`.
+  Native: `_Utility/TcpTransport.cpp:282-287`, `_Utility/Messages.cpp:594-605`;
+  parity: `docs/parity/p1064-help-bot-send.csv`; report:
+  `docs/reports/HELP_PAGES_BOT_SEND_P1064.md`.
 - **TCP small-write pressure (P898)** — fixed 8 KiB send buffers can exhaust
   kernel packet memory at WAN RTTs even with zero loss. Default-off
   `transport.tcpBatchWrites` gathers up to 32 pending frames (16 KiB gathering
@@ -1738,6 +1746,16 @@ list in **reverse**.
   native anchor instead of throwing. The centred ripcord countdown reserve is the
   union of the native 150-px StringImage box (`Artwork/dialog.mdl:5145-5151`,
   `:5429`) and the wider port glyph run (P859). Proof: `tools/hud2-proof`.
+- **Controls reference pages (P1064)** — `src/Allegiance.ClientCore.Game/Rendering/HelpManualModel.cs`
+  keeps `hlpControls` (Flight) and adjacent `hlpControls2` (Other), partitioning complete
+  live binding groups exactly once. The measured/cached table in
+  `src/Allegiance.ClientCore.Game/Rendering/HelpOverlayLayout.cs` and
+  `src/Allegiance.ClientCore.Game/Rendering/HelpOverlayRenderer.cs` reserves two spare
+  rows in both HUD styles. `tools/p979-visual-proof/Program.cs` `ui --help-pages`
+  captures both pages and checks production-font capacity for both key presets.
+  `tools/p1064-help-images.py` packs the full PNGs without changing pixels.
+  Native manual history: `effect/help.cpp:210-240`; report:
+  `docs/reports/HELP_PAGES_BOT_SEND_P1064.md`.
 - **HUD golden baseline / zero-delta gate (P980)** — `tools/hud2-proof` renders 22
   scenarios × 7 resolutions (800×480 … 3840×2160) × 3 sizes × 2 backdrops (dark/bright)
   × 2 skins through the production renderers, and `--capture` writes lossless RGBA

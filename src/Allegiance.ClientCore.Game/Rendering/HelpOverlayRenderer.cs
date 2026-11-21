@@ -19,10 +19,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// starmap; toggling it on/off is independent of every other overlay flag, so
 /// the prior view (starmap, HUD, chat log) resumes unchanged when it closes.
 ///
-/// The columns are measured at scale 1; if their combined width would overflow
-/// the panel the whole panel's text is scaled DOWN uniformly (never clipped) —
-/// a defensive guarantee so a long-lived table or a narrow viewport can never
-/// truncate a binding.
+/// P1064 measures each Controls page against both axes, scales its row pitch
+/// with its text, and reserves two rows below the tallest column. The result
+/// is cached until the live bindings, selected page or viewport change.
 /// </summary>
 public sealed class HelpOverlayRenderer
 {
@@ -30,6 +29,9 @@ public sealed class HelpOverlayRenderer
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
+    private IReadOnlyList<KeyBindingTable.Group>? _cachedGroups;
+    private HelpOverlayLayout.ControlTable? _cachedTable;
+    private float _cachedWidth, _cachedHeight;
 
     private static readonly Color PanelBg = new(0.017f, 0.036f, 0.046f, 0.93f);
     private static readonly Color PanelBorder = new(0.16f, 0.42f, 0.40f);
@@ -57,8 +59,8 @@ public sealed class HelpOverlayRenderer
     /// <summary>P757 — draw the help overlay with the manual's topic bar and,
     /// when the current topic is not the Controls reference, the topic's page
     /// text (native HelpPane: nav pane + main page + scroll bars,
-    /// effect/help.cpp:96-296). Passing a null manual draws the plain P257 key
-    /// reference (legacy callers / capture paths).</summary>
+    /// effect/help.cpp:210-240). Passing a null manual draws the first Controls
+    /// page without a topic bar (legacy callers / capture paths).</summary>
     public void Draw(Viewport viewport, HelpManualModel? manual)
     {
         float w = viewport.Width;
@@ -75,53 +77,17 @@ public sealed class HelpOverlayRenderer
         float panelY = (h - panelH) / 2f;
         const float padding = HelpOverlayLayout.Padding;
 
-        var groups = KeyBindingTable.All;
-
-        // The manual's topic bar and the footer note are fixed rows; the key
-        // columns are laid out only in the band between them (P757b).
+        bool controls = manual is null || HelpManualModel.IsControlsTopic(manual.CurrentTopic);
+        var groups = HelpManualModel.ControlsGroups(KeyBindingStore.Instance.Map,
+            manual?.CurrentTopic == "hlpControls2" ? "hlpControls2" : "hlpControls");
         var band = HelpOverlayLayout.ContentBand(panelY, panelH, manual is not null);
-        // The full catalogue has groups taller than a 720p band (targeting has
-        // 52 entries), so the Controls reference is laid out as splittable
-        // sections rather than one unsplittable block per group.
-        var entryCounts = new int[groups.Count];
-        for (int i = 0; i < groups.Count; i++) entryCounts[i] = groups[i].Entries.Count;
-        var sections = HelpOverlayLayout.LayoutSections(entryCounts, band.Top, band.Height);
-
-        // Column count = max section column + 1; per-column width = the widest
-        // measured line among its sections' titles and key+description cells.
-        int columns = 0;
-        foreach (var section in sections)
-            columns = System.Math.Max(columns, section.Column + 1);
-
-        var colWidths = new float[columns];
-        foreach (var section in sections)
-        {
-            var group = groups[section.GroupIndex];
-            float colW = _small.MeasureString(SectionTitle(group, section)).X;
-            for (int e = section.FirstEntry; e < section.EndEntry; e++)
-            {
-                var entry = group.Entries[e];
-                float cell = _small.MeasureString(entry.Key).X
-                           + 14f                         // key/desc gutter
-                           + _small.MeasureString(entry.Description).X;
-                if (cell > colW) colW = cell;
-            }
-            if (colW > colWidths[section.Column]) colWidths[section.Column] = colW;
-        }
-
-        // Defensive uniform text scale: shrink the whole table so it always
-        // fits the panel width (avail = panel inner width), never clipping.
         float avail = panelW - 2f * padding;
-        float needed = 0f;
-        for (int c = 0; c < columns; c++)
-            needed += colWidths[c];
-        needed += (columns - 1) * HelpOverlayLayout.ColumnGap;
-        float scale = needed > avail
-            ? System.MathF.Max(0.5f, avail / needed)
-            : 1f;
-        // A manual page draws prose, not the dense key table: keep it at the
-        // normal text size even when the Controls table needs to shrink.
-        if (manual is not null && manual.CurrentTopic != "hlpControls") scale = 1f;
+        var table = controls ? ControlsTable(groups, avail, band.Height)
+            : new HelpOverlayLayout.ControlTable(1f, [], [], 0f, 0f, band.Height);
+        var sections = table.Sections;
+        var colWidths = table.ColumnWidths;
+        int columns = colWidths.Length;
+        float scale = controls ? table.Scale : 1f;
         float scaledGap = HelpOverlayLayout.ColumnGap * scale;
 
         // Scaled column origins.
@@ -133,7 +99,7 @@ public sealed class HelpOverlayRenderer
             cx += colWidths[c] * scale + scaledGap;
         }
 
-        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         try
         {
             FillRect(panelX, panelY, panelW, panelH, PanelBg);
@@ -152,16 +118,19 @@ public sealed class HelpOverlayRenderer
             // P757 — the manual's topic bar (native nav pane) rides under the
             // header; the Controls topic keeps the full key-reference columns,
             // every other topic shows its page text instead.
-            bool showManual = manual is not null && manual.CurrentTopic != "hlpControls";
+            bool showManual = !controls;
             if (manual is not null)
             {
+                float navWidth = 0;
+                foreach (var t in HelpManualModel.Topics) navWidth += _small.MeasureString(t.Title).X + 34f;
+                float navScale = System.MathF.Min(1f, avail / navWidth);
                 float tx = panelX + padding;
                 foreach (var t in HelpManualModel.Topics)
                 {
                     bool cur = t.Id == manual.CurrentTopic;
                     string label = (cur ? "[" : " ") + t.Title + (cur ? "]" : " ");
-                    Draw(label, new Vector2(tx, panelY + 30f), cur ? HeaderColor : NoteColor, scale);
-                    tx += _small.MeasureString(t.Title).X * scale + 34f * scale;
+                    Draw(label, new Vector2(tx, panelY + 30f), cur ? HeaderColor : NoteColor, navScale);
+                    tx += _small.MeasureString(t.Title).X * navScale + 34f * navScale;
                 }
                 if (manual.HistoryDepth > 1)
                     Draw("BACKSPACE: back", new Vector2(panelX + padding, panelY + panelH - 46f), NoteColor, scale);
@@ -184,7 +153,7 @@ public sealed class HelpOverlayRenderer
             {
                 var group = groups[section.GroupIndex];
                 float x = colX[section.Column];
-                float titleY = section.Y;
+                float titleY = band.Top + section.Y * scale;
 
                 Draw(SectionTitle(group, section), new Vector2(x, titleY), GroupTitleColor, scale);
 
@@ -196,16 +165,16 @@ public sealed class HelpOverlayRenderer
                     if (kw > keyW) keyW = kw;
                 }
 
-                float rowY = titleY + HelpOverlayLayout.RowHeight
-                                        + HelpOverlayLayout.TitleGap;
+                float rowY = titleY + (HelpOverlayLayout.RowHeight
+                                        + HelpOverlayLayout.TitleGap) * scale;
                 for (int e = section.FirstEntry; e < section.EndEntry; e++)
                 {
                     var entry = group.Entries[e];
                     Draw(entry.Key, new Vector2(x, rowY), KeyColor, scale);
-                    Draw(entry.Description,
+                    Draw(HelpManualModel.ControlsDescription(entry.Description),
                         new Vector2(x + keyW * scale + 14f * scale, rowY),
                         DescColor, scale);
-                    rowY += HelpOverlayLayout.RowHeight;
+                    rowY += HelpOverlayLayout.RowHeight * scale;
                 }
             }
 
@@ -221,6 +190,29 @@ public sealed class HelpOverlayRenderer
         {
             _sb.End();
         }
+    }
+
+    private HelpOverlayLayout.ControlTable ControlsTable(IReadOnlyList<KeyBindingTable.Group> groups,
+        float width, float height)
+    {
+        bool same = _cachedGroups is not null && _cachedGroups.Count == groups.Count
+            && _cachedWidth == width && _cachedHeight == height;
+        for (int g = 0; same && g < groups.Count; g++)
+        {
+            var old = _cachedGroups![g];
+            var current = groups[g];
+            same = old.Title == current.Title && old.Entries.Count == current.Entries.Count;
+            for (int e = 0; same && e < current.Entries.Count; e++)
+                same = old.Entries[e] == current.Entries[e];
+        }
+        if (!same)
+        {
+            _cachedGroups = groups;
+            _cachedWidth = width;
+            _cachedHeight = height;
+            _cachedTable = HelpOverlayLayout.MeasureControls(groups, text => _small.MeasureString(text).X, width, height);
+        }
+        return _cachedTable!;
     }
 
     private static string SectionTitle(KeyBindingTable.Group group, HelpOverlayLayout.Section section)

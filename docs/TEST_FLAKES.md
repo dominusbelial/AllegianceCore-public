@@ -5,6 +5,50 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1064 — Controls capacity and background bot send resolved (2026-11-20)
+
+The two P1060 follow-ups below are fixed in product code; full evidence and
+captures: [HELP_PAGES_BOT_SEND_P1064.md](reports/HELP_PAGES_BOT_SEND_P1064.md).
+
+| Resolved issue | Cause and fix | Qualification |
+|---|---|---|
+| Controls reference overflows 720p | The single catalogue table exhausted twelve columns. Keep `hlpControls` as Flight and add adjacent `hlpControls2` Other, complete groups exactly once; shared measured layout reserves two rows. | Both key presets at 720p/1080p/1440p; 83 help/navigation/input-layout cases ×3; eight inspected Classic/Modern window captures. |
+| Background `Bot.Send` aborts Core | A receive callback replies after Shutdown or sender-worker failure clears the TCP client sender. Drop late sends after a successful Join, log once; never-connected/failed-Join sends still throw. | Deterministic real-bot race fails both orderings before the fix; 3 regression cases ×20 after; PlayerMoneyAutoDonateTests 11 cases ×20 alone, zero failures or host aborts. |
+
+Final Fast, **2026-11-20 17:44–17:55 local (UTC−05:00)**: **FAIL**, **15,650
+passed / 4 failed / 6 not executed**, **15,660 results**, **0 missing / 0 extra**,
+**645.4 s**. Core completes **6,793/6,793** result records (**6,787 passed / 3 failed /
+3 not executed**), no host abort. P1060's **14,075 results / 1,571 missing** remain
+historical: the 1,571-case deficit is recovered; 14 additional tests explain the
+remaining count increase. The fixed help family, donation class and regression
+all pass in the sweep. Nine infrastructure checks pass; calibrated limit
+**11.542 s**; six timing offenders; no quarantine flake. No gate waived.
+
+All four unrelated assertion failures and every timing method ran **three times
+alone** after the sweep: **24 fresh processes / 60 cases passed**, zero failures
+or skips, all below that sweep limit. Full theory methods, not just their slow
+rows, were selected.
+
+| Unrelated method | Fast observation | Cases passed per isolated run | Slowest case in runs 1 / 2 / 3 (s) |
+|---|---|---:|---:|
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civ 35 passed in 14.899 s (timing) | 3 ×3 | 5.445 / 5.456 / 5.459 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 16.510 s (timing) | 1 ×3 | 3.217 / 3.211 / 3.236 |
+| `P974SessionOwnershipTests.Overall_deadline_includes_the_join_answer_and_never_accepts_silence` | ACK null after the 200 ms join deadline (assertion) | 1 ×3 | 0.215 / 0.213 / 0.214 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civs 25/3 passed in 16.678/11.729 s (timing) | 2 ×3 | 4.042 / 4.115 / 4.138 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | unexpected cross-side ASTEROID_MINED (assertion) | 1 ×3 | 1.800 / 1.797 / 1.800 |
+| `DroneSpawnLoadoutTests.Spawned_wingman_defends_a_charge_and_damages_a_threat_without_manual_arming` | enemy fraction 1 after 20,000 ticks; 30.780 s (assertion + timing) | 1 ×3 | 0.303 / 0.312 / 0.313 |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station` | NPC did not dock/sell within tick budget (assertion) | 1 ×3 | 1.085 / 1.042 / 1.047 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | civ 5 passed in 24.238 s (timing) | 10 ×3 | 4.449 / 4.502 / 4.464 |
+
+P974's ACK-null observation uses a test `DelayedTransport`, not the changed TCP
+transport. The Wingman damage scenario has no client; NPC simulation and these
+fixtures are unchanged. P796/P814/SC2/P999 timing and miner/asteroid families
+already have ledger history. These isolated passes do not prove a root cause;
+the original red sweep remains recorded. Raw evidence: `.scratch/p1064/final-fast/`
+and `.scratch/p1064/final-isolation/`; portable summaries and the complete report
+are linked above. No assertion, timeout, timing calibration, quarantine or game
+rule was relaxed.
+
 ## P1060 — resolved recurring families (2026-11-20)
 
 Commit-to-be reference: **P1060 working tree** (Codex lane; no commit or push).
@@ -24,8 +68,8 @@ weakness and now use the same guard. P828's best-of-five retry was removed in fa
 of a single 120-frame window. A real byte-array allocation remains visible and an
 intervening collection invalidates the measurement instead of being retried.
 
-Unrelated observations left open: `HelpOverlayTests.ControlsSections_FitThe720pManualBand`
-(overflows the 720p band; reproducible in baseline project runs), the existing
+The Controls overflow and background Bot disconnect/send abort observed here
+are subsequently resolved by P1064 above. Other observations left open:
 `Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state`, and
 `P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live`.
 Additional non-task observations: `Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact`
@@ -34,8 +78,9 @@ pass three isolated repeats. Clean-runner GPU proofs
 `HdrFoundationTests.Gpu_proof_shows_one_transform_float_targets_resize_and_fallback`
 and `SimPaletteTests.Gpu_proof_applies_the_sim_grade_bloom_and_keeps_the_hud_ungraded`
 fail three isolated repeats with NoSuitableGraphicsDeviceException / null GL
-extension string. The help-overlay layout failure also fails three alone. These
-remain open; the report distinguishes them from the earlier relocated diagnostic
+extension string. The help-overlay layout failure also failed three alone at P1060; P1064 now
+replaces that single-page layout and qualification. The other families remain
+open; the P1060 report distinguishes them from the earlier relocated diagnostic
 P803 path failures, which pass three each in their normal directory layout.
 The final Fast sweep and three isolated repeats of its non-task failures are
 recorded in the report; no unrelated fix or gate waiver is part of P1060.
@@ -51,22 +96,23 @@ and retains its **20/20** isolated qualification. No gate is waived.
 
 | Non-task method / issue | Final sweep | Three isolated outcomes after the sweep |
 |---|---|---|
-| `HelpOverlayTests.ControlsSections_FitThe720pManualBand` | group 9 ends at y=636 beyond y=630 | **fail / fail / fail**; bounds bug remains open |
+| `HelpOverlayTests.ControlsSections_FitThe720pManualBand` | group 9 ends at y=636 beyond y=630 | **fail / fail / fail** at P1060; resolved by P1064's two-page reference |
 | `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | default ExpandedPartData instead of granted launcher | **pass / pass / pass**; existing launcher-receipt family |
 | `MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire` | warning did not arm; 27.789 s | **pass / pass / pass**; existing warning-receipt family |
 | `Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification` | expected ship 8096, actual null | **pass / pass / pass**; existing resume-receipt family |
 | `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civs 3/25: 12.683 / 19.946 s | **2 cases passed ×3**, slowest 7.518 / 5.498 / 4.207 s |
 | `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civs 35/25: 17.831 / 11.700 s | **3 cases passed ×3**, slowest 5.499 / 7.519 / 7.459 s |
 | `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 15.523 s | **pass / pass / pass**, 4.438 / 5.115 / 5.383 s |
-| Background bot send after disconnect | `InvalidOperationException: not connected`; Core coverage aborted | `PlayerMoneyAutoDonateTests` **11 passed / 11 passed / abort after 7 passes**, reproducing the identical stack |
+| Background bot send after disconnect | `InvalidOperationException: not connected`; Core coverage aborted | `PlayerMoneyAutoDonateTests` **11 passed / 11 passed / abort after 7 passes** at P1060; P1064 subsequently passes 20 isolated class runs without abort |
 
 The crash stack is `TcpTransport.Send:600 → Bot.Send:1895 → Bot.OnReceive:2340 →
 TcpTransport.ReadDataLoop:1455`: an inbound callback attempts a scripted pose after
 the socket is disconnected. The isolated failed process was in the MU1/MU2
 fixture of `Mutual_donation_clears_target_first_then_donates`. This is separate
-from P1060's four fixes; Bot and transport sources are unchanged. The exact
+from P1060's four fixes, which left Bot and transport sources unchanged. The exact
 mutual-donation method passes three further isolated runs, while the class
-reproduces the abort once in three. The disconnect race remains open.
+reproduces the abort once in three at P1060. P1064 subsequently proves and
+fixes this disconnect race in the shared TCP client send layer.
 Report and raw evidence: [P1060](reports/TEST_FLAKES_ROOT_CAUSE_P1060.md),
 `<lane evidence dir>/final-fast-qualified/` and `final-isolation-*`.
 

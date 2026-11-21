@@ -1,0 +1,10 @@
+{
+  "baselineCommit": "8b01dc57c7e5",
+  "compared": 1848,
+  "pixelDifferences": 0,
+  "animationOnlyDifferences": 84,
+  "semanticDifferences": 0,
+  "corruptGoldens": 0,
+  "pass": true,
+  "sourceSnapshot": "Original tracked source from git archive HEAD; built separately in scratch."
+}

@@ -775,6 +775,12 @@ public sealed partial class Game1
     {
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width, h = vp.Height;
+        if (_introView == IntroView.Help && Rendering.HelpManualModel.IsControlsTopic(_helpManual.CurrentTopic))
+        {
+            _helpOverlayRenderer.Draw(vp, _helpManual);
+            DrawHangarQuitConfirmation();
+            return;
+        }
         _spriteBatch.Begin(_introView is IntroView.Benchmark or IntroView.BenchmarkOffer ? SpriteSortMode.Immediate : SpriteSortMode.Deferred,
             BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone);
         try
@@ -1141,14 +1147,16 @@ public sealed partial class Game1
     {
         var lines = new List<ScreenTextRun>();
         // Topic bar (native nav pane).
+        float navWidth = Rendering.HelpManualModel.Topics.Sum(t => _hudSmall.MeasureString(t.Title).X + 34f);
+        float navScale = MathF.Min(1f, (w - 80f) / navWidth);
         float tx = 40f;
         foreach (var t in Rendering.HelpManualModel.Topics)
         {
             bool cur = t.Id == _helpManual.CurrentTopic;
             var label = (cur ? "[" : " ") + t.Title + (cur ? "]" : " ");
-            lines.Add(new(label, new Vector2(tx, 112f), 1f,
+            lines.Add(new(label, new Vector2(tx, 112f), navScale,
                 cur ? ScreenInkRole.Title : ScreenInkRole.Dim, cur ? titleCol : dimCol));
-            tx += _hudSmall.MeasureString(t.Title).X + 34f;
+            tx += (_hudSmall.MeasureString(t.Title).X + 34f) * navScale;
         }
 
         // Current page (native main page + scroll).

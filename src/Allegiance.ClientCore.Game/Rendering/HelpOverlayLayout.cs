@@ -35,6 +35,9 @@ public sealed class HelpOverlayLayout
     /// <summary>Horizontal gap between columns (px).</summary>
     public const float ColumnGap = 24f;
 
+    /// <summary>Compact group separation within the two Controls pages.</summary>
+    public const float ControlsGroupGap = 12f;
+
     /// <summary>Inner margin around the panel content (px).</summary>
     public const float Padding = 22f;
 
@@ -83,7 +86,7 @@ public sealed class HelpOverlayLayout
     /// sections into columns. This is the Controls reference's layout: unlike
     /// <see cref="Layout"/> it can place one group's entries in several columns,
     /// which is what lets the 52-entry targeting group fit a 720p panel.</summary>
-    public static Section[] LayoutSections(IReadOnlyList<int> entryCounts, float panelY, float panelH)
+    public static Section[] LayoutSections(IReadOnlyList<int> entryCounts, float panelY, float panelH, int maxEntriesPerSection = int.MaxValue)
     {
         var blocks = new List<(int Group, int First, int Count)>();
         for (int g = 0; g < entryCounts.Count; g++)
@@ -100,7 +103,7 @@ public sealed class HelpOverlayLayout
             int maxRows = Math.Max(1, (int)MathF.Floor((panelH - RowHeight - TitleGap) / RowHeight));
             while (remaining > 0)
             {
-                int take = Math.Min(maxRows, remaining);
+                int take = Math.Min(Math.Min(maxRows, Math.Max(1, maxEntriesPerSection)), remaining);
                 blocks.Add((g, first, take));
                 first += take;
                 remaining -= take;
@@ -137,6 +140,87 @@ public sealed class HelpOverlayLayout
             if (!overflows || k == MaxSectionColumns) return sections;
         }
         return sections;
+    }
+
+    /// <summary>A measured Controls page, shared by the renderer and capacity proof.
+    /// Sections/widths use logical pixels; the renderer scales both axes.</summary>
+    public sealed record ControlTable(float Scale, Section[] Sections, float[] ColumnWidths,
+        float UsedWidth, float UsedHeight, float CapacityHeight)
+    {
+        public float RemainingRows => (CapacityHeight - UsedHeight) / (RowHeight * Scale);
+    }
+
+    /// <summary>Use the largest fitting scale (hundredths), with two spare rows
+    /// below the table. Measure aligned key and description columns separately:
+    /// their maxima may belong to different entries.</summary>
+    public static ControlTable MeasureControls(IReadOnlyList<KeyBindingTable.Group> groups,
+        Func<string, float> measure, float availableWidth, float availableHeight)
+    {
+        ControlTable? best = null;
+        var counts = new int[groups.Count];
+        for (int g = 0; g < groups.Count; g++) counts[g] = groups[g].Entries.Count;
+        for (int percent = 100; percent >= 40; percent--)
+        {
+            float scale = percent / 100f;
+            float height = availableHeight / scale - 2f * RowHeight;
+            int maxRows = Math.Max(1, (int)((height - RowHeight - TitleGap) / RowHeight));
+            for (int sliceRows = maxRows; sliceRows >= Math.Min(6, maxRows); sliceRows--)
+            {
+                var sections = LayoutSections(counts, 0f, height, sliceRows);
+                var blockWidths = new float[sections.Length];
+                var order = new List<int>();
+                for (int i = 0; i < sections.Length; i++)
+                {
+                    var section = sections[i];
+                    var group = groups[section.GroupIndex];
+                    float keyWidth = 0, descriptionWidth = 0;
+                    for (int e = section.FirstEntry; e < section.EndEntry; e++)
+                    {
+                        keyWidth = Math.Max(keyWidth, measure(group.Entries[e].Key));
+                        descriptionWidth = Math.Max(descriptionWidth, measure(HelpManualModel.ControlsDescription(group.Entries[e].Description)));
+                    }
+                    blockWidths[i] = Math.Max(measure(group.Title + (section.FirstEntry > 0 ? " (cont.)" : "")),
+                        keyWidth + 14f + descriptionWidth);
+                    order.Add(i);
+                }
+                // Keep wide sections together: height-only balancing repeats a
+                // single long description's width in every column unnecessarily.
+                order.Sort((a, b) =>
+                {
+                    int widthOrder = blockWidths[b].CompareTo(blockWidths[a]);
+                    if (widthOrder != 0) return widthOrder;
+                    int heightOrder = sections[b].Height.CompareTo(sections[a].Height);
+                    return heightOrder != 0 ? heightOrder : a.CompareTo(b);
+                });
+                var widths = new List<float>();
+                var heights = new List<float>();
+                foreach (int i in order)
+                {
+                    int column = -1;
+                    for (int c = 0; c < widths.Count; c++)
+                        if (heights[c] + ControlsGroupGap + sections[i].Height <= height
+                            && (column < 0 || heights[c] > heights[column])) column = c;
+                    if (column < 0)
+                    {
+                        column = widths.Count;
+                        widths.Add(blockWidths[i]);
+                        heights.Add(0);
+                    }
+                    float y = heights[column] == 0 ? 0 : heights[column] + ControlsGroupGap;
+                    sections[i] = sections[i] with { Column = column, Y = y };
+                    heights[column] = y + sections[i].Height;
+                }
+                float width = Math.Max(0, widths.Count - 1) * ColumnGap;
+                foreach (float colWidth in widths) width += colWidth;
+                float usedHeight = 0;
+                foreach (float colHeight in heights) usedHeight = Math.Max(usedHeight, colHeight);
+                var result = new ControlTable(scale, sections, widths.ToArray(), width * scale,
+                    usedHeight * scale, availableHeight);
+                if (best is null || result.UsedWidth < best.UsedWidth) best = result;
+                if (result.UsedWidth <= availableWidth && result.RemainingRows >= 2f - 0.001f) return result;
+            }
+        }
+        return best!;
     }
 
     /// <summary>
