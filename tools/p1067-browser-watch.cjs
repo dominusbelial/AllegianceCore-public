@@ -73,10 +73,10 @@ async function main() {
 
     // F2 is the desktop's Director binding; the browser routes it through the
     // same action map. Prove one on/off round trip before the sampled profiles.
-    await page.locator('#theCanvas').focus(); await page.keyboard.press('F2');
+    await page.locator('#theCanvas').focus(); await page.keyboard.press('F2', { delay: 100 });
     await until(async () => (await page.evaluate(() => gameMenu.metrics())).flight.watch.active, 'F2 starts Watch', 15000);
     const f2on = await page.evaluate(() => gameMenu.metrics().flight.watch);
-    await page.keyboard.press('F2');
+    await page.keyboard.press('F2', { delay: 100 });
     await until(async () => !(await page.evaluate(() => gameMenu.metrics())).flight.watch.active, 'F2 stops Watch', 15000);
 
     for (const [style, width, height] of [['Classic', 1920, 1080], ['Modern', 1920, 1080], ['Classic', 800, 480], ['Modern', 800, 480]]) {
@@ -118,7 +118,7 @@ async function main() {
       // Back to chase: the same toggle, and any flight input cancels too.
       await page.locator('#flight-watch').click();
       await until(async () => !(await page.evaluate(() => gameMenu.metrics())).flight.watch.active, 'Watch stops', 15000);
-      await page.locator('#theCanvas').focus(); await page.keyboard.press('F2');
+      await page.locator('#theCanvas').focus(); await page.keyboard.press('F2', { delay: 100 });
       await until(async () => (await page.evaluate(() => gameMenu.metrics())).flight.watch.active, 'F2 starts Watch again', 15000);
       await page.keyboard.down('w');
       await until(async () => !(await page.evaluate(() => gameMenu.metrics())).flight.watch.active, 'a flight input cancels Watch', 5000);

@@ -318,3 +318,39 @@ no Chromium (missing system libraries, no package installs allowed). Everything 
 Nothing else is open: items 1–3 are implemented and tested, and item 4's managed proof and host precondition are
 complete.
 
+
+## Workstation browser results — Claude
+
+Run 2026-11-21 on the workstation from the merged review branch (P1066 + P1067), headless Chromium via the P1051
+Playwright modules, `p1051-browser-host --bots 5`, dev seed 1067, **20 s per window** (chase, then Watch, per case).
+[Summary JSON](BROWSER_DIRECTOR_WATCH_P1067_assets/browser/browser-watch-summary.json).
+
+**Harness fix in review:** the first run timed out at "F2 starts Watch". `keyboard.press('F2')` released the key before
+the next game frame, so the per-frame edge (`Edge("Director")`) never saw it held; every other press in the harness
+already held 100 ms. The F2 presses now hold 100 ms; no game change. The 20 s window keeps the four cases inside the
+≈3 minutes a parked pilot survives in this battle (P1066 lost the pilot twice at 60 s); a pilot loss would still fail
+the run.
+
+| Case | Chase p50 / p95 ms | Watch p50 / p95 / p99 ms | Watch frames | Flight key cancels |
+|---|---|---|---|---|
+| Classic 1920×1080 | 16.7 / 16.8 | 16.7 / 16.8 / 16.8 | 1,212 | yes |
+| Modern 1920×1080 | 16.7 / 16.7 | 16.7 / 16.8 / 16.8 | 1,212 | yes |
+| Classic 800×480 | 16.7 / 16.8 | 16.7 / 16.7 / 16.8 | 1,195 | yes |
+| Modern 800×480 | 16.7 / 16.8 | 16.7 / 16.8 / 16.8 | 1,195 | yes |
+
+Headless pacing is capped at 60 Hz (not a real-GPU cost). Across 315 samples the planner used all five shot kinds
+(Chase 118, Pass 92, Target 56, Orbit 40, FlyBy 9 samples) and framed Ship, Engagement, Warp and Explosion subjects;
+the pilot stayed flying in Ixion (1058) throughout. Every capture had contacts = meshes, 0 stand-ins.
+
+**Captures** (opened and checked by Claude):
+- `watch-classic-1920x1080.jpg` (Orbit, subjects Ship 3 / Warp 1): a wide shot — the own ship small at the bottom with a
+  bright four-point flare and its label, side-lit rocks around, one enemy label at the right edge; `WATCH` tag
+  bottom-left, the toolbar shows "Stop watching".
+- `watch-modern-1920x1080.jpg` (Orbit, Ship 4 / Engagement 2 / Warp 2): the camera is very close to a large textured
+  hull (blue panels with green detail) that fills the centre and is cut off at its edges, with the own pilot label
+  across it; Modern gauges, `WATCH` tag. **Follow-up:** this close orbit passes through or near a hull; the desktop
+  director's framing/near-plane behaviour should be compared before calling it intended.
+- `watch-classic-800x480.jpg` (FlyBy, Ship 3 / Explosion 10 / Warp 3): rock field with three enemy labels and the own
+  label; Classic gauges; `WATCH`.
+- `watch-modern-800x480.jpg` (FlyBy, Ship 5 / Engagement 4 / Explosion 12 / Warp 3): a busy field with enemy labels and
+  ranges, target bracket, blue/yellow contact markers; Modern gauges; `WATCH`.

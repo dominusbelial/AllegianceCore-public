@@ -345,3 +345,49 @@ visual closures by use, reuse frame storage, and lower browser effect load befor
 resolution. Desktop behavior/pixels, native visibility and server/wire rules remain
 unchanged. Browser visual/pacing/heap evidence is explicitly for Claude because
 this lane lacks Chromium.
+
+## Workstation browser results — Claude
+
+Run 2026-11-21 on the workstation from the merged review branch (P1066 + P1067), headless Chromium via the existing
+P1051 Playwright modules, `p1051-browser-host --bots 5`, **40 s per case** for both passes (see "Retries" below).
+[Summary JSON](BROWSER_SCENE_LIGHT_SKY_P1066_assets/browser/browser-scene-summary.json).
+
+**Bug found and fixed in review (`033fb445`): the scene packs never loaded.** The lobby serves every extensionless
+`packs/<sha256>` file as `application/octet-stream` (`src/Allegiance.Lobby/BrowserPreview/BrowserPreviewHosting.cs:58-63`),
+and `AssetStager` requires the response type to equal the declared one (`AssetStager.cs:183-184`). `p1066-scene-packs.py`
+declared PNG sources as `image/png`, so `scene-b1` (which holds `e_tele.png`) failed with `InvalidDataException` on every
+retry and `scene.ready` never became true; all 239 paintings would have failed the same way, on the VPS too. The P1054,
+P1065 and P1066 packers now declare `application/octet-stream`; `StagedManifest.Validate` refuses any other pack type at
+manifest load, with a regression test (`P1066BrowserSceneTests.Pack_png_declared_as_image_png_is_refused_at_manifest_load_not_retried_in_flight`).
+The harness now records `[browser]` console lines and pack requests on failure, which is how this was found.
+
+| Case | Before p50 / p95 ms | After p50 / p95 ms | After frames |
+|---|---|---|---|
+| Classic 1920×1080 | 16.7 / 16.7 | 16.7 / 16.8 | 2,402 |
+| Modern 1920×1080 | 16.7 / 16.8 | 16.7 / 16.8 | 2,388 |
+| Classic 800×480 | 16.7 / 16.7 | 16.7 / 16.7 | 2,396 |
+| Modern 800×480 | 16.7 / 16.8 | 16.7 / 16.7 | 2,429 |
+
+Headless Chromium (SwiftShader) paces at the 60 Hz cap, so equal numbers show no regression below that cap — they are
+**not** real-GPU cost. After the forced fetch failure and release: `scene.ready` and `paintingsReady` true, sky tier
+`black`, effect load `full`, dust 16, 3 contacts = 3 meshes, 0 stand-ins, ship pass 0.3 ms, 7 battle packs completed
+(1 retry, the injected failure), 12.3 MiB promoted, managed heap 111 MiB. While packs were held, a ship without its mesh
+drew as a stand-in (3 contacts = 2 meshes + 1 stand-in) and the sky drew black with dust before any pack arrived.
+
+**Retries (not relabelled):** two 60 s attempts lost the pilot in the fourth window (pod → home 1053, harness asserts
+1058). The pilot survives ≈3 minutes parked in the battle, so both passes were re-run at 40 s per case; the before pass
+was re-run too, so the comparison stays matched.
+
+**Captures** (opened and checked by Claude):
+- `scene-5-classic-1920x1080.png`: black space with sparse small star points and dust specks; a few rocks at the edges,
+  lit dark blue-grey; distant fighters as small meshes with name labels, a lifepod warning triangle, Classic ring gauges
+  centred, `CHASE` tag bottom-left, the HTML flight toolbar along the bottom.
+- `scene-5-modern-1920x1080.png`: the same sector at another moment — many rocks, side-lit blue-grey with one warm
+  orange-brown rock top right; dust specks; Modern gauges (shield 0 % with the red warning, the known P1063 H7 issue),
+  target bracket, enemy labels with range.
+- `scene-5-classic-800x480.png`: denser rock field, lit; enemy labels with ranges; Classic gauges scaled down.
+- `scene-5-modern-800x480.png`: one large lit rock left, distant contacts as coloured edge markers, Modern gauges.
+
+**Stars:** the browser now matches the desktop's default black tier — compare `desktop-scene-after.png`, which also
+shows sparse star points, side-lit blue rocks and dust. Strobes counted 2 in an earlier (retried) attempt and 0 in the passing one; they are too small to read at
+these 2–3 km ranges; no aleph transit happened during capture, so sparks/flash are covered by the unit tests only.
