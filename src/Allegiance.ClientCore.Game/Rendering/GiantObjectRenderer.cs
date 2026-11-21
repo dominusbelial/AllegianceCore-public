@@ -104,6 +104,9 @@ public sealed class GiantObjectRenderer : IDisposable
         _gd.SamplerStates[0] = SamplerState.LinearClamp; // no wrap at the patch edge
 
         byte b = (byte)Math.Clamp(_activeBrightness * 255f, 0f, 255f);
+#if BROWSER
+        var effect = BrowserSkyBuffers.For(_gd).Prepare(_activeTex, new Vector3(b / 255f), view, projection);
+#else
         using var effect = new BasicEffect(_gd)
         {
             TextureEnabled = true,
@@ -115,8 +118,15 @@ public sealed class GiantObjectRenderer : IDisposable
             Projection = projection,
             World = Matrix.Identity,
         };
+#endif
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             _gd.SetVertexBuffer(_vb);
             _gd.DrawPrimitives(PrimitiveType.TriangleList, 0, _vertCount / 3);

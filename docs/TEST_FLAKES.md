@@ -5,6 +5,34 @@ by **P647**; the full historical ledger is preserved verbatim in the History sec
 at the end).
 
 
+## P1067 — Browser Watch camera: final Fast, run last (2026-11-21)
+
+P1067 adds the browser-only director snapshot/glue (`src/Allegiance.ClientCore.Game.Browser/DirectorWatch.cs`,
+`Game1.Flight.cs`), the `#flight-watch` toolbar toggle, the dev-only `director-seed` URL contract and their tests; no
+shared simulation, server dispatch, wire, identity or desktop rendering file changed. The final Fast sweep on the
+final source exited **1**: **15,841 tests, 604.0 s**, **0 failed assertions**, **7 not executed**, every project
+green (Browser 49/0/0, Browser game 148/0/0, Lobby 325/0/0), all **9 infrastructure checks passed**, calibrated case
+limit **11.520 s**. The red is **timing only**: 10 passing executions above the limit from nine existing
+load-sensitive methods.
+
+| Method (sweep row) | Sweep seconds | Three isolated outcomes (fresh process) | Isolated durations |
+|---|---:|---|---|
+| `SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass` | 14.056 | 1/0/0 ×3 | 1.177 / 1.188 / 1.196 s |
+| `P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production` (civ 5) | 14.203 | 3/0/0 ×3 (whole theory) | 5.210 / 5.121 / 5.278 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25, civ 3) | 19.968 / 11.611 | 2/0/0 ×3 (both rows) | 7.403 / 7.282 / 7.183 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | 12.704 | 3/0/0 ×3 (whole theory) | 13.564 / 13.368 / 13.334 s |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 14.195 | 1/0/0 ×3 | 1.496 / 1.464 / 1.507 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 22.564 | 1/0/0 ×3 | 3.267 / 3.233 / 3.220 s |
+| `P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch` | 11.654 | 1/0/0 ×3 | 0.786 / 0.777 / 0.801 s |
+| `P987RecordedBotDecisionCorpusTests.Recorded_inputs_replay_to_the_same_outputs` | 11.922 | 1/0/0 ×3 | 0.827 / 0.817 / 0.808 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | 15.409 | 10/0/0 ×3 (whole theory) | 33.807 / ~35 / ~34 s per 10-row suite |
+
+All **27 fresh processes passed** with zero failures or skips. `P703ResearchCommanderTests` and
+`P987RecordedBotDecisionCorpusTests` are new to this ledger; the other seven are chronic families recorded above.
+No assertion, timeout, tier, quarantine policy, simulation rule or timing threshold changed. **Fast remains red for
+timing only.** Raw evidence: `TestResults/tiers-20261121T103132.065320Z/` and ignored `.scratch/p1067/fast-isolated/`.
+
+
 ## P1064 — Controls capacity and background bot send resolved (2026-11-20)
 
 The two P1060 follow-ups below are fixed in product code; full evidence and
@@ -10674,3 +10702,42 @@ These are existing load-sensitive gun-damage and selection families, not P1062 c
 timeout, tier, quarantine policy, throttle, privilege, simulation or wire rule was changed. Ignored raw
 evidence: `TestResults/tiers-20261121T043242.263060Z/` (TRX + logs + summary.json).
 
+
+## P1066 — final Fast assertion/timing triage (2026-11-21 05:55 local UTC−5)
+
+The single final Fast sweep ran after implementation and task/desktop gates: **15,821
+passed / 2 failed / 7 not executed**, **15,830 total**, **565.1 s**. All **9
+infrastructure checks passed**, no quarantine flakes; calibrated case limit
+**11.566 s**. Browser preview/game/lobby: **39/136/325 passes**. Fast remains
+**red for two assertions and five passing timing offenders**.
+
+Each affected method was selected in **three fresh isolated processes**, serially
+with artwork and all theory rows, after the sweep:
+
+| Method | Sweep observation | Three isolated results (passed/failed/skipped) | Isolated per-case duration |
+|---|---|---|---|
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | side-export mismatch: expected −2, actual 0 (line 229) | **1/0/0, 0/1/0, 1/0/0** | 1.057–1.700 s |
+| `P990BroadcastLaneTelemetryTests.Lane_record_and_stamp_paths_allocate_nothing_after_warmup` | allocation assertion: expected 0 B, actual 3,032 B (line 167) | **1/0/0, 1/0/0, 1/0/0** | 0.009–0.010 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civ 35 passed in 12.609 s | **3/0/0, 3/0/0, 3/0/0** | 3.594–5.980 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 13.993 s | **2/0/0, 2/0/0, 2/0/0** | 3.270–4.559 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 14.017 s | **1/0/0, 1/0/0, 1/0/0** | 3.428–3.461 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | civ 5 passed in 19.833 s | **10/0/0, 10/0/0, 10/0/0** | 2.024–4.920 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | passed in 13.574 s | **1/0/0, 1/0/0, 1/0/0** | 1.550–1.929 s |
+
+`FullSessionIntegrationTests` reproduces the previously ledgered initial
+EXPORT/SideId ordering mismatch (see P955 entry above), **once in three**
+isolated runs. Its assertion compares two peers as soon as mutual EXPORT exists;
+one peer still has team-lobby side −2 and the other side 0. The telemetry
+zero-allocation failure did **not** reproduce in three runs; no runtime-cause claim
+is made from the isolated result. All five timing methods passed every isolated
+row below the sweep's limit. This is triage evidence, not a green Fast result.
+
+The two assertion test files and `Allegiance.Server/BroadcastTelemetry.cs` are
+byte-identical to HEAD (hashes in the receipt). P1066's `ClientWorld` changes are
+BROWSER-only; its non-browser preprocessed source matches HEAD. No session, server
+telemetry, simulation, assertion, threshold, timeout, tier or quarantine rule was
+changed. No second broad Fast sweep was run.
+[Sweep receipt](reports/BROWSER_SCENE_LIGHT_SKY_P1066_assets/fast-summary.json),
+[all isolated outcomes/durations, source and TRX hashes](reports/BROWSER_SCENE_LIGHT_SKY_P1066_assets/fast-isolated.json).
+Raw logs/TRX remain ignored in `.scratch/p1066/fast/` and
+`.scratch/p1066/fast-isolated/`.

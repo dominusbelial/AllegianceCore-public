@@ -1,0 +1,98 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolProjects": 150,
+  "testReceipts": [
+    {
+      "path": "reviewed-repeat-1/browser-new.trx",
+      "sha256": "77231c6a1752e072fe83ef5fea6bf4db87a622be1202ba0c8d443800fccf4cec",
+      "outcomes": {
+        "Passed": 19
+      }
+    },
+    {
+      "path": "reviewed-repeat-1/desktop-new.trx",
+      "sha256": "707d23ca26b0673976d2a4f548c2c899ace0fea238370d90e9d8e86b3333d18e",
+      "outcomes": {
+        "Passed": 11
+      }
+    },
+    {
+      "path": "reviewed-repeat-2/browser-new.trx",
+      "sha256": "d9cc21bec76692a8c9256e21446e9d0d4e22c5bb93772dd9f9b98bdbb03467d3",
+      "outcomes": {
+        "Passed": 19
+      }
+    },
+    {
+      "path": "reviewed-repeat-2/desktop-new.trx",
+      "sha256": "6573282cc619e1d54dfa75ec018d902b18be8e2d7326ff91e6f6d6265f85764c",
+      "outcomes": {
+        "Passed": 11
+      }
+    },
+    {
+      "path": "reviewed-repeat-3/browser-new.trx",
+      "sha256": "f1e593d7393572a289a6d46f426176a4c3b0f6fe04f567e17391207f4c7f1bd7",
+      "outcomes": {
+        "Passed": 19
+      }
+    },
+    {
+      "path": "reviewed-repeat-3/desktop-new.trx",
+      "sha256": "9b942ea001a178190e2800a910022a72b0995ce1806dc391393c31e03a9633bd",
+      "outcomes": {
+        "Passed": 11
+      }
+    },
+    {
+      "path": "reviewed-suites/Allegiance.ClientCore.Browser.Tests.trx",
+      "sha256": "3810a80483a14f14bb5b0ad6aedf8f2bac893045c2e81f642fada295ba2b7bf0",
+      "outcomes": {
+        "Passed": 39
+      }
+    },
+    {
+      "path": "reviewed-suites/Allegiance.ClientCore.Game.Browser.Tests.trx",
+      "sha256": "b350482a9e59815add7ed459f7d8ed8d12b3045dda29b552915aaf5944dde0d1",
+      "outcomes": {
+        "Passed": 136
+      }
+    },
+    {
+      "path": "reviewed-suites/Allegiance.Lobby.Tests.trx",
+      "sha256": "3eb38bfed255b3e5bb52e9fd792d932a843165cc4b3a2502b0673bb06d31e3c8",
+      "outcomes": {
+        "Passed": 328,
+        "NotExecuted": 3
+      }
+    }
+  ],
+  "javascriptTests": 8,
+  "javascriptRepeat": 3,
+  "pythonSceneTests": 3,
+  "pythonRepeat": 3,
+  "deployChecks": 45,
+  "browserAvailable": false,
+  "fast": {
+    "result": "red",
+    "total": 15830,
+    "passed": 15821,
+    "failed": 2,
+    "notExecuted": 7,
+    "timingOffenders": 5,
+    "seconds": 565.1231176189613,
+    "caseLimitSeconds": 11.566047745358091,
+    "infrastructurePassed": 9,
+    "quarantineFlakes": 0,
+    "isolatedProcesses": 21,
+    "isolatedOutcomes": {
+      "Passed": 56,
+      "Failed": 1
+    }
+  },
+  "finishedLocal": "2026-11-21 05:56 America/Bogota",
+  "remainingTaskProcesses": []
+}

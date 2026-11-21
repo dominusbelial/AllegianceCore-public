@@ -34,7 +34,9 @@ public sealed record StagedManifest(int Version, StagedAsset[] Assets)
             var name = Canonical(asset.Source);
             if (asset.Sha256 is null || !Regex.IsMatch(asset.Sha256, @"\A[0-9a-f]{64}\z") ||
                 asset.Path != $"packs/{asset.Sha256}" || asset.ByteSize is <= 0 or > MaximumFileBytes ||
-                asset.ContentType is not ("application/octet-stream" or "audio/ogg" or "image/png" or "text/plain") ||
+                // Every staged asset is an extensionless content-addressed pack, which the lobby serves as
+                // application/octet-stream (BrowserPreviewHosting); any other declared type could never verify.
+                asset.ContentType != "application/octet-stream" ||
                 string.IsNullOrWhiteSpace(asset.Provenance) || asset.Provenance.Length > 512 ||
                 asset.Dependencies is null || asset.Dependencies.Length > 128 || asset.VisualDependencies?.Length > 128 ||
                 asset.VisualDependencies?.Any(d => !SectorManifest.IsVisual(Canonical(d))) == true)

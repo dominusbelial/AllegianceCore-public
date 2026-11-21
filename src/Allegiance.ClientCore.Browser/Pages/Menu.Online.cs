@@ -222,6 +222,8 @@ public partial class Menu
         finally { --_pendingJoins; if (generation == _onlineGeneration) { _onlineBusy = false; StateHasChanged(); } }
     }
     private void ToggleContactView() => _game?.ToggleContactView();
+    // P1067 — the parked director camera (desktop F2 / "Watch").
+    private void ToggleWatch() => _game?.ToggleWatch();
     private void DockHome() => _game?.DockHome();
     private Task RetryStagingAsync() => _pendingServer is { } server ? JoinServerAsync(server, _pendingMission) : Task.CompletedTask;
     private (string Title, string Objective, string Body)? OnlineBriefing()

@@ -43,6 +43,25 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     /// behind it.</summary>
     private const float ObjectDist = 7800f;
 
+#if BROWSER
+    private bool _paintingsResident, _giantsResident;
+    /// <summary>Promote optional original layers without rebuilding native sky
+    /// textures. Called only after verified packs are resident (P1066).</summary>
+    public bool PromoteResidentLayers(bool paintings, bool giants)
+    {
+        bool changed = false;
+        if (paintings && !_paintingsResident)
+        {
+            _paintingsResident = true; changed = true;
+            _distant.SetCluster(_spaceCluster); _galaxies.SetCluster(_spaceCluster);
+        }
+        if (giants && !_giantsResident)
+        {
+            _giantsResident = true; changed = true; _giants.SetCluster(_spaceCluster);
+        }
+        return changed;
+    }
+#endif
     private SimStarLayer? _simStars;
     private DataClusterIGC _spaceCluster;
     private readonly GraphicsDevice _gd;
@@ -108,9 +127,14 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
         var toward = TowardLight(cluster);
         _lensFlare.SetLightDirection(toward);
         _moons.SetCluster(cluster);
+#if BROWSER
+        if (_paintingsResident) { _distant.SetCluster(cluster); _galaxies.SetCluster(cluster); }
+        if (_giantsResident) _giants.SetCluster(cluster);
+#else
         _distant.SetCluster(cluster);
         _galaxies.SetCluster(cluster);
         _giants.SetCluster(cluster);
+#endif
     }
 
     /// <summary>Draw the black sky behind everything: point stars, the native

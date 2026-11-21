@@ -1,0 +1,16 @@
+{
+  "frame": 1800,
+  "width": 1920,
+  "height": 1080,
+  "byteIdentical": true,
+  "files": {
+    "desktop-scene-after.png": {
+      "bytes": 570799,
+      "sha256": "ac6cdc9cd014480132391fab6e81a6cfef1b46015194b752b2772c86532cd4be"
+    },
+    "desktop-scene-before.png": {
+      "bytes": 570799,
+      "sha256": "ac6cdc9cd014480132391fab6e81a6cfef1b46015194b752b2772c86532cd4be"
+    }
+  }
+}

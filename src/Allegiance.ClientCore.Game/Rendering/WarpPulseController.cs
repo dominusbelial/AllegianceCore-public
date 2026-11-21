@@ -54,6 +54,9 @@ public sealed class WarpPulseController
 
     private readonly Dictionary<short, Pulse> _active = new();
     private long _seqCounter;
+#if BROWSER
+    private readonly List<short> _expired = new(MaxSimultaneous);
+#endif
 
     /// <summary>Number of warps currently tracked by a pulse (peak ≤
     /// <see cref="MaxSimultaneous"/>).</summary>
@@ -103,7 +106,11 @@ public sealed class WarpPulseController
     public void Update(double now)
     {
         if (_active.Count == 0) return;
+#if BROWSER
+        var remove = _expired; remove.Clear();
+#else
         List<short>? remove = null;
+#endif
         foreach (var kv in _active)
             if (now - kv.Value.Start >= TotalSeconds)
                 (remove ??= new()).Add(kv.Key);

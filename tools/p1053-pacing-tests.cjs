@@ -9,10 +9,11 @@ test('audio gap threshold is strict; thirty consecutive sub-34ms frames recover'
   const p=guard();p.sample(0);p.sample(100);assert.equal(p.slow,false);p.sample(201);assert.equal(p.slow,true);
   let now=frames(p,201,16,29);assert.equal(p.slow,true);p.sample(now+=34);now=frames(p,now,16,29);assert.equal(p.slow,true);p.sample(now+16);assert.equal(p.slow,false);
 });
-test('sustained rolling p95 steps down twice and only five-second low p95 recovers', () => {
-  const p=guard();p.sample(0);let now=frames(p,0,50,80);assert.equal(p.scale,.75);
+test('sustained rolling p95 lowers effects before resolution; five-second recovery reverses the steps', () => {
+  const p=guard();p.sample(0);let now=frames(p,0,50,80);assert.equal(p.scale,1);assert.equal(p.effectLoad,false);
+  now=frames(p,now,50,42);assert.equal(p.scale,.75);
   now=frames(p,now,50,42);assert.equal(p.scale,.5);now=frames(p,now,16,300);assert.equal(p.scale,.5);
-  now=frames(p,now,16,150);assert.equal(p.scale,.75);now=frames(p,now,16,320);assert.equal(p.scale,1);
+  now=frames(p,now,16,150);assert.equal(p.scale,.75);now=frames(p,now,16,320);assert.equal(p.scale,1);assert.equal(p.effectLoad,false);now=frames(p,now,16,320);assert.equal(p.effectLoad,true);
 });
 test('an isolated stall cannot lower scale; background gaps cannot authorize recovery', () => {
   const p=guard();p.sample(0);let now=frames(p,0,16,150);p.sample(now+=101);now=frames(p,now,16,150);assert.equal(p.scale,1);
@@ -24,5 +25,11 @@ test('34-100ms work resets audio recovery without causing a new late-gap mute', 
 });
 
 test('very sparse frames still lower resolution instead of starving the rolling window',()=>{
- const p=guard();p.sample(0);let now=frames(p,0,1100,4);assert.equal(p.scale,.75);now=frames(p,now,1100,4);assert.equal(p.scale,.5);assert.equal(p.slow,true);
+ const p=guard();p.sample(0);let now=frames(p,0,1100,4);assert.equal(p.scale,1);assert.equal(p.effectLoad,false);now=frames(p,now,1100,4);assert.equal(p.scale,.75);now=frames(p,now,1100,4);assert.equal(p.scale,.5);assert.equal(p.slow,true);
+});
+
+test('hidden time cannot recover reduced effects; reset restores the default',()=>{
+ const p=guard();p.sample(0);let now=frames(p,0,50,80);assert.equal(p.effectLoad,false);
+ p.sample(now+60000,true);p.sample(now+120000);assert.equal(p.effectLoad,false);assert.equal(p.scale,1);
+ p.reset();assert.equal(p.effectLoad,true);assert.equal(p.snapshot().effectLoad,true);
 });

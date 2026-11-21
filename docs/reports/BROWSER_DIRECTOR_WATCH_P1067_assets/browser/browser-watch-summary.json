@@ -1,0 +1,246 @@
+{
+ "task": "P1067",
+ "run": "Claude workstation review, 2026-11-21, merged review branch (P1066+P1067), 20 s per case",
+ "size": 5,
+ "browserVersion": "153.0.8010.0",
+ "headlessGpuRepresentative": false,
+ "seed": 1067,
+ "f2KeyRoute": {
+  "started": true,
+  "seed": 1067
+ },
+ "chaseVersusWatchPacing": [
+  {
+   "label": "Classic 1920x1080 chase",
+   "frames": 299,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.799999999995634,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Classic 1920x1080 watch",
+   "frames": 1212,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.799999999995634,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Classic 1920x1080 cancel-on-input",
+   "cancelledByFlightInput": true
+  },
+  {
+   "label": "Modern 1920x1080 chase",
+   "frames": 298,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.70000000001164,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Modern 1920x1080 watch",
+   "frames": 1212,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.79999999998836,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Modern 1920x1080 cancel-on-input",
+   "cancelledByFlightInput": true
+  },
+  {
+   "label": "Classic 800x480 chase",
+   "frames": 299,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.79999999998836,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Classic 800x480 watch",
+   "frames": 1195,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.70000000001164,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Classic 800x480 cancel-on-input",
+   "cancelledByFlightInput": true
+  },
+  {
+   "label": "Modern 800x480 chase",
+   "frames": 299,
+   "p50Ms": 16.69999999999709,
+   "p95Ms": 16.79999999998836,
+   "p99Ms": 16.80000000000291
+  },
+  {
+   "label": "Modern 800x480 watch",
+   "frames": 1195,
+   "p50Ms": 16.699999999982538,
+   "p95Ms": 16.79999999998836,
+   "p99Ms": 16.800000000017462
+  },
+  {
+   "label": "Modern 800x480 cancel-on-input",
+   "cancelledByFlightInput": true
+  }
+ ],
+ "captures": [
+  {
+   "file": "watch-classic-1920x1080.jpg",
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "sampledAt": 1795269125269,
+   "kind": "Orbit",
+   "subjectIndex": 3,
+   "categories": {
+    "Ship": 3,
+    "Warp": 1
+   },
+   "contacts": 4,
+   "meshes": 4,
+   "standIns": 0,
+   "hullIds": [
+    85,
+    90,
+    13,
+    86
+   ],
+   "shotChanges": 4,
+   "seed": 1067,
+   "shotKinds": [
+    "Target",
+    "Pass",
+    "Chase",
+    "Orbit"
+   ],
+   "subjectKindsFramed": [
+    "Ship",
+    "Warp"
+   ],
+   "maxSubjects": 4
+  },
+  {
+   "file": "watch-modern-1920x1080.jpg",
+   "style": "Modern",
+   "width": 1920,
+   "height": 1080,
+   "sampledAt": 1795269151985,
+   "kind": "Orbit",
+   "subjectIndex": 5,
+   "categories": {
+    "Ship": 4,
+    "Engagement": 2,
+    "Warp": 2
+   },
+   "contacts": 5,
+   "meshes": 5,
+   "standIns": 0,
+   "hullIds": [
+    85,
+    90,
+    13,
+    86,
+    87
+   ],
+   "shotChanges": 4,
+   "seed": 1067,
+   "shotKinds": [
+    "Target",
+    "Pass",
+    "Chase",
+    "Orbit"
+   ],
+   "subjectKindsFramed": [
+    "Ship",
+    "Engagement",
+    "Warp"
+   ],
+   "maxSubjects": 8
+  },
+  {
+   "file": "watch-classic-800x480.jpg",
+   "style": "Classic",
+   "width": 800,
+   "height": 480,
+   "sampledAt": 1795269178592,
+   "kind": "FlyBy",
+   "subjectIndex": 11,
+   "categories": {
+    "Ship": 3,
+    "Explosion": 10,
+    "Warp": 3
+   },
+   "contacts": 4,
+   "meshes": 4,
+   "standIns": 0,
+   "hullIds": [
+    85,
+    33,
+    13,
+    86
+   ],
+   "shotChanges": 5,
+   "seed": 1067,
+   "shotKinds": [
+    "Target",
+    "Pass",
+    "Chase",
+    "Orbit",
+    "FlyBy"
+   ],
+   "subjectKindsFramed": [
+    "Ship",
+    "Engagement",
+    "Warp",
+    "Explosion"
+   ],
+   "maxSubjects": 24
+  },
+  {
+   "file": "watch-modern-800x480.jpg",
+   "style": "Modern",
+   "width": 800,
+   "height": 480,
+   "sampledAt": 1795269205244,
+   "kind": "FlyBy",
+   "subjectIndex": 16,
+   "categories": {
+    "Ship": 5,
+    "Engagement": 4,
+    "Explosion": 12,
+    "Warp": 3
+   },
+   "contacts": 6,
+   "meshes": 6,
+   "standIns": 0,
+   "hullIds": [
+    85,
+    13,
+    86,
+    17,
+    15
+   ],
+   "shotChanges": 4,
+   "seed": 1067,
+   "shotKinds": [
+    "Target",
+    "Pass",
+    "Chase",
+    "Orbit",
+    "FlyBy"
+   ],
+   "subjectKindsFramed": [
+    "Ship",
+    "Engagement",
+    "Explosion",
+    "Warp"
+   ],
+   "maxSubjects": 24
+  }
+ ],
+ "imageBytes": 229588,
+ "samples": 315,
+ "shotKindSampleCounts": {
+  "null": 315
+ }
+}

@@ -107,8 +107,14 @@ public sealed class Starfield : IDisposable
 
         _effect.View = view;
         _effect.Projection = projection;
+#if BROWSER
+        for (int passIndex = 0; passIndex < _effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = _effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in _effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             _effect.GraphicsDevice.DrawUserPrimitives(PrimitiveType.PointList, _scratch, 0, _scratch.Length);
         }

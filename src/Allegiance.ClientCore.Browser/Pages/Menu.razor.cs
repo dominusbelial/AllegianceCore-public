@@ -69,6 +69,7 @@ public partial class Menu
             var dimensions = await JsRuntime.InvokeAsync<int[]>("menuViewport");
             StopGame();
             _game = new Game1(_assets, _style, dimensions[0], dimensions[1]);
+            if (_dev) _game.ConfigureWatchSeed(BrowserEntry.DirectorSeed(new Uri(Nav.Uri).Query, dev: true));
             _game.OpenOnline = () => _ = OpenOnlineAsync();
             _game.DownloadScreenshot = () => _ = ScreenshotAsync();
             _reference ??= DotNetObjectReference.Create(this);
@@ -163,6 +164,8 @@ public partial class Menu
     public void FlightKeys(string[] codes) => _game?.FlightKeys(codes);
     [JSInvokable]
     public void PresentationSize(int width, int height) => _game?.SetPresentationSize(width, height);
+    [JSInvokable]
+    public void EffectLoad(bool full) => _game?.SetEffectLoad(full);
     [JSInvokable]
     public void FlightGamepad(float[] axes, float[] buttons) => _game?.FlightGamepad(axes, buttons);
     [JSInvokable]

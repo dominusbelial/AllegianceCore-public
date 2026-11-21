@@ -1,0 +1,214 @@
+{
+  "runtime": ".NET Release JIT, actual browser-source preparation; no WASM/GPU claim",
+  "iterations": 20000,
+  "tieredCompilation": "0",
+  "before": "P1065 indexed roster, hull lookup, contacts/names in reused buffers",
+  "after": "Before plus cluster light, cloak, drawn-ship strobes, live aleph lead-up sparks/flash/pulse, glimpse selection and default dust preparation/culling",
+  "excluded": "Camera/prediction, original asset decoding, WebGL uploads/drawing, HUD rendering and JavaScript frame pacing",
+  "results": [
+    {
+      "ships": 2,
+      "offSector": 0,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 0.12951500000000002,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 6.844285,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 2,
+      "sparks": 300,
+      "checksum": 17270000
+    },
+    {
+      "ships": 2,
+      "offSector": 0,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 0.1239,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 4.1856800000000005,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 2,
+      "sparks": 300,
+      "checksum": 17270000
+    },
+    {
+      "ships": 2,
+      "offSector": 500,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 0.12285,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 6.83968,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 2,
+      "sparks": 300,
+      "checksum": 17270000
+    },
+    {
+      "ships": 2,
+      "offSector": 500,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 0.124885,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 4.16595,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 2,
+      "sparks": 300,
+      "checksum": 17270000
+    },
+    {
+      "ships": 10,
+      "offSector": 0,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 0.574155,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 20.675710000000002,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 10,
+      "sparks": 1290,
+      "checksum": 175846000
+    },
+    {
+      "ships": 10,
+      "offSector": 0,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 0.5669649999999999,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 17.887710000000002,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 10,
+      "sparks": 1290,
+      "checksum": 175846000
+    },
+    {
+      "ships": 10,
+      "offSector": 500,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 0.57196,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 20.74642,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 10,
+      "sparks": 1290,
+      "checksum": 175846000
+    },
+    {
+      "ships": 10,
+      "offSector": 500,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 0.56915,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 17.9459,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 10,
+      "sparks": 1290,
+      "checksum": 175846000
+    },
+    {
+      "ships": 20,
+      "offSector": 0,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 1.140735,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 24.70715,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 20,
+      "sparks": 1380,
+      "checksum": 248490000
+    },
+    {
+      "ships": 20,
+      "offSector": 0,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 1.1590799999999999,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 22.024375,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 20,
+      "sparks": 1380,
+      "checksum": 248490000
+    },
+    {
+      "ships": 20,
+      "offSector": 500,
+      "fullEffects": true,
+      "before": {
+        "microsecondsPerPass": 1.140865,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 24.78184,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 25,
+      "strobes": 20,
+      "sparks": 1380,
+      "checksum": 248490000
+    },
+    {
+      "ships": 20,
+      "offSector": 500,
+      "fullEffects": false,
+      "before": {
+        "microsecondsPerPass": 1.1586100000000001,
+        "bytesPerPass": 0
+      },
+      "after": {
+        "microsecondsPerPass": 22.16398,
+        "bytesPerPass": 0
+      },
+      "dustGrains": 0,
+      "strobes": 20,
+      "sparks": 1380,
+      "checksum": 248490000
+    }
+  ]
+}

@@ -102,6 +102,7 @@
                 }
                 <p class="flight-help">W/S thrust · arrows turn · Space fire · Shift boost · click canvas for mouse steering · Escape releases · Alt+Enter fullscreen</p>
                 <button id="flight-contact" @onclick="ToggleContactView">@(_game?.ViewingContact == true ? "Chase view" : "View nearby ships")</button>
+                <button id="flight-watch" @onclick="ToggleWatch">@(_game?.Watching == true ? "Stop watching" : "Watch")</button>
                 @if (_dev)
                 {
                     <button id="flight-rock" @onclick="() => _game?.ToggleRockView()">View nearby asteroid</button>

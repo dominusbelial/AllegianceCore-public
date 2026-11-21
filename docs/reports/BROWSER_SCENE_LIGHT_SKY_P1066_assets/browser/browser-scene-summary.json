@@ -1,0 +1,212 @@
+{
+ "task": "P1066",
+ "run": "Claude workstation review, 2026-11-21, merged review branch (P1066+P1067+pack content-type fix 033fb445)",
+ "size": 5,
+ "secondsPerCase": 40,
+ "browserVersion": "153.0.8010.0",
+ "headlessGpuRepresentative": false,
+ "note": "Headless Chromium (SwiftShader) paces at the 60 Hz cap; before/after equality shows no regression below that cap, not real-GPU cost.",
+ "forcedFetchFailure": true,
+ "held": {
+  "scene": {
+   "ready": false,
+   "effectLoad": "full",
+   "dust": 18,
+   "strobes": 0,
+   "sparks": 0,
+   "glimpses": 0,
+   "skyTier": "black",
+   "paintingsReady": false,
+   "constructionReady": false
+  },
+  "battle": {
+   "sectorShips": 3,
+   "contacts": 3,
+   "meshes": 2,
+   "standIns": 1,
+   "hullIds": [
+    85,
+    13,
+    90
+   ],
+   "culledRocks": 5,
+   "shipPassMs": 0.2
+  },
+  "battlePacks": {
+   "completed": 1,
+   "retries": 0,
+   "promotedBytes": 0
+  },
+  "managedHeapMiB": 142,
+  "wasmLinearMiB": 0,
+  "pacing": null
+ },
+ "swapped": {
+  "scene": {
+   "ready": true,
+   "effectLoad": "full",
+   "dust": 16,
+   "strobes": 0,
+   "sparks": 0,
+   "glimpses": 1,
+   "skyTier": "black",
+   "paintingsReady": true,
+   "constructionReady": false
+  },
+  "battle": {
+   "sectorShips": 3,
+   "contacts": 3,
+   "meshes": 3,
+   "standIns": 0,
+   "hullIds": [
+    85,
+    13,
+    90
+   ],
+   "culledRocks": 7,
+   "shipPassMs": 0.3
+  },
+  "battlePacks": {
+   "completed": 7,
+   "retries": 1,
+   "promotedBytes": 12850956
+  },
+  "managedHeapMiB": 111,
+  "wasmLinearMiB": 0,
+  "pacing": null
+ },
+ "timing": [
+  {
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "beforeP50Ms": 16.7,
+   "beforeP95Ms": 16.7,
+   "afterP50Ms": 16.7,
+   "afterP95Ms": 16.8,
+   "afterFrames": 2402
+  },
+  {
+   "style": "Modern",
+   "width": 1920,
+   "height": 1080,
+   "beforeP50Ms": 16.7,
+   "beforeP95Ms": 16.8,
+   "afterP50Ms": 16.7,
+   "afterP95Ms": 16.8,
+   "afterFrames": 2388
+  },
+  {
+   "style": "Classic",
+   "width": 800,
+   "height": 480,
+   "beforeP50Ms": 16.7,
+   "beforeP95Ms": 16.7,
+   "afterP50Ms": 16.7,
+   "afterP95Ms": 16.7,
+   "afterFrames": 2396
+  },
+  {
+   "style": "Modern",
+   "width": 800,
+   "height": 480,
+   "beforeP50Ms": 16.7,
+   "beforeP95Ms": 16.8,
+   "afterP50Ms": 16.7,
+   "afterP95Ms": 16.7,
+   "afterFrames": 2429
+  }
+ ],
+ "captures": [
+  {
+   "file": "scene-5-classic-1920x1080.png",
+   "style": "Classic",
+   "width": 1920,
+   "height": 1080,
+   "battle": {
+    "sectorShips": 5,
+    "contacts": 5,
+    "meshes": 5,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     13,
+     90,
+     86,
+     87
+    ],
+    "culledRocks": 21,
+    "shipPassMs": 0.9
+   }
+  },
+  {
+   "file": "scene-5-modern-1920x1080.png",
+   "style": "Modern",
+   "width": 1920,
+   "height": 1080,
+   "battle": {
+    "sectorShips": 7,
+    "contacts": 7,
+    "meshes": 7,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     13,
+     90,
+     86,
+     113,
+     17
+    ],
+    "culledRocks": 21,
+    "shipPassMs": 0.7
+   }
+  },
+  {
+   "file": "scene-5-classic-800x480.png",
+   "style": "Classic",
+   "width": 800,
+   "height": 480,
+   "battle": {
+    "sectorShips": 9,
+    "contacts": 9,
+    "meshes": 9,
+    "standIns": 0,
+    "hullIds": [
+     85,
+     13,
+     90,
+     86,
+     113,
+     15,
+     151
+    ],
+    "culledRocks": 21,
+    "shipPassMs": 0.6
+   }
+  },
+  {
+   "file": "scene-5-modern-800x480.png",
+   "style": "Modern",
+   "width": 800,
+   "height": 480,
+   "battle": {
+    "sectorShips": 8,
+    "contacts": 7,
+    "meshes": 7,
+    "standIns": 0,
+    "hullIds": [
+     13,
+     90,
+     86,
+     113,
+     15,
+     151
+    ],
+    "culledRocks": 21,
+    "shipPassMs": 0.6
+   }
+  }
+ ],
+ "imageBytes": 426203,
+ "packRequests": 849
+}

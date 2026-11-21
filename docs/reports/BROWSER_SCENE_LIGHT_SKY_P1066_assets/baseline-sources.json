@@ -1,0 +1,31 @@
+{
+  "baseline": "git archive HEAD, independently built",
+  "files": [
+    {
+      "path": "src/Allegiance.ClientCore.Game/Game1.Rendering.cs",
+      "baselineSha256": "40d6d9d574e5d14d6ea28290fd48db13af67e2663269913b02b8d67489328906",
+      "currentSha256": "c6f725672e1304961ac501ab540728f2b181e67c6c6d4973268e91755ea2116a"
+    },
+    {
+      "path": "src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs",
+      "baselineSha256": "dffc2f5d5195068bf500b5ae5bef4b6392fffef6ccbe1541d6c51f77323fbdd1",
+      "currentSha256": "7a72c6c0d02cdf54edc60b3cfef610120fbfec61a31d7eab3b072020ed64be85"
+    },
+    {
+      "path": "src/Allegiance.ClientCore.Game/Rendering/NavStrobeLayout.cs",
+      "baselineSha256": "303991b96271dd08e063f5234f2e5213734582d458d4736ac6e62b2ca227d1bf",
+      "currentSha256": "303991b96271dd08e063f5234f2e5213734582d458d4736ac6e62b2ca227d1bf"
+    },
+    {
+      "path": "src/Allegiance.ClientCore.Game/Rendering/BlackSkyRenderer.cs",
+      "baselineSha256": "79b928e992add382306567719eb79344227b836c82a82b43d6d0f916847e167f",
+      "currentSha256": "bd76b41f486d0d39f5c5f4e73a86f8bb1390917e2ea5fd4ae490047ca682cbc5"
+    },
+    {
+      "path": "src/Allegiance.ClientCore/State/ClientWorld.cs",
+      "baselineSha256": "6afdcaccb2c9291d077ac2dd3f6c57b797fcc5f0b5547343e0504352321be7f5",
+      "currentSha256": "3a4cf3f28a68d823035b4b541a6c41e508797d96222c3db3b379c036b946274b",
+      "nonBrowserSourceEqualIgnoringBlankLines": true
+    }
+  ]
+}

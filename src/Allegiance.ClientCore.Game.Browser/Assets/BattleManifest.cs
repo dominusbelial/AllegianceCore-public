@@ -8,8 +8,12 @@ public sealed record BattlePack(string Key, string[] Sources);
 /// collision or simulation data can be supplied by this deferred manifest.</summary>
 public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePack[] Packs)
 {
+    public short[]? SceneGiantSectors { get; init; }
+
     public void Validate(StagedManifest resident)
     {
+        if (SceneGiantSectors is { } sectors && (sectors.Length > 256 || sectors.Any(s => s < 0) || sectors.Distinct().Count() != sectors.Length))
+            throw new InvalidDataException("Invalid scene giant sectors.");
         resident.Validate();
         if (Version != 1 || Assets is not { Length: > 0 and <= 2048 } || Packs is not { Length: > 0 and <= 1024 })
             throw new InvalidDataException("Invalid battle manifest.");
@@ -25,7 +29,7 @@ public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePac
         {
             if (asset is null) throw new InvalidDataException("Null battle asset.");
             string name = StagedManifest.Canonical(asset.Source);
-            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal))
+            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal) && name != "giant-objects.json")
                 throw new InvalidDataException("Only visual battle assets may be deferred.");
             if (!deferredNames.Add(name)) throw new InvalidDataException("Duplicate battle source.");
             if (metadata.TryGetValue(name, out var old) && (old.Sha256 != asset.Sha256 || old.ByteSize != asset.ByteSize || old.ContentType != asset.ContentType ||
@@ -41,7 +45,7 @@ public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePac
         foreach (var pack in Packs)
         {
             if (pack is null || string.IsNullOrEmpty(pack.Key) || pack.Key.Length > 80 || StagedManifest.Canonical(pack.Key) != pack.Key ||
-                !keys.Add(pack.Key) || pack.Sources is not { Length: > 0 and <= 128 })
+                !keys.Add(pack.Key) || pack.Sources is not { Length: > 0 } || pack.Sources.Length > (pack.Key is "scene-b1" or "scene-paintings" ? 1024 : 128))
                 throw new InvalidDataException("Invalid battle pack.");
             var closure = pack.Sources.Select(StagedManifest.Canonical).ToHashSet(StringComparer.Ordinal);
             var deferred = closure.Where(n => !baseNames.Contains(n)).ToArray();

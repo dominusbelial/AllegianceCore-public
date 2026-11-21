@@ -25,8 +25,9 @@ public static class NativeStationLights
         float time, List<NavStrobeView> output)
     {
         var local = NativeStationResolver.NoseFlip * Matrix.CreateScale(scale) * world;
-        foreach (var light in lights)
+        for (int i = 0; i < lights.Count; i++)
         {
+            var light = lights[i];
             // Native does not wrap negative time-phase forward into the first
             // period (efapp.cpp:180-194); a future phase has not flashed yet.
             if (time < light.Phase) continue;

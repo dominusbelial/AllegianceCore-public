@@ -38,6 +38,15 @@ internal static class SkyBillboard
         var right = baseRight * c + baseUp * s;
         var up = -baseRight * s + baseUp * c;
 
+#if BROWSER
+        var scratch = BrowserSkyBuffers.For(gd);
+        var corners = scratch.Quad;
+        corners[0] = new VertexPositionColorTexture(center - right * halfWorld - up * halfWorld, Color.White, new Vector2(0, 1));
+        corners[1] = new VertexPositionColorTexture(center + right * halfWorld - up * halfWorld, Color.White, new Vector2(1, 1));
+        corners[2] = new VertexPositionColorTexture(center - right * halfWorld + up * halfWorld, Color.White, new Vector2(0, 0));
+        corners[3] = new VertexPositionColorTexture(center + right * halfWorld + up * halfWorld, Color.White, new Vector2(1, 0));
+        var indices = scratch.Indices;
+#else
         var corners = new[]
         {
             new VertexPositionColorTexture(center - right * halfWorld - up * halfWorld, Color.White, new Vector2(0, 1)),
@@ -46,8 +55,12 @@ internal static class SkyBillboard
             new VertexPositionColorTexture(center + right * halfWorld + up * halfWorld, Color.White, new Vector2(1, 0)),
         };
         var indices = new short[] { 0, 1, 2, 2, 1, 3 };
+#endif
 
         gd.BlendState = BlendState.AlphaBlend;
+#if BROWSER
+        var effect = BrowserSkyBuffers.For(gd).Prepare(texture, diffuse?.ToVector3() ?? Vector3.One, view, projection);
+#else
         using var effect = new BasicEffect(gd)
         {
             TextureEnabled = true,
@@ -59,8 +72,15 @@ internal static class SkyBillboard
             Projection = projection,
             World = Matrix.Identity,
         };
+#endif
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, corners, 0, corners.Length, indices, 0, 2);
         }
