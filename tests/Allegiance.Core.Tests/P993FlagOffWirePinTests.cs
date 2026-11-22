@@ -38,7 +38,7 @@ public sealed class P993FlagOffWirePinTests
     // Base-commit digest of the scenario below (SHA-256 over every captured frame:
     // tick, recipient, coalesce key, guaranteed, length, bytes), plus the
     // frame/byte totals. A change here means the flag-off wire changed.
-    private const string OffDigest = "B4EE423CF3463009A0F78153E242610355C5557D3DF801AE0B8780F5EBD9B955";
+    private const string OffDigest = "A56DEAF7C7A037601B6C97A5B254B0E39316C7128EFD1B31D1EC4BEC0C53CFCB";
     private const int OffFrames = 2463;
     private const int OffBytes = 147081;
 

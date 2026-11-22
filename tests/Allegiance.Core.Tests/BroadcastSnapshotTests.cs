@@ -360,6 +360,8 @@ public sealed class BroadcastSnapshotTests
         // PopulateCluster for asteroid-less / treasure-less sectors) and station-type
         // replacement by side techs (:4011-4049) change the recorded world. Bisected
         // across the merge chain: f6e9e480/dff1e87c green, a3b8819f red.
+        // P1073: regenerated again because the ship update's power byte now carries
+        // the native afterburner ramp (Igc/shipIGC.h:1137) instead of a constant 1.0.
         // NT-2: regenerated after P797 (7734a197) — native map discovery. The
         // cross-side DISCOVERY sweep (Server.Broadcast.cs SweepCrossSideDiscoveryExports,
         // the port of FedSrv.CPP:10766-10775 ShowObject + :11055-11062 OBJECT_SPOTTED,
@@ -372,10 +374,10 @@ public sealed class BroadcastSnapshotTests
         // other and across off/on/encode-once.
         string golden = (native, parallel) switch
         {
-            (false, false) => "7FA94E792A05FCB3",
-            (false, true) => "4E0158A1483C8D22",
-            (true, false) => "1E9A19A6A20A83A5",
-            _ => "E8D661910C691E42",
+            (false, false) => "B82D2840488DE16D",
+            (false, true) => "8100378C26770A07",
+            (true, false) => "4E30CE78A15E07C0",
+            _ => "585280342E13E406",
         };
         File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p669-identity-{native}-{parallel}-{floor}.json"), JsonSerializer.Serialize(result));
         Assert.StartsWith(golden, result.offHash);

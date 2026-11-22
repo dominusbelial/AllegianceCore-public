@@ -122,6 +122,13 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     /// <summary>P862 — how many planet poster textures this tier has resident.</summary>
     public int LoadedPlanetTextures => _planet.LoadedTextureCount;
 
+    /// <summary>P1073 — clear logged misses for a later promoted pack.</summary>
+    public void InvalidateMissingArt()
+    {
+        _missing.Clear();
+        _planet.InvalidateMissingArt();
+    }
+
     /// <summary>Switch the HD sky to a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {

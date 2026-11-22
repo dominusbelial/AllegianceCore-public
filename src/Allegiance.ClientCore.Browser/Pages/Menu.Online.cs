@@ -262,6 +262,17 @@ public partial class Menu
                 return System.Text.Json.JsonSerializer.Deserialize(json, MissionBriefingInfoJsonContext.Default.MissionBriefingInfo)
                     ?? throw new InvalidDataException("Empty briefing");
             };
+            // P1073 — the port-only research briefing (fmid 992) is Brotli too. The
+            // same resident runtime decoder that serves 996 serves it; desktop keeps
+            // the in-core BrotliStream path and its exact wire bytes.
+            session.BrowserResearchBriefingDecoder = message =>
+            {
+                var header = FedMessageHeader.Read(message);
+                if (header.Fmid != ResearchBriefing.Fmid || header.CbMsg != message.Length) throw new InvalidDataException("Invalid research briefing header");
+                byte[] json = _briefingDecoder!.Invoke<byte[]>("decode", message[4..]);
+                return System.Text.Json.JsonSerializer.Deserialize(json, ResearchBriefingJsonContext.Default.ResearchBriefing)
+                    ?? throw new InvalidDataException("Empty research briefing");
+            };
             session.EnableAutoReconnect();
             session.World.MissionCoreResolver = name => string.Equals(Path.GetFileNameWithoutExtension(name), Path.GetFileNameWithoutExtension(server.CoreFile), StringComparison.OrdinalIgnoreCase) ? core : null;
             // The complete verified starter snapshot already exists. Fetch a fresh

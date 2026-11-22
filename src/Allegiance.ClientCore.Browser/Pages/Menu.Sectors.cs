@@ -27,6 +27,7 @@ public partial class Menu
             _battleStreamer = new(_battleManifest, resident, battleStager, _assets);
             _game.RequestBattlePack = _battleStreamer.RequestPack;
             _game.BattlePackReady = _battleStreamer.IsReady;
+            _game.BattlePackExists = _battleStreamer.HasPack;
         }
         var stager = new AssetStager(Http, new BrowserAssetCache(_platform, _assetMemoryFallback), request =>
         { request.SetBrowserResponseStreamingEnabled(true); request.SetBrowserRequestCache(BrowserRequestCache.Reload); }, SectorPackStreamer.VerifyCooperativelyAsync);
@@ -62,11 +63,15 @@ public partial class Menu
                 if (effect.Value.ClusterId == sector) { battle.RequestPack("scene-build"); break; }
             foreach (var missile in session.World.Missiles.Values)
                 if (missile.ClusterId == sector) battle.RequestPack("missile-" + missile.TypeId);
+            // P1073 — generated maps have no P1054 sector recording: request the
+            // station, asteroid, warp and sky closures for this sector (and the
+            // selected/prefetched one) through the same verified on-demand path.
+            _game!.RequestSectorArt(sector, _prefetchSector);
         }
     }
     private async Task StopSectorStreamingAsync()
     {
-        if (_game is not null) { _game.RequestBattlePack = null; _game.BattlePackReady = null; }
+        if (_game is not null) { _game.RequestBattlePack = null; _game.BattlePackReady = null; _game.BattlePackExists = null; }
         var battle = _battleStreamer; _battleStreamer = null;
         if (battle is not null) await battle.DisposeAsync();
         var streamer = _sectorStreamer; _sectorStreamer = null;

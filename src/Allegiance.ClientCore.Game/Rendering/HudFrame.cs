@@ -16,7 +16,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 /// <param name="AmmoFraction">Mounted ammo 0..1.</param>
 /// <param name="FuelFraction">Fuel 0..1.</param>
 /// <param name="EnergyFraction">Energy 0..1.</param>
-/// <param name="Power">Reactor power 0..1.</param>
+/// <param name="Power">Native afterburner power 0..1 (<c>CafterburnerIGC::GetPower</c>; <c>Igc/shipIGC.h:1137</c>).</param>
 /// <param name="Speed">True speed, world units/sec (<c>Velocity.Length()</c>).</param>
 /// <param name="Throttle">Throttle axis, -1 (idle) .. +1 (full forward) — the
 /// same <c>Controls.Throttle</c> axis <see cref="Flight.FlightInput"/> sends.</param>

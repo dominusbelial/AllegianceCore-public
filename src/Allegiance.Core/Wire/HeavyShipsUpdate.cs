@@ -133,7 +133,7 @@ public sealed class HeavyShipUpdateEntry
         short shipId, int stateM, ControlData controls,
         uint time, Vector3 position,
         Orientation orientation, Vector3 velocity, float[] turnRates,
-        float hullFrac, float shieldFrac, float oreFrac)
+        float hullFrac, float shieldFrac, float oreFrac, float power = 1.0f)
     {
         var u = new HeavyShipUpdateEntry();
         CompactQuant.WriteShort(u.Bytes, 0, shipId);
@@ -155,7 +155,7 @@ public sealed class HeavyShipUpdateEntry
         u.Bytes[35] = CompactQuant.Percent(1.0f);   // fuel
         u.Bytes[36] = CompactQuant.Percent(1.0f);   // energy
         u.Bytes[37] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));
-        u.Bytes[38] = CompactQuant.Percent(1.0f);   // power
+        u.Bytes[38] = CompactQuant.Percent(Math.Clamp(power, 0f, 1f));   // power (native afterburner ramp)
         return u;
     }
 
@@ -167,7 +167,7 @@ public sealed class HeavyShipUpdateEntry
             ship.Id, ship.StateM, ship.Controls,
             time, ship.Position,
             ship.Orientation, ship.Velocity, new[] { ship.TurnRates[0], ship.TurnRates[1], ship.TurnRates[2] },
-            ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity());
+            ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity(), ship.AfterburnerPower);
 
     /// <summary>Write a live pose into caller-owned storage, preserving the heavy
     /// codec's full ammo/fuel/energy slots and exact relative quantization.</summary>
@@ -253,7 +253,7 @@ public sealed class HeavyShipUpdateEntry
         var s = _snapshot!;
         return From(_snapshotTimeRef, _snapshotPosRef, s.Id, s.State, s.Controls, s.Time,
             s.Position, s.Orientation, s.Velocity, [s.Yaw, s.Pitch, s.Roll],
-            s.Hull, s.Shield, s.Ore).Bytes;
+            s.Hull, s.Shield, s.Ore, s.Power).Bytes;
     }
 }
 

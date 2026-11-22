@@ -29,6 +29,8 @@ window.menuText = instance => {
       return 'window';
     },
     probeBrotli: bytes => instance.invokeMethodAsync('ProbeBrotli', bytes),
+    // P1073 — which codecs the real browser runtime supports, on a real briefing frame.
+    probeCodecs: () => instance.invokeMethodAsync('ProbeCodecs'),
     decodeBrotli: bytes => instance.invokeMethodAsync('DecodeBrotli', bytes)
   };
   const detachFlight = window.installFlightInput(instance);

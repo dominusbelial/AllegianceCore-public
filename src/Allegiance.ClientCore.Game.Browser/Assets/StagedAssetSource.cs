@@ -25,7 +25,13 @@ public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource
         : throw new AssetNotResidentException(relativePath);
     public IEnumerable<string> Enumerate(string directoryRelativePath)
     {
-        string prefix = directoryRelativePath.Length == 0 ? "" : StagedManifest.Canonical(directoryRelativePath.TrimEnd('/')) + "/";
+        // P1073 — "." and "" are the documented IAssetSource root (WarpRenderer and
+        // HangarArt probe the artwork root case-insensitively). Canonical is a strict
+        // pack-name boundary and rejects "."; root is resolved here instead, so the
+        // boundary itself stays untouched.
+        if (directoryRelativePath is "." or "")
+            return _files.Keys.Where(k => !k.Contains('/')).ToArray();
+        string prefix = StagedManifest.Canonical(directoryRelativePath.TrimEnd('/')) + "/";
         return _files.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal) && !k[prefix.Length..].Contains('/')).ToArray();
     }
     /// <summary>Promote a completely verified pack on the event loop before joining.</summary>

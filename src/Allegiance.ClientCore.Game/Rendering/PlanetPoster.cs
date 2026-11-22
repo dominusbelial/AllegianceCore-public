@@ -201,6 +201,14 @@ public sealed class PlanetPoster : IDisposable
         catch (Exception ex) { Missing(planetName, ex.Message); return null; }
     }
 
+    /// <summary>P1073 — clear logged misses and re-resolve the active planet on the
+    /// next SetCluster (a verified browser pack can promote the poster later).</summary>
+    public void InvalidateMissingArt()
+    {
+        _missing.Clear();
+        _activePlanet = null;
+    }
+
     private void Missing(string stem, string? why = null)
     {
         if (_missing.Add(stem))

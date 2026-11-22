@@ -18,4 +18,9 @@ public interface ISkyRenderer : IDisposable
 
     /// <summary>Draw the sky behind everything for the flight camera.</summary>
     void Draw(Matrix view, Matrix projection, Vector3 cameraEye, SpaceVisualFrame frame = default);
+
+    /// <summary>P1073 — a verified pack was promoted: forget cached "missing"
+    /// answers so a texture that arrived after the first frame is loaded instead
+    /// of staying absent for the sector visit.</summary>
+    void InvalidateMissingArt() { }
 }

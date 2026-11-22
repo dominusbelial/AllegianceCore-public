@@ -8,7 +8,7 @@ namespace Allegiance.Core.Wire;
 internal sealed record ShipWireSnapshot(short Id, int State, ControlData Controls,
     uint Time, Vector3 Position, Orientation Orientation, Vector3 Velocity,
     float Yaw, float Pitch, float Roll, float Hull, float Shield,
-    float Ammo, float Fuel, float Energy, float Ore)
+    float Ammo, float Fuel, float Energy, float Ore, float Power)
 {
     internal static ShipWireSnapshot Capture(short id, Ship ship, uint time,
         int extraStateBits = 0, bool carryEndurance = false)
@@ -21,6 +21,6 @@ internal sealed record ShipWireSnapshot(short Id, int State, ControlData Control
             ship.HullType.MaxAmmo > 0 ? ship.Ammo / (float)ship.HullType.MaxAmmo : 0f,
             carryEndurance ? ship.LifepodEnduranceFraction(ship.Mission?.LastUpdate ?? 0) : 1f,
             maxEnergy > 0 ? ship.Energy / maxEnergy : 0f,
-            ship.Ore / ship.EffectiveMineCapacity());
+            ship.Ore / ship.EffectiveMineCapacity(), ship.AfterburnerPower);
     }
 }

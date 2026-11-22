@@ -54,6 +54,11 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     private NativeStar[] _stars = [];
     private uint _starSeed;
     private short _nStars = -1;
+#if BROWSER
+    /// <summary>P1073 — expanded one-pixel line dots; the KNI WebGL backend has no
+    /// <c>PrimitiveType.PointList</c> (ConcreteGraphicsContext.PrimitiveTypeGL).</summary>
+    private VertexPositionColor[] _starDots = [];
+#endif
 
     private SkyDome? _activeDome;
     private string? _activePoster;
@@ -210,6 +215,17 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         }
     }
 
+    /// <summary>P1073 — a verified pack was promoted; forget cached misses so the
+    /// environment dome and planet poster retry on the next SetCluster.</summary>
+    public void InvalidateMissingArt()
+    {
+        _missing.Clear();
+        _activePoster = null;
+        _activeDome = null;
+        _activeEnvTexture = null;
+        _planet.InvalidateMissingArt();
+    }
+
     private void DrawStars(Matrix view, Matrix projection, Vector3 cameraEye)
     {
         var gd = _gd;
@@ -235,10 +251,20 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             World = Matrix.Identity,
             LightingEnabled = false,
         };
+#if BROWSER
+        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
+        {
+            var pass = effect.CurrentTechnique.Passes[passIndex];
+#else
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
+#endif
             pass.Apply();
+#if BROWSER
+            gd.DrawUserPrimitives(PrimitiveType.LineList, BrowserStarDots.Expand(scratch, ref _starDots), 0, scratch.Length);
+#else
             gd.DrawUserPrimitives(PrimitiveType.PointList, scratch, 0, scratch.Length);
+#endif
         }
     }
 

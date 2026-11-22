@@ -18,6 +18,9 @@ public sealed class BattlePackStreamer : IAsyncDisposable
     public int RetryCount { get; private set; }
     public long PromotedBytes { get; private set; }
     public bool IsReady(string key) => _ready.Contains(key);
+    /// <summary>P1073 — whether this generation declares the pack at all (an older
+    /// manifest may predate the generated-map/station closures).</summary>
+    public bool HasPack(string key) => _packs.ContainsKey(key);
 
     public BattlePackStreamer(BattleManifest manifest, StagedManifest resident, AssetStager stager, StagedAssetSource destination)
     {

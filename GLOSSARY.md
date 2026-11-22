@@ -152,6 +152,22 @@ list in **reverse**.
   Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
   parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
   `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
+- **Generated-map browser parity and live gaps (P1073)** — the generated-map art
+  namespace is enumerated once in `src/Allegiance.Core/MapGen/GeneratedMapArt.cs`
+  (planet posters, `globeN`/`environmentNbmp` domes, `plnt19`/`plnt42`/`aleph` warp
+  funnels and the native asteroid rows). `tools/p1066-scene-packs.py` adds the
+  per-family `mapgen-*` and `scene-hangar` verified closures; `tools/p1065-battle-packs.py`
+  now also reads native `OT_stationType` (31) records so every station type has a
+  `station-<id>` closure. The browser requests the current/prefetched sector's
+  station/rock/warp/sky packs through the existing P1065 streamer
+  (`src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs`,
+  `src/Allegiance.ClientCore.Browser/Pages/Menu.Sectors.cs`). The port-only
+  `ResearchBriefing` (fmid 992) is decoded in the browser by the same staged
+  resident runtime Brotli decoder as `MissionBriefingInfo`
+  (`src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`). Coverage tests:
+  `tools/p1073-pack-coverage-tests.py`, `tests/Allegiance.ClientCore.Game.Browser.Tests/P1073*.cs`;
+  proof: `tools/p1073-browser-generated.cjs`; report:
+  `docs/reports/BROWSER_LIVE_GAPS_P1073.md`.
 - **Shared browser scene (P1066, B1)** — desktop orchestration is extracted to
   `src/Allegiance.ClientCore.Game/Game1.Scene.cs`; both clients compile and call
   `src/Allegiance.ClientCore.Game/Rendering/NativeScene.cs` for light, default sky,

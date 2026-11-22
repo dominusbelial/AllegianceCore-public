@@ -82,7 +82,12 @@ server.Boot(new ServerConfig
     Reconnect = new() { Enabled = true, GraceSeconds = 10 },
     Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = options.Guests },
     Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
-    Games = [new() { Name = "P1061 public mission", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
+    // P1073 — an optional generated-map + showcase-research match (the live
+    // P1071 preset shape). Default stays the static XXV_simple proof.
+    Showcase = new() { TechMode = options.MapGen is null ? "unlocked" : "research" },
+    Games = [new() { Name = options.MapGen is null ? "P1061 public mission" : "P1073 generated " + options.MapGen,
+        Map = options.MapGen is null ? "XXV_simple.igc" : "", MapGen = options.MapGen is null ? null : new() { Type = options.MapGen, Seed = options.MapSeed },
+        Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
         Password = GamePassword, AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
 });
 using var proxy = Process.Start(new ProcessStartInfo("node") { UseShellExecute = false,

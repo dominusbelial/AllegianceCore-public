@@ -58,6 +58,9 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
     /// <summary>Resident runtime decoder, prepared asynchronously before JoinAsync.
     /// Invocation is synchronous computation, preserving owner and packet order.</summary>
     public Func<byte[], MissionBriefingInfo>? BrowserMissionBriefingDecoder { get; set; }
+    /// <summary>P1073 — the same resident runtime decoder for the port-only research
+    /// briefing (fmid 992), which is Brotli-compressed like the mission briefing.</summary>
+    public Func<byte[], ResearchBriefing>? BrowserResearchBriefingDecoder { get; set; }
 #endif
 
     /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
@@ -1872,7 +1875,14 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
                 case ResearchBriefing.Fmid:
                     // P975 — the one containment path counts/logs (rate-limited, no
                     // exception text) instead of this case's own unbounded line.
+                    // P1073 — browser-WASM .NET has no Brotli codec; the browser
+                    // decodes through the staged resident runtime decoder, exactly
+                    // as the mission briefing (996) already does.
+#if BROWSER
+                    _world.Apply((BrowserResearchBriefingDecoder ?? throw new InvalidOperationException("Research briefing decoder is not staged"))(m));
+#else
                     _world.Apply(ResearchBriefing.Decode(m));
+#endif
                     break;
                 case MissionBriefingInfo.Fmid:
 #if BROWSER

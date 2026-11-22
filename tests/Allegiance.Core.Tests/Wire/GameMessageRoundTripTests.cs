@@ -194,7 +194,10 @@ public class GameMessageRoundTripTests
         // MaxEnergy=0, so a MaxEnergy=0 hull truthfully reports 0 energy — the
         // previous constant-1.0 "flight demo never drains" placeholder is gone,
         // the same treatment P362 already applied to the ammo byte above.
-        ff(240);        // power
+        // P1073 — power is the mounted afterburner's live native ramp
+        // (Igc/shipIGC.h:1137); this hull has none mounted, so native exports 0
+        // (the old constant 240 was the port's placeholder).
+        ff(0);          // power
         ff(0x7E);       // cookie
         Assert.Equal(54, p);
 

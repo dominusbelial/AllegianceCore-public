@@ -43,6 +43,9 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     /// behind it.</summary>
     private const float ObjectDist = 7800f;
 
+    /// <summary>P1073 — a verified pack was promoted; let the planet poster retry.</summary>
+    public void InvalidateMissingArt() => _planet.InvalidateMissingArt();
+
 #if BROWSER
     private bool _paintingsResident, _giantsResident;
     /// <summary>Promote optional original layers without rebuilding native sky

@@ -43,6 +43,14 @@ def core_roots(data):
             if size != 524:
                 raise ValueError('Invalid missile record')
             roots.append(dict(key='missile-' + str(struct.unpack_from('<h', record, 446)[0]), model=text(24, 13), texture=text(37, 13)))
+        elif kind == 31:
+            # P1073 — OT_stationType / DataStationTypeIGC (Igc/igc.h:2649). Same
+            # 524-byte layout as the port's DataStationTypeIGC.Decode: modelName
+            # @8, textureName @486, stationTypeID @446. Station art used to arrive
+            # only through the traced P1051/P1054 sector packs of a fixed-civ map.
+            if size != 524:
+                raise ValueError('Invalid station type record')
+            roots.append(dict(key='station-' + str(struct.unpack_from('<h', record, 446)[0]), model=text(8, 14), texture=text(486, 13)))
     return roots
 
 
@@ -107,6 +115,10 @@ def build(root, artwork):
             closure.add(name)
             asset = original(name)
             pending.extend(asset['dependencies'])
+            # P1073 — follow the join split's deferred visual deps too (a resident
+            # mesh whose surface a sector pack streamed), so station/rock closures
+            # never ship a model without its texture.
+            pending.extend(asset.get('visualDependencies') or [])
         packs.append(dict(key=row['key'], sources=sorted(closure)))
     assets = sorted(entries.values(), key=lambda a: a['source'])
     manifest = dict(version=1, assets=assets, packs=packs)
@@ -121,6 +133,8 @@ def build(root, artwork):
                    packs=[dict(key=p['key'], **sizes([entries[n] for n in p['sources'] if n in entries])) for p in packs],
                    hullModels=len({r['model'] for r in roots if r['key'].startswith('hull-')}),
                    coveredHullModels=len({r['model'] for r in roots if r['key'].startswith('hull-') and r not in missing}),
+                   stationTypes=len({r['key'] for r in roots if r['key'].startswith('station-')}),
+                   coveredStationTypes=len({r['key'] for r in roots if r['key'].startswith('station-') and r not in missing}),
                    missing=missing,
                    effects='Original bytes only. exp22bmp is 15360 pixels wide: task B must tile it before GPU upload. No effect renderer is added here.')
     (root / 'battle-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
