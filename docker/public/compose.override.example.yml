@@ -1,0 +1,22 @@
+# Optional host additions on top of docker-compose.yml. Copy to compose.override.yml
+# beside it; `docker compose` merges it automatically. The live public host uses this.
+#
+# - STUN for desktop NAT traversal (player-hosted games and hole punching). Also open
+#   3478/udp and 3479/udp in the host firewall. No UDP proxy or CDN in front: it
+#   would replace the source address STUN reports.
+# - Player-hosted games listed by the lobby.
+# - The artwork fetch script read from this directory instead of the repo root, for
+#   hosts that hold only this directory.
+#
+# Native GotoPlan travel is already the server default (SimConfig.NativeGotoPlan); no
+# override is needed for it.
+services:
+  lobby:
+    environment:
+      Lobby__PlayerHostedGames: "true"
+      Lobby__StunBindAddress: "::"
+      Lobby__StunPrimaryPort: "3478"
+      Lobby__StunSecondaryPort: "3479"
+  artwork:
+    volumes:
+      - ./fetch-trial-artwork.sh:/fetch-trial-artwork.sh:ro

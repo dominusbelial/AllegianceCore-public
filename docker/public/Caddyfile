@@ -10,6 +10,8 @@
 # its default exclusions cover images/video. Nothing is compressed twice.
 
 {
+	# Optional ACME contact. Delete this line to register with no contact address
+	# (ACME_EMAIL then only satisfies compose interpolation; the live host does this).
 	email {$ACME_EMAIL}
 	servers {
 		protocols h1 h2

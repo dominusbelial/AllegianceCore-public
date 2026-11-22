@@ -18,7 +18,7 @@ This change supplies files and tools only. The operator reviews and authorizes a
 | Between matches | Automatic next match after 30 simulation seconds |
 | Side selection | Auto-seat after 30 simulation seconds; `maxTeamImbalance: 1` |
 | Team capacity | 32 players per team, allowing humans beyond baseline seats |
-| Connections per source | 32; external bots share a source and need reconnect headroom |
+| Connections per source | 64 (the default); bots share the operator's source with the operator's own clients |
 | Guests | `identity.allowAnonymous: true` is required for browser guests |
 | Play log | On in this example; off by default elsewhere |
 
@@ -61,6 +61,21 @@ python3 -m unittest discover -s tools/tests -p test_play_report.py
 The report counts completed session segments by UTC start date and ISO week-year. Returning means an active callsign has appeared on at least two distinct dates by the end of the displayed period, within the supplied files; first-visit days do not count as returning. It includes unique callsigns and guest/account counts, sessions, median/nearest-rank p90 minutes, returning callsigns, browser/desktop/unknown session counts, launched/only-joined sessions and matches with humans. Guests are only random public callsigns: cleared storage, rerolled or edited names count as new people, and shared names cannot establish unique physical people. A reconnect is a new session segment; staying across a match boundary also starts another segment. Account classification requires a server-verified join ticket; no account ID is persisted. Bot sessions are excluded; per-match summaries count distinct human and bot callsigns observed during that match, including players who left before the end. Match summaries start at assembly and end at game over, retirement or clean shutdown; they include the pre-game/intermission interval. `winner` is a side ID, or null for a draw or shutdown. Match participation does not prove simultaneous overlap.
 
 Monthly files are selected by completion time in UTC. The writer appends and flushes lines on a background worker and retains the current UTC month plus eleven preceding months. Each file is capped at 64 MiB by default (`playLog.maxFileBytes`); subsequent records that month are dropped. A full bounded queue (`queueCapacity`, default 1024) also drops rather than blocks the simulation. `[playlog]` diagnostics count written/dropped/failed records; the server exposes `PlayLogDropped` for in-process observation. Disk errors drop records and preserve gameplay. Shutdown drains the queue. Abrupt process termination can lose open sessions or queued records, so the data is an estimate of completed play, not billing or identity evidence. Files contain public callsigns and gameplay aggregates only: no addresses, ports, agents, account IDs or ticket contents. Protect these volume files using the operator's existing access policy.
+
+## Operating notes (live host, 2026-11)
+
+- **Bots** run under systemd on the external bot host:
+  [`tools/allegiance-mcp/scripts/allegiance-perpetual-bots.service.example`](../tools/allegiance-mcp/scripts/allegiance-perpetual-bots.service.example)
+  uses a self-contained published driver, `Restart=always` and a log file. A server redeploy or a lost link
+  recovers by itself, and the driver refills seats after reconnecting.
+- **Do not reuse a rig's bot secret** (`ALLEGIANCE_PRIVILEGE_SECRET`) against a public host. An empty game
+  password needs no `ALLEGIANCE_LAN_PASSWORD`: the join gate is skipped when the game has no password.
+- **Pass the client version** at or above the server's `minimumClientVersion`. A missing version reports `0.0.0`
+  and is refused.
+- **Exclude test visits** from the play report. Operators' own browser test guests are ordinary `Pilot-…`
+  sessions in the log; note their callsigns when testing.
+- **Fly a browser guest on the rotation's generated maps** after any client or art change. See
+  `docs/BROWSER_HOSTING.md` ("Lessons from the live host").
 
 ## Native intent
 

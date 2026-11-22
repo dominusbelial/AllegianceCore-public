@@ -56,6 +56,7 @@
   },
   "identity": {
     "issuer": "https://<public-origin>",
+    // Leave "" to read the audience from lobby.enrollmentFile (what the live host does).
     "audience": "<enrollment-server-id>",
     "publicKeyFile": "/lobby-trust/public-key.pem",
     // Browser guests require anonymous admission; ticket checks still apply to accounts.
@@ -71,8 +72,10 @@
   },
   "sideSelectAutoSeatSeconds": 30,
   "transport": {
-    // External bots share one source IP: 10 seats plus reconnect/human headroom.
-    "maxConnectionsPerIp": 32
+    // External bots share one source IP, often the operator's own network, which the
+    // operator's own clients also use. Keep the default 64 (10 seats + reconnects +
+    // the operator's clients); never set it below the default for this preset.
+    "maxConnectionsPerIp": 64
   },
   "playLog": {
     "enabled": true,

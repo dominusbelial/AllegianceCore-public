@@ -1,0 +1,42 @@
+# systemd unit for the perpetual-battle backfill driver (P1071) on the external bot host.
+# Never install this on the public game server.
+#
+# Install (as root on the bot host), after publishing a self-contained driver:
+#   dotnet publish tools/allegiance-mcp -c Release -r linux-x64 --self-contained true -o <BOT_DIR>/mcp
+#   copy this file to /etc/systemd/system/allegiance-perpetual-bots.service, fill in the placeholders,
+#   then run `systemctl daemon-reload && systemctl enable --now allegiance-perpetual-bots.service`.
+#
+# <BOT_USER>        unprivileged account that owns <BOT_DIR>
+# <BOT_DIR>         directory holding mcp/ (the published driver) and backfill.log
+# <ARTWORK_DIR>     artwork corpus readable by <BOT_USER>
+# <SERVER> <PORT>   public game server address and port
+# <CLIENT_VERSION>  the server's minimumClientVersion or later (dev builds report 0.0.0 and are refused)
+#
+# Do not set ALLEGIANCE_PRIVILEGE_SECRET here unless the target server is configured with that
+# same bot secret. A rig's secret must never be sent to a public host. An empty game password
+# skips the join password gate (Server.MissionCookies.cs), so ALLEGIANCE_LAN_PASSWORD may stay
+# empty for a drop-in battle.
+[Unit]
+Description=AllegianceCore perpetual public battle backfill bots
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+User=<BOT_USER>
+WorkingDirectory=<BOT_DIR>
+Environment=ALLEGIANCE_ARTWORK_PATH=<ARTWORK_DIR>
+Environment=ALLEGIANCE_LAN_PASSWORD=
+ExecStart=<BOT_DIR>/mcp/allegiance-mcp <SERVER> <PORT> --backfill-seats 5 --client-version <CLIENT_VERSION>
+# Recover by itself after a server redeploy or a lost link; the driver refills seats on reconnect.
+Restart=always
+RestartSec=30
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65536
+StandardOutput=append:<BOT_DIR>/backfill.log
+StandardError=append:<BOT_DIR>/backfill.log
+
+[Install]
+WantedBy=multi-user.target

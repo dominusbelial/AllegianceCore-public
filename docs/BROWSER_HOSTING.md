@@ -166,8 +166,9 @@ export BROWSER_CLIENT_VERSION=<release>          # e.g. 0.1.6
 docker build -f src/Allegiance.Lobby/Dockerfile  -t allegiance-lobby:<release>  .
 docker build -f src/Allegiance.Server/Dockerfile -t allegiance-server:<release> .
 
-# 2. Browser generation, atomically.
-scripts/publish-browser-flight.sh .scratch/browser/generation <traces...>   # see the P1051 report
+# 2. Browser generation, atomically, from the committed traces
+#    (tools/browser-traces/flight-2026-11; the live host's generations were built this way).
+scripts/publish-browser-generation.sh .scratch/browser/generation
 
 # 3. Copy to the host (placeholders; use the operator's own access path).
 docker save allegiance-lobby:<release> allegiance-server:<release> | gzip > images-<release>.tgz
@@ -218,6 +219,23 @@ cd ~/allegiance-public && docker compose up -d
 # 5. Enroll the server's identity (operator device flow, as in the dev stack),
 #    then restart the server so its audience/issuer match.
 ```
+
+Lessons from the live host (2026-11):
+
+- **Optional extras.** `compose.override.example.yml` (STUN, player-hosted games, local fetch
+  script) is copied to `compose.override.yml` beside the stack. Delete the Caddyfile `email` line to
+  register ACME with no contact address.
+- **A generation-only update** means uploading the new generation beside the old one
+  (`rsync --copy-dest=<old>` sends only changed files), swapping the directory names, then
+  `docker compose up -d --no-deps --force-recreate lobby`. The server and its battle keep running.
+  The lobby keeps its server list in memory, so the list is **empty until the server's next heartbeat**
+  (up to `heartbeatIntervalSeconds`, 25 s). The server re-registers under a new listing id.
+- **A server restart** races Caddy on first boot (enrollment/heartbeat "connection refused", retried
+  every 5 minutes). `docker compose restart server` also restarts Caddy, which depends on it.
+- **Test on the maps you serve.** Generated maps (`mapGen`) and random civs reach browser paths that
+  the static `XXV_simple` map never did: point-list stars (fixed in `6bc0dade`), and station, asteroid
+  and texture coverage (P1073). Before switching a public host to a new rotation or civ mode, fly a
+  browser guest on it.
 
 The production stack is [`docker/public/docker-compose.yml`](../docker/public/docker-compose.yml)
 (host networking, Caddy, lobby, server, artwork), with
