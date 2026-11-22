@@ -38,7 +38,14 @@ window.menuText = instance => {
   const queueFocus = () => queueMicrotask(focus);
   const events = [[document, 'focusin'], [document, 'focusout'], [window, 'focus'], [window, 'blur']];
   const text = event => {
-    if (!ownsKeys() || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (['Flight','Hangar'].includes(document.getElementById('online-panel')?.dataset.state)) return;
+    if (!ownsKeys()) return;
+    const codes = [event.code];
+    if (event.ctrlKey) codes.push('ControlLeft');
+    if (event.shiftKey) codes.push('ShiftLeft');
+    if (event.altKey) codes.push('AltLeft');
+    if (instance.invokeMethod('ReferenceKey', codes)) { event.preventDefault(); return; }
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
     // Tab switches the native pilot/menu focus. Shift+Tab can leave the canvas
     // for the HTML toolbar; its buttons retain ordinary browser tab navigation.
     if (event.key === 'Tab' && !event.shiftKey && window.gameMenu.metrics().screen) { event.preventDefault(); return; }

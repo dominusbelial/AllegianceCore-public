@@ -18,9 +18,10 @@ function fixture({delayedResume=false}={}){
  const detach=window.installFlightInput({invokeMethod:(name,...args)=>{calls.push([name,...args]);order.push(name)}});
  return {window,document,canvas,calls,order,audio,detach,set pads(value){pads=value},get polls(){return polls},get lockCalls(){return lockCalls},get fullCalls(){return fullCalls}};
 }
-test('pointer refusal retries only on a later fresh gesture and Escape releases it',async()=>{
+test('pointer refusal retries only on a deliberate canvas click and Escape releases it',async()=>{
  const f=fixture();f.canvas.dispatch('mousedown',{buttons:0});assert.equal(f.lockCalls,1);await Promise.resolve();assert.equal(f.lockCalls,1);
- f.window.dispatch('keyup',{code:'KeyW'});f.window.dispatch('keydown',{code:'ArrowUp',key:'ArrowUp'});assert.equal(f.lockCalls,2);
+ f.window.dispatch('keyup',{code:'KeyW'});f.window.dispatch('keydown',{code:'ArrowUp',key:'ArrowUp'});assert.equal(f.lockCalls,1);
+ f.canvas.dispatch('mousedown',{buttons:0});assert.equal(f.lockCalls,2);
  f.document.pointerLockElement=f.canvas;f.document.dispatch('pointerlockchange');f.window.dispatch('keydown',{code:'Escape',key:'Escape'});
  assert.equal(f.document.pointerLockElement,null);assert.ok(f.calls.some(c=>c[0]==='ReleaseFlightInput'));f.detach();
 });

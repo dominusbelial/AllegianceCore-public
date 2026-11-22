@@ -223,6 +223,22 @@ list in **reverse**.
   screens without them. Proof: `tools/p1070-browser-hangar.cjs`; parity:
   `docs/parity/p1070-browser-hangar-loadout.csv`; report:
   `docs/reports/BROWSER_HANGAR_LOADOUT_P1070.md`. No desktop source changed.
+- **Browser keyboard parity (P1074)** — physical DOM codes in
+  `src/Allegiance.ClientCore.Game.Browser/BrowserKeyboard.cs` cover the shared action
+  catalog (OEM punctuation, numpad, both modifier sides and backslashes). Browser-only
+  defaults avoid reserved browser/OS chords and appear with `(browser)` in the live
+  reference. `src/Allegiance.ClientCore.Game.Browser/BrowserFlightSteering.cs` applies native per-axis key
+  precedence over mouse input; `wwwroot/flight-input.js` in the browser head captures
+  only on canvas click or the live mouse-toggle chord and returns toolbar focus to
+  the canvas (Shift+Tab visits the toolbar, Escape returns). Browser input dispatch
+  and the shared Controls reference are in
+  `src/Allegiance.ClientCore.Game.Browser/Game1.KeyboardActions.cs`,
+  `src/Allegiance.ClientCore.Game.Browser/Game1.KeyboardUtility.cs` and
+  `src/Allegiance.ClientCore.Game.Browser/Game1.KeyboardHelp.cs`; its visible target
+  adapter is `src/Allegiance.ClientCore.Game.Browser/BrowserTargeting.cs`.
+  Proof: `tools/p1074-browser-keyboard.cjs`, `tools/p1074-keyboard-input-tests.cjs`;
+  parity: `docs/parity/p1074-browser-keyboard.csv`; report:
+  `docs/reports/BROWSER_KEYBOARD_PARITY_P1074.md`. Desktop input/defaults unchanged.
 - **Browser sign-in offer (P1062)** — the lobby's own pages now tell a signed-in player
   about the browser client. `GET /api/browser` (`src/Allegiance.Lobby/LobbyEndpoints.cs`,
   `BrowserPreview/BrowserOffer.cs`) answers `enabled`, the served `prefix` and, for the

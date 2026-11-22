@@ -208,7 +208,12 @@ public sealed partial class ActionMap
     public string LabelOf(string action)
     {
         var chord = BindingOf(action);
-        if (chord.Key != Keys.None) return chord.Label;
+        if (chord.Key != Keys.None)
+#if BROWSER
+            return Allegiance.ClientCore.MonoGame.BrowserKeyboardBindings.Label(action, chord);
+#else
+            return chord.Label;
+#endif
         return MouseButtonOf(action) is { } m ? m.Label : "";
     }
 

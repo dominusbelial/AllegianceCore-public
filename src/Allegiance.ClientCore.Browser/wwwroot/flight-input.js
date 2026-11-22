@@ -39,21 +39,24 @@
   }
   window.installFlightInput = instance => {
     const canvas = document.getElementById('theCanvas'), held = new Set(), listeners = [];
-    let alive = true, pointerPending = false, wantsPointer = false, padConnected = false, padIndex = null;
+    let alive = true, pointerPending = false, wantsPointer = false, padConnected = false, padIndex = null, toolbarNavigation = false, toggleWasDown = false;
     const playing = () => document.getElementById('online-panel')?.dataset.state === 'Flight';
     // P1070 — the hangar and loadout are driven in the game window (the canvas), so the
     // same key stream and a canvas pointer feed them: the desktop reads keys through the
     // action map (confirm/back/menu) and the pointer through Mouse.GetState() for hover
     // and click. Pointer lock, fullscreen and the audio gesture stay flight-only.
     const docked = () => document.getElementById('online-panel')?.dataset.state === 'Hangar';
-    const owns = () => (playing() || docked()) && !document.activeElement?.closest('button,a,input,select,textarea,[contenteditable="true"]');
-    const invoke = (method, ...args) => { if (alive) instance.invokeMethod(method, ...args); };
+    const textEntry = () => !!document.activeElement?.closest('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]),textarea,[contenteditable]:not([contenteditable="false"]),[role="textbox"]');
+    const control = () => document.activeElement?.closest('button,a,select,input[type=checkbox],input[type=radio],input[type=range]');
+    const owns = () => (playing() || docked()) && !textEntry();
+    const focusCanvas = () => { toolbarNavigation = false; canvas.focus(); };
+    const invoke = (method, ...args) => { if (alive) return instance.invokeMethod(method, ...args); };
     const on = (target, name, handler, options) => { target.addEventListener(name, handler, options); listeners.push(() => target.removeEventListener(name, handler, options)); };
-    const release = () => { padConnected = false; padIndex = null; wantsPointer = false; held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); if (document.pointerLockElement === canvas) document.exitPointerLock(); };
+    const release = () => { padConnected = false; padIndex = null; wantsPointer = false; toggleWasDown = false; held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); if (document.pointerLockElement === canvas) document.exitPointerLock(); };
     const lock = () => {
       if (!wantsPointer || pointerPending || document.pointerLockElement === canvas) return;
       pointerPending = true;
-      try { const request = canvas.requestPointerLock(); request?.catch(error => { console.info('[browser] Pointer lock refused; use the next key press or click to retry.'); pointerPending = false; }); }
+      try { const request = canvas.requestPointerLock(); request?.catch(error => { console.info('[browser] Pointer lock refused; click the game view or use the mouse-flight toggle to retry.'); pointerPending = false; }); }
       catch { pointerPending = false; }
     };
     const fullscreen = () => {
@@ -63,16 +66,39 @@
     };
     on(window, 'keydown', event => {
       if (event.isTrusted) audio(!document.hidden, true);
-      if (event.altKey && event.key === 'Enter' && playing()) { event.preventDefault(); if (!event.repeat) fullscreen(); return; }
       if (!owns()) return;
-      // P1070 — Escape is a real screen verb while docked (native back from the
-      // loadout), so the hangar gets the key instead of it only releasing flight input.
-      if (event.code === 'Escape') { if (docked()) { held.add('Escape'); invoke('FlightKeys', [...held]); } else release(); return; }
-      if (['Tab','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace'].includes(event.code)) event.preventDefault();
-      if (event.isTrusted && !event.repeat && !docked()) lock();
-      held.add(event.code); invoke('FlightKeys', [...held]);
+      if (event.altKey && event.code === 'Enter' && playing()) { event.preventDefault(); if (!event.repeat) fullscreen(); return; }
+      // Shift+Tab leaves the game; Tab then visits toolbar controls normally.
+      // Escape returns to flight. Space/Enter deliberately activate a control
+      // reached by Tab, while a mouse-clicked button cannot steal flight keys.
+      if (event.code === 'Tab' && (event.shiftKey || control())) {
+        toolbarNavigation = true; held.clear(); invoke('FlightKeys', []); return;
+      }
+      if (toolbarNavigation && control() && (['Enter','Space'].includes(event.code)
+          || document.activeElement?.closest('select') && event.code !== 'Escape')) return;
+      if (event.code === 'Escape') {
+        event.preventDefault(); focusCanvas();
+        if (invoke('FlightEscape') === true) return;
+        if (docked()) { held.add('Escape'); invoke('FlightKeys', [...held]); } else release();
+        return;
+      }
+      // Cancel every deliverable browser shortcut only inside the game. Hard
+      // OS/tab-management chords have safe browser defaults in the action map.
+      event.preventDefault();
+      if (control()) focusCanvas();
+      held.add(event.code);
+      // The synchronous check keeps a deliberate mouse-toggle gesture inside
+      // the trusted event, and respects the live action binding. No other key
+      // press ever captures the pointer, including after a refused request.
+      const toggle = playing() && invoke('MouseToggleKey', [...held]) === true;
+      if (toggle && !toggleWasDown && !event.repeat && event.isTrusted) {
+        if (document.pointerLockElement === canvas) { wantsPointer = false; document.exitPointerLock(); }
+        else { wantsPointer = true; lock(); }
+      }
+      toggleWasDown = toggle;
+      invoke('FlightKeys', [...held]);
     }, true);
-    on(window, 'keyup', event => { held.delete(event.code); invoke('FlightKeys', [...held]); }, true);
+    on(window, 'keyup', event => { held.delete(event.code); toggleWasDown = invoke('MouseToggleKey', [...held]) === true; invoke('FlightKeys', [...held]); }, true);
     on(canvas, 'mousedown', event => {
       if (!playing()) return;
       canvas.focus();
@@ -113,7 +139,7 @@
       pointerPending = false;
       const locked = document.pointerLockElement === canvas;
       invoke('PointerCapture', locked);
-      if (!locked) { held.clear(); invoke('FlightKeys', []); invoke('ReleaseFlightInput'); }
+      if (!locked) { wantsPointer = false; release(); }
     });
     on(document, 'pointerlockerror', () => { pointerPending = false; console.info('[browser] Pointer lock refused; retry on the next gesture.'); });
     on(window, 'blur', () => { focused = false; release(); audio(false); });
@@ -122,12 +148,24 @@
     on(document, 'visibilitychange', () => { if (document.hidden) release(); audio(!document.hidden); });
     on(canvas, 'contextmenu', event => event.preventDefault());
     on(canvas, 'webglcontextlost', event => { event.preventDefault(); release(); invoke('ContextLost'); });
+    // Pointer activation must not leave a toolbar button as the key owner.
+    // Do not prevent select's popup, or input/text editing. Tab focus is intact.
+    on(document, 'mousedown', event => {
+      if ((playing() || docked()) && event.target.closest?.('#online-panel button, #menu-controls button')) event.preventDefault();
+    }, true);
+    on(document, 'change', event => {
+      if (owns() && event.target.closest?.('#online-panel select')) focusCanvas();
+    });
+    on(document, 'focusin', () => {
+      if (textEntry()) { held.clear(); invoke('FlightKeys', []); invoke('FlightMouseButtons', 0); }
+    });
     on(document, 'click', event => {
       if (event.isTrusted) audio(!document.hidden, true);
       if (event.target.closest?.('[data-flight-fullscreen]')) fullscreen();
+      if ((playing() || docked()) && event.target.closest?.('#online-panel button, #menu-controls button')) focusCanvas();
     });
     window.gameFlight = {
-      activate: () => canvas.focus(), audioStates: () => [...contexts].map(c => c.state),
+      activate: focusCanvas, audioStates: () => [...contexts].map(c => c.state),
       pacing(slow) { if (framesLate !== slow) { framesLate = slow; audio(!document.hidden); } },
       frame() {
         // Poll once per game frame; only the W3C standard layout is portable.
