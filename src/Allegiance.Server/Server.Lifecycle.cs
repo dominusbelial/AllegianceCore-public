@@ -65,6 +65,8 @@ public sealed partial class Server
     {
         _shutdown = false;
         _config = config;
+        if (_config.PlayLog is null) throw new InvalidDataException("playLog must be an object");
+        _config.PlayLog.Validate();
         InitializeConsole();
         _config.Bots.ApplyEnvironment(Environment.GetEnvironmentVariable("ALLEGIANCE_BOTS_CIV_STRATEGY"));
         Console.WriteLine($"[boot] bots.civStrategy = {_config.Bots.CivStrategy.ToString().ToLowerInvariant()} ({(_config.Bots.CivStrategy ? "commander/fleet experiment" : "observation only")})");
@@ -247,6 +249,7 @@ public sealed partial class Server
         _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
         BindHostAndTransport();                      // checklist items 3 & 6
         OpenCaptureIfEnabled();                      // optional --capture (off by default)
+        if (_config.PlayLog.Enabled) _playLog = new PlayLogWriter(_config.PlayLog);
         var missions = InstantiateGames(core);       // checklist item 8
         _missions = missions;
         // P382 — spawn each side's initial miner drones (docked at home) once
@@ -1516,6 +1519,7 @@ public sealed partial class Server
         string mapName = selectedMap is { } choice
             ? choice.Entry.Map ?? $"gen:{Enum.Parse<MapGenType>(choice.Entry.MapGen!.Type, true)}" : g.Map;
         lock (_matchups) _matchups.Add(mission, (_skillMatchNumber, civSeed, goalDescription, homeDescription, selectedMap?.Receipt ?? "", mapName));
+        BeginPlayMatch(mission);
         Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
         InitializeCivStrategy(mission, civSeed, fromMapGen ? $"gen:{mg!.Type}" : mapName, strategyMapSeed, swapHomes);
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
@@ -2285,6 +2289,7 @@ public sealed partial class Server
 
     private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason, bool requested = false, string message = "")
     {
+        EndPlaySession(id);
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
         _pendingSideSelect.Remove(id);
@@ -2781,6 +2786,7 @@ public sealed partial class Server
         _broadcastPublisher?.Dispose();
         _broadcastPublisher = null;
         _host?.Transport?.Shutdown();
+        ShutdownPlayLog();
         if (_missions is not null) foreach (var mission in _missions) mission.Dispose();
         _missions?.Clear();
         DisposeRetiredMissions();

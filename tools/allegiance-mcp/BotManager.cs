@@ -217,8 +217,10 @@ internal sealed partial class BotManager : IDisposable
         LoadoutVariety.Configure(seed);
     }
 
-    public BotManager(string host, ushort port, WorkerPartition? partition = null)
+    public BotManager(string host, ushort port, WorkerPartition? partition = null, bool backfill = false, string? clientVersion = null)
     {
+        _backfill = backfill;
+        _backfillClientVersion = clientVersion ?? "0.0.0";
         Partition = partition;
         _host = host;
         _port = port;
@@ -231,6 +233,7 @@ internal sealed partial class BotManager : IDisposable
         Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
         ConnectProbe();
+        if (_backfill) lock (_commanders) _commanders[ProbeSide] = Probe;
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
         _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
         if (Partition is null || Partition.Index == 0) _researchThread.Start();
@@ -264,11 +267,12 @@ internal sealed partial class BotManager : IDisposable
 
     // ── Startup probe (server validation + side roster) ────────────────────
 
-    private static LogonRequest Request(string name)
+    private LogonRequest Request(string name)
     {
         var request = new LogonRequest
         {
-            CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+            CharacterName = name, ZoneTicket = _backfill ? null : [0x01, 0x02, 0x03, 0x04],
+            ClientVersion = _backfill ? _backfillClientVersion : null,
             CDKey = Environment.GetEnvironmentVariable("ALLEGIANCE_PRIVILEGE_SECRET") ?? "ABCDEFGHIJKL", MissionPassword = Environment.GetEnvironmentVariable("ALLEGIANCE_LAN_PASSWORD") ?? "pw",
             FedsrvVer = LogonRequest.MsgVer, Time = 911u, DwCookie = uint.MaxValue,
             CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
@@ -735,7 +739,7 @@ internal sealed partial class BotManager : IDisposable
         if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"combat client '{name}' never got a validated LOGONACK from {_host}:{_port}");
         SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
-            () => cs.LastPositionRefusal, cs.SendPositionReq);
+            () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: !_backfill);
 
         shipId = cs.World.MyShipId!.Value;
         actualSide = cs.World.MySideId ?? side;
@@ -1157,7 +1161,7 @@ internal sealed partial class BotManager : IDisposable
             if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
                 return existing;
             DisposePeer(existing);
-            string name = $"research-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
+            string name = $"{(_backfill ? "mcp-cmd" : "research-cmd")}{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
             using var ownership = new PendingOwnership(DisposePeer);
             var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
             cs.World.CountOnlyProjectiles = true;

@@ -93,6 +93,7 @@ services:
       - artwork:/artwork:ro
       - ./server.json:/app/server.json:ro
       - lobby-trust:/lobby-trust:ro
+      # Optional playLog storage: /server-identity/plays (same durable server data volume).
       - server-identity:/server-identity
     depends_on:
       artwork:

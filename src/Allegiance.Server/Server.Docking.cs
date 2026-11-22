@@ -2405,6 +2405,8 @@ public sealed partial class Server
         // consider this ship for re-docking again until Sector.LaunchCooldownSeconds
         // elapses, regardless of how close it drifts back to the station.
         ship.LastLaunchTime = _simNow;
+        if (_playLog is not null && ConnOf(ship) is { } playPeer && _peerShips.TryGetValue(playPeer, out var playLive))
+            AttachPlayScore(playPeer, playLive);
     }
 
     /// <summary>

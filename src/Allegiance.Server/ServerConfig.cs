@@ -1144,6 +1144,7 @@ public sealed class ReceiveConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    public PlayLogConfig PlayLog { get; set; } = new();
     public ServerIdentityConfig? Identity { get; set; }
 
     /// <summary>
@@ -1581,6 +1582,8 @@ public static class ServerConfigLoader
             Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_FRIENDLY_FIRE"),
             Environment.GetEnvironmentVariable("ALLEGIANCE_GAME_ALLOW_ALLIED_VIZ"));
         ApplyCli(config, cli);
+        if (config.PlayLog is null) throw new InvalidDataException("playLog must be an object");
+        config.PlayLog.Validate();
         foreach (var game in config.Games) _ = game.ResolveGoals(config.Showcase.MapRotation is null);
         return config;
     }

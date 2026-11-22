@@ -255,18 +255,26 @@ internal sealed partial class BotManager
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
         ActiveBot[] bots;
-        lock (_gate) bots = _bots.Where(b => names.Contains(b.Name)).ToArray();
+        lock (_gate)
+        {
+            // Backfill owns persistent combat slots, including temporarily vacant
+            // ones. Retain them when pending discovery becomes a registered run,
+            // so a later real client can inherit its slot without a new timer.
+            IEnumerable<ActiveBot> candidates = _backfill && _backfillFinaleMembers.Count > 0
+                ? _backfillFinaleMembers.Values : _bots;
+            bots = candidates.Where(b => names.Contains(b.Name)).ToArray();
+        }
         var core = Catalog.RepresentativeCore();
         var plans = new Dictionary<short, FinalePlan>();
         foreach (short side in bots.Select(b => b.Side).Distinct())
         {
-            var sideBots = bots.Where(b => b.Side == side).ToArray();
+            var sideBots = bots.Where(b => b.Side == side && (!_backfill || IsParticipating(b))).ToArray();
             // P896 — P797 honesty: a side only ever receives a target from its OWN
             // worlds. `stations` is the fleet-wide union used for discovery
             // bookkeeping, and handing it to every side is what let the P831 grace
             // give side A a station only side B's world held — which the strike-end
             // check then read as "destroyed" (false station-killed).
-            var observed = ObservedFinaleStations(side, sideBots, stations);
+            var observed = _backfill && sideBots.Length == 0 ? [] : ObservedFinaleStations(side, sideBots, stations);
             var target = PickSideFinaleTarget(core, side, observed, sideBots);
             if (target is not { } home)
             {

@@ -10856,3 +10856,53 @@ changed. No second broad Fast sweep was run.
 [all isolated outcomes/durations, source and TRX hashes](reports/BROWSER_SCENE_LIGHT_SKY_P1066_assets/fast-isolated.json).
 Raw logs/TRX remain ignored in `.scratch/p1066/fast/` and
 `.scratch/p1066/fast-isolated/`.
+
+## P1071 — Perpetual battle, initial Fast sweep (2026-11-22 UTC)
+
+The artwork/native-equipped full Fast sweep executed **15,951 cases**:
+**15,943 passed / 1 failed / 7 skipped**. Its nine infrastructure checks passed.
+The calibrated Fast limit was **11.529 s**. One known wire-credit timing case
+failed and two existing timing-sensitive theory rows passed their assertions but
+exceeded that limit. Each affected method was then run alone three times,
+serially, without changing assertions, thresholds, tiers, quarantine rules or
+repair/profile implementations:
+
+| Method | Sweep observation | Three isolated reruns |
+| --- | --- | --- |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | fighter credit 0.056 rather than 0.500 | **1/0/0 ×3**, 3.055–3.067 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 12.738 s | **2/0/0 ×3**, both theory rows; 2.906–3.967 s per case |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | civ 3 passed in 12.018 s | **10/0/0 ×3**, all ten civilizations; 0.270–1.563 s per case |
+
+These are the already-ledgered repair-credit and first-load timing families.
+P1071 adds default-off analytics and external backfill orchestration; none of the
+repair, scoring, civ-profile or test policy implementations changed. The later
+backfill-only rotation-generation fix passed its focused gates and was included
+in the final sweep below. Initial receipt and raw TRX/logs remain ignored under
+`.scratch/p1071-fast/` and `.scratch/p1071-fast-isolated/`; the task report is
+`docs/reports/PERPETUAL_BATTLE_P1071.md`.
+
+## P1071 — Perpetual battle, final Fast timing triage (2026-11-22 UTC)
+
+The final artwork/native-equipped Fast sweep executed **15,952 cases** in
+**558.4 s**: **15,945 passed / 0 failed / 7 not executed**. All **9 infrastructure
+checks passed**. The runner remains **red for six passing timing offenders**,
+against its calibrated **11.531 s** case limit. Each affected method ran in
+three fresh isolated processes, serially, including all theory rows:
+
+| Method | Sweep observation | Three isolated results (passed/failed/skipped) | Isolated per-case duration |
+| --- | --- | --- | --- |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 13.575 s | **2/0/0 ×3** | 2.913–3.957 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | civ 35 passed in 11.561 s | **3/0/0 ×3** | 3.145–5.198 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 13.647 s | **1/0/0 ×3** | 3.044–3.087 s |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | civ 3 passed in 13.763 s | **10/0/0 ×3** | 0.265–1.871 s |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | passed in 14.245 s | **1/0/0 ×3** | 1.431–1.438 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | civ 5 passed in 14.256 s | **10/0/0 ×3** | 1.813–4.384 s |
+
+All **81 isolated cases passed**, below the sweep's calibrated limit. These
+selection/catalog/artwork-loading timing families are already ledgered above;
+the isolated results do not turn the broad timing gate green. No assertion,
+threshold, timeout, tier, quarantine, repair or profile rule changed. Raw evidence
+remains ignored under `.scratch/p1071-fast-final/` and
+`.scratch/p1071-fast-final-isolated/`; the extracted per-case receipt is
+`.scratch/p1071-fast-final-isolated-results.json`. See the
+[P1071 report](reports/PERPETUAL_BATTLE_P1071.md) for implementation and other gates.

@@ -1,0 +1,118 @@
+// Files-only public battle template; fill enrollment and public-origin placeholders locally.
+{
+  "artPath": "/artwork",
+  "staticCore": "PCore001.igc",
+  "staticCoreEncrypted": false,
+  "port": 6073,
+  "minimumClientVersion": "2.0.0",
+  "webSocket": {
+    "enabled": true,
+    "publicUrl": "wss://<public-origin>/game",
+    "port": 6080,
+    "bindAddress": "127.0.0.1",
+    "path": "/game",
+    "allowedOrigins": [
+      "https://<public-origin>"
+    ],
+    "knownProxies": [
+      "127.0.0.1"
+    ],
+    "allowLoopbackDevelopment": false
+  },
+  "updatesPerSecond": 20,
+  "games": [
+    {
+      "name": "Perpetual Public Battle",
+      "map": "XXV_simple.igc",
+      "teams": 2,
+      "civIds": [
+        -1,
+        -1
+      ],
+      "sideNames": [
+        "Alpha",
+        "Bravo"
+      ],
+      "password": "",
+      "autoStart": true,
+      "civRotation": "off",
+      "maxTeamImbalance": 1,
+      "maxPlayersPerTeam": 32,
+      "allowDevelopments": true,
+      "allowShipyardPath": true,
+      "allowExpansionPath": true,
+      "allowTacticalPath": true,
+      "allowSupremacyPath": true,
+      "initialMinersPerTeam": 1,
+      "homeSwap": "off"
+    }
+  ],
+  "lobby": {
+    "url": "http://127.0.0.1:8080",
+    "displayName": "Perpetual Public Battle",
+    "publicAddress": "127.0.0.1",
+    "heartbeatIntervalSeconds": 25,
+    "enrollmentFile": "/server-identity/enrollment.json"
+  },
+  "identity": {
+    "issuer": "https://<public-origin>",
+    "audience": "<enrollment-server-id>",
+    "publicKeyFile": "/lobby-trust/public-key.pem",
+    // Browser guests require anonymous admission; ticket checks still apply to accounts.
+    "allowAnonymous": true
+  },
+  "liveSettings": {
+    "timeDilation": "auto",
+    "seenWarpRouting": false,
+    "autoNextMatch": {
+      "enabled": true,
+      "intermissionSeconds": 30
+    }
+  },
+  "sideSelectAutoSeatSeconds": 30,
+  "transport": {
+    // External bots share one source IP: 10 seats plus reconnect/human headroom.
+    "maxConnectionsPerIp": 32
+  },
+  "playLog": {
+    "enabled": true,
+    "path": "/server-identity/plays/plays.jsonl",
+    "botNames": [
+      "mcp-*",
+      "research-cmd*"
+    ],
+    "queueCapacity": 1024,
+    "maxFileBytes": 67108864
+  },
+  "showcase": {
+    "techMode": "research",
+    "incomeMultiplier": 5000,
+    "researchTimeScale": 8,
+    "loopResearchPlans": false,
+    "finaleTimeoutSeconds": 900,
+    "stationKillsDecideDeadline": true,
+    "matchCapSeconds": 3600,
+    "mapRotation": {
+      "mode": "cycle",
+      "seed": 927,
+      "entries": [
+        {
+          "mapGen": {
+            "type": "SingleRing"
+          }
+        },
+        {
+          "mapGen": {
+            "type": "PinWheel"
+          }
+        },
+        {
+          "mapGen": {
+            // DiamondRing requires at least 3 teams (native mapmakerigc.cpp:1930-1937).
+            "type": "DoubleRing"
+          }
+        }
+      ]
+    }
+  }
+}

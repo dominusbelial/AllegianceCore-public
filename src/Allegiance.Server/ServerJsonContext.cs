@@ -31,6 +31,9 @@ namespace Allegiance.Server;
     PropertyNameCaseInsensitive = true,
     ReadCommentHandling = JsonCommentHandling.Skip,
     AllowTrailingCommas = true)]
+[JsonSerializable(typeof(PlayLogConfig))]
+[JsonSerializable(typeof(PlaySessionEntry))]
+[JsonSerializable(typeof(PlayMatchEntry))]
 [JsonSerializable(typeof(ServerConfig))]
 [JsonSerializable(typeof(GameConfig))]
 [JsonSerializable(typeof(Allegiance.Core.Model.MissionGoals))]
