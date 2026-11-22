@@ -43,13 +43,13 @@ public sealed class ProjectileModelRenderer : IDisposable
     private readonly Dictionary<string, Geometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingLogged;
     // P593 — a case-insensitive index of every .mdl basename in the artwork
     // root (stem -> exact on-disk stem), the P586b proven pattern: a projectile
     // model's imported texture namespace may be capitalised on disk (e.g.
     // "Wep07bbmp.mdl") and a case-sensitive File.Exists on Linux would miss it →
     // lit-solid white. The index makes the texture probe case-insensitive.
-    private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetStemIndex _diskStems;
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
@@ -61,11 +61,11 @@ public sealed class ProjectileModelRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _missingLogged = new(assets);
         _effect = new BasicEffect(gd) { TextureEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
-        foreach (var rel in assets.Enumerate("."))
-            if (rel.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
-                _diskStems[Path.GetFileNameWithoutExtension(rel)] = Path.GetFileNameWithoutExtension(rel);
+        _diskStems = new(assets);
+
     }
 
     /// <summary>The compiled mesh for a <c>.mdl</c> model stem (parsed + built
@@ -95,6 +95,7 @@ public sealed class ProjectileModelRenderer : IDisposable
     private bool TryParse(string modelName, out MdlFile file)
     {
         if (_parsed.TryGetValue(modelName, out file!)) return true;
+        if (_missingLogged.Contains(modelName)) { file = null!; return false; }
         if (!_diskStems.TryGetValue(modelName, out var exact))
         {
             file = null!;
@@ -144,7 +145,6 @@ public sealed class ProjectileModelRenderer : IDisposable
     public Texture2D? TextureFor(string modelName)
     {
         if (string.IsNullOrEmpty(modelName)) return null;
-        if (_textures.TryGetValue(modelName, out var t)) return t;
         if (!TryParse(modelName, out var mdl)) return null;
         string? stem = ResolveTextureStemFor(mdl, modelName, s => _diskStems.ContainsKey(s));
         if (stem is null)
@@ -152,6 +152,7 @@ public sealed class ProjectileModelRenderer : IDisposable
             LogMissing(modelName + " (texture)", "no import namespace resolves a texture unit");
             return null;
         }
+        if (_textures.TryGetValue(stem, out var cached)) return cached;
         if (!_diskStems.TryGetValue(stem, out var exact))
         {
             LogMissing(stem, "not present");
@@ -170,7 +171,7 @@ public sealed class ProjectileModelRenderer : IDisposable
                     cols[n++] = new Color((int)mdlTex.Rgba[si], (int)mdlTex.Rgba[si + 1], (int)mdlTex.Rgba[si + 2], 255);
                 }
             surf.SetData(cols);
-            _textures[modelName] = surf;
+            _textures[stem] = surf;
             return surf;
         }
         catch (Exception ex)

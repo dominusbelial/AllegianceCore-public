@@ -42,12 +42,12 @@ public sealed class NativeTreasureRenderer : IDisposable
 {
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
-    private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetStemIndex _diskStems;
     private readonly Dictionary<string, NativeShipRenderer.NativeShipGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingModelLogged;
+    private readonly AssetMissCache _missingTextureLogged;
     private readonly Dictionary<short, SpinState> _spins = new();
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
@@ -61,18 +61,14 @@ public sealed class NativeTreasureRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _missingModelLogged = new(assets);
+        _missingTextureLogged = new(assets);
         // P586b — a case-insensitive index of every .mdl basename in the artwork
         // root, so a treasure model/texture stem resolves to its EXACT on-disk
         // name. Native runs on Windows (case-insensitive), so a namespace like
         // "wep07bbmp" must still find the capitalised "Wep07bbmp.mdl" unit;
         // Linux's case-sensitive File.Exists would otherwise miss it.
-        foreach (var rel in assets.Enumerate("."))
-            if (rel.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
-            {
-                var baseName = Path.GetFileNameWithoutExtension(rel);
-                if (!string.IsNullOrEmpty(baseName))
-                    _diskStems[baseName] = baseName;
-            }
+        _diskStems = new(assets);
         _effect = new BasicEffect(gd);
         _decalEffect = new BasicEffect(gd) { VertexColorEnabled = false, TextureEnabled = true };
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
@@ -93,6 +89,7 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelStem)) return null;
         if (_models.TryGetValue(modelStem, out var g)) return g;
+        if (_missingModelLogged.Contains(modelStem)) return null;
         var exact = ExactStem(modelStem);
         try
         {
@@ -120,6 +117,7 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        if (_missingTextureLogged.Contains(textureStem)) return null;
         var exact = ExactStem(textureStem);
         try
         {

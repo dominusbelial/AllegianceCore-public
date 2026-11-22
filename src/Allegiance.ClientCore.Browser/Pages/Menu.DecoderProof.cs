@@ -6,6 +6,20 @@ namespace Allegiance.ClientCore.Browser.Pages;
 public partial class Menu
 {
     [JSInvokable]
+    public void ProofView(string? kind, short id) { if (_dev) _game?.ProofView(kind, id); }
+
+    [JSInvokable]
+    public bool PrepareLateArtProof()
+    {
+        if (!_dev || _battleStreamer?.HasPack("proof-p1075-art") != true) return false;
+        _battleStreamer.RequestPack("proof-p1075-art");
+        return _battleStreamer.IsReady("proof-p1075-art");
+    }
+
+    [JSInvokable]
+    public object? ProbeLateArt() => _dev ? _game?.ProbeLateArt() : null;
+
+    [JSInvokable]
     public byte[] DecodeBrotli(byte[] input) => _briefingDecoder!.Invoke<byte[]>("decode", input);
 
     // Read-only runtime capability evidence for the loopback Chromium harness.

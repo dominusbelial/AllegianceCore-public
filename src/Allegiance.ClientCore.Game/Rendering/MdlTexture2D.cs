@@ -18,12 +18,13 @@ internal sealed class MdlTexture2D : IDisposable
     private readonly IAssetSource _assets;
     private readonly int _keyBelow;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missing;
 
     public MdlTexture2D(GraphicsDevice gd, IAssetSource assets, int keyBelow = 10)
     {
         _gd = gd;
         _assets = assets;
+        _missing = new(assets);
         _keyBelow = keyBelow;
     }
 

@@ -26,7 +26,7 @@ public sealed class PlanetPoster : IDisposable
     private readonly IAssetSource _assets;
     private static readonly Color XnaWhite = Color.White;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missing;
 
     private Texture2D? _texture;
     private string? _activePlanet;
@@ -34,11 +34,14 @@ public sealed class PlanetPoster : IDisposable
     private float _radius;
     private bool _has;
     private long _textureRevision;
+    private readonly AssetContentRevision _contentRevision;
 
     public PlanetPoster(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
         _assets = assets;
+        _contentRevision = new(assets);
+        _missing = new(assets);
     }
 
     /// <summary>Whether a planet is currently available (a texture decoded).</summary>
@@ -63,6 +66,7 @@ public sealed class PlanetPoster : IDisposable
     /// <summary>Update the planet from a cluster's data (called on sector change).</summary>
     public void SetCluster(DataClusterIGC cluster)
     {
+        if (_contentRevision.Changed() && _texture is null) _activePlanet = null;
         if (_assets is IResidentTextureSource resident && _textureRevision != resident.TextureRevision)
         { _textureRevision = resident.TextureRevision; _activePlanet = null; }
         if (!string.IsNullOrEmpty(cluster.PlanetName)

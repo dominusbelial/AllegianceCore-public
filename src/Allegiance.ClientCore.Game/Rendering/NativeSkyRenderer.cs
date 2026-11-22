@@ -46,7 +46,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, SkyDome> _domes = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missing;
 
     private SpaceStarRenderer? _nativeTails;
     private VertexStar[] _tailStars = [];
@@ -74,6 +74,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         _gd = gd;
         _simSun = new LensFlareRenderer(gd, assets);
         _assets = assets;
+        _missing = new(assets);
         _planet = new PlanetPoster(gd, assets);
     }
 

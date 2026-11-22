@@ -72,7 +72,7 @@ server.Boot(new ServerConfig
     Discovery = new() { Enabled = false },
     WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = [Origin],
         KnownProxies = ["127.0.0.1"], AllowLoopbackDevelopment = false, PublicUrl = "wss://localhost:8443/game" },
-    LiveSettings = options.Bots == 0 ? new() : new()
+    LiveSettings = options.Bots == 0 || options.MapGen is not null ? new() : new()
     {
         DebugMode = true,
         TestHarness = new() { Enabled = true, CharacterNamePrefix = "mcp-", Money = 500000, IgnoreTechGate = true },
@@ -104,7 +104,7 @@ void AnswerBotIdentityRequests()
     {
         using var document = JsonDocument.Parse(File.ReadAllText(request));
         string name = document.RootElement.GetProperty("name").GetString()!;
-        if (!name.StartsWith("mcp-", StringComparison.Ordinal)) throw new InvalidDataException("Only proof bot names may use this broker.");
+        if (!name.StartsWith("mcp-", StringComparison.Ordinal) && !name.StartsWith("research-cmd", StringComparison.Ordinal)) throw new InvalidDataException("Only proof bot names may use this broker.");
         if (!botAccounts.TryGetValue(name, out var botAccount))
         {
             string callsign = name.Length <= 24 ? name : name[..15] + "-" + Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(name)))[..8];
@@ -153,18 +153,19 @@ var staleJoin = stale.JoinAsync((ushort)listingInfo.port, desktopAccount.Callsig
         DwCookie = uint.MaxValue, Time = 1, ClientVersion = "0.0.0", MissionPassword = GamePassword,
         ZoneTicket = System.Text.Encoding.UTF8.GetBytes(signing.Issue(desktopAccount, approved.ServerId, DateTimeOffset.UtcNow)) },
     host: listingInfo.address!);
-var navigationWarps = MissionMap.Load(IgcReader.ParseFile(Path.Combine(art, "XXV_simple.igc"))).Warps.ToDictionary(w => w.WarpId);
+var navigationWarps = server.Missions[0].Sectors.SelectMany(s => s.Warps).Select(w => w.Warp).ToDictionary(w => w.WarpId);
 var chart = navigationWarps.Values.Select(w => new { w.WarpId, w.ClusterId, w.Name, w.Position,
     destinationSectorId = navigationWarps[w.DestinationId].ClusterId }).ToArray();
 Task? desktopJoin = null;
 Task? keeperJoin = null;
-string battleSector = "Ixion";
+string battleSector = options.MapGen is null ? "Ixion"
+    : server.Missions[0].Sectors.First(s => s.Stations.Count == 0).Name;
 if (options.Bots > 0)
 {
-    var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(art, "XXV_simple.igc")));
-    short home = map.Stations.First(s => s.SideId == 0).ClusterId;
-    short target = map.Clusters.Single(c => c.Name == battleSector).ClusterId;
-    if (!map.Warps.Any(w => w.ClusterId == home && navigationWarps[w.DestinationId].ClusterId == target))
+    var mission = server.Missions[0];
+    short home = mission.Sectors.First(s => s.Stations.Any(st => st.SideId == 0)).Id;
+    short target = mission.Sectors.Single(c => c.Name == battleSector).Id;
+    if (!navigationWarps.Values.Any(w => w.ClusterId == home && navigationWarps[w.DestinationId].ClusterId == target))
         throw new InvalidDataException("Battle rendezvous must be one aleph from home.");
     battleBots.Start(options.Bots, tcpPort, ClientVersion, GamePassword, brokerDirectory, battleSector);
 }
@@ -183,6 +184,7 @@ try
     while (!stopping && Environment.TickCount64 < finishAt && !File.Exists(Path.Combine(scratch, "stop")))
     {
         server.TickSim();
+        LateStationProof.Poll(server, scratch);
         if (options.Bots > 0) AnswerBotIdentityRequests();
         if (battleBots.Error is { } botError) throw new IOException("Battle startup failed: " + botError);
         if (staleJoin.IsCompleted && oldVersionRefusal is null)

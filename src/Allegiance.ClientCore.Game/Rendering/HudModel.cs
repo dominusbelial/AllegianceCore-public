@@ -433,6 +433,9 @@ public sealed class HudModel
         Telemetry = telemetry is { } t
             ? t with
             {
+                // Native reads the mounted burner's power, never the key alone
+                // (WinTrek/trekigc.cpp:820-825; Igc/shipIGC.h:1137).
+                AfterburnerActive = t.Power > 0f,
                 WeaponSystems = Array.AsReadOnly(t.WeaponSystems.ToArray()),
                 AmmoFraction = t.IsAdriftLifepod ? 0 : t.AmmoFraction,
                 EnergyFraction = t.IsAdriftLifepod ? 0 : t.EnergyFraction,

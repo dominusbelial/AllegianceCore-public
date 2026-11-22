@@ -60,8 +60,8 @@ public sealed class NativeShipRenderer : IDisposable
     private readonly Dictionary<string, List<NativeShipGeometry>> _lodLevels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int[]> _lodDesc = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingModelLogged;
+    private readonly AssetMissCache _missingTextureLogged;
     private readonly BasicEffect _effect;
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
@@ -75,6 +75,8 @@ public sealed class NativeShipRenderer : IDisposable
     {
         _gd = gd;
         _assets = assets;
+        _missingModelLogged = new(assets);
+        _missingTextureLogged = new(assets);
         _effect = new BasicEffect(gd);
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets), hdPack, shaders: shaders, seconds: seconds);
         _ownsHd = hd is null;
@@ -118,6 +120,7 @@ public sealed class NativeShipRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelStem)) return null;
         if (_models.TryGetValue(modelStem, out var g)) return g;
+        if (_missingModelLogged.Contains(modelStem)) return null;
         try
         {
             if (!_assets.Exists(modelStem + ".mdl"))
@@ -144,6 +147,7 @@ public sealed class NativeShipRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        if (_missingTextureLogged.Contains(textureStem)) return null;
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {

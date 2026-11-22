@@ -72,6 +72,7 @@ public sealed class WarpRenderer : IDisposable
 
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
+    private readonly AssetContentRevision _contentRevision;
     private readonly NativeEffectTextures _native;
     private readonly WarpMesh[] _lodMeshes;
     private readonly DynamicVertexBuffer[] _lodBuffers;   // VertexPositionColorTexture, one per tier
@@ -104,6 +105,8 @@ public sealed class WarpRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _contentRevision = new(assets);
+        _missingLogged = new(assets);
         _native = NativeEffectTextures.Load(gd, assets);
 
         // Build one mesh per native LOD tier (finest first).
@@ -362,6 +365,13 @@ public sealed class WarpRenderer : IDisposable
     /// </summary>
     private Texture2D FunnelTexture(string textureName)
     {
+        if (_contentRevision.Changed())
+            foreach (var key in _funnelTexture.Keys.ToArray())
+            {
+                string preferred = (IsAlephFamily(key) ? key : "aleph") + "bmp";
+                if (string.Equals(_funnelStems.GetValueOrDefault(key), preferred, StringComparison.OrdinalIgnoreCase)) continue;
+                _funnelTexture[key].Dispose(); _funnelTexture.Remove(key); _funnelStems.Remove(key);
+            }
         if (_funnelTexture.TryGetValue(textureName, out var t)) return t;
         _lastLoadedStem = null;
         Texture2D tex;
@@ -370,7 +380,8 @@ public sealed class WarpRenderer : IDisposable
         else
             tex = LoadTextureFile("aleph") ?? LoadTextureFile(textureName) ?? _native.SoftFallback;
         _funnelStems[textureName] = _lastLoadedStem;
-        _funnelTexture[textureName] = tex;
+        // A fallback is not a successful asset lookup: retry after promotion.
+        if (_lastLoadedStem is not null) _funnelTexture[textureName] = tex;
         return tex;
     }
 
@@ -385,10 +396,11 @@ public sealed class WarpRenderer : IDisposable
     /// P749 — never lets a missing/unlisted/unreadable optional texture escape:
     /// any fault is swallowed and returns null so the caller falls back to the
     /// soft placeholder (logged once per stem).</summary>
-    private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingLogged;
     private string? _lastLoadedStem;
     private Texture2D? LoadTextureFile(string stem)
     {
+        if (_missingLogged.Contains(stem)) return null;
         try
         {
             string rel = stem + "bmp.mdl";

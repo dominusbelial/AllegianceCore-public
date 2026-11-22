@@ -40,7 +40,8 @@ public sealed class GiantObjectRenderer : IDisposable
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missing;
+    private readonly AssetContentRevision _revision;
 
     private GiantObjectConfig _config = GiantObjectConfig.Empty();
     private bool _configLoaded;
@@ -58,6 +59,7 @@ public sealed class GiantObjectRenderer : IDisposable
     {
         _gd = gd;
         _assets = assets;
+        _missing = new(assets); _revision = new(assets);
     }
 
     /// <summary>Switch the giant to a cluster's data (called on sector change):
@@ -187,6 +189,7 @@ public sealed class GiantObjectRenderer : IDisposable
 
     private GiantObjectConfig EnsureConfig()
     {
+        if (_revision.Changed() && _config.ByCluster.Count == 0) _configLoaded = false;
         if (_configLoaded) return _config;
         _configLoaded = true;
         try

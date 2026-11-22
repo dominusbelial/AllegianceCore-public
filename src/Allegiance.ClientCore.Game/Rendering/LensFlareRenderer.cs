@@ -57,11 +57,13 @@ public sealed class LensFlareRenderer : IDisposable
 
     private Vector3? _lightDir;
     private bool _loaded;
+    private readonly AssetContentRevision _revision;
     private Texture2D? _simDisc;
 
     public LensFlareRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _revision = new(assets);
         _mdl = new MdlTexture2D(gd, assets, keyBelow: 10);
     }
 
@@ -74,6 +76,7 @@ public sealed class LensFlareRenderer : IDisposable
 
     private void EnsureLoaded()
     {
+        if (_revision.Changed()) _loaded = false;
         if (_loaded) return;
         for (int i = 0; i < LensFlareElements.SurfaceArt.Length; i++)
             _surfaces[i] = _mdl.Get(LensFlareElements.SurfaceArt[i]);

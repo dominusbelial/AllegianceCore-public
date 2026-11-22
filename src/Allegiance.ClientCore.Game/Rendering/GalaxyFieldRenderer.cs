@@ -41,6 +41,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
     private readonly List<(byte[] Rgba, int W, int H)> _sprites = [];
     private readonly List<(float U0, float V0, float U1, float V1)> _uvs = [];
     private bool _libraryReady;
+    private readonly AssetContentRevision _revision;
 
     private Texture2D? _atlas;
     private int _lrdAtlasIdx = -1;
@@ -58,6 +59,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
     {
         _gd = gd;
         _assets = assets;
+        _revision = new(assets);
     }
 
     public int SpriteCount => _sprites.Count;
@@ -164,6 +166,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
 
     private void EnsureLibrary()
     {
+        if (_revision.Changed() && _atlas is null) _libraryReady = false;
         if (_libraryReady) return;
         _libraryReady = true;
         _sprites.Clear();

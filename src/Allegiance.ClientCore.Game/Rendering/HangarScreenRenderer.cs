@@ -155,11 +155,8 @@ public sealed class HangarScreenRenderer : IDisposable
             0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
     }
 
-    /// <summary>The two port-only verbs (native's hangar has no Buy/Default
-    /// button). They sit in the letterbox margin under the scaled screen — see
-    /// <see cref="HangarScreen.PortVerbRect"/> — so they never cover native art
-    /// in a widescreen window, with the screen's bottom-right corner as the 4:3
-    /// fallback.</summary>
+    /// <summary>Supplemental Buy/Def cells within the native artwork, with shared
+    /// draw/hit rectangles that avoid every native hotspot and hover text.</summary>
     private void DrawPortVerbs(Viewport viewport, HangarAction hover)
     {
         foreach (var (action, label) in new[] { (HangarAction.Buy, "Buy"), (HangarAction.Default, "Def") })

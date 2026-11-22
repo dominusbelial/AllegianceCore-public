@@ -29,8 +29,10 @@ public sealed class NativeMaterialParts : IDisposable
     public static Func<string, Stream> NativeReader(IAssetSource assets)
     {
         Dictionary<string, string>? names = null;
+        var revision = new AssetContentRevision(assets);
         return path =>
         {
+            if (revision.Changed()) names = null;
             if (assets.Exists(path)) return assets.OpenRead(path);
             names ??= assets.Enumerate(".").ToDictionary(p => p, p => p, StringComparer.OrdinalIgnoreCase);
             return assets.OpenRead(names.GetValueOrDefault(path, path));

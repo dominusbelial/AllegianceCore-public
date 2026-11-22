@@ -287,7 +287,8 @@ public sealed class AlephGlimpseRenderer : IDisposable
         Matrix projection,
         DataClusterIGC currentCluster,
         Func<short, float> pulseStrength,
-        Func<short, int, int, float, bool> flareOccluded)
+        Func<short, int, int, float, bool> flareOccluded,
+        bool prepareOnly = false, bool allowPreparation = true)
     {
         if (targets.Count == 0) return;
         _frame++;
@@ -356,7 +357,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
                 // units out (the fade starts at FadeStartDistance).
                 if (dist <= t.Warp.Radius * radiusFactor) continue;
 
-                if (sky is not null && EnsureTarget(sky, t.DestSector, t.Dest, dir)) switched = true;
+                if (allowPreparation && sky is not null && EnsureTarget(sky, t.DestSector, t.Dest, dir)) switched = true;
                 if (!_cache.TryGetValue(t.DestSector, out var entry) || !entry.Rendered) continue;
 
                 shown.Add(new Visible(
@@ -378,6 +379,8 @@ public sealed class AlephGlimpseRenderer : IDisposable
             // DrawSkyP576 would not re-set it).
             if (switched && sky is not null) sky.SetCluster(currentCluster);
         }
+
+        if (prepareOnly) return;
 
         var prevBlend = _gd.BlendState;
         var prevDepth = _gd.DepthStencilState;
