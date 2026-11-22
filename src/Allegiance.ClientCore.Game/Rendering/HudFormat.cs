@@ -83,6 +83,17 @@ public static class HudFormat
     /// display percentage. <c>-1</c> → 0, <c>0</c> → 50, <c>+1</c> → 100.
     /// Out-of-range inputs are clamped to the axis span.
     /// </summary>
+    /// <summary>
+    /// P1073 — the native afterburner-power value the HUD shows. Native's owning
+    /// client simulates its own afterburner part and reads
+    /// <c>CafterburnerIGC::GetPower</c>; a remote ship applies the update's power byte
+    /// to that part (<c>src/Igc/shipIGC.cpp:3080</c>). The port's predictive own-ship
+    /// simulation is the equivalent local source; otherwise the server-truth wire
+    /// value is used. Both are the same native quantity, so Classic and Modern agree.
+    /// </summary>
+    public static float AfterburnerPower(bool ownShipPredicting, float simulated, float wire) =>
+        ownShipPredicting ? simulated : wire;
+
     public static int ThrottlePercent(float throttle)
     {
         float t = Math.Clamp(throttle, -1f, 1f);

@@ -59,6 +59,15 @@ public sealed class HangarScreenRenderer : IDisposable
     /// and decodes). False → the caller keeps the text-row hangar.</summary>
     public bool CanDrawNative => HangarArt.IsInstalled(_assets) && BackgroundLoaded;
 
+    /// <summary>P1073 — a verified hangar pack was promoted after this screen was
+    /// built: drop the cached art so the launch animation (and any other native
+    /// bitmap) is retried instead of staying at its text fallback.</summary>
+    public void InvalidateArt()
+    {
+        _art?.Dispose();
+        _art = null;
+    }
+
     private bool BackgroundLoaded
     {
         get

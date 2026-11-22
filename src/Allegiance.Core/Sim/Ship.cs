@@ -9460,6 +9460,14 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>P412 — the afterburner activation latch (<c>CafterburnerIGC::m_fActive</c>).</summary>
     private bool _afterburnerActive;
 
+    /// <summary>P1073 — the native afterburner power the ship update exports:
+    /// <c>pshipupdate-&gt;power = p ? BytePercentage(p-&gt;GetPower()) : 0</c>
+    /// (<c>Igc/shipIGC.h:1137</c>), where <c>p</c> is the mounted
+    /// <c>ET_Afterburner</c> part (<c>CafterburnerIGC::GetPower</c>,
+    /// <c>Igc/afterburnerIGC.h:135-140</c>). 0 when no afterburner is mounted.
+    /// The server has simulated this ramp since P412; the wire now reports it.</summary>
+    public float AfterburnerPower => _afterburnerPower;
+
     /// <summary>P412 — the native <c>c_fcidMountRate</c> float-constant index
     /// (<c>Igc/igc.h:69</c>) that drives the afterburner mount-ramp rate
     /// (<c>afterburnerIGC.cpp:114</c>: <c>m_mountedFraction += dt ·

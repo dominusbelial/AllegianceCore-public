@@ -34,7 +34,19 @@ class ScenePacksTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='p1066-packs-') as directory:
             root, art = Path(directory) / 'generation', Path(directory) / 'art'
             (root / 'packs').mkdir(parents=True); art.mkdir()
-            for name in ['moonbmp', 'moon7bmp', 'moonnebbmp', 'f104bmp', 'f105bmp', 'f106bmp', 'f101bmp', 'debris1bmp', 'build']:
+            # P1073 — generated-map families and the native hangar launch animation are
+            # part of the published set; the fixture supplies every required stem so a
+            # genuinely missing publication file still fails closed below.
+            generated = ['nebplnt36bmp', 'nebplnt35bmp', 'nebplnt02bmp', 'nebplnt23bmp', 'nebplnt19bmp',
+                         'nebplnt01bmp', 'nebplnt03bmp', 'nebplnt04bmp', 'nebplnt05bmp', 'nebplnt06bmp',
+                         'nebplnt07bmp', 'nebplnt08bmp', 'nebplnt09bmp', 'nebplnt10bmp', 'nebplnt11bmp',
+                         'nebplnt12bmp', 'nebplnt16bmp', 'nebplnt24bmp', 'nebplnt25bmp', 'nebplnt29bmp',
+                         'nebplnt30bmp', 'nebplnt31bmp', 'nebplnt33bmp', 'nebplnt37bmp',
+                         'plnt19bmp', 'plnt42bmp', 'alephbmp', 'animlaunch', 'animlaunchbmp',
+                         'bgrnd03', 'bgrnd03bmp', 'bgrnd05', 'bgrnd05bmp', 'bgrnd51', 'bgrnd51bmp',
+                         'bgrnd52', 'bgrnd52bmp', 'bgrnd53', 'bgrnd53bmp', 'bgrnd55', 'bgrnd55bmp',
+                         'bgrnd56', 'bgrnd56bmp'] + [f'globe{n}' for n in range(1, 9)] + [f'environment{n}bmp' for n in range(1, 9)]
+            for name in ['moonbmp', 'moon7bmp', 'moonnebbmp', 'f104bmp', 'f105bmp', 'f106bmp', 'f101bmp', 'debris1bmp', 'build'] + generated:
                 (art / (name + '.mdl')).write_text('fixture ' + name)
             (art / 'e_telebmp.mdl').write_text('use "model"; ImageFromFile("e_tele.png", false);')
             (art / 'e_tele.png').write_bytes(b'fixture original teleport')

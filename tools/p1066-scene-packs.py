@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import struct
 
 
 def provenance(name):
@@ -25,6 +26,44 @@ def provenance(name):
     if name.startswith('giantobj/'):
         return 'NASA/JPL-Caltech/R. Hurt (SSC/Caltech); public domain US Government work; processed desktop sprite; scene-NOTICE.txt'
     return 'FreeAllegiance Artwork; MIT (2017 FreeAllegiance); original desktop scene bytes'
+
+
+def map_asteroid_models(paths):
+    """P1073 — every asteroid model/texture a STATIC map record can place.
+
+    Map files carry an ``OT_asteroid`` (5) record per placed rock
+    (``DataAsteroidIGC``: modelName @74, textureName @87, 13 bytes each;
+    src/Allegiance.Core/Data/DataAsteroidIGC.cs). The generated-map table is
+    ``NativeAsteroidTypes``; this catches the authored maps that reuse hull/station
+    models as rocks (bgrnd57, ss307, cap101, ...). Parsing is read-only and fails
+    closed on malformed files.
+    """
+    models = {}
+    for path in paths.values():
+        if path.suffix.lower() != '.igc':
+            continue
+        data = path.read_bytes()
+        if len(data) < 8:
+            continue
+        start = 8 if struct.unpack_from('<i', data, 4)[0] == len(data) - 8 else (
+            4 if struct.unpack_from('<I', data, 0)[0] == len(data) - 4 else None)
+        if start is None:
+            continue
+        position = start
+        while position + 6 <= len(data):
+            kind, size = struct.unpack_from('<hi', data, position)
+            position += 6
+            if size < 0 or position + size > len(data):
+                break
+            record = data[position:position + size]
+            position += size
+            if kind != 5 or size != 144:
+                continue
+            model = record[74:87].split(b'\0')[0].decode('ascii').strip().lower()
+            texture = record[87:100].split(b'\0')[0].decode('ascii').strip().lower()
+            if model:
+                models.setdefault(model, set()).add(texture)
+    return models
 
 
 def notices(root):
@@ -80,7 +119,13 @@ def build(root, artwork):
             selected.add(name)
             if name in resident or name in entries:
                 asset = resident.get(name) or entries[name]
+                # P1073 — a resident file from the P1054 split may carry its deferred
+                # visual dependencies in `visualDependencies` (e.g. a model whose
+                # texture was streamed by a sector pack). The closure must follow
+                # them, or an on-demand scene pack would ship the mesh without its
+                # surface (the white-asteroid failure mode).
                 pending.extend(asset['dependencies'])
+                pending.extend(asset.get('visualDependencies') or [])
                 continue
             data = paths[name].read_bytes()
             dependencies = []
@@ -103,10 +148,43 @@ def build(root, artwork):
             raise ValueError('Scene closure exceeds manifest bound')
         return selected
 
+    # P1073 — generated-map artwork and the native hangar launch animation. The
+    # planet/globe/rock families are per-family on-demand packs so a generated
+    # sector fetches only the art it actually uses; the join manifest is untouched.
+    # The names mirror Allegiance.Core.MapGen.GeneratedMapArt (checked by
+    # tools/p1073-pack-coverage-tests.py).
+    mapgen_planets = ['nebplnt36bmp', 'nebplnt35bmp', 'nebplnt02bmp', 'nebplnt23bmp',
+                      'nebplnt19bmp', 'nebplnt01bmp', 'nebplnt03bmp', 'nebplnt04bmp',
+                      'nebplnt05bmp', 'nebplnt06bmp', 'nebplnt07bmp', 'nebplnt08bmp',
+                      'nebplnt09bmp', 'nebplnt10bmp', 'nebplnt11bmp', 'nebplnt12bmp',
+                      'nebplnt16bmp', 'nebplnt24bmp', 'nebplnt25bmp', 'nebplnt29bmp',
+                      'nebplnt30bmp', 'nebplnt31bmp', 'nebplnt33bmp', 'nebplnt37bmp']
+    mapgen_globes = ['globe' + str(n) for n in range(1, 9)]
+    mapgen_warp_textures = ['plnt19bmp', 'plnt42bmp', 'alephbmp']
+    mapgen_rocks = ['bgrnd03', 'bgrnd05', 'bgrnd51', 'bgrnd52', 'bgrnd53', 'bgrnd55', 'bgrnd56']
+    mapgen = [dict(key='mapgen-planet-' + name, sources=sorted(closure([name + '.mdl'])))
+              for name in mapgen_planets if name + '.mdl' in paths]
+    mapgen += [dict(key='mapgen-globe-' + name.replace('globe', ''), sources=sorted(closure(
+                   [name + '.mdl', name.replace('globe', 'environment') + 'bmp.mdl'])))
+               for name in mapgen_globes if name + '.mdl' in paths]
+    mapgen += [dict(key='mapgen-warp-' + name, sources=sorted(closure([name + '.mdl'])))
+               for name in mapgen_warp_textures if name + '.mdl' in paths]
+    mapgen += [dict(key='mapgen-rock-' + name, sources=sorted(closure([name + '.mdl'])))
+               for name in mapgen_rocks if name + '.mdl' in paths]
+    hangar = [dict(key='scene-hangar', sources=sorted(closure(['animlaunch.mdl', 'animlaunchbmp.mdl'])))]
+    # P1073 — static maps' authored asteroid records (the generated-map table is
+    # NativeAsteroidTypes; maps may reuse any model, e.g. bgrnd57/ss307/cap101).
+    static_rocks = []
+    for model, textures in sorted(map_asteroid_models(paths).items()):
+        roots = [model + '.mdl'] + sorted(t + '.mdl' for t in textures if t and t != model and t + '.mdl' in paths)
+        if model + '.mdl' not in paths:
+            continue
+        static_rocks.append(dict(key='static-rock-' + model, sources=sorted(closure(roots))))
     scene_packs = [dict(key=key, sources=sorted(closure(roots)))
                    for key, roots in [('scene-b1', native), ('scene-engines', engines),
                                       ('scene-paintings', paintings),
                                       ('scene-build', ['build.mdl']), ('scene-giants', giants)] if roots]
+    scene_packs += mapgen + hangar + static_rocks
     all_sources = {n for pack in scene_packs for n in pack['sources']}
     index['assets'] = sorted(entries.values(), key=lambda a: a['source'])
     index['packs'] = [p for p in index['packs'] if not p['key'].startswith('scene-')] + scene_packs

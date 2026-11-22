@@ -102,8 +102,8 @@ public sealed class ServerShipUpdate
 
     /// <summary>
     /// Quantize a live ship's state into the canonical 47 bytes. Hull, shield
-    /// and ammo fractions are real (damage / P362 ammo); fuel/energy/power stay
-    /// at flat 1.0 (the flight demo never drains them) — EXCEPT that when
+    /// and ammo fractions are real (damage / P362 ammo); fuel/energy stay
+    /// at flat 1.0 where the port has no pool (power is the real native afterburner ramp) — EXCEPT that when
     /// <paramref name="carryEndurance"/> is set (the OWNING peer's own payload)
     /// the fuel slot carries the ship's real remaining-lifepod-oxygen fraction
     /// (P377). <see cref="Ship.Ore"/> is the exception — the P55 cargo slot (<c>byte 45</c>,
@@ -173,7 +173,9 @@ public sealed class ServerShipUpdate
         float energyFrac = eMax > 0f ? ship.Energy / eMax : 0f;
         destination[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
         destination[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / ship.EffectiveMineCapacity(), 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre(GetOreCapacity(), m_fOre) — GA-scaled capacity, P477)
-        destination[46] = CompactQuant.Percent(1.0f);   // power
+        // P1073 — native exports the mounted afterburner's live ramp
+        // (Igc/shipIGC.h:1137), not a constant; Ship has simulated it since P412.
+        destination[46] = CompactQuant.Percent(Math.Clamp(ship.AfterburnerPower, 0f, 1f));   // power
     }
 
     /// <summary>
@@ -253,6 +255,6 @@ public sealed class ServerShipUpdate
         var s = _snapshot!;
         return FromValues(s.Id, s.State, s.Controls, s.Time, s.Position, s.Orientation,
             s.Velocity, [s.Yaw, s.Pitch, s.Roll], s.Hull, s.Shield, s.Ammo,
-            s.Fuel, s.Energy, s.Ore, 1f).Bytes;
+            s.Fuel, s.Energy, s.Ore, s.Power).Bytes;
     }
 }

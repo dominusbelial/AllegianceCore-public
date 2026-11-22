@@ -3195,7 +3195,10 @@ public sealed partial class Game1
                     AmmoFraction: adriftLifepod ? 0f : up.AmmoFraction,
                     FuelFraction: up.FuelFraction,
                     EnergyFraction: adriftLifepod ? 0f : up.EnergyFraction,
-                    Power: up.Power,
+                    // P1073 — native's afterburner power: the owning client reads its
+                    // own simulated part (CafterburnerIGC::GetPower); the wire byte is
+                    // the same value for remote ships (Igc/shipIGC.h:1137).
+                    Power: HudFormat.AfterburnerPower(_ownShipPrediction && _ownSim.HaveHull, _ownSim.Power, up.Power),
                     // P508 — the HUD speed readout uses the local SIMULATION velocity
                     // when the own-ship sim is rendering (so the gauge tracks the
                     // same-frame ship the player flies); server-truth velocity otherwise

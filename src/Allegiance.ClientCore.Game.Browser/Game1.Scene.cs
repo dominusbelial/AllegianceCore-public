@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.Browser.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Rendering;
@@ -114,13 +115,28 @@ public sealed partial class Game1
             ((long)own.SectorId << 32) ^ ((long)_cameraMode << 16) ^ 1L);
         if (_flightSky is not null)
         {
-            long revision = _sectorTextures?.Revision ?? 0;
-            if (_skySector != own.SectorId || _skyTextureRevision != revision)
+            // P1073 — keep requesting the sector's generated-map art (deduped by the
+            // streamer) and hold the cluster switch until the sky closures that this
+            // generation declares are verified-resident. A later promotion invalidates
+            // the renderers' logged misses through the content revision.
+            RequestSectorArt(own.SectorId);
+            long revision = ((_sectorTextures?.Revision ?? 0) << 32)
+                ^ ((_assets as StagedAssetSource)?.ContentRevision ?? 0);
+            if (_skyTextureRevision != revision)
+            {
+                _flightSky.InvalidateMissingArt();
+                _skySector = -1;
+                _skyTextureRevision = revision;
+                foreach (var sector in world.Clusters.Keys) _sceneGlimpses!.Invalidate(sector);
+            }
+            if (_skySector != own.SectorId && !SkyArtReady(own.SectorId))
+            {
+                // Bytes are still in flight: keep the previous sky instead of
+                // permanently logging the new sector's textures as missing.
+            }
+            else if (_skySector != own.SectorId)
             {
                 _flightSky.SetCluster(cluster); _skySector = own.SectorId;
-                if (_skyTextureRevision != revision)
-                    foreach (var sector in world.Clusters.Keys) _sceneGlimpses!.Invalidate(sector);
-                _skyTextureRevision = revision;
             }
             if (_flightSky.PromoteResidentLayers(BattlePackReady?.Invoke("scene-paintings") == true,
                     BattlePackReady?.Invoke("scene-giants") == true)) _sceneGlimpses!.InvalidateAll();

@@ -177,6 +177,15 @@ public sealed partial class Game1
         textures = SectorTextureMetrics, starmapOpen = StarmapOpen, selectedMapSector = SelectedMapSector,
         drawnRockSurfaces = _drawnRockSurfaces,
         sky = SectorSkyMetrics, scene = SceneMetrics,
+        // P1073 — live generated-map/live-battle evidence for the browser harness.
+        sectorArt = SectorArtMetrics,
+        research = _flightSession?.World.ResearchBriefing is { } briefing
+            ? new { received = true, TechMode = (string?)briefing.TechMode, Epoch = (string?)briefing.Epoch, steps = briefing.Plan.Steps.Count, briefing.SideId }
+            : new { received = false, TechMode = (string?)null, Epoch = (string?)null, steps = 0, SideId = (short)-1 },
+        docked = _flightSession?.World.MyShipId is { } dockId && _flightSession.World.Ships.TryGetValue(dockId, out var dockShip)
+            && dockShip.StationId >= 0,
+        hud = new { power = _ownSim.Power, afterburnerActive = (_ownSim.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+            serverPower = _flightSession?.World.MyShipId is { } hpId && _flightSession.World.Ships.TryGetValue(hpId, out var hpShip) ? hpShip.Latest?.Power : null },
         battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
             standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
             culledRocks = CulledRocks, shipPassMs = ShipPassMilliseconds, maxShipPassMs = MaxShipPassMilliseconds,

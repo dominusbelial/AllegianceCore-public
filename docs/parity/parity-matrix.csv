@@ -224,7 +224,7 @@ fedmsg,19 VOTE,Inc/Messages.h:183,done,Wire/Vote.cs,4
 fedmsg,20 SHIP_DELETE,Inc/Messages.h:196,done,Wire/ShipDelete.cs,5
 fedmsg,21 RANDOMIZE_TEAMS,Inc/Messages.h:201,done,Wire/RandomizeTeams.cs,4
 fedmsg,23 CHATMESSAGE,Inc/Messages.h:216,done,Wire/ChatMessage.cs,5
-fedmsg,24 SHIP_UPDATE,Inc/Messages.h:227,done,Wire/ShipUpdate.cs,5
+fedmsg,24 SHIP_UPDATE,Inc/Messages.h:227; Igc/shipIGC.h:1137,done,"src/Allegiance.Core/Wire/ClientShipUpdate.cs (39-byte client pose); the server→client pose is ServerShipUpdate (src/Allegiance.Core/Wire/ServerShipUpdate.cs). P1073 fills byte 46 from Ship.AfterburnerPower — native pshipupdate->power = BytePercentage(mounted ET_Afterburner GetPower), 0 without one (Igc/shipIGC.h:1137, afterburnerIGC.h:135-140) — instead of a constant 1.0; ShipWireSnapshot carries the same value into the captured single/heavy paths. Tests: P1073AfterburnerPowerTests; GameMessageRoundTripTests.SetCluster_EmitsExactDeclaredBytes.",5
 fedmsg,26 EXPORT,Inc/Messages.h:240,done,Wire/ExportAsteroid.cs,4
 fedmsg,27 POSTER,Inc/Messages.h:245,n/a,"P868 A: Unused native message: whole-tree inventory finds declaration/receive-side shape but no active native producer (POSTER/URLROOT/NEW_SHIP_INSTANCE), or declaration only (MUTE/SET_TEAM_INVESTOR/THREAT); no observable native path. retain n/a: Unused native message: whole-tree inventory finds declaration/receive-side shape but no active native producer (POSTER/URLROOT/NEW_SHIP_INSTANCE), or declaration only (MUTE/SET_TEAM_INVESTOR/THREAT); no observable native path.",4
 fedmsg,28 TREASURE,Inc/Messages.h:253,done,Wire/TreasureSpawn.cs,4

@@ -125,6 +125,8 @@ public sealed partial class Game1
                 // stand-in until the verified pack lands.
                 previewStreamed = _battleScene?.MeshBytesReady(shop?.EffectiveHullId ?? -1,
                     (Allegiance.ClientCore.Browser.Assets.StagedAssetSource)_assets) == true,
+                // P1073 — the Launch pane's native FrameImage is resident (harness hook).
+                launchArt = _assets.Exists("animlaunch.mdl"),
                 // The hangar verbs' live rectangles — the same HangarControls.Bounds the
                 // pointer hit test and the renderer use, so a harness clicks exactly
                 // where the button is drawn.
@@ -202,8 +204,22 @@ public sealed partial class Game1
         _hangarPreviewSpin = 0;
     }
 
+    private bool _hangarArtPromoted;
+    /// <summary>P1073 — the native hangar launch animation (`animlaunch`) streams
+    /// through the P1066 verified scene-pack path; once it lands the cached art is
+    /// dropped so the Launch pane draws the native FrameImage instead of the text
+    /// fallback (desktop: HangarArt.ResolvePath, Game1.Hangar.cs:53-55).</summary>
+    private void RequestHangarArt()
+    {
+        RequestBattlePack?.Invoke("scene-hangar");
+        if (_hangarArtPromoted || BattlePackReady?.Invoke("scene-hangar") != true) return;
+        _hangarArtPromoted = true;
+        _hangarScreenRenderer?.InvalidateArt();
+    }
+
     private void EnsureHangarRenderers()
     {
+        RequestHangarArt();
         if (_hangarScreenRenderer is null)
         {
             // The two native font bakes the desktop's hangar renderer takes
