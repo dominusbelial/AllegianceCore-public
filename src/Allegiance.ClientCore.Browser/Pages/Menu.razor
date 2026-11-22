@@ -75,10 +75,10 @@
                         {
                             @foreach (var mission in missions)
                             {
-                                <button class="online-join" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, mission)">Join @mission.Name</button>
+                                <button class="online-join primary" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, mission)">Join @mission.Name</button>
                             }
                         }
-                        else { <button class="online-join" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, null)">Join @server.MissionName</button> }
+                        else { <button class="online-join primary" disabled="@_onlineBusy" @onclick="() => JoinServerAsync(server, null)">Join @server.MissionName</button> }
                     </article>
                 }
                 @if (_servers.Length == 0) { <p>No servers are listed.</p> }
