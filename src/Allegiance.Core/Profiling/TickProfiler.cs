@@ -470,6 +470,14 @@ public sealed class TickProfiler
                 $"[tickprof] window {seconds:0.##}s ticks={_ticksInWindow}{label} " +
                 $"tick-wall mean={MeanOf(_tickWallList):0.00}ms p95={P95Of(_tickWallList):0.00}ms max={_tickWallMax:0.00}ms");
 
+            if (Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_METRICS") == "1" && _tickWallList.Count > 0)
+            {
+                var tickSamples = _tickWallList.OrderBy(t => t).ToArray();
+                double At(double fraction) => tickSamples[Math.Clamp((int)Math.Ceiling(tickSamples.Length * fraction) - 1, 0, tickSamples.Length - 1)];
+                string histogram = string.Join(",", tickSamples.GroupBy(t => (long)Math.Round(t * 1000)).Select(g => $"{g.Key}:{g.Count()}"));
+                Console.WriteLine(FormattableString.Invariant($"[tick-quantiles] ticks={tickSamples.Length} p50Ms={At(.5):0.000} p95Ms={At(.95):0.000} p99Ms={At(.99):0.000} histogramUs={histogram}"));
+            }
+
             foreach (var bucket in _hist.Keys.OrderByDescending(b => MeanOf(_hist[b])))
             {
                 var list = _hist[bucket];

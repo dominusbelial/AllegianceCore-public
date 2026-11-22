@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900, string? LogonFile = null, int? BackfillSeats = null, string[]? BotNames = null, string? ClientVersion = null)
+internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900, string? LogonFile = null, int? BackfillSeats = null, string[]? BotNames = null, string? ClientVersion = null, BotTransportOptions? Transport = null)
 {
     internal static DriverOptions Parse(string[] args)
     {
@@ -24,6 +24,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
         int? backfillSeats = null;
         string[]? botNames = null;
         string? clientVersion = null;
+        var transport = BotTransportOptions.Read(Environment.GetEnvironmentVariable);
         for (int i = 2; i < args.Length; i += 2)
         {
             if (i + 1 >= args.Length) throw new ArgumentException($"missing value for {args[i]}");
@@ -49,6 +50,11 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
                     if (botNames.Length == 0 || botNames.Any(p => p == "*" || p[..^1].Contains('*')))
                         throw new ArgumentException("--bot-names requires comma-separated exact names or trailing-* prefixes");
                     break;
+                case "--transport": transport = transport with { Protocol = args[i + 1] }; break;
+                case "--ws-url": transport = transport with { Url = args[i + 1] }; break;
+                case "--ws-origin": transport = transport with { Origin = args[i + 1] }; break;
+                case "--ws-fraction": transport = transport with { Fraction = BotTransportOptions.ParseFraction(args[i + 1]) }; break;
+                case "--ws-ca-file": transport = transport with { CaFile = Path.GetFullPath(args[i + 1]) }; break;
                 case "--logon-file": logonFile = Path.GetFullPath(args[i + 1]); break;
                 case "--skirmish": skirmish = args[i + 1]; break;
                 case "--workers":
@@ -76,7 +82,11 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
             throw new ArgumentException("--backfill-seats owns one driver; cannot combine with worker/skirmish modes");
         if (clientVersion is not null && backfillSeats is null) throw new ArgumentException("--client-version requires --backfill-seats");
         if (botNames is not null && backfillSeats is null) throw new ArgumentException("--bot-names requires --backfill-seats");
-        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline, logonFile, backfillSeats, botNames, clientVersion);
+        transport.Validate();
+        if (logonFile is not null && (transport.Protocol == "ws" || transport.Fraction is > 0)
+            && !Allegiance.Core.Transport.WebSocketEndpoint.FromConfiguration(transport.Url!).Uri.IsLoopback)
+            throw new ArgumentException("--logon-file requires a loopback WebSocket endpoint too");
+        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline, logonFile, backfillSeats, botNames, clientVersion, transport);
     }
 }
 
@@ -102,7 +112,7 @@ internal static class Program
                 ProcessLifetime.WatchOwner(ownerPid, stop.Token);
             if (options.BackfillSeats is { } seats)
             {
-                using var manager = new BotManager(options.Host, options.Port, backfill: true, clientVersion: options.ClientVersion);
+                using var manager = new BotManager(options.Host, options.Port, backfill: true, clientVersion: options.ClientVersion, transport: options.Transport);
                 var driver = new BackfillDriver(manager, seats, options.BotNames);
                 await driver.RunAsync(stop.Token);
             }
@@ -126,12 +136,12 @@ internal static class Program
                         catch (OperationCanceledException) { return; }
                         Process.GetCurrentProcess().Kill();
                     });
-                using var manager = new BotManager(options.Host, options.Port, partition);
+                using var manager = new BotManager(options.Host, options.Port, partition, transport: options.Transport);
                 await ProcessWorker.ServeAsync(manager, stop.Token);
             }
             else
             {
-                using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, stop.Token, recoveryDeadlineSeconds: options.RecoveryDeadlineSeconds);
+                using var supervisor = await WorkerSupervisor.StartAsync(options.Host, options.Port, options.Workers, stop.Token, recoveryDeadlineSeconds: options.RecoveryDeadlineSeconds, transport: options.Transport);
                 EventHandler exit = (_, _) => supervisor.Dispose();
                 AppDomain.CurrentDomain.ProcessExit += exit;
                 try

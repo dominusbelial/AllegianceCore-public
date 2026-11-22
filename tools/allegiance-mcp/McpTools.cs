@@ -269,7 +269,7 @@ internal static partial class McpTools
                     .Select(p => new { id = p.Id, name = p.Name, category = p.Category }))),
                 "list_active_bots" => Ok(JsonSerializer.Serialize(mgr.ActiveBots()
                     .Select(b => new {
-                        name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull,
+                        name = b.Name, transport = b.Transport, shipId = b.ShipId, side = b.Side, hull = b.Hull,
                         role = b.Role, sector = b.Sector, behavior = b.Behavior,
                         state = b.State, defenseSector = b.DefenseSector,
                         target = b.Target, orderedTarget = b.OrderedTarget, engagers = b.Engagers,
@@ -1161,6 +1161,7 @@ internal static partial class McpTools
         return Ok(JsonSerializer.Serialize(new
         {
             perBotCpu = mgr.BenchmarkBotCpu(),
+            transports = mgr.TransportStatus(),
             botCount = ps.Cadence.BotCount,
             interval = Stat(ps.Cadence.Interval),
             jump = Stat(ps.Cadence.Jump),

@@ -646,3 +646,25 @@ existing `server-identity` volume at `/server-identity/plays/plays-YYYY-MM.jsonl
 in both compose files, with no new service or port. Bot processes run on a separate
 host, never on the public server. Review deployment separately; the example alone
 changes no running service.
+
+### WebSocket bot load experiment (P1072)
+
+The experiment-only `docker/rig/compose.websocket-experiment.yml` adds Caddy TLS
+on 8443 in front of the server's private 6080 listener, using the exact-hop
+forwarding policy from `docker/public/Caddyfile`. It is a separate Compose project,
+invoked with `-f`; preserve existing private rig overrides. It raises only test
+configuration limits to 128 live connections and 256 attempts per source/window.
+Export the certificate (never the key) with:
+
+```sh
+docker compose -f docker/rig/compose.websocket-experiment.yml cp ws-proxy:/data/caddy/pki/authorities/local/root.crt ./ws-load-ca.pem
+```
+
+See `docs/WEBSOCKET_LOAD_TEST.md` for preparation, guarded spawners, per-transport
+metrics and A/B windows. Bot-host environment settings are
+`ALLEGIANCE_BOT_TRANSPORT` (default `tcp`), `ALLEGIANCE_BOT_WS_URL`,
+`ALLEGIANCE_BOT_WS_ORIGIN`, `ALLEGIANCE_BOT_WS_CA_FILE`, and
+`ALLEGIANCE_BOT_WS_FRACTION`. CLI values override them. These belong to the bot
+process, outside the ordinary Compose stack. `ALLEGIANCE_BENCHMARK_METRICS=1`
+on server and bots emits the P1072 records; the server enables its tick profiler
+unless explicitly configured otherwise. No shipped admission or Origin default changes.

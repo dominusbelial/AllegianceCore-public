@@ -59,6 +59,9 @@ public sealed partial class ConnectionSession
             => session.RaiseLost(owner, this);
         public void OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
         {
+            // Instrument arrival before waiting for decode's gate. A retired
+            // owner cannot refresh a newer connection's receive observation.
+            if (ReferenceEquals(session._owner, owner)) session.ObservePacketArrival();
             lock (session._gate)
                 if (Current) ((ITransportSite)session).OnReceive(from, data);
         }
@@ -158,7 +161,7 @@ public sealed partial class ConnectionSession
 #if !BROWSER
                 _joinedInternet is not null ? new UdpTransport(site) :
 #endif
-                TransportFactoryForTesting?.Invoke(site) ?? TransportFactory.CreateClient(site, _joinedProtocol, _joinedUdpPort, _joinedWebSocketEndpoint, _joinedWebSocketOrigin);
+                TransportFactoryForTesting?.Invoke(site) ?? TransportFactory.CreateClient(site, _joinedProtocol, _joinedUdpPort, _joinedWebSocketEndpoint, _joinedWebSocketOrigin, _joinedWebSocketCertificateValidation);
             owner.Site = site;
             owner.Transport = transport;
             _transport = transport;

@@ -1,0 +1,20 @@
+# Same one-hop overwrite policy as docker/public/Caddyfile, with experiment CA.
+{
+    auto_https disable_redirects
+    servers {
+        protocols h1 h2
+    }
+}
+https://{$P1072_WS_HOST:load.example.invalid}:8443 {
+    tls internal
+    handle /game {
+        reverse_proxy server:6080 {
+            transport http {
+                versions 1.1
+            }
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
+    }
+    respond 404
+}

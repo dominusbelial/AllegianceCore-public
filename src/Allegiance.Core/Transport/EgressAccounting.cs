@@ -8,7 +8,7 @@ public enum EgressEvent { Offered, Sent, Coalesced, Dropped }
 /// <summary>P661: host-only fixed storage, indexed by (peer kind, lane, fmid).
 /// No decoding, CRC recomputation, allocation, or new locks on the send path.
 /// Bytes include FEDMESSAGE headers; framing/CRC/unparsed bytes have a separate row.</summary>
-public sealed class EgressAccounting
+public sealed partial class EgressAccounting
 {
     public const int OverheadFmid = 65536;
     private const int Types = OverheadFmid + 1;
@@ -28,9 +28,10 @@ public sealed class EgressAccounting
     /// is counted once when its last byte is accepted. Other events cover a whole
     /// frame. The caller already owns the frame; this method retains nothing.</summary>
     internal void Record(ReadOnlySpan<byte> frame, bool harness, bool stream,
-        EgressEvent ev, int offset = 0, int count = -1)
+        EgressEvent ev, int offset = 0, int count = -1, string protocol = "tcp")
     {
         if (frame.Length < 5 || frame[0] != 2) return; // greetings aren't egress
+        RecordTransport(protocol, ev, count < 0 ? frame.Length : count, count < 0 || offset + count == frame.Length);
         RecordCore(frame, harness, stream, ev, offset, count, 5);
     }
 
@@ -41,6 +42,7 @@ public sealed class EgressAccounting
         RecordCore(packet, harness, stream, ev, 0, packet.Length, 0);
         int header = packet.Length < 126 ? 2 : packet.Length <= ushort.MaxValue ? 4 : 10;
         int group = (harness ? 2 : 0) + (stream ? 1 : 0);
+        RecordTransport("ws", ev, packet.Length + header, true);
         Add(ref _counters[group * Types + OverheadFmid], ev, header, 0, 0);
     }
 

@@ -6,7 +6,7 @@ namespace Allegiance.Core.Transport;
 /// <summary>Direct binary FedPackets, shared by desktop and single-threaded WASM.
 /// Client publication/loss mirrors TcpTransport.cs:480-563,1377-1391;
 /// serialized receive mirrors :1397-1455. No greeting is used by the WS protocol.</summary>
-public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint endpoint, string? origin = null) : ITransport, IDisposable, IAsyncDisposable
+public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint endpoint, string? origin = null, System.Net.Security.RemoteCertificateValidationCallback? certificateValidation = null) : ITransport, IDisposable, IAsyncDisposable
 {
     public const string Subprotocol = "allegiance-fed-v1";
     public const int MessageCap = 64 * 1024;
@@ -47,11 +47,14 @@ public sealed class WebSocketTransport(ITransportSite site, WebSocketEndpoint en
         try
         {
 #if BROWSER
+            if (certificateValidation is not null) throw new PlatformNotSupportedException("Browser manages TLS trust");
             // The browser WebSocket API uses redirect mode "error" for its
             // opening handshake; it never follows HTTP redirects.
             await socket.ConnectAsync(endpoint.Uri, deadline.Token).ConfigureAwait(false);
 #else
-            using var invoker = new HttpMessageInvoker(new SocketsHttpHandler { AllowAutoRedirect = false });
+            using var handler = new SocketsHttpHandler { AllowAutoRedirect = false };
+            if (certificateValidation is not null) handler.SslOptions.RemoteCertificateValidationCallback = certificateValidation;
+            using var invoker = new HttpMessageInvoker(handler);
             await socket.ConnectAsync(endpoint.Uri, invoker, deadline.Token).ConfigureAwait(false);
 #endif
             lock (_gate)

@@ -3,9 +3,9 @@ namespace Allegiance.Core.Transport;
 /// <summary>Default TCP; opt-in UDP with bounded TCP fallback, or an explicit validated WebSocket listing/config route.</summary>
 public static class TransportFactory
 {
-    public static ITransport CreateClient(ITransportSite site, string? protocol = null, ushort? udpPort = null, WebSocketEndpoint? webSocketEndpoint = null, string? webSocketOrigin = null)
+    public static ITransport CreateClient(ITransportSite site, string? protocol = null, ushort? udpPort = null, WebSocketEndpoint? webSocketEndpoint = null, string? webSocketOrigin = null, System.Net.Security.RemoteCertificateValidationCallback? webSocketCertificateValidation = null)
     {
-        if (webSocketEndpoint is not null) return new WebSocketTransport(site, webSocketEndpoint, webSocketOrigin);
+        if (webSocketEndpoint is not null) return new WebSocketTransport(site, webSocketEndpoint, webSocketOrigin, webSocketCertificateValidation);
 #if BROWSER
         throw new PlatformNotSupportedException("TCP/UDP is not available in the browser; select an advertised WebSocket route");
 #else

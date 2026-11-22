@@ -28,16 +28,16 @@ internal sealed partial class WorkerSupervisor : IDisposable
             string.Equals(Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_SYNC_WINGS"), "on", StringComparison.OrdinalIgnoreCase));
         _coordination = coordinate ? CoordinateAsync() : Task.CompletedTask;
     }
-    internal static async Task<WorkerSupervisor> StartAsync(string host, ushort port, int count, CancellationToken ct, bool recovery = true, double recoveryDeadlineSeconds = 900)
+    internal static async Task<WorkerSupervisor> StartAsync(string host, ushort port, int count, CancellationToken ct, bool recovery = true, double recoveryDeadlineSeconds = 900, BotTransportOptions? transport = null)
     {
         var workers = new List<IWorker>();
         try
         {
-            for (int i = 0; i < count; i++) workers.Add(ProcessWorker.Start(host, port, i, count));
+            for (int i = 0; i < count; i++) workers.Add(ProcessWorker.Start(host, port, i, count, transport));
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(90));
             await Task.WhenAll(workers.Select(w => w.CallAsync("__ping", EmptyArgs, timeout.Token)));
-            return new(workers) { _workerFactory = i => ProcessWorker.Start(host, port, i, count), _recoveryEnabled = recovery, _recoveryDeadline = TimeSpan.FromSeconds(recoveryDeadlineSeconds) };
+            return new(workers) { _workerFactory = i => ProcessWorker.Start(host, port, i, count, transport), _recoveryEnabled = recovery, _recoveryDeadline = TimeSpan.FromSeconds(recoveryDeadlineSeconds) };
         }
         catch { foreach (var worker in workers) worker.Dispose(); throw; }
     }

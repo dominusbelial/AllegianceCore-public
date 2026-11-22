@@ -950,7 +950,7 @@ public sealed partial class Server
         _host.ChatRequested = SendSiteChat;
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
-        var egress = TickProfiler.Instance is not null ? new EgressAccounting() : null;
+        var egress = TickProfiler.Instance is not null || Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_METRICS") == "1" ? new EgressAccounting() : null;
         var reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null;
         TcpTransport CreateTcp(ITransportSite site) => new(site, _transportMode, _transportPoolWorkers)
         {
@@ -1764,7 +1764,7 @@ public sealed partial class Server
 
     private static void ApplyProfilerConfig(ProfilerConfig? cfg)
     {
-        bool enabled = cfg?.Enabled ?? false;
+        bool enabled = cfg?.Enabled == true || Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_METRICS") == "1";
         int interval = cfg?.ReportIntervalSeconds ?? 5;
         string? csv = cfg?.CsvPath;
         bool slowCapture = cfg?.SlowTickCapture ?? false;

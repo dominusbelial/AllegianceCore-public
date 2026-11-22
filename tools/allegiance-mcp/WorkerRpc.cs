@@ -43,7 +43,7 @@ internal sealed class ProcessWorker : IWorker
     public bool Alive => Volatile.Read(ref _disposed) == 0 && Volatile.Read(ref _failure) is null && !_process.HasExited;
     public string? Failure => Volatile.Read(ref _failure);
 
-    internal static ProcessWorker Start(string host, ushort port, int index, int count)
+    internal static ProcessWorker Start(string host, ushort port, int index, int count, BotTransportOptions? transport = null)
     {
         var info = new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false };
         // dotnet app.dll and the published apphost both launch this exact assembly.
@@ -52,6 +52,7 @@ internal sealed class ProcessWorker : IWorker
         foreach (var arg in new[] { host, port.ToString(), "--worker", $"{index + 1}/{count}", "--parent", Environment.ProcessId.ToString() }) info.ArgumentList.Add(arg);
         if (BotLogonIdentity.FilePath is { } logonFile)
         { info.ArgumentList.Add("--logon-file"); info.ArgumentList.Add(logonFile); }
+        foreach (var arg in (transport ?? BotTransportOptions.Read(Environment.GetEnvironmentVariable)).Arguments()) info.ArgumentList.Add(arg);
         return new(info, index, Path.Combine(Environment.CurrentDirectory, $"err.worker-{index + 1}.log"));
     }
 

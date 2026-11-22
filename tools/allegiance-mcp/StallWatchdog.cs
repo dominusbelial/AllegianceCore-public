@@ -20,7 +20,8 @@ internal sealed class StallWatchdog : IDisposable
     private readonly Thread? _watchdog, _logger;
     private int _disposed;
     private long _logDroppedLines;
-    private double _expected;
+    private double _expected, _nextTransportSample;
+    private readonly bool _transportMetrics = Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_METRICS") == "1";
     internal StallMetrics Metrics { get; }
 
     internal StallWatchdog(bool start = true, Func<double>? clock = null,
@@ -42,7 +43,7 @@ internal sealed class StallWatchdog : IDisposable
         _watchdog.Start();
     }
 
-    internal ObservedSession Track(ITransportSite client, string name)
+    internal ObservedSession Track(ITransportSite client, string name, BotTransportOptions? options = null, bool owned = false)
     {
         var session = new ObservedSession(client, name, _clock, (s, reason, detail) =>
         {
@@ -56,24 +57,28 @@ internal sealed class StallWatchdog : IDisposable
                     $"snapshot={JsonSerializer.Serialize(WithLogCount(state), JsonOptions)}");
             }
             finally { _sessions.TryRemove(client, out _); }
-        });
+        }, options, owned);
         session.Attach();
         if (!_sessions.TryAdd(client, session)) throw new InvalidOperationException("session already tracked");
         return session;
     }
 
-    internal void Connect(ITransportSite client, string name, string host, ushort port)
+    internal void Connect(ITransportSite client, string name, string host, ushort port, BotTransportOptions? options = null)
     {
-        var session = Track(client, name);
+        var session = Track(client, name, options, owned: client is ConnectionSession);
         // P813c — the bot host arms the experimental reconnect grace for combat
         // clients when the operator opts in with ALLEGIANCE_RECONNECT_GRACE_SECONDS
         // (the same switch the MonoGame client reads). A dropped bot then re-dials
         // and resumes its seat instead of being reaped as "connection lost"; the
         // server side needs reconnect.enabled too. Default off = today's behaviour.
-        if (client is ObservedSession observed && observed.Client is ConnectionSession cs
+        if (client is ConnectionSession cs
             && ReconnectGraceSeconds() is { } window)
             cs.EnableAutoReconnect(host, port, name, window);
-        try { session.Transport.Join(host, port, name); }
+        try
+        {
+            if (client is ConnectionSession owned) owned.Connect(port, name, host);
+            else session.Transport.Join(host, port, name);
+        }
         catch (Exception ex)
         {
             session.End("connect-exception", $"{ex.GetType().Name}: {ex.Message}");
@@ -91,6 +96,9 @@ internal sealed class StallWatchdog : IDisposable
             ? seconds
             : null;
     }
+
+    internal void MarkLogon(ITransportSite client)
+    { if (_sessions.TryGetValue(client, out var session)) session.MarkLogon(); }
 
     internal void Close(IDisposable? client)
     {
@@ -121,12 +129,20 @@ internal sealed class StallWatchdog : IDisposable
     }
 
     internal static JsonElement JsonSnapshot(StallReport report) => JsonSerializer.SerializeToElement(report, JsonOptions);
+    internal (string Name, ConnectionSession Session)[] ConnectedClients => _sessions.Values
+        .Where(s => s.Client is ConnectionSession).Select(s => (s.Name, (ConnectionSession)s.Client)).ToArray();
+
     internal StallReport Snapshot() => WithLogCount(Metrics.Snapshot());
     private StallReport WithLogCount(StallReport report) => report with { LogDroppedLines = Interlocked.Read(ref _logDroppedLines) };
 
     internal void Tick()
     {
         double now = _clock();
+        if (_transportMetrics && now >= _nextTransportSample)
+        {
+            _nextTransportSample = now + 1000;
+            SampleTransports();
+        }
         double late = Math.Max(0, now - _expected);
         _expected = now + 100; // Drop missed ticks; never run a catch-up burst.
         var sample = Sample(late);
@@ -136,6 +152,46 @@ internal sealed class StallWatchdog : IDisposable
         if (sample.Minute is { } minute)
             Log($"[stall-minute] utc={DateTime.UtcNow:O} window={JsonSerializer.Serialize(minute, JsonOptions)} " +
                 $"snapshot={JsonSerializer.Serialize(WithLogCount(sample.Report), JsonOptions)}");
+    }
+
+    private void SampleTransports()
+    {
+        foreach (var session in _sessions.Values)
+        {
+            if (session.Client is not ConnectionSession cs)
+            {
+                if (session.Client is not global::Allegiance.Bot.Bot plain || plain.Ack is not { FValidated: true }) continue;
+                double? logonMs = session.LogonRecorded ? null : session.LogonMs;
+                session.LogonRecorded |= logonMs is not null;
+                Log("[bot-transport] " + JsonSerializer.Serialize(new
+                {
+                    name = session.Name, protocol = TransportFactory.ActiveTransport(session.Transport).ProtocolName,
+                    logonMs, updateAgeMs = session.UpdateAgeMs, ageSource = "shipUpdate",
+                    readAgeMs = session.ReadAgeMs, reconnects = 0,
+                }));
+                continue;
+            }
+            // Never stall the high-priority watchdog on a busy decoder.
+            if (!Monitor.TryEnter(cs.Gate)) continue;
+            try
+            {
+                if (cs.Ack is not { FValidated: true }) continue;
+                string protocol = cs.ActiveTransportProtocol;
+                if (protocol == "disconnected") continue;
+                double? logon = session.LogonRecorded ? null : session.LogonMs;
+                session.LogonRecorded |= logon is not null;
+                double? age = cs.World.MyShipId is { } id && cs.World.Ships.TryGetValue(id, out var ship)
+                    && ship.Latest is not null && ship.StationId < 0 ? Math.Max(0, Environment.TickCount64 - ship.LatestArrivalTime * 1000) : null;
+                int reconnects = Math.Max(0, cs.ResumeAttempts - session.LastReconnects);
+                session.LastReconnects = cs.ResumeAttempts;
+                Log("[bot-transport] " + JsonSerializer.Serialize(new
+                {
+                    name = session.Name, protocol, logonMs = logon, updateAgeMs = age, ageSource = "ownPose",
+                    readAgeMs = session.ReadAgeMs, reconnects,
+                }));
+            }
+            finally { Monitor.Exit(cs.Gate); }
+        }
     }
 
     private void WatchLoop()

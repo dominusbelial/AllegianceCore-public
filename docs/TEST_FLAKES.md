@@ -6,6 +6,42 @@ at the end).
 
 
 
+## P1072 — WebSocket bots: final Fast follow-up (2026-11-22)
+
+The full Fast sweep executed **15,971 cases in 659.9 s**: **15,960 passed /
+4 failed / 7 not executed**. Infrastructure and coverage checks passed. Six
+executions exceeded the calibrated **11.568 s** limit; one was also a functional
+failure. All nine distinct failed/over-limit cases were rerun **3× alone**:
+
+| Case | Sweep | Isolated outcomes | Isolated seconds |
+|---|---|---|---|
+| `StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched` | Failed (15.206s) | pass / pass / pass | 0.573 / 0.536 / 0.554 |
+| `P813cReconnectGraceTests.Seated_connection_cannot_take_or_retire_a_parked_seat` | Failed (1.270s) | pass / pass / pass | 1.573 / 1.655 / 1.663 |
+| `BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over` | Failed (0.207s) | pass / pass / pass | 0.626 / 0.703 / 0.687 |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | Failed (0.708s) | fail / fail / fail | 1.083 / 1.090 / 1.056 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | Passed (timing) (17.517s) | pass / pass / pass | 3.408 / 3.528 / 3.397 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed (timing) (17.933s) | pass / pass / pass | 3.647 / 3.498 / 3.609 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)` | Passed (timing) (14.579s) | pass / pass / pass | 3.773 / 3.818 / 6.491 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | Passed (timing) (11.659s) | pass / pass / pass | 1.896 / 1.693 / 1.653 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | Passed (timing) (13.399s) | pass / pass / pass | 3.368 / 3.332 / 3.309 |
+
+The station-missile hit deadline, parked-seat receipt, ballot receipt and
+FullSession side-export ordering failures all have earlier ledger entries.
+FullSession still fails at line 229 (expected side -2, observed 0) in all three
+lane isolates. An untouched `bc8d5d34` (P1071 merge) source export, built in
+temporary storage with the same SDK/artwork, gave **pass / fail / pass** at the
+same assertion (2.336 / 1.553 / 2.010 s), confirming the existing intermittent
+signature. The other eight cases passed 3/3, with all timing reruns under the
+limit. No simulation, station, ballot, chat, strategy or test threshold was
+changed to address these baseline issues.
+
+P1072 changes transport selection/observation and diagnostics; its 24 new .NET
+cases passed 3× alone (72 results), 210 focused existing transport/security
+checks and 53 watchdog/supervisor/reconnect checks passed. Timed TCP and WS
+battles both completed 300 measured seconds without drops or disconnects.
+Report: [WEBSOCKET_BOTS_P1072.md](reports/WEBSOCKET_BOTS_P1072.md).
+
+
 ## P1069 review — warm engine preparation allocation check (2026-11-21, Claude)
 
 `P1069EngineSceneTests.Warm_engine_preparation_for_thrusting_ships_allocates_no_steady_state_bytes(ships: 2)`

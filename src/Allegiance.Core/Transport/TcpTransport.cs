@@ -989,9 +989,10 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
         PeerSender peerSender = sender!;
         Spawn(() =>
         {
+            string? readCause = null;
             try
             {
-                ReadDataLoop(peer, peerId);
+                readCause = ReadDataLoop(peer, peerId);
             }
             finally
             {
@@ -1005,7 +1006,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                 // reason (a clean server Shutdown is the only non-error close).
                 bool intentional = _intentionalShutdown;
                 RaisePeerLeftOnce(peerSender, peerId, intentional ? DisconnectReason.Shutdown : DisconnectReason.ReadErrorOrEof,
-                                  logLine: !intentional);
+                                  logLine: !intentional, metricCause: readCause);
                 // P967 — the receive side for this id is over: its ended-peer
                 // marker may now be retired by the bounded window.
                 MarkReceiveDrained(peerId);
@@ -1221,7 +1222,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     /// unbounded, never-pruned ended-peer dictionary: the flag must survive
     /// exactly as long as some reaping path can still reference this peer, and
     /// no longer.</para></summary>
-    private void RaisePeerLeftOnce(PeerSender sender, ConnectionId id, DisconnectReason reason, bool logLine)
+    private void RaisePeerLeftOnce(PeerSender sender, ConnectionId id, DisconnectReason reason, bool logLine, string? metricCause = null)
     {
         if (Interlocked.Exchange(ref sender.Ended, 1) != 0) return;
         // P967 — a tombstone is added here (not as the raise guard) so
@@ -1230,6 +1231,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
         // only past the bounded recent window.
         _peerEnded.TryAdd(id, 0);
         _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+        Egress?.RecordTransportDisconnect("tcp", reason, metricCause);
         // P654 (H-15) — release the established peer's per-IP accounting so
         // the per-IP tally stays accurate across the data session (this
         // peer's slot was held since accept, or since it became a peer).
@@ -1274,6 +1276,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     private void RecordDisconnectRaw(DisconnectReason reason, string detail)
     {
         _disconnectCounts.AddOrUpdate(reason, 1, (_, c) => c + 1);
+        Egress?.RecordTransportDisconnect("tcp", reason);
         Console.WriteLine($"[conn-drop] (pre-join) {detail} reason={reason}");
     }
 
@@ -1293,7 +1296,8 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     /// <see cref="DisconnectReason.GreetTimeout"/> instead of a generic protocol
     /// error, exactly as a socket receive timeout used to be classified. Still an
     /// <see cref="IOException"/>, so the data loop's catches are unchanged.</summary>
-    private sealed class ReadDeadlineException(string message) : IOException(message);
+    private sealed class ReadDeadlineException(string message, string cause) : IOException(message)
+    { internal string Cause { get; } = cause; }
 
     /// <summary>P606 — drain (and clear) the per-window disconnect counts by
     /// reason. Called by the server each report window so the profiler log gets
@@ -1412,7 +1416,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     }
 
     // ---- read loop -------------------------------------------------------
-    private void ReadDataLoop(NetworkStream s, ConnectionId from)
+    private string? ReadDataLoop(NetworkStream s, ConnectionId from)
     {
         try
         {
@@ -1443,7 +1447,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                     ? Environment.TickCount64 + (long)DataLinkIdleTimeout.TotalMilliseconds : 0;
                 long frameTimeoutMs = _isHost ? (long)DataFrameReadTimeout.TotalMilliseconds : 0;
                 (byte type, byte[] body) = ReadFrame(s, cap, idleDeadline, frameTimeoutMs);
-                if (type != (byte)FrameType.Data) { CloseQuiet(s); return; }
+                if (type != (byte)FrameType.Data) { CloseQuiet(s); return null; }
                 // P1023 (R1 finding F3) — a data frame shorter than the packet's
                 // trailing CRC cannot be a packet: FedPacket.Unpack rejects
                 // anything under 4 bytes ("packet shorter than the CRC slot",
@@ -1470,16 +1474,18 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                     }
                     else _clientReadFailure = $"server sent a {body.Length}-byte frame (shorter than the {FedPacket.CrcWidth}-byte packet CRC)";
                     CloseQuiet(s);
-                    return;
+                    return null;
                 }
                 if (!_isHost || !IsPeerClosed(from)) _site.OnReceive(from, body);
             }
         }
         catch (EndOfStreamException) { _clientReadFailure = "server closed connection (EOF)"; }
+        catch (ReadDeadlineException ex) { _clientReadFailure = "read I/O error"; return ex.Cause; }
         catch (IOException) { _clientReadFailure = "read I/O error"; }
         catch (SocketException) { _clientReadFailure = "socket error"; }
         catch (ObjectDisposedException) { _clientReadFailure = "connection disposed"; }
         catch (ArgumentException) { _clientReadFailure = "invalid frame"; }
+        return null;
     }
 
     // ---- framing primitives ---------------------------------------------
@@ -1525,7 +1531,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
         // P671 — the IDLE deadline bounds only the frame's first byte: a link
         // that sends nothing at all is link-dead. Once a byte has arrived the
         // frame is in progress and the (separate) FRAME deadline takes over.
-        int first = ReadSome(s, hdr.Slice(0, 1), idleDeadlineMs);
+        int first = ReadSome(s, hdr.Slice(0, 1), idleDeadlineMs, "idle");
         if (first <= 0) throw new EndOfStreamException("peer closed before frame");
         // P671 — anchor the frame deadline NOW that the frame has started. A
         // header that stalls, or a body that dribbles, must complete within
@@ -1606,12 +1612,12 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
     ///     same remaining-budget rule instead of only the socket's per-read
     ///     ReceiveTimeout.)
     ///     Sends stay non-blocking (P645's partial-write safety is untouched).</summary>
-    private static int ReadSome(Stream s, Span<byte> dst, long deadlineMs)
+    private static int ReadSome(Stream s, Span<byte> dst, long deadlineMs, string metricCause = "fragment")
     {
         while (true)
         {
             if (deadlineMs != 0 && Environment.TickCount64 > deadlineMs)
-                throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
+                throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)", metricCause);
             // P646 — block efficiently on a NON-BLOCKING pool socket instead of
             // throwing+catching a would-block IOException every ~1 ms (P645's
             // Thread.Sleep(1) retry burned CPU and allocated an exception object
@@ -1665,7 +1671,7 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                 // throws the real bound-exceeded error; otherwise (spurious early
                 // timeout) retry with a fresh remaining budget.
                 if (Environment.TickCount64 > deadlineMs)
-                    throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)");
+                    throw new ReadDeadlineException("peer data-session read bound exceeded (idle or in-progress frame deadline)", metricCause);
                 continue;
             }
             return n;
@@ -2023,6 +2029,8 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                         if (guaranteed) Reliable?.RecordOneShotParked(false);
                     }
                 }
+                Egress?.ObserveTransportQueue("tcp", _queuedBytes + _batchBytes + (_inflight is null ? 0 : _inflightLength - _inflightOffset),
+                    _orderedQueue.Count + _streamQueue.Count + _parkQueue.Count + (_batchSegments?.Count ?? 0) + (_inflight is null ? 0 : 1));
                 Monitor.Pulse(_sync);
 
                 // Overflow policy (P611): the peer is disconnected only when it

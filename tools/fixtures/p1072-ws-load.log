@@ -1,0 +1,9 @@
+startup noise
+[transport-egress] protocol=tcp sends=10 bytes=1000 drops=0 droppedBytes=0 queueBytesHighWater=500 queueEntriesHighWater=4 disconnects=
+[transport-egress] protocol=ws sends=5 bytes=700 drops=0 droppedBytes=0 queueBytesHighWater=300 queueEntriesHighWater=2 disconnects=IdleTimeout:2,FragmentTimeout:1
+[transport-egress] protocol=tcp sends=20 bytes=2000 drops=2 droppedBytes=100 queueBytesHighWater=200 queueEntriesHighWater=2 disconnects=SendTimeout:1
+[worker 1] [bot-transport] {"name":"mcp-a","protocol":"tcp","logonMs":30,"updateAgeMs":10,"reconnects":0}
+[bot-transport] {"name":"mcp-b","protocol":"wss","logonMs":50,"updateAgeMs":20,"reconnects":0}
+[bot-transport] {"name":"mcp-b","protocol":"wss","logonMs":null,"updateAgeMs":40,"reconnects":1}
+[tick-quantiles] ticks=10 p50Ms=1 p95Ms=3 p99Ms=3 histogramUs=1000:9,3000:1
+[tick-quantiles] ticks=10 p50Ms=1 p95Ms=5 p99Ms=5 histogramUs=1000:8,5000:2
