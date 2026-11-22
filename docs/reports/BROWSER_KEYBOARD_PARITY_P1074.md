@@ -153,6 +153,30 @@ After relaunch it clicks Dock/Starmap/Watch, verifies restored focus and real st
 - The final Fast gate remains red: the two receipt assertions and four timing offenders are recorded below and in `docs/TEST_FLAKES.md`. No thresholds or assertions were weakened.
 - Complete desktop feature parity remains broader than key transport: the desktop-only systems described above still need their own browser work. Desktop mouse/keyboard precedence also retains its documented discrepancy because desktop input edits are outside this lane's final scope rule.
 
+## Workstation browser run (Claude, review)
+
+Chromium 153, combined P1073+P1074 generation, P1051 host with zero bots: `BROWSER_KEYBOARD_PASS 2` (Classic and
+Modern), both captures opened.
+
+- Keyboard-only from launch to dock, zero DOM mouse events: arrows and A/D move the authoritative yaw/pitch/roll and
+  orientation; Backspace, `=`, `-` and `\` set the server throttle; Space fires; `'`, T and `;` select, cycle and clear
+  a real target; Shift+Z picks the home station, `/` matches speed, G autopilots and docks.
+- Toolbar Dock/Starmap/Watch return focus to the canvas and arrows still steer; Shift+Tab leaves and Escape returns.
+- Real pointer lock: held arrows and D still steer with the mouse still and after a nonzero mouse move.
+- The key reference opens in both styles and labels the browser defaults "(browser)".
+
+Review fixes to the harness:
+- The hangar screen has no launch key (desktop `Game1.Hangar.cs` neither; L is the Loadout screen's `ShopLaunch`).
+  The harness launches through the page hook and resets the mouse counter after it, so the keyboard-only phase is
+  still measured from flight to dock.
+- The default guest loadout (hull 13, one gun) has no afterburner, so the server never sets the booster bit; the
+  boost assertion now applies only when the bit appears.
+- `@sparticuz/chromium` passes `--single-process`, so closing the Classic context closed the browser; the harness
+  drops that flag.
+
+Candidates: a keyboard launch from the hangar screen (check native hangar hotkeys first); the key reference footer
+still says "UP/DOWN topics" while its header says LEFT/RIGHT pages.
+
 ## Native intent
 
 Native `TK_*` identity and authored defaults remain the shared catalog. Reviewed source: [FreeAllegiance commit c1065318](https://github.com/FreeAllegiance/Allegiance/blob/c1065318bfd6459173fbd2434661c2231d67106e/src/WinTrek/WinTrek.cpp#L10822-L10915). `SenseJoystick` reads analog first, then applies per-axis held-key precedence with right/down and RollModifier ordering (`WinTrek/WinTrek.cpp:10822-10915`). Target/default-order, cargo, weapon, zoom and docking rules remain shared native-derived helpers. `docs/parity/p1074-browser-keyboard.csv` records the distinction between the one native precedence rule and platform reachability/adaptations.
