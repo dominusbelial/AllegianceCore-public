@@ -284,6 +284,9 @@ public static class InputLayouts
             if (_relocationMap.TryGetValue(def.Name, out var moved)) chord = moved;
             map[def.Name] = chord;
         }
+#if BROWSER
+        Allegiance.ClientCore.MonoGame.BrowserKeyboardBindings.ApplyDefaults(map);
+#endif
         return map;
     }
 

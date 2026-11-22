@@ -338,7 +338,11 @@ try
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId, s.HullId, s.PoseSectorId, visible = s.CanDrawInSector(desktop.World.MyShipId is { } ownShip && desktop.World.Ships.TryGetValue(ownShip, out var viewer) ? viewer.SectorId : (short)-1) }).ToArray(), desktopShotsReceived };
         var state = new { battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
-            { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, throttle = s.Controls.Throttle, s.StateM, position = s.Position.ToString() }).ToArray() };
+            { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, roll = s.Controls.Roll, throttle = s.Controls.Throttle, s.StateM,
+                forward = new[] { s.Orientation.GetForward().X, s.Orientation.GetForward().Y, s.Orientation.GetForward().Z },
+                up = new[] { s.Orientation.GetUp().X, s.Orientation.GetUp().Y, s.Orientation.GetUp().Z },
+                speed = s.Velocity.Length(), targetId = s.CommandTarget?.Id,
+                position = s.Position.ToString() }).ToArray() };
         // No credentials in proof evidence.
         string temp = Path.Combine(scratch, "state.tmp");
         await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(state)); File.Move(temp, Path.Combine(scratch, "state.json"), true);

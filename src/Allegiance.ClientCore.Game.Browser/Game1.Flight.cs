@@ -170,6 +170,7 @@ public sealed partial class Game1
         return _sectorRocks.GetValueOrDefault(sector) ?? [];
     }
     public object FlightMetrics => new {
+        keyboard = KeyboardMetrics,
         viewport = new { width = GraphicsDevice.Viewport.Width, height = GraphicsDevice.Viewport.Height },
         controls = new { yaw = _ownSim.Controls.Yaw, pitch = _ownSim.Controls.Pitch, throttle = _ownSim.Controls.Throttle, stateM = _ownSim.StateM },
         authoritative = _flightSession?.World.MyShipId is { } ownId && _flightSession.World.Ships.TryGetValue(ownId, out var ownShip) ? ownShip.Latest?.Position.ToString() : null,
@@ -225,6 +226,7 @@ public sealed partial class Game1
         // headless lifecycle fixture). The first actual scene initializes itself.
         if (_flightLoaded) ResetScene();
         _flightSession = session;
+        _browserSelectedTarget = null; _browserKeyHelp = false; _browserBoosterToggle = false; _browserCargoMount = 0; _browserInventoryPart = null;
         if (session is null) return;
         _shopCatalog ??= ShopCatalog.TryLoad(_assets);
         _battleScene = new(_shopCatalog!.Core!.HullTypes);
@@ -238,18 +240,8 @@ public sealed partial class Game1
         session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
     }
     private bool ActionDown(KeyboardState keys, string action) => KeyBindingStore.Instance.Map.IsDownMostSpecific(keys, action);
-    public void FlightKeys(string[] codes)
-    {
-        _flightKeys = new KeyboardState(codes.Select(ParseKey).Where(k => k != Keys.None).ToArray());
-    }
-    private static Keys ParseKey(string code)
-    {
-        string name = code.StartsWith("Key", StringComparison.Ordinal) ? code[3..]
-            : code.StartsWith("Digit", StringComparison.Ordinal) ? "D" + code[5..]
-            : code.StartsWith("Arrow", StringComparison.Ordinal) ? code[5..]
-            : code switch { "Backspace" => "Back", "ShiftLeft" => "LeftShift", "ShiftRight" => "RightShift", "ControlLeft" => "LeftControl", "ControlRight" => "RightControl", "AltLeft" => "LeftAlt", "AltRight" => "RightAlt", "Equal" => "OemPlus", "Minus" => "OemMinus", "Backquote" => "OemTilde", "Backslash" => "OemPipe", "IntlBackslash" => "OemBackslash", "BracketLeft" => "OemOpenBrackets", "BracketRight" => "OemCloseBrackets", _ => code };
-        return Enum.TryParse<Keys>(name, out var key) ? key : Keys.None;
-    }
+    public void FlightKeys(string[] codes) => _flightKeys = BrowserKeyboard.State(codes);
+    public bool MouseToggleKey(string[] codes) => ActionDown(BrowserKeyboard.State(codes), "ToggleMouse");
     public void PointerMotion(int dx, int dy) { if (_pointerLocked) { _pointerDx += dx; _pointerDy += dy; } }
     public void PointerCapture(bool locked)
     {
@@ -284,8 +276,11 @@ public sealed partial class Game1
         _nowSeconds += _flightElapsedSeconds;
         _sceneGameSeconds += _flightElapsedSeconds * _session.World.TimeScale;
         PumpServerClock();
+        var rawKeys = _flightKeys;
+        bool helpOwnsKeys = UpdateBrowserKeyHelp(rawKeys);
         var world = _session.World;
-        if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up) return;
+        if (world.MyShipId is not { } id || !world.Ships.TryGetValue(id, out var own) || own.Latest is not { } up)
+        { _lastFlightKeys = rawKeys; return; }
         UpdateOwnShipSimulation(world, own, up);
         // P1067 — Watch needs a live flying ship: a docked hangar screen or a
         // death view is not b-roll, so the mode ends with the flight.
@@ -294,10 +289,10 @@ public sealed partial class Game1
             Watch.Stop();
             Console.WriteLine("[browser] watch OFF (not flying)");
         }
-        if (!Flying) { _browserAutoTarget = null; return; }
+        if (!Flying) { _lastFlightKeys = rawKeys; _browserAutoTarget = null; return; }
         if (_browserAutoTarget is { Kind: TargetKind.Warp } warpTarget && world.Warps.TryGetValue(warpTarget.Id, out var oldWarp) && oldWarp.ClusterId != own.SectorId)
             _browserAutoTarget = null;
-        var keys = _flightKeys;
+        var keys = helpOwnsKeys ? default : rawKeys;
         bool Edge(string action) => ActionDown(keys, action) && !ActionDown(_lastFlightKeys, action);
         // P1067 — desktop F2 (action "Director", Game1.Director.cs:514-523).
         if (Edge("Director")) ToggleWatch();
@@ -318,17 +313,14 @@ public sealed partial class Game1
         if (Edge("NextWeapon")) _selectedMount = FlightInput.NextMount(_selectedMount, FixedMountCount());
         if (Edge("ToggleCloak")) _cloakToggled = !_cloakToggled;
         if (Edge("LockVector")) _coastToggled = !_coastToggled;
-        var input = SampleManualFlightInput(keys, ActionDown(keys, "ThrustUp"), ActionDown(keys, "FireBooster"));
+        ApplyBrowserKeyboardActions(keys, own);
+        ApplyBrowserKeyboardUtility(keys, own);
+        var input = SampleManualFlightInput(keys, ActionDown(keys, "ThrustUp"), ActionDown(keys, "FireBooster") || _browserBoosterToggle);
         input = input with { Fire = input.Fire || (_pointerLocked && (_mouseButtons & 1) != 0) };
         var command = FlightInput.Translate(input);
-        if (_pointerLocked)
-        {
-            var deflection = _mouseFlight.Update(_pointerDx, _pointerDy);
-            var (yaw, pitch) = MouseFlightController.MapResponse(deflection, _mouseFlight.Deadzone, _mouseFlight.LinearControls);
-            // Same native TK_RollModifier routing as desktop (WinTrek.cpp:10828-10834).
-            command = command with { Controls = command.Controls with
-                { Yaw = input.RollModifier ? 0 : yaw, Pitch = pitch, Roll = input.RollModifier ? yaw : command.Controls.Roll } };
-        }
+        var deflection = _pointerLocked ? _mouseFlight.Update(_pointerDx, _pointerDy) : default;
+        var (yaw, pitch) = MouseFlightController.MapResponse(deflection, _mouseFlight.Deadzone, _mouseFlight.LinearControls);
+        command = BrowserFlightSteering.Combine(command, input, _pointerLocked, yaw, pitch);
         if (_browserPad is not null) command = ApplyGamePadFlight(command);
         _pointerDx = _pointerDy = 0;
         bool padTurnActive = _browserPad is { } pad &&
@@ -347,6 +339,8 @@ public sealed partial class Game1
             else
             {
                 SimVec? targetPosition = null; short? sector = null;
+                if (target.Kind == TargetKind.Ship && world.Ships.TryGetValue(target.Id, out var targetShip) && targetShip.Latest is { } targetPose) { targetPosition = targetPose.Position; sector = targetShip.SectorId; }
+                if (target.Kind == TargetKind.Asteroid && world.Asteroids.TryGetValue(target.Id, out var asteroid)) { targetPosition = Vec(asteroid.Position); sector = asteroid.ClusterId; }
                 if (target.Kind == TargetKind.Station && world.Stations.TryGetValue(target.Id, out var station)) { targetPosition = Vec(station.Position); sector = station.ClusterId; }
                 if (target.Kind == TargetKind.Probe && world.Probes.TryGetValue(target.Id, out var probe)) { targetPosition = probe.Position; sector = probe.ClusterId; }
                 if (target.Kind == TargetKind.Warp && world.Warps.TryGetValue(target.Id, out var warp)) { targetPosition = Vec(warp.Position); sector = warp.ClusterId; }
@@ -372,7 +366,7 @@ public sealed partial class Game1
         _hullUploads?.Step(ClientNowMilliseconds);
         _ = RocksInSector(world, own.SectorId); // Register discoveries only when the spatial set changes.
         _browserSpins.Advance(own.SectorId, _flightElapsedSeconds * world.TimeScale);
-        _lastFlightKeys = keys;
+        _lastFlightKeys = rawKeys;
     }
     /// <summary>P1069 — decode a hull's original mesh and upload its GPU
     /// buffers/texture (the exact NativeShipRenderer calls the draw path already
@@ -493,6 +487,7 @@ public sealed partial class Game1
             }
         }
         _rockFrustum.Matrix = view * projection;
+        _browserTargetEye = eye; // Input picking uses this exact rendered camera.
         BeginScene(world, own, view, projection, eye);
         long shipPassStart = System.Diagnostics.Stopwatch.GetTimestamp();
         DrawnShips = DrawnMeshes = DrawnStandIns = 0;
@@ -568,6 +563,7 @@ public sealed partial class Game1
         }
         _drawnRockSurfaces.Clear(); CulledRocks = 0;
         _rockFrustum.Matrix = view * projection;
+        _browserTargetEye = eye; // Input picking uses this exact rendered camera.
         foreach (var rock in RocksInSector(world, own.SectorId))
         {
             if (!BattleShipScene.RockInView(V(rock.Position) - eye, rock.Radius, _rockFrustum)) { CulledRocks++; continue; }
@@ -605,7 +601,7 @@ public sealed partial class Game1
             (_ownSim.StateM & ShipControlState.WeaponsMask) != 0, _groupFire, _selectedMount, false, warpFlash, false, _cloakToggled,
             world.KillBonusPercent, up.Orientation.GetRollDegrees(), [], false, 0, world.MyMoney, TurnYaw: _ownSim.Controls.Yaw, TurnPitch: _ownSim.Controls.Pitch, AutopilotEngaged: _browserAutoTarget is not null, WarningMask: world.ShipWarnings.Mask, TimeDilationPercent: (float)world.TimeScale * 100);
         var hud = _hudSettings.Style == HudStyle.Classic ? _classicFlightHud! : _modernFlightHud!;
-        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, contacts: _flightContacts, buffers: _flightHudBuffers,
+        hud.Draw(HudModelAdapter.Create(frame, _cameraMode, radarMode: _browserRadarMode, contacts: _flightContacts, buffers: _flightHudBuffers,
             cameraLabel: Watch.Active ? DirectorWatch.HudLabel : null), GraphicsDevice.Viewport);
         DrawBrowserStarmap(own.SectorId);
         FlightFrames++;

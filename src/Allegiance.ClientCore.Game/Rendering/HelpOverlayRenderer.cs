@@ -111,7 +111,11 @@ public sealed class HelpOverlayRenderer
             // "H TOGGLE" went stale when P623 moved Help to F1). P757: with the
             // manual active, the header also names the navigation.
             var map = KeyBindingStore.Instance.Map;
+#if BROWSER
+            string header = $"KEYBOARD  ({map.LabelOf("Help")} TOGGLE - LEFT/RIGHT PAGES - ESC BACK)";
+#else
             string header = HelpHeader.Line(map.BindingOf("Help").Label, map.BindingOf("OpenKeyBindings").Label);
+#endif
             var hs = _small.MeasureString(header) * scale;
             Draw(header, new Vector2((w - hs.X) / 2f, panelY + 8f), HeaderColor, scale);
 

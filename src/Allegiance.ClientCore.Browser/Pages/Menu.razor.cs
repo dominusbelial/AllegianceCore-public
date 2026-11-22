@@ -160,8 +160,22 @@ public partial class Menu
             StopGame(); StateHasChanged(); return false;
         }
     }
+    private static string BrowserFlightKeyHint()
+    {
+        var map = Allegiance.ClientCore.MonoGame.Rendering.KeyBindingStore.Instance.Map;
+        return $"{map.LabelOf("ThrustForward")}/{map.LabelOf("ThrustBackward")} thrust · "
+            + $"{map.LabelOf("PitchUp")}/{map.LabelOf("PitchDown")}/{map.LabelOf("YawLeft")}/{map.LabelOf("YawRight")} turn · "
+            + $"{map.LabelOf("FireWeapon")} fire · {map.LabelOf("FireBooster")} boost · {map.LabelOf("FireMissile")} missile · {map.LabelOf("Help")} keys";
+    }
+
     [JSInvokable]
     public void FlightKeys(string[] codes) => _game?.FlightKeys(codes);
+    [JSInvokable]
+    public bool ReferenceKey(string[] codes) => _game?.ReferenceKey(codes) == true;
+    [JSInvokable]
+    public bool FlightEscape() => _game?.CloseBrowserKeyHelp() == true;
+    [JSInvokable]
+    public bool MouseToggleKey(string[] codes) => _game?.MouseToggleKey(codes) == true;
     // P1070 — the docked screens' pointer: the canvas has no KNI mouse position, so
     // the page forwards the same x/y/button/wheel the desktop reads from
     // Mouse.GetState() (Game1.Hangar.cs:233, Game1.LoadoutV2Input.cs:55).

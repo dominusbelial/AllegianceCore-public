@@ -1,0 +1,868 @@
+{
+  "nativeReviewedCommit": "c1065318bfd6459173fbd2434661c2231d67106e",
+  "nativeArtworkKeyTableSha256": "aaef32f9a5b1052781134c308cb59a21a1019e93ec61cbc3c175119ce9d72149",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolsBuild": {
+    "projects": 152,
+    "passed": true
+  },
+  "newCSharpIsolated": [
+    {
+      "test": "Every_catalog_default_native_default_alternate_and_modifier_has_a_DOM_code",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Every_catalog_default_native_default_alternate_and_modifier_has_a_DOM_code",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Every_catalog_default_native_default_alternate_and_modifier_has_a_DOM_code",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Actual_Game1_FlightKeys_uses_the_physical_table",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "test": "Actual_Game1_FlightKeys_uses_the_physical_table",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "test": "Actual_Game1_FlightKeys_uses_the_physical_table",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "test": "All_numpad_digits_and_left_right_modifiers_remain_distinct",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "All_numpad_digits_and_left_right_modifiers_remain_distinct",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "All_numpad_digits_and_left_right_modifiers_remain_distinct",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Browser_defaults_avoid_reserved_chords_and_help_names_the_live_map",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 2
+    },
+    {
+      "test": "Browser_defaults_avoid_reserved_chords_and_help_names_the_live_map",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 2
+    },
+    {
+      "test": "Browser_defaults_avoid_reserved_chords_and_help_names_the_live_map",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 2
+    },
+    {
+      "test": "Native_keyboard_override_preserves_other_axes_buttons_and_throttle_for_every_key_combination",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Native_keyboard_override_preserves_other_axes_buttons_and_throttle_for_every_key_combination",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Native_keyboard_override_preserves_other_axes_buttons_and_throttle_for_every_key_combination",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Browser_missile_does_not_turn_held_thrust_into_Ctrl_W",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Browser_missile_does_not_turn_held_thrust_into_Ctrl_W",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Browser_missile_does_not_turn_held_thrust_into_Ctrl_W",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_projection_uses_the_rendered_eye_and_clips_to_the_actual_frustum",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_projection_uses_the_rendered_eye_and_clips_to_the_actual_frustum",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_projection_uses_the_rendered_eye_and_clips_to_the_actual_frustum",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_center_cycle_and_friendly_home_filter_have_observable_selections",
+      "repeat": 1,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_center_cycle_and_friendly_home_filter_have_observable_selections",
+      "repeat": 2,
+      "exitCode": 0,
+      "passed": 1
+    },
+    {
+      "test": "Target_center_cycle_and_friendly_home_filter_have_observable_selections",
+      "repeat": 3,
+      "exitCode": 0,
+      "passed": 1
+    }
+  ],
+  "newJavaScriptIsolated": [
+    {
+      "test": "ordinary keys never capture or retry a previously refused pointer lock",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "ordinary keys never capture or retry a previously refused pointer lock",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "ordinary keys never capture or retry a previously refused pointer lock",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "only the live mouse-flight toggle is a keyboard capture gesture",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "only the live mouse-flight toggle is a keyboard capture gesture",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "only the live mouse-flight toggle is a keyboard capture gesture",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "granting pointer lock preserves held steering, losing it releases every key",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "granting pointer lock preserves held steering, losing it releases every key",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "granting pointer lock preserves held steering, losing it releases every key",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "a focused toolbar button cannot eat steering or accidentally fire itself with Space",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "a focused toolbar button cannot eat steering or accidentally fire itself with Space",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "a focused toolbar button cannot eat steering or accidentally fire itself with Space",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "mouse toolbar buttons preserve focus and completing buttons or selects returns to the canvas",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "mouse toolbar buttons preserve focus and completing buttons or selects returns to the canvas",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "mouse toolbar buttons preserve focus and completing buttons or selects returns to the canvas",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "Shift Tab leaves flight, Tab/Enter reach and activate toolbar, Escape returns to flight",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "Shift Tab leaves flight, Tab/Enter reach and activate toolbar, Escape returns to flight",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "Shift Tab leaves flight, Tab/Enter reach and activate toolbar, Escape returns to flight",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "text fields keep printable keys, shortcuts, arrows, Space, Enter and Alt Enter",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "text fields keep printable keys, shortcuts, arrows, Space, Enter and Alt Enter",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "text fields keep printable keys, shortcuts, arrows, Space, Enter and Alt Enter",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "deliverable refresh/search/save/browser chords are cancelled only in game",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "deliverable refresh/search/save/browser chords are cancelled only in game",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "deliverable refresh/search/save/browser chords are cancelled only in game",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "blur and Escape drop held keys without allowing future keys to recapture",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "blur and Escape drop held keys without allowing future keys to recapture",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "blur and Escape drop held keys without allowing future keys to recapture",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "intro reference and screenshot keys cancel browser defaults using the live map",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "intro reference and screenshot keys cancel browser defaults using the live map",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "intro reference and screenshot keys cancel browser defaults using the live map",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "the menu text adapter leaves session input to the flight owner",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "the menu text adapter leaves session input to the flight owner",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "the menu text adapter leaves session input to the flight owner",
+      "repeat": 3,
+      "exitCode": 0
+    },
+    {
+      "test": "menu text fields retain their keys and canvas text still reaches the menu",
+      "repeat": 1,
+      "exitCode": 0
+    },
+    {
+      "test": "menu text fields retain their keys and canvas text still reaches the menu",
+      "repeat": 2,
+      "exitCode": 0
+    },
+    {
+      "test": "menu text fields retain their keys and canvas text still reaches the menu",
+      "repeat": 3,
+      "exitCode": 0
+    }
+  ],
+  "browserProjects": {
+    "Allegiance.ClientCore.Browser.Tests": 52,
+    "Allegiance.ClientCore.Game.Browser.Tests": 239
+  },
+  "unrelatedIsolated": [
+    {
+      "test": "ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.3957253"
+      ]
+    },
+    {
+      "test": "ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.4756844"
+      ]
+    },
+    {
+      "test": "ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.4071309"
+      ]
+    },
+    {
+      "test": "DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.3865563"
+      ]
+    },
+    {
+      "test": "DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.3540049"
+      ]
+    },
+    {
+      "test": "DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.3342302"
+      ]
+    },
+    {
+      "test": "SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.0608909",
+        "00:00:04.1819463"
+      ]
+    },
+    {
+      "test": "SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.0685705",
+        "00:00:04.2069986"
+      ]
+    },
+    {
+      "test": "SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:04.1735195",
+        "00:00:03.0542862"
+      ]
+    },
+    {
+      "test": "P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.2335230"
+      ]
+    },
+    {
+      "test": "P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.2862576"
+      ]
+    },
+    {
+      "test": "P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.1599532"
+      ]
+    }
+  ],
+  "earlierFast": {
+    "tier": "fast",
+    "seconds": 582.2340876259841,
+    "projects": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "count": 52,
+        "outcomes": {
+          "Passed": 52
+        }
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "count": 238,
+        "outcomes": {
+          "Passed": 238
+        }
+      },
+      "Allegiance.Lobby.Tests": {
+        "count": 327,
+        "outcomes": {
+          "Passed": 327
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 6011,
+        "outcomes": {
+          "Passed": 6006,
+          "NotExecuted": 4,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2492,
+        "outcomes": {
+          "Passed": 2491,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6797,
+        "outcomes": {
+          "Passed": 6794,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1638196286472149,
+      "referenceMs": 4.3876,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.638196286472148
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 16.1040686
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 15.5727057
+      }
+    ],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed",
+      "2 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.03872452804353088,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "chromium": {
+    "executed": false,
+    "reason": "Chromium and Playwright unavailable in the lane; workstation harness provided"
+  },
+  "finalFast": {
+    "tier": "fast",
+    "seconds": 595.9291309459368,
+    "projects": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "count": 52,
+        "outcomes": {
+          "Passed": 52
+        }
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "count": 239,
+        "outcomes": {
+          "Passed": 239
+        }
+      },
+      "Allegiance.Lobby.Tests": {
+        "count": 327,
+        "outcomes": {
+          "Passed": 327
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 6011,
+        "outcomes": {
+          "Passed": 6007,
+          "NotExecuted": 4
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2492,
+        "outcomes": {
+          "Passed": 2492
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6797,
+        "outcomes": {
+          "Passed": 6792,
+          "Failed": 2,
+          "NotExecuted": 3
+        }
+      }
+    },
+    "calibration": {
+      "factor": 1.1545623342175064,
+      "referenceMs": 4.3527,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 11.545623342175064
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+        "outcome": "Passed",
+        "seconds": 14.7690923
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+        "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+        "outcome": "Passed",
+        "seconds": 13.4910961
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+        "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+        "outcome": "Passed",
+        "seconds": 13.0753207
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+        "outcome": "Passed",
+        "seconds": 17.1076123
+      }
+    ],
+    "errors": [
+      "Allegiance.Core.Tests: main failed",
+      "4 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.033100316068157554,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "finalUnrelatedIsolated": [
+    {
+      "test": "AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.7864245"
+      ]
+    },
+    {
+      "test": "AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.8082288"
+      ]
+    },
+    {
+      "test": "AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.7694535"
+      ]
+    },
+    {
+      "test": "WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:00.3122948"
+      ]
+    },
+    {
+      "test": "WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:00.3149234"
+      ]
+    },
+    {
+      "test": "WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed"
+      ],
+      "durations": [
+        "00:00:00.3058897"
+      ]
+    },
+    {
+      "test": "P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:04.4263703",
+        "00:00:05.3986953",
+        "00:00:03.3946835"
+      ]
+    },
+    {
+      "test": "P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:04.4018617",
+        "00:00:03.3552868",
+        "00:00:05.4690601"
+      ]
+    },
+    {
+      "test": "P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:05.3915198",
+        "00:00:04.4139447",
+        "00:00:03.3925604"
+      ]
+    },
+    {
+      "test": "P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 1,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:03.7837911",
+        "00:00:03.4910460",
+        "00:00:03.2536542",
+        "00:00:02.8638994",
+        "00:00:01.8677164",
+        "00:00:02.9469286",
+        "00:00:04.4752775",
+        "00:00:04.1121082",
+        "00:00:02.9240932",
+        "00:00:02.8813310"
+      ]
+    },
+    {
+      "test": "P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 2,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:01.8875421",
+        "00:00:04.1253137",
+        "00:00:02.9963571",
+        "00:00:02.8935848",
+        "00:00:04.4063363",
+        "00:00:03.3109386",
+        "00:00:03.5226772",
+        "00:00:02.9072093",
+        "00:00:03.8295898",
+        "00:00:02.9612860"
+      ]
+    },
+    {
+      "test": "P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 3,
+      "exitCode": 0,
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "durations": [
+        "00:00:02.8078381",
+        "00:00:03.7020457",
+        "00:00:02.9849666",
+        "00:00:03.2049084",
+        "00:00:03.4769776",
+        "00:00:04.1572450",
+        "00:00:01.8342078",
+        "00:00:02.9015234",
+        "00:00:05.6969986",
+        "00:00:02.8103089"
+      ]
+    }
+  ]
+}

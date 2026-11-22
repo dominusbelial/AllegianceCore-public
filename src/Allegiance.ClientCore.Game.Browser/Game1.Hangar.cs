@@ -186,7 +186,7 @@ public sealed partial class Game1
 
     /// <summary>The docked keys (the same <c>FlightKeys</c> stream the flight pass
     /// reads; <c>wwwroot/flight-input.js</c> forwards it while the hangar is up too).</summary>
-    private void HangarKeys() => _hangarKeys = _flightKeys;
+    private void HangarKeys() => _hangarKeys = KeyHelpOpen ? default : _flightKeys;
 
     /// <summary>The page's launch pipeline asks the model to release its latch when it
     /// finishes (success or a refused click).</summary>

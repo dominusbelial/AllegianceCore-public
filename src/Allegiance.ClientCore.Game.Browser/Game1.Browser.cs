@@ -114,6 +114,7 @@ public sealed partial class Game1 : Game
     {
         if (_flightSession is not null) { UpdateOnlineFlight(gameTime); _sectorTextures?.Pump(GraphicsDevice); base.Update(gameTime); return; }
         var keys = _keyboardFocus ? Keyboard.GetState() : default;
+        if (UpdateBrowserKeyHelp(keys)) { _previous = keys; base.Update(gameTime); return; }
         bool up = keys.IsKeyDown(Keys.Up), down = keys.IsKeyDown(Keys.Down);
         bool enter = keys.IsKeyDown(Keys.Enter), tab = keys.IsKeyDown(Keys.Tab);
         bool Press(Keys key) => keys.IsKeyDown(key) && !_previous.IsKeyDown(key);
@@ -128,7 +129,7 @@ public sealed partial class Game1 : Game
         }
         else if (Press(Keys.Escape)) _introView = IntroView.Main;
         if (_graphicsSettingsVisible) { _graphicsSettingsVisible = false; ShowUnavailable("Graphics calibration and flight effects"); }
-        if (Press(Keys.F12)) DownloadScreenshot?.Invoke();
+        if (ActionDown(keys, "ScreenShot") && !ActionDown(_previous, "ScreenShot")) DownloadScreenshot?.Invoke();
         _iUp = up; _iDown = down; _iEnter = enter; _iTab = tab;
         _previous = keys;
         base.Update(gameTime);
@@ -172,10 +173,12 @@ public sealed partial class Game1 : Game
         else ShowUnavailable(IntroMainLabels[_introIndex]);
     }
     private void ShowUnavailable(string feature) { _unavailable = feature + " is not available in the browser."; _introView = IntroView.Unavailable; }
-    private void ToggleKeyBindings() => ShowUnavailable("Controls for flight");
+    private void ToggleKeyBindings() => ToggleBrowserKeyHelp();
     partial void HandlePlatformOptionsCommand(OptionsMenuModel.OptionsCommand command, ref bool handled)
     {
-        if (command is OptionsMenuModel.OptionsCommand.GraphicsSettings or OptionsMenuModel.OptionsCommand.MapKeysAndControls
+        if (command == OptionsMenuModel.OptionsCommand.MapKeysAndControls)
+        { ToggleBrowserKeyHelp(); handled = true; return; }
+        if (command is OptionsMenuModel.OptionsCommand.GraphicsSettings
             or OptionsMenuModel.OptionsCommand.ToggleMusic or OptionsMenuModel.OptionsCommand.MusicVolumeUp
             or OptionsMenuModel.OptionsCommand.MusicVolumeDown or OptionsMenuModel.OptionsCommand.ToggleMuteChatSender)
         {
@@ -224,7 +227,7 @@ public sealed partial class Game1 : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(_flightSession is not null ? Color.Black : new Color(5, 12, 20));
-        if (_flightSession is not null) { DrawOnlineFlight(); base.Draw(gameTime); return; }
+        if (_flightSession is not null) { DrawOnlineFlight(); DrawBrowserKeyboardHud(); base.Draw(gameTime); return; }
         var vp = GraphicsDevice.Viewport;
         var title = new Color(HudColor.TealAccent.R, HudColor.TealAccent.G, HudColor.TealAccent.B);
         var dim = new Color(.48f, .64f, .62f);
@@ -245,6 +248,7 @@ public sealed partial class Game1 : Game
             }
         }
         finally { _spriteBatch.End(); }
+        DrawBrowserKeyboardHud();
         base.Draw(gameTime);
     }
 }

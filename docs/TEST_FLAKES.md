@@ -41,6 +41,52 @@ checks and 53 watchdog/supervisor/reconnect checks passed. Timed TCP and WS
 battles both completed 300 measured seconds without drops or disconnects.
 Report: [WEBSOCKET_BOTS_P1072.md](reports/WEBSOCKET_BOTS_P1072.md).
 
+## P1074 — browser keyboard, broad Fast observations (2026-11-22)
+
+P1074 changes browser input/help and browser-only default overlays. Desktop input,
+server simulation, protocol, test assertions, tiers, quarantine and timing policy
+are unchanged. [Report](reports/BROWSER_KEYBOARD_PARITY_P1074.md), with compact
+machine-readable results in `reports/BROWSER_KEYBOARD_PARITY_P1074_assets/validation.json`.
+
+Earlier sweep: **15,972 results, 582.2 s; 15,963 passed / 2 failed / 7 not executed**.
+Nine infrastructure checks passed; calibrated limit **11.638 s**. Both browser
+projects and the P1074 cases passed. These are existing ledger families (including
+the launcher-receipt row under P1060 and the remote-death row under P1070).
+
+| Method | Sweep | Fresh isolated repetitions with artwork |
+|---|---|---|
+| `ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live` | default `ExpandedPartData` instead of the granted launcher on the client | **3/3 passed**, 1.396 / 1.476 / 1.407 s |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | B never latched A's death after 2,500 delivery polls | **3/3 passed**, 1.387 / 1.354 / 1.334 s |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | civ 25 passed in 16.104 s (timing only) | **2 cases passed ×3**, slowest 4.182 / 4.207 / 4.174 s |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 15.573 s (timing only) | **3/3 passed**, 3.234 / 3.286 / 3.160 s |
+
+Final-source sweep: **15,973 results, 595.9 s; 15,964 passed / 2 failed / 7 not executed**.
+Nine infrastructure checks passed; calibrated limit **11.546 s**. Browser projects
+passed 52/52 and 239/239; the desktop and session projects passed. The earlier
+launcher and remote-death failures did not recur. The two final assertion failures
+are existing mining/warp receipt families already recorded elsewhere in this ledger.
+
+| Method | Final sweep |
+|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | queued mining receipts: expected 1, actual 3 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | peer collection contained only old-sector `SHIP_STATUS` |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 14.769 s (timing only) |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` (civ 35) | passed in 13.491 s (timing only) |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` (civ 25) | passed in 13.075 s (timing only) |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` (civ 5) | passed in 17.108 s (timing only) |
+
+All final receipt/timing methods passed in three fresh isolated processes with artwork:
+
+| Method | Isolated qualification after the final sweep |
+|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | 3/3 passed: 1.786 / 1.808 / 1.769 s |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | 3/3 passed: 0.312 / 0.315 / 0.306 s |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | All 3 cases passed ×3; slowest 5.399 / 5.469 / 5.392 s |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | All 10 cases passed ×3; slowest 4.475 / 4.406 / 5.697 s |
+
+The P814/SC2 three-run isolated qualifications above also passed on the final production code.
+
+**Fast remains red; no gate is waived.**
 
 ## P1069 review — warm engine preparation allocation check (2026-11-21, Claude)
 

@@ -122,7 +122,8 @@
                 {
                     <p id="online-pose">@_pose</p>
                 }
-                <p class="flight-help">W/S thrust · arrows turn · Space fire · Shift boost · click canvas for mouse steering · Escape releases · Alt+Enter fullscreen</p>
+                <p class="flight-help">@BrowserFlightKeyHint() · click canvas for mouse steering · Shift+Tab toolbar · Escape returns to flight/releases mouse · Alt+Enter fullscreen</p>
+                <button id="flight-keys" @onclick="() => _game?.ToggleBrowserKeyHelp()">Key reference</button>
                 <button id="flight-contact" @onclick="ToggleContactView">@(_game?.ViewingContact == true ? "Chase view" : "View nearby ships")</button>
                 <button id="flight-watch" @onclick="ToggleWatch">@(_game?.Watching == true ? "Stop watching" : "Watch")</button>
                 @if (_dev)
