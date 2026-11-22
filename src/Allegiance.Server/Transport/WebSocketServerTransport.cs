@@ -182,7 +182,8 @@ public sealed class WebSocketServerTransport : IServerTransport, IDisposable
         internal readonly CancellationTokenSource Stop = new();
         internal WebSocketSendQueue Queue = null!;
         internal readonly long Accepted = accepted;
-        internal bool Authenticated, Human, Closed, Flush;
+        internal bool Authenticated, Human, Closed, Flush, FragmentPending;
+        internal CancellationToken ReceiveDeadline;
         public void Dispose() { Queue.Ready.Dispose(); Stop.Dispose(); }
     }
     private async Task ReadLoop(Peer peer)
@@ -201,21 +202,23 @@ public sealed class WebSocketServerTransport : IServerTransport, IDisposable
                     int cap; lock (peer.Gate) cap = peer.Authenticated ? maximum : Math.Min(maximum, _settings.PreLogonMaxMessageBytes);
                     double seconds = fragments == 0 ? _settings.IdleTimeoutSeconds : Math.Min(_settings.FragmentProgressTimeoutSeconds,
                         _settings.MessageTimeoutSeconds - (Environment.TickCount64 - start) / 1000d);
-                    if (seconds <= 0) { Close(peer, DisconnectReason.ProtocolError); return; }
+                    if (seconds <= 0) { Close(peer, DisconnectReason.ProtocolError, "fragment"); return; }
                     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(peer.Stop.Token);
                     timeout.CancelAfter(TimeSpan.FromSeconds(seconds));
+                    lock (peer.Gate) { peer.ReceiveDeadline = timeout.Token; peer.FragmentPending = fragments != 0; }
                     ValueWebSocketReceiveResult result;
                     try
                     {
                         result = await peer.Socket.ReceiveAsync(data.AsMemory(used, Math.Min(4096, cap + 1 - used)), timeout.Token).ConfigureAwait(false);
                     }
-                    catch (OperationCanceledException) { Close(peer, DisconnectReason.ReadErrorOrEof); return; }
+                    catch (OperationCanceledException)
+                    { Close(peer, DisconnectReason.ReadErrorOrEof, peer.Stop.IsCancellationRequested ? null : fragments == 0 ? "idle" : "fragment"); return; }
                     long now = Environment.TickCount64;
                     bool authExpired;
                     lock (peer.Gate) authExpired = !peer.Authenticated && now - peer.Accepted >= _settings.AuthenticationTimeoutSeconds * 1000;
                     if (authExpired) { Close(peer, DisconnectReason.PreLogonTimeout); return; }
                     if (fragments != 0 && now - start >= _settings.MessageTimeoutSeconds * 1000)
-                    { Close(peer, DisconnectReason.ProtocolError); return; }
+                    { Close(peer, DisconnectReason.ProtocolError, "fragment"); return; }
                     if (fragments == 0) start = now;
                     if (result.MessageType == WebSocketMessageType.Close) return;
                     if (result.MessageType != WebSocketMessageType.Binary || ++fragments > _settings.MaxFragments || (used += result.Count) > cap)
@@ -288,14 +291,17 @@ public sealed class WebSocketServerTransport : IServerTransport, IDisposable
         }
         catch (OperationCanceledException) { }
     }
-    private void Close(Peer peer, DisconnectReason reason)
+    private void Close(Peer peer, DisconnectReason reason, string? metricCause = null)
     {
         lock (peer.Gate)
         {
             if (peer.Closed) return;
+            metricCause ??= reason == DisconnectReason.ReadErrorOrEof && peer.ReceiveDeadline.IsCancellationRequested
+                && !peer.Stop.IsCancellationRequested ? peer.FragmentPending ? "fragment" : "idle" : null;
             peer.Closed = true; peer.Queue.Close();
             if (peer.Flush && reason == DisconnectReason.ReadErrorOrEof) reason = DisconnectReason.Shutdown;
             _disconnects.AddOrUpdate(reason, 1, (_, n) => n + 1);
+            Egress?.RecordTransportDisconnect("ws", reason, metricCause);
             peer.Stop.Cancel(); peer.Socket.Abort();
         }
     }
@@ -352,6 +358,7 @@ public sealed class WebSocketServerTransport : IServerTransport, IDisposable
             ServerCounters?.RecordPacket(data, guaranteed);
             if (key == 0 && guaranteed) Reliable?.RecordOneShotParked(false);
             reason = p.Queue.Enqueue(data, key, guaranteed, Environment.TickCount64);
+            Egress?.ObserveTransportQueue("ws", p.Queue.Storage.Bytes, p.Queue.Storage.Entries);
             Interlocked.Add(ref _enqueued, WireLength(data.Length));
         }
         if (reason != DisconnectReason.None) Close(p, reason);

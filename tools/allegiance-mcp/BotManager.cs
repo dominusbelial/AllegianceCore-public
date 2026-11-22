@@ -217,8 +217,9 @@ internal sealed partial class BotManager : IDisposable
         LoadoutVariety.Configure(seed);
     }
 
-    public BotManager(string host, ushort port, WorkerPartition? partition = null, bool backfill = false, string? clientVersion = null)
+    public BotManager(string host, ushort port, WorkerPartition? partition = null, bool backfill = false, string? clientVersion = null, BotTransportOptions? transport = null)
     {
+        _botTransport = (transport ?? BotTransportOptions.Read(Environment.GetEnvironmentVariable)).Validate();
         _backfill = backfill;
         _backfillClientVersion = clientVersion ?? "0.0.0";
         Partition = partition;
@@ -233,6 +234,7 @@ internal sealed partial class BotManager : IDisposable
         Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
         ConnectProbe();
+        _transportBotOffset = Math.Max(0, ValidSides().Count - (_backfill ? 1 : 0));
         if (_backfill) lock (_commanders) _commanders[ProbeSide] = Probe;
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
         _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
@@ -291,12 +293,13 @@ internal sealed partial class BotManager : IDisposable
         // Native mission names are unique. Include both worker identity and a
         // fresh suffix so separate supervisors/single managers can coexist.
         string name = $"mcp-probe-w{(Partition?.Index ?? 0) + 1}-{Guid.NewGuid().ToString("N")[..6]}";
-        _stallTelemetry.Connect(Probe, name, _host, _port);
+        ConnectBotTransport(Probe, name, _host, _port);
         Probe.SendLogonRequest(Request(name));
         if (!WaitUntil(() => Probe.Ack is not null || Probe.Lost, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
         if (Probe.Ack is not { FValidated: true })
             throw new InvalidOperationException($"startup probe: logon refused: {Probe.Ack?.CharNameOrFailureReason ?? "connection lost"}");
+        _stallTelemetry.MarkLogon(Probe);
         short side = ProbeSidePref();
         Probe.SendPositionReq(side);
         if (!WaitUntil(() => Probe.World.MyShipId is not null && Probe.World.MySideId is not null || Probe.LastPositionRefusal is not null || Probe.Lost, 15000))
@@ -579,10 +582,11 @@ internal sealed partial class BotManager : IDisposable
         {
             // idle / weave: a plain BotClass client (same-side observable by the probe).
             var b = ownership.Own(new BotClass { AutoSelectSideAfterLogon = false, RetainRawCombatUpdates = false });
-            _stallTelemetry.Connect(b, name, _host, _port);
+            ConnectBotTransport(b, name, _host, _port, botId + _transportBotOffset);
             b.SendLogonRequest(Request(name));
             if (!WaitUntil(() => b.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"spawn_bot: bot '{name}' never got a validated LOGONACK from {_host}:{_port}");
+            _stallTelemetry.MarkLogon(b);
             int refusalCursor = b.DelPositionReqs.Count;
             SeatWithRetry(name, chosenSide, () => b.ShipAssignment is not null, () => b.Connected,
                 () => b.DelPositionReqs.Skip(refusalCursor).LastOrDefault(r => r.ShipId == b.Ack?.ShipID),
@@ -734,10 +738,11 @@ internal sealed partial class BotManager : IDisposable
         var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
         cs.World.CountOnlyProjectiles = true;
         cs.World.ReckonRemotes = false;   // P633 — headless bot harness: no render consumption of dead-reckoners
-        _stallTelemetry.Connect(cs, name, _host, _port);
+        ConnectBotTransport(cs, name, _host, _port, botId + _transportBotOffset);
         cs.SendLogonRequest(Request(name));
         if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"combat client '{name}' never got a validated LOGONACK from {_host}:{_port}");
+        _stallTelemetry.MarkLogon(cs);
         SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
             () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: !_backfill);
 
@@ -1166,10 +1171,12 @@ internal sealed partial class BotManager : IDisposable
             var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
             cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
-            _stallTelemetry.Connect(cs, name, _host, _port);
+            ConnectBotTransport(cs, name, _host, _port,
+                ValidSides().Order().Where(s => !_backfill || s != ProbeSide).ToList().IndexOf(side) + 1);
             cs.SendLogonRequest(Request(name));
             if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.Ack is { FValidated: true }, 12000))
                 throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
+            _stallTelemetry.MarkLogon(cs);
             // A commander must retain the side whose wallet it will manage.
             SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
                 () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: false);
@@ -5283,6 +5290,7 @@ bool isThreat =
     /// the probe's server-reported world on demand — no synthetic state).</summary>
     public sealed class ActiveBotView
     {
+        public string Transport { get; init; } = "unknown";
         public required string Name { get; init; }
         public required short ShipId { get; init; }
         public required short Side { get; init; }
@@ -5461,7 +5469,7 @@ bool isThreat =
                         bool idle = IsBotIdle(bot.PodDocked, now, bot.LastMoveAt, speed);
                         views.Add(new ActiveBotView
                         {
-                            Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
+                            Name = bot.Name, Transport = BotProtocol(bot), ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                             Sector = sector, Behavior = bot.Behavior,
                             Position = [pos.X, pos.Y, pos.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
                             Engagers = EngagersOf(bot),
@@ -5482,7 +5490,7 @@ bool isThreat =
                     bool idle2 = IsBotIdle(bot.PodDocked, now, bot.LastMoveAt, 0.0);
                     views.Add(new ActiveBotView
                     {
-                        Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
+                        Name = bot.Name, Transport = BotProtocol(bot), ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                         Sector = s, Behavior = bot.Behavior, Position = [0, 0, 0], Target = null, OrderedTarget = bot.OrderedTargetId,
                         Engagers = 0,
                         WorldReady = BotWorldReady(bot), WorldReadyDelaySec = BotWorldReadyDelay(bot),

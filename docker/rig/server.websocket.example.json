@@ -1,0 +1,107 @@
+{
+  "artPath": "/artwork",
+  "staticCore": "PCore001.igc",
+  "staticCoreEncrypted": false,
+  "port": 6073,
+  "minimumClientVersion": null,
+  "webSocket": {
+    "enabled": true,
+    "publicUrl": null,
+    "port": 6080,
+    "bindAddress": "192.0.2.3",
+    "path": "/game",
+    "allowedOrigins": [
+      "https://load.example.invalid:8443"
+    ],
+    "knownProxies": [
+      "192.0.2.2"
+    ],
+    "allowLoopbackDevelopment": false,
+    "maxConnectionsPerIp": 128,
+    "handshakeAttemptsPerIpPerWindow": 256
+  },
+  "updatesPerSecond": 20,
+  "games": [
+    {
+      "name": "P1072 WebSocket load experiment",
+      "map": "XXV_simple.igc",
+      "teams": 2,
+      "civIds": [
+        -1,
+        -1
+      ],
+      "sideNames": [
+        "Alpha",
+        "Bravo"
+      ],
+      "password": "",
+      "autoStart": true,
+      "civRotation": "off",
+      "maxTeamImbalance": 1,
+      "maxPlayersPerTeam": 32,
+      "allowDevelopments": true,
+      "allowShipyardPath": true,
+      "allowExpansionPath": true,
+      "allowTacticalPath": true,
+      "allowSupremacyPath": true,
+      "initialMinersPerTeam": 1,
+      "homeSwap": "off",
+      "civSeed": 1072
+    }
+  ],
+  "lobby": null,
+  "identity": null,
+  "liveSettings": {
+    "timeDilation": "auto",
+    "seenWarpRouting": false,
+    "autoNextMatch": {
+      "enabled": true,
+      "intermissionSeconds": 30
+    }
+  },
+  "sideSelectAutoSeatSeconds": 30,
+  "transport": {
+    "maxConnectionsPerIp": 256
+  },
+  "playLog": {
+    "enabled": true,
+    "path": "/server-identity/plays/plays.jsonl",
+    "botNames": [
+      "mcp-*",
+      "research-cmd*"
+    ],
+    "queueCapacity": 1024,
+    "maxFileBytes": 67108864
+  },
+  "showcase": {
+    "techMode": "research",
+    "incomeMultiplier": 5000,
+    "researchTimeScale": 8,
+    "loopResearchPlans": false,
+    "finaleTimeoutSeconds": 900,
+    "stationKillsDecideDeadline": true,
+    "matchCapSeconds": 3600,
+    "mapRotation": {
+      "mode": "cycle",
+      "seed": 927,
+      "entries": [
+        {
+          "mapGen": {
+            "type": "SingleRing"
+          }
+        },
+        {
+          "mapGen": {
+            "type": "PinWheel"
+          }
+        },
+        {
+          "mapGen": {
+            "type": "DoubleRing"
+          }
+        }
+      ]
+    }
+  },
+  "benchmarkSeed": 1072
+}

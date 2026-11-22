@@ -83,6 +83,15 @@ services:
       - browser-preview:/output
     restart: "no"
 
+  # P1072 bot-driver-only settings (no bot service in this stack):
+  # ALLEGIANCE_BOT_TRANSPORT, ALLEGIANCE_BOT_WS_URL, ALLEGIANCE_BOT_WS_ORIGIN,
+  # ALLEGIANCE_BOT_WS_CA_FILE, ALLEGIANCE_BOT_WS_FRACTION are consumed by
+  # tools/allegiance-mcp/scripts/ on the bot host; see docs/WEBSOCKET_LOAD_TEST.md.
+  # Experiment TLS sidecar/8443 and the private 6080 listener are defined only in
+  # docker/rig/compose.websocket-experiment.yml (explicit -f, separate project).
+  # Its interpolation settings are P1072_SERVER_IMAGE, P1072_SERVER_CONFIG,
+  # P1072_BIND_ADDRESS and P1072_WS_HOST. Local proof-only controls
+  # P1072_COMPARE_SECONDS / P1072_EVIDENCE_DIR do not enter containers.
   # Desktop Host LAN passes ALLEGIANCE_LAN_PASSWORD privately to its owned bot
   # driver; it is not a server/container setting and must not be set here.
   # Optional bot owner transfer uses botAuthenticationSecret in the mounted server JSON.
@@ -114,6 +123,8 @@ services:
       lobby:
         condition: service_healthy
     environment:
+      # P1072: existing benchmark switch also enables transport egress records.
+      ALLEGIANCE_BENCHMARK_METRICS: "${ALLEGIANCE_BENCHMARK_METRICS:-0}"
       # P1000/P1001: default-off core-derived commander/fleet strategy experiment.
       ALLEGIANCE_BOTS_CIV_STRATEGY: "${ALLEGIANCE_BOTS_CIV_STRATEGY:-}"
       # P895: optional UDP listener; TCP pool remains available and is the default.

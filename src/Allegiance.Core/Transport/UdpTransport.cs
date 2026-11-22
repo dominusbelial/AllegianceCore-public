@@ -683,7 +683,7 @@ public sealed partial class UdpTransport : IServerTransport, IUdpReceiveDiagnost
         framed[0] = 2;
         BinaryPrimitives.WriteInt32LittleEndian(framed.AsSpan(1), f.Data.Length);
         f.Data.CopyTo(framed, 5);
-        Egress?.Record(framed, !p.Human, f.Key != 0, ev);
+        Egress?.Record(framed, !p.Human, f.Key != 0, ev, protocol: "udp");
         if (ev == EgressEvent.Offered) ServerCounters?.RecordFrame(framed, f.Guaranteed);
     }
     private void QueueAck(Peer p, ulong id, long now)

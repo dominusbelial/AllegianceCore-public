@@ -1,0 +1,42 @@
+# P1072 experiment only. Invoke with -f; never overwrite a private rig override.
+# The documentation subnet gives the single trusted proxy a stable exact address.
+name: p1072-ws-experiment
+services:
+  server:
+    image: ${P1072_SERVER_IMAGE:-allegiance-server:local}
+    volumes:
+      - ${ALLEGIANCE_ARTWORK_PATH:?set artwork path}:/artwork:ro
+      - ${P1072_SERVER_CONFIG:-./server.websocket.example.json}:/app/server.json:ro
+      - ws-play-log:/server-identity
+    environment:
+      ALLEGIANCE_BENCHMARK_METRICS: "1"
+      ALLEGIANCE_TICK_PROFILER: "1"
+      ALLEGIANCE_TICK_PROFILER_INTERVAL: "5"
+    ports:
+      - "${P1072_BIND_ADDRESS:-127.0.0.1}:6073:6073"
+    networks:
+      ws-experiment:
+        ipv4_address: 192.0.2.3
+  ws-proxy:
+    image: caddy:2.10-alpine
+    environment:
+      P1072_WS_HOST: ${P1072_WS_HOST:-load.example.invalid}
+    ports:
+      - "${P1072_BIND_ADDRESS:-127.0.0.1}:8443:8443"
+    volumes:
+      - ./Caddyfile.websocket:/etc/caddy/Caddyfile:ro
+      - ws-caddy-data:/data
+      - ws-caddy-config:/config
+    networks:
+      ws-experiment:
+        ipv4_address: 192.0.2.2
+    depends_on: [server]
+networks:
+  ws-experiment:
+    ipam:
+      config:
+        - subnet: 192.0.2.0/24
+volumes:
+  ws-play-log:
+  ws-caddy-data:
+  ws-caddy-config:

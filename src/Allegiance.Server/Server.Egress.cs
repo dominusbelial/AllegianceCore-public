@@ -30,6 +30,16 @@ public sealed partial class Server
         var window = accounting.DrainWindow();
         LastEgressWindow = window;
         Console.WriteLine(FormatEgressSummary(window));
+        EmitTransportEgress(accounting, window.WindowSeconds);
+    }
+
+    private static void EmitTransportEgress(EgressAccounting accounting, double seconds)
+    {
+        foreach (var w in accounting.DrainTransportWindows())
+        {
+            string reasons = string.Join(",", w.Disconnects.OrderBy(p => p.Key).Select(p => $"{p.Key}:{p.Value}"));
+            Console.WriteLine(FormattableString.Invariant($"[transport-egress] windowSecs={seconds:0.000} protocol={w.Protocol} sends={w.Sends} bytes={w.Bytes} drops={w.Drops} droppedBytes={w.DroppedBytes} queueBytesHighWater={w.QueueBytesHighWater} queueEntriesHighWater={w.QueueEntriesHighWater} disconnects={reasons}"));
+        }
     }
 
     private PeerSendWindow[] _sendPeerWindows = [];

@@ -62,6 +62,19 @@ list in **reverse**.
   provides loopback identity/list/side/launch with the resident starter core.
   Proof: `tools/p1048b-browser-join.cjs`, `tools/p1048b-browser-host/Program.cs`;
   report: `docs/reports/BROWSER_WS_JOIN_P1048B.md`. No new native game rule.
+- **WebSocket bot load tests (P1072)** — `tools/allegiance-mcp/BotTransportOptions.cs`
+  validates explicit CLI/environment routes and optional single-CA trust;
+  `tools/allegiance-mcp/BotManager.Transport.cs` assigns stable bot/control indices
+  and preserves each route through reconnect/backfill/worker recovery. Owned
+  ConnectionSession lifecycle supplies the existing watchdog's receive observations.
+  `src/Allegiance.Core/Transport/EgressAccounting.Transports.cs` adds benchmark-gated
+  per-transport frame/byte/drop, queue high-water and disconnect records; tick
+  histograms share the existing profiler. `tools/ws-load-report.py` combines
+  server and bot logs. Operator recipe and measurement limits:
+  `docs/WEBSOCKET_LOAD_TEST.md`; experiment-only proxy/config:
+  `docker/rig/compose.websocket-experiment.yml`; report:
+  `docs/reports/WEBSOCKET_BOTS_P1072.md`. Native DirectPlay connection intent only;
+  no new simulation rule.
 - **WebSocket route trust / source budgets (P1052)** — listing input accepts public
   WSS only in `src/Allegiance.Core/Transport/WebSocketEndpoint.cs`; trusted
   configuration retains loopback WS. Converted IDN/DNS labels are validated and

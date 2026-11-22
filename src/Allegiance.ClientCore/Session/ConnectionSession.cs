@@ -33,6 +33,12 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
     public WebSocketEndpoint? WebSocketEndpoint { get; set; }
     /// <summary>Desktop only; browsers supply their own Origin header.</summary>
     public string? WebSocketOrigin { get; set; }
+    /// <summary>Optional operator-owned TLS trust policy; frozen for reconnects.</summary>
+    public System.Net.Security.RemoteCertificateValidationCallback? WebSocketCertificateValidation { get; set; }
+    private System.Net.Security.RemoteCertificateValidationCallback? _joinedWebSocketCertificateValidation;
+    /// <summary>Full-frame arrival before decode; observers must not block.</summary>
+    public event Action? PacketReceived;
+    private void ObservePacketArrival() => PacketReceived?.Invoke();
     /// <summary>Actual transport after the bounded handshake, including TCP fallback.</summary>
     public string ActiveTransportProtocol
     {
@@ -484,6 +490,7 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
 #endif
             _joinedWebSocketEndpoint = WebSocketEndpoint;
             _joinedWebSocketOrigin = WebSocketOrigin;
+            _joinedWebSocketCertificateValidation = WebSocketCertificateValidation;
 #if !BROWSER
             if (_joinedInternet is not null && _joinedWebSocketEndpoint is not null)
                 throw new InvalidOperationException("Choose either an Internet UDP join or a WebSocket listing");
@@ -1644,12 +1651,10 @@ public sealed partial class ConnectionSession : ITransportSite, IDisposable, IAs
                     // parked seat under the name the server knows.
                     if (_ack.FValidated && _ack.CharNameOrFailureReason is { Length: > 0 } accepted)
                     {
-#if BROWSER
                         // The resume ACK carries a greeting (Server.ReconnectGrace.cs),
-                        // not a new canonical callsign. Keep the verified initial name
-                        // across successive WS resumes; native appmsg.cpp:39-40.
+                        // not a new canonical callsign. Preserve the initial name on
+                        // every transport across successive resumes; appmsg.cpp:39-40.
                         if (!_reconnecting)
-#endif
                         {
                             _resumeName = accepted;
                             if (_resumeRequest is { } pending) pending.CharacterName = accepted;

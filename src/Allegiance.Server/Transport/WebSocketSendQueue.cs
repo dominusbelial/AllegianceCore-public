@@ -70,5 +70,6 @@ internal sealed class WebSocketSendQueue(WebSocketConfig settings, WebSocketQueu
             if (frame.Guaranteed) age = Math.Max(age, now - frame.Since);
         }
     }
+    internal (long Bytes, int Entries) Storage => (_bytes, _pending.Count + (_inflight is null ? 0 : 1));
     internal void Close() { _closed = true; _pending.Clear(); _keys.Clear(); _inflight = null; _bytes = 0; }
 }
