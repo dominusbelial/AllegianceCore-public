@@ -532,6 +532,7 @@ public sealed partial class Server
         if (mission.IsTraining) return; // the lesson graph owns completion
         if (mission.Stage == MissionStage.Over) return;
         mission.Stage = MissionStage.Over;
+        EndPlayMatch(mission, winnerId == GameOver.NA ? null : winnerId);
         MarkLobbyDirty("stage-over");   // P866 — SetStage → SetLobbyIsDirty (fsmission.cpp:1766)
 
         // P765 — per-part timing of the game-over tick. Gated behind the same
@@ -4660,6 +4661,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             && !live.PlayerScore.Commanding)
             live.PlayerScore.StartCommand(_simNow);
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+        AttachPlayScore(from, live);   // P1071: baseline restored scores before gameplay
         // P775 — the catch-all of native moment (1): a joiner that is never
         // seated (SideId still null at launch) is announced here with its own
         // (non-)side, exactly native's AddPlayerToMission announce for a

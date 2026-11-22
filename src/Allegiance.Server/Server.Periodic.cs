@@ -89,6 +89,7 @@ public sealed partial class Server
             if (now - mission.CreatedAt <= 10.0) continue;     // > 100000000 FILETIME ticks = 10 s (FedSrv.CPP:7902-7903)
             int index = _missions.IndexOf(mission);
             Console.WriteLine($"[periodic] no one showed up for player-created mission (cookie {mission.Cookie}), killing it (FedSrv.CPP:7906)");
+            EndPlayMatch(mission, null);
             _missions.Remove(mission);
             _clusterInfoBytes.Remove(mission.Cookie);
             _exportSweepCache.ForgetScope(mission.Cookie);

@@ -741,6 +741,20 @@ list in **reverse**.
 
 ## 3. Server (`src/Allegiance.Server`)
 
+- **Perpetual public battle and play log (P1071)** — default-off bounded asynchronous
+  monthly JSONL logging in `src/Allegiance.Server/PlayLog.cs`, wired to accepted joins,
+  native score deltas, disconnects and match boundaries by
+  `src/Allegiance.Server/Server.PlayLog.cs`. Shared telemetry-only bot name patterns
+  live in `src/Allegiance.Core/Identity/BotNameRules.cs`. The two-side random-civ
+  example is `docker/public/server.perpetual.example.json`; external MCP backfill
+  (`--backfill-seats`) lives in `tools/allegiance-mcp/BackfillDriver.cs`,
+  `BackfillSeats.cs` and `BotManager.Backfill.cs` in that project. Protected commander
+  and economy clients count as seats. `tools/play-report.py` aggregates completed
+  sessions and match participation. Operator guide: `docs/PUBLIC_PERPETUAL_BATTLE.md`;
+  parity: `docs/parity/p1071-perpetual-battle.csv`; report:
+  `docs/reports/PERPETUAL_BATTLE_P1071.md`. Analytics/backfill are port orchestration;
+  native imbalance exceptions and admission stay unchanged.
+
 - **Boot / config** — arg parsing and config load/override (`--config`,
   `--key value`, `--map-seed`). `src/Allegiance.Server/Program.cs`,
   `src/Allegiance.Server/ServerConfig.cs` (`ServerConfigLoader.ApplyCli`).

@@ -636,3 +636,13 @@ for the measured AOT join, security tests, TCP comparison and lane limitations.
 The publication and future hosting cache contract lives in
 [Browser generation hosting notes](../docs/BROWSER_HOSTING.md). The local proof
 proxy still sends `no-cache`; no hosting or compose configuration changes here.
+
+### Perpetual public battle and optional play log (P1071)
+
+The files-only public preset is `public/server.perpetual.example.json`; see
+[`docs/PUBLIC_PERPETUAL_BATTLE.md`](../docs/PUBLIC_PERPETUAL_BATTLE.md) for rules,
+external seat backfill and reporting. `playLog` defaults off. The preset uses the
+existing `server-identity` volume at `/server-identity/plays/plays-YYYY-MM.jsonl`
+in both compose files, with no new service or port. Bot processes run on a separate
+host, never on the public server. Review deployment separately; the example alone
+changes no running service.

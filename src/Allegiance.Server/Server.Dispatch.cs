@@ -395,6 +395,7 @@ public sealed partial class Server
                         // P1022 (R1 F7) — a correct password clears the counters, so
                         // a player who mistyped earlier is never slowed afterwards.
                         RecordCredentialGuessSuccess(from);
+                        if (joinMission is not null) BeginPlaySession(from, req.CharacterName ?? "", joinMission);
                         SendSideRoster(from);
                     }
                     else

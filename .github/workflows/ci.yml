@@ -53,6 +53,9 @@ jobs:
         # that does not exist in the tree.
         run: python3 tools/check-glossary-links.py
 
+      - name: Play report fixture checks
+        run: python3 -m unittest discover -s tools/tests -p 'test_play_report.py'
+
       - name: Test Fast tier (non-corpus gate)
         env:
           TEST_FILTER: "Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"
