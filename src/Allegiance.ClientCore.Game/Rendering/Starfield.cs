@@ -27,6 +27,9 @@ public sealed class Starfield : IDisposable
     private readonly Vector3[] _worldPositions;
     private readonly Color[] _colors;
     private readonly VertexPositionColor[] _scratch;
+#if BROWSER
+    private VertexPositionColor[] _dots = [];
+#endif
     private readonly BasicEffect _effect;
     private SpaceStarRenderer? _tails;
     private VertexStar[]? _tailStars;
@@ -116,7 +119,11 @@ public sealed class Starfield : IDisposable
         {
 #endif
             pass.Apply();
+#if BROWSER
+            _effect.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, BrowserStarDots.Expand(_scratch, ref _dots), 0, _scratch.Length);
+#else
             _effect.GraphicsDevice.DrawUserPrimitives(PrimitiveType.PointList, _scratch, 0, _scratch.Length);
+#endif
         }
     }
     public void Dispose() { _effect.Dispose(); _tails?.Dispose(); }

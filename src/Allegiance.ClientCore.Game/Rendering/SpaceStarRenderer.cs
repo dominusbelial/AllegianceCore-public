@@ -10,6 +10,9 @@ public sealed class SpaceStarRenderer(GraphicsDevice device) : IDisposable
     private readonly BasicEffect _effect = new(device) { VertexColorEnabled = true, World = Matrix.Identity };
     private VertexPositionColor[] _points = [];
     private VertexPositionColor[] _lines = [];
+#if BROWSER
+    private VertexPositionColor[] _dots = [];
+#endif
     private Matrix _previous;
     private bool _history;
     private float _fade;
@@ -61,7 +64,11 @@ public sealed class SpaceStarRenderer(GraphicsDevice device) : IDisposable
             {
 #endif
                 pass.Apply();
+#if BROWSER
+                device.DrawUserPrimitives(PrimitiveType.LineList, BrowserStarDots.Expand(_points, ref _dots), 0, _points.Length);
+#else
                 device.DrawUserPrimitives(PrimitiveType.PointList, _points, 0, _points.Length);
+#endif
             }
         if (LastTailCount > 0)
         {
@@ -110,3 +117,31 @@ public sealed class SimStarLayer(GraphicsDevice device) : IDisposable
     public void Draw(Matrix view, Matrix projection, SpaceVisualFrame frame) => _renderer.Draw(_stars, view, projection, frame);
     public void Dispose() => _renderer.Dispose();
 }
+
+#if BROWSER
+/// <summary>The KNI WebGL backend has no point primitive (<c>PrimitiveTypeGL</c> throws
+/// <see cref="NotSupportedException"/> for <see cref="PrimitiveType.PointList"/>), so the
+/// browser draws each star as a one-to-two pixel line: the point and a second vertex
+/// a small angle away, perpendicular to its direction. Desktop keeps native points.</summary>
+internal static class BrowserStarDots
+{
+    /// <summary>Angular length of a dot, in radians (about 1.5 px at a 1080 px, 90° view).</summary>
+    private const float Angle = 0.003f;
+    public static VertexPositionColor[] Expand(VertexPositionColor[] points, ref VertexPositionColor[] buffer)
+    {
+        if (buffer.Length != points.Length * 2) buffer = new VertexPositionColor[points.Length * 2];
+        for (int i = 0; i < points.Length; i++)
+        {
+            var p = points[i].Position;
+            float length = p.Length();
+            var axis = MathF.Abs(p.Y) < 0.9f * length ? Vector3.Up : Vector3.Right;
+            var side = Vector3.Cross(p, axis);
+            float sideLength = side.Length();
+            var offset = sideLength > 0 ? side * (length * Angle / sideLength) : Vector3.Zero;
+            buffer[i * 2] = points[i];
+            buffer[i * 2 + 1] = new VertexPositionColor(p + offset, points[i].Color);
+        }
+        return buffer;
+    }
+}
+#endif
