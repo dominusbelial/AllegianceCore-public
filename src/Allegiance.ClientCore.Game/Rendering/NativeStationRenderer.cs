@@ -44,8 +44,8 @@ public sealed class NativeStationRenderer : IDisposable
     private readonly Dictionary<string, NativeStationGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingModelLogged;
+    private readonly AssetMissCache _missingTextureLogged;
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
@@ -57,6 +57,8 @@ public sealed class NativeStationRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _missingModelLogged = new(assets);
+        _missingTextureLogged = new(assets);
         _effect = new BasicEffect(gd);
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }

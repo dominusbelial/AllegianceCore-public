@@ -44,6 +44,7 @@ public sealed class ProbeRenderer : IDisposable
     private readonly string _modelStem;
     private readonly string? _textureStem;
     public float MeshRadius { get; }
+    public bool TextureResident => _texture is not null;
     private readonly HdMaterialRenderer? _hd;
     private readonly NativeMaterialParts _materials;
     private readonly Assets.IAssetSource? _assets;
@@ -53,7 +54,8 @@ public sealed class ProbeRenderer : IDisposable
     private readonly int _triangleCount;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _rasterizer;
-    private readonly Texture2D? _texture;
+    private Texture2D? _texture;
+    private readonly Assets.AssetMissCache? _missing;
 
     /// <summary>
     /// Construct from a parsed <see cref="MdlFile"/>'s meshes.
@@ -93,7 +95,10 @@ public sealed class ProbeRenderer : IDisposable
                 indices[iCursor++] = (uint)(m.Indices[i] + vertBase);
         }
 
-        _hd = hd; _assets = assets; _modelStem = modelStem; _textureStem = textureStem;
+        _hd = hd; _assets = assets; _missing = assets is null ? null : new(assets); _modelStem = modelStem;
+        // A streamed model can arrive before any texture namespace resolves.
+        // Retain its authored scope rather than caching that unresolved null.
+        _textureStem = textureStem ?? meshes.Select(m => m.TextureStem).FirstOrDefault(s => !string.IsNullOrEmpty(s));
         MeshRadius = NativeShipResolver.MergedRadius(meshes);
         _materials = new(meshes, verts, indices);
         _vertices = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
@@ -138,6 +143,8 @@ public sealed class ProbeRenderer : IDisposable
         // path follows). So when the real texture is bound, DiffuseColor is
         // white so the texture shows its true colours; the friendly/enemy
         // side tint is used only by the lit-solid fallback.
+        if (_texture is null && _textureStem is not null) _texture = TextureFor(_textureStem);
+        _effect.TextureEnabled = _texture is not null;
         if (_texture is not null)
             _effect.DiffuseColor = Color.White.ToVector3();
         else
@@ -173,7 +180,8 @@ public sealed class ProbeRenderer : IDisposable
     private Texture2D? TextureFor(string stem)
     {
         if (_partTextures.TryGetValue(stem, out var texture)) return texture;
-        if (stem.Equals(_textureStem, StringComparison.OrdinalIgnoreCase)) return _texture;
+        if (stem.Equals(_textureStem, StringComparison.OrdinalIgnoreCase) && _texture is not null) return _texture;
+        if (_missing?.Contains(stem) == true) return null;
         if (_assets is null) return null;
         try
         {
@@ -182,7 +190,11 @@ public sealed class ProbeRenderer : IDisposable
             texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
             _partTextures.Add(stem, texture); return texture;
         }
-        catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException) { return null; }
+        catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException)
+        {
+            if (_missing?.Add(stem) == true) Console.WriteLine($"[probe] texture '{stem}' unavailable ({e.GetType().Name})");
+            return null;
+        }
     }
 
     public void Dispose()
@@ -193,7 +205,7 @@ public sealed class ProbeRenderer : IDisposable
         _indices.Dispose();
         _effect.Dispose();
         _rasterizer.Dispose();
-        _texture?.Dispose();
+        if (_texture is not null && !_partTextures.Values.Contains(_texture)) _texture.Dispose();
     }
 
     /// <summary>

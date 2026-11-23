@@ -44,8 +44,8 @@ public sealed class NativeAsteroidRenderer : IDisposable
     private readonly Dictionary<string, NativeShipRenderer.NativeShipGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingModelLogged;
+    private readonly AssetMissCache _missingTextureLogged;
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
@@ -57,6 +57,8 @@ public sealed class NativeAsteroidRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _missingModelLogged = new(assets);
+        _missingTextureLogged = new(assets);
         _effect = new BasicEffect(gd);
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
@@ -95,6 +97,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelStem)) return null;
         if (_models.TryGetValue(modelStem, out var g)) return g;
+        if (_missingModelLogged.Contains(modelStem)) return null;
         try
         {
             if (!_assets.Exists(modelStem + ".mdl"))
@@ -122,6 +125,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_assets is IResidentTextureSource resident && resident.TryGetTexture(textureStem, false, out var prepared)) return prepared;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        if (_missingTextureLogged.Contains(textureStem)) return null;
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {

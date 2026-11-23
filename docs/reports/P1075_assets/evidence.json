@@ -1,0 +1,2730 @@
+{
+  "version": 1,
+  "fixture": {
+    "map": "SingleRing",
+    "seed": 1073,
+    "civIds": [
+      1,
+      3
+    ],
+    "combatBotsPerSide": 5,
+    "guestReservesFriendlySeat": true,
+    "auxiliaryPeers": "existing desktop/keeper and research commander peers",
+    "throttle": "stop after launch; fixed read-only portal camera",
+    "postLaunchResponseDelayMs": 150
+  },
+  "before": [
+    {
+      "style": "Classic",
+      "first30": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 25166172,
+        "planets": 8388728,
+        "globes": 8388728,
+        "scene": 14426954,
+        "other": 0
+      },
+      "first30Compressed": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 8276880,
+        "planets": 2313836,
+        "globes": 672561,
+        "scene": 10905673,
+        "other": 0
+      },
+      "beforePromotion": {
+        "id": 9187,
+        "typeId": 4,
+        "model": "dgsup",
+        "modelResident": false,
+        "texture": null,
+        "textureResident": false,
+        "visible": false
+      },
+      "afterPromotion": {
+        "id": 9187,
+        "typeId": 4,
+        "model": "dgsup",
+        "modelResident": true,
+        "texture": null,
+        "textureResident": false,
+        "visible": true
+      },
+      "afterburner": {
+        "power": 0,
+        "afterburnerActive": true,
+        "serverPower": 0
+      },
+      "frames": {
+        "sampled": 2105,
+        "discarded": [
+          {
+            "frame": 461,
+            "time": 11662.6,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 484,
+            "time": 11679.3,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 1409,
+            "time": 12445.9,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 2269,
+            "time": 13179.2,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 2359,
+            "time": 13979.2,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 2779,
+            "time": 14295.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 3661,
+            "time": 15045.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 4609,
+            "time": 15829.1,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 5557,
+            "time": 16612.4,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 6303,
+            "time": 17879,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 20694,
+            "time": 30895.1,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 31011,
+            "time": 40978,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          }
+        ],
+        "errors": []
+      },
+      "rendererProof": null,
+      "first30Requests": 255,
+      "first30UniqueHashes": 255,
+      "sectorAt30": 0,
+      "sceneAt30": {
+        "ready": true,
+        "effectLoad": "full",
+        "dust": 23,
+        "strobes": 0,
+        "sparks": 0,
+        "exhaust": 0,
+        "glows": 0,
+        "ribbons": 1,
+        "enginesReady": true,
+        "glimpses": 1,
+        "skyTier": "black",
+        "paintingsReady": true,
+        "constructionReady": false
+      }
+    },
+    {
+      "style": "Modern",
+      "first30": {
+        "stations": 201236,
+        "hulls": 0,
+        "rocks": 25166172,
+        "planets": 8388728,
+        "globes": 8388728,
+        "scene": 14426954,
+        "other": 0
+      },
+      "first30Compressed": {
+        "stations": 74174,
+        "hulls": 0,
+        "rocks": 8276880,
+        "planets": 2313836,
+        "globes": 672561,
+        "scene": 10905673,
+        "other": 0
+      },
+      "beforePromotion": {
+        "id": 9188,
+        "typeId": 5,
+        "model": "drgsy",
+        "modelResident": false,
+        "texture": null,
+        "textureResident": false,
+        "visible": false
+      },
+      "afterPromotion": {
+        "id": 9188,
+        "typeId": 5,
+        "model": "drgsy",
+        "modelResident": true,
+        "texture": null,
+        "textureResident": false,
+        "visible": true
+      },
+      "afterburner": {
+        "power": 0,
+        "afterburnerActive": true,
+        "serverPower": 0
+      },
+      "frames": {
+        "sampled": 2096,
+        "discarded": [
+          {
+            "frame": 925,
+            "time": 11891.9,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 1512,
+            "time": 12725.2,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 1553,
+            "time": 13541.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 1802,
+            "time": 13858.5,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 1960,
+            "time": 14058.5,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 2521,
+            "time": 14841.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 3082,
+            "time": 15641.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 3656,
+            "time": 16458.4,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 3933,
+            "time": 17541.6,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 14383,
+            "time": 30607.8,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          },
+          {
+            "frame": 23968,
+            "time": 40557.4,
+            "samples": [
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ],
+              [
+                68,
+                34,
+                136,
+                255
+              ]
+            ]
+          }
+        ],
+        "errors": []
+      },
+      "rendererProof": null,
+      "first30Requests": 257,
+      "first30UniqueHashes": 257,
+      "sectorAt30": 0,
+      "sceneAt30": {
+        "ready": true,
+        "effectLoad": "full",
+        "dust": 19,
+        "strobes": 0,
+        "sparks": 0,
+        "exhaust": 0,
+        "glows": 0,
+        "ribbons": 1,
+        "enginesReady": true,
+        "glimpses": 1,
+        "skyTier": "black",
+        "paintingsReady": true,
+        "constructionReady": false
+      }
+    }
+  ],
+  "after": [
+    {
+      "style": "Classic",
+      "first30": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 8388724,
+        "planets": 8388728,
+        "globes": 8388728,
+        "scene": 4474466,
+        "other": 0
+      },
+      "first30Compressed": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 2220145,
+        "planets": 2313836,
+        "globes": 672561,
+        "scene": 947445,
+        "other": 0
+      },
+      "beforePromotion": {
+        "id": 9187,
+        "typeId": 4,
+        "model": "dgsup",
+        "modelResident": false,
+        "texture": null,
+        "textureResident": false,
+        "visible": false,
+        "drawFrames": 0
+      },
+      "afterPromotion": {
+        "id": 9187,
+        "typeId": 4,
+        "model": "dgsup",
+        "modelResident": true,
+        "texture": "dgsupbmp",
+        "textureResident": true,
+        "visible": true,
+        "drawFrames": 29
+      },
+      "afterburner": {
+        "readoutActive": false,
+        "power": 0,
+        "afterburnerActive": true,
+        "serverPower": 0
+      },
+      "frames": {
+        "sampled": 3089,
+        "discarded": [],
+        "errors": []
+      },
+      "rendererProof": {
+        "rows": [
+          {
+            "name": "station",
+            "model": "dgarr",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "dgarrbmp",
+            "nonBlackPixels": 1454
+          },
+          {
+            "name": "asteroid",
+            "model": "bgrnd05",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "bgrnd05bmp",
+            "nonBlackPixels": 2276
+          },
+          {
+            "name": "ship",
+            "model": "quizscoutv2",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "quizscout2bmp",
+            "nonBlackPixels": 224
+          },
+          {
+            "name": "missile",
+            "model": "mis05",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "mis05bmp",
+            "nonBlackPixels": 27
+          },
+          {
+            "name": "probe",
+            "model": "utl02",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "utl02bmp",
+            "nonBlackPixels": 677
+          },
+          {
+            "name": "treasure",
+            "model": "acs14",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "acs14bmp",
+            "nonBlackPixels": 590
+          },
+          {
+            "name": "projectile",
+            "model": "bgrnd55",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "bgrnd55bmp",
+            "nonBlackPixels": 3309
+          }
+        ]
+      },
+      "first30Requests": 14,
+      "first30UniqueHashes": 14,
+      "sectorAt30": 0,
+      "sceneAt30": {
+        "ready": true,
+        "effectLoad": "full",
+        "dust": 23,
+        "strobes": 0,
+        "sparks": 0,
+        "exhaust": 0,
+        "glows": 0,
+        "ribbons": 1,
+        "enginesReady": true,
+        "glimpses": 1,
+        "skyTier": "black",
+        "paintingsReady": false,
+        "constructionReady": false
+      }
+    },
+    {
+      "style": "Modern",
+      "first30": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 8388724,
+        "planets": 8388728,
+        "globes": 8388728,
+        "scene": 4474466,
+        "other": 0
+      },
+      "first30Compressed": {
+        "stations": 0,
+        "hulls": 0,
+        "rocks": 2220145,
+        "planets": 2313836,
+        "globes": 672561,
+        "scene": 947445,
+        "other": 0
+      },
+      "beforePromotion": {
+        "id": 9188,
+        "typeId": 5,
+        "model": "drgsy",
+        "modelResident": false,
+        "texture": null,
+        "textureResident": false,
+        "visible": false,
+        "drawFrames": 0
+      },
+      "afterPromotion": {
+        "id": 9188,
+        "typeId": 5,
+        "model": "drgsy",
+        "modelResident": true,
+        "texture": "dregabmp",
+        "textureResident": true,
+        "visible": true,
+        "drawFrames": 29
+      },
+      "afterburner": {
+        "readoutActive": false,
+        "power": 0,
+        "afterburnerActive": true,
+        "serverPower": 0
+      },
+      "frames": {
+        "sampled": 3283,
+        "discarded": [],
+        "errors": []
+      },
+      "rendererProof": {
+        "rows": [
+          {
+            "name": "station",
+            "model": "dgarr",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "dgarrbmp",
+            "nonBlackPixels": 1454
+          },
+          {
+            "name": "asteroid",
+            "model": "bgrnd05",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "bgrnd05bmp",
+            "nonBlackPixels": 2276
+          },
+          {
+            "name": "ship",
+            "model": "quizscoutv2",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "quizscout2bmp",
+            "nonBlackPixels": 224
+          },
+          {
+            "name": "missile",
+            "model": "mis05",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "mis05bmp",
+            "nonBlackPixels": 27
+          },
+          {
+            "name": "probe",
+            "model": "utl02",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "utl02bmp",
+            "nonBlackPixels": 677
+          },
+          {
+            "name": "treasure",
+            "model": "acs14",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "acs14bmp",
+            "nonBlackPixels": 590
+          },
+          {
+            "name": "projectile",
+            "model": "bgrnd55",
+            "initialMissing": true,
+            "modelAfterPromotion": true,
+            "textureMissing": true,
+            "textureAfterPromotion": true,
+            "textureStem": "bgrnd55bmp",
+            "nonBlackPixels": 3309
+          }
+        ]
+      },
+      "first30Requests": 14,
+      "first30UniqueHashes": 14,
+      "sectorAt30": 0,
+      "sceneAt30": {
+        "ready": true,
+        "effectLoad": "full",
+        "dust": 17,
+        "strobes": 0,
+        "sparks": 0,
+        "exhaust": 0,
+        "glows": 0,
+        "ribbons": 1,
+        "enginesReady": true,
+        "glimpses": 1,
+        "skyTier": "black",
+        "paintingsReady": false,
+        "constructionReady": false
+      }
+    }
+  ],
+  "regressions": {
+    "p1073": {
+      "passed": true,
+      "captures": 6,
+      "imageBytes": 200899
+    },
+    "p1074": {
+      "passed": true,
+      "styles": 2
+    },
+    "latestGenerationRetested": true
+  },
+  "builds": {
+    "solutionWarnings": 0,
+    "solutionErrors": 0,
+    "toolProjects": 153,
+    "frameworkGzipBytes": 6484868,
+    "joinGzipBytes": 7564835,
+    "joinPlusRuntimeGzipBytes": 14049703
+  },
+  "newTests": {
+    "browserCases": 13,
+    "desktopCases": 9,
+    "repeatsAlone": 3,
+    "dotnetPasses": 66,
+    "nodeTests": 3,
+    "nodePassesAlone": 9
+  },
+  "captures": [
+    {
+      "file": "baseline-afterburner-classic.jpg",
+      "byteSize": 50447,
+      "sha256": "e8c5b2037e533a3c3a1e6d86f7c616511d706fd0933903e0c52462e55eac8f7f"
+    },
+    {
+      "file": "baseline-afterburner-modern.jpg",
+      "byteSize": 66745,
+      "sha256": "a9f23b973d5fe115f497d4837cd858b8f1eddba04d33d42d196f9af7b1ed187c"
+    },
+    {
+      "file": "built-station-classic.jpg",
+      "byteSize": 40882,
+      "sha256": "fecacd4799515a1fc3a36e66acc0d1bc4ef51eb693652e37bb5f118ede511b9c"
+    },
+    {
+      "file": "built-station-modern.jpg",
+      "byteSize": 64387,
+      "sha256": "de00d0ca722266d7d8ce6b60cf7f2cd7d6a74400c8d6fb681ef8de68381b8bd6"
+    },
+    {
+      "file": "desktop-afterburner-classic.png",
+      "byteSize": 52083,
+      "sha256": "e193a3001393af5be543266ab52df5e031da24422db335f56970c70125207556"
+    },
+    {
+      "file": "desktop-afterburner-modern.png",
+      "byteSize": 87003,
+      "sha256": "91221b99a05028bd96737af7df4ba432d1f2f04a790bb9e74e24d1a37c72b073"
+    },
+    {
+      "file": "desktop-hangar-classic-1280x800.png",
+      "byteSize": 695093,
+      "sha256": "892a29395919b700e2c08fff2a70f66351e15b91c1967beb9b35757739a99ec3"
+    },
+    {
+      "file": "desktop-hangar-classic-1920x1080.png",
+      "byteSize": 1092505,
+      "sha256": "b50951a91c2b704b5a07e34b8e5db65e5881be5a33dfa393a7c3785ef30fe5d5"
+    },
+    {
+      "file": "desktop-hangar-classic-800x480.png",
+      "byteSize": 320936,
+      "sha256": "cb96172cbc41c02fc34e80b7af45e6abc305c69ff27dfe3e3ffc5d06f2b4fc5d"
+    },
+    {
+      "file": "desktop-hangar-modern-1280x800.png",
+      "byteSize": 695093,
+      "sha256": "892a29395919b700e2c08fff2a70f66351e15b91c1967beb9b35757739a99ec3"
+    },
+    {
+      "file": "desktop-hangar-modern-1920x1080.png",
+      "byteSize": 1092505,
+      "sha256": "b50951a91c2b704b5a07e34b8e5db65e5881be5a33dfa393a7c3785ef30fe5d5"
+    },
+    {
+      "file": "desktop-hangar-modern-800x480.png",
+      "byteSize": 320936,
+      "sha256": "cb96172cbc41c02fc34e80b7af45e6abc305c69ff27dfe3e3ffc5d06f2b4fc5d"
+    },
+    {
+      "file": "hangar-classic-1280x800.jpg",
+      "byteSize": 91649,
+      "sha256": "4bee6638a236710ebb96c817ace741beca1b935c06a7bd5f170483c9e0abb1bc"
+    },
+    {
+      "file": "hangar-classic-1920x1080.jpg",
+      "byteSize": 136151,
+      "sha256": "ce13e0a711e4737e282462f97056b81e25dcf992e7904ce16322288c6526a35c"
+    },
+    {
+      "file": "hangar-classic-800x480.jpg",
+      "byteSize": 49444,
+      "sha256": "b49735be6a755262dcd482e7251a515ffb9a0546088b893834d88f85a83aca4c"
+    },
+    {
+      "file": "hangar-modern-1280x800.jpg",
+      "byteSize": 91698,
+      "sha256": "07ed0c569e08c8ec346286e8e181008b721214f5e781e050a430b1a010a75832"
+    },
+    {
+      "file": "hangar-modern-1920x1080.jpg",
+      "byteSize": 136170,
+      "sha256": "802f77d9b8685a7abd851e1d2dc2708306c4cd3ca31f07dce991b17b4c36f7c5"
+    },
+    {
+      "file": "hangar-modern-800x480.jpg",
+      "byteSize": 49434,
+      "sha256": "eea58700df2441688d1e2950b4d2e8b8278fd40f93e5e2f4bd922900c3d518ce"
+    },
+    {
+      "file": "help-classic.jpg",
+      "byteSize": 220620,
+      "sha256": "2c823198f3047877b6b68148fd8b65960f921b5715d22c8ecfaf3007aeb3d305"
+    },
+    {
+      "file": "help-modern.jpg",
+      "byteSize": 225434,
+      "sha256": "adb6d2e34751f223d462a3b60feae8a83b5aeed9dd3437d170e7b9d274fe3424"
+    }
+  ],
+  "qualifications": [
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 4.7689548
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 9,
+      "passed": 9,
+      "maxCaseSeconds": 6.6559688
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 6,
+      "passed": 6,
+      "maxCaseSeconds": 5.9015178
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 4.4619814
+    },
+    {
+      "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 1.5612314
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 1.4343894
+    },
+    {
+      "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 0.9053217
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 1.474806
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 0.3906817
+    },
+    {
+      "method": "Allegiance.Core.Tests.NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 0.7598832
+    }
+  ],
+  "fastSweeps": {
+    "fast-final": {
+      "seconds": 597.3844186930219,
+      "projects": {
+        "Allegiance.ClientCore.Browser.Tests": {
+          "count": 52,
+          "outcomes": {
+            "Passed": 52
+          }
+        },
+        "Allegiance.ClientCore.Game.Browser.Tests": {
+          "count": 261,
+          "outcomes": {
+            "Passed": 261
+          }
+        },
+        "Allegiance.Lobby.Tests": {
+          "count": 327,
+          "outcomes": {
+            "Passed": 327
+          }
+        },
+        "Allegiance.Update.Tests": {
+          "count": 55,
+          "outcomes": {
+            "Passed": 55
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 6020,
+          "outcomes": {
+            "Passed": 6016,
+            "NotExecuted": 4
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 2507,
+          "outcomes": {
+            "Passed": 2506,
+            "Failed": 1
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 6806,
+          "outcomes": {
+            "Passed": 6803,
+            "NotExecuted": 3
+          }
+        }
+      },
+      "calibration": {
+        "factor": 1.156816976127321,
+        "referenceMs": 4.3612,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 11.56816976127321
+      },
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 16.7836971
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 13.0272217
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 16.5074981
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+          "outcome": "Passed",
+          "seconds": 14.972516
+        },
+        {
+          "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+          "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+          "outcome": "Passed",
+          "seconds": 14.9985847
+        }
+      ],
+      "errors": [
+        "Allegiance.ClientCore.Tests: main failed",
+        "5 Fast test executions exceeded the calibrated 10 second limit"
+      ],
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.03738400700967759,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      }
+    },
+    "fast-release": {
+      "seconds": 601.9927976480685,
+      "projects": {
+        "Allegiance.ClientCore.Browser.Tests": {
+          "count": 52,
+          "outcomes": {
+            "Passed": 52
+          }
+        },
+        "Allegiance.ClientCore.Game.Browser.Tests": {
+          "count": 261,
+          "outcomes": {
+            "Passed": 261
+          }
+        },
+        "Allegiance.Lobby.Tests": {
+          "count": 327,
+          "outcomes": {
+            "Passed": 327
+          }
+        },
+        "Allegiance.Update.Tests": {
+          "count": 55,
+          "outcomes": {
+            "Passed": 55
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 6020,
+          "outcomes": {
+            "Passed": 6016,
+            "NotExecuted": 4
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 2507,
+          "outcomes": {
+            "Passed": 2507
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 6806,
+          "outcomes": {
+            "Passed": 6801,
+            "Failed": 2,
+            "NotExecuted": 3
+          }
+        }
+      },
+      "calibration": {
+        "factor": 1.1574801061007958,
+        "referenceMs": 4.3637,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 11.574801061007957
+      },
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 13.649957
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 14.1321267
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 14.7362183
+        },
+        {
+          "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+          "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+          "outcome": "Passed",
+          "seconds": 15.0148107
+        },
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 16.0912292
+        },
+        {
+          "name": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable(civ: 201)",
+          "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+          "outcome": "Passed",
+          "seconds": 11.9432259
+        }
+      ],
+      "errors": [
+        "Allegiance.Core.Tests: main failed",
+        "6 Fast test executions exceeded the calibrated 10 second limit"
+      ],
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.0377759620314464,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      }
+    },
+    "fast-probe": {
+      "tier": "fast",
+      "seconds": 638.2182388179936,
+      "projects": {
+        "Allegiance.ClientCore.Browser.Tests": {
+          "count": 52,
+          "outcomes": {
+            "Passed": 52
+          }
+        },
+        "Allegiance.ClientCore.Game.Browser.Tests": {
+          "count": 261,
+          "outcomes": {
+            "Passed": 261
+          }
+        },
+        "Allegiance.Lobby.Tests": {
+          "count": 327,
+          "outcomes": {
+            "Passed": 327
+          }
+        },
+        "Allegiance.Update.Tests": {
+          "count": 55,
+          "outcomes": {
+            "Passed": 55
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 6020,
+          "outcomes": {
+            "Passed": 6016,
+            "NotExecuted": 4
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 2507,
+          "outcomes": {
+            "Passed": 2506,
+            "Failed": 1
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 6806,
+          "outcomes": {
+            "Passed": 6801,
+            "NotExecuted": 3,
+            "Failed": 2
+          }
+        }
+      },
+      "calibration": {
+        "factor": 1.176180371352785,
+        "referenceMs": 4.4342,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 11.76180371352785
+      },
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 13.4213273
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 12.2655568
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 18.52935
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 35)",
+          "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+          "outcome": "Passed",
+          "seconds": 14.7967618
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 18.3532657
+        },
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 17.8337029
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+          "outcome": "Passed",
+          "seconds": 24.9927373
+        },
+        {
+          "name": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable(civ: 201)",
+          "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+          "outcome": "Passed",
+          "seconds": 12.1550988
+        },
+        {
+          "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+          "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+          "outcome": "Passed",
+          "seconds": 16.7925141
+        }
+      ],
+      "errors": [
+        "Allegiance.ClientCore.Tests: main failed",
+        "Allegiance.Core.Tests: main failed",
+        "9 Fast test executions exceeded the calibrated 10 second limit"
+      ],
+      "quarantineFlakes": [],
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.039543263032101095,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim(training: False, model: \"native\")",
+          "message": "skirmish/native sustained aim drift"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P865bCarrierRetaskTests.Relaunch_retasks_an_accepted_goto_onto_the_carrier_to_defend",
+          "message": "no carrier relaunch with the expected re-task within 200 ticks (final: pos=(488,870,952), stationId=, acceptedCid=5, acceptedTarget=9500, defend=null, goto=null)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: []"
+        }
+      ]
+    }
+  },
+  "finalGraphicsQualification": {
+    "probeConstructedWithoutResolvedTexture": true,
+    "runs": [
+      {
+        "style": "Classic",
+        "first30": {
+          "stations": 0,
+          "hulls": 0,
+          "rocks": 8388724,
+          "planets": 8388728,
+          "globes": 8388728,
+          "scene": 4474466,
+          "other": 0
+        },
+        "first30Compressed": {
+          "stations": 0,
+          "hulls": 0,
+          "rocks": 2220145,
+          "planets": 2313836,
+          "globes": 672561,
+          "scene": 947445,
+          "other": 0
+        },
+        "beforePromotion": {
+          "id": 9187,
+          "typeId": 4,
+          "model": "dgsup",
+          "modelResident": false,
+          "texture": null,
+          "textureResident": false,
+          "visible": false,
+          "drawFrames": 0
+        },
+        "afterPromotion": {
+          "id": 9187,
+          "typeId": 4,
+          "model": "dgsup",
+          "modelResident": true,
+          "texture": "dgsupbmp",
+          "textureResident": true,
+          "visible": true,
+          "drawFrames": 30
+        },
+        "afterburner": {
+          "readoutActive": false,
+          "power": 0,
+          "afterburnerActive": true,
+          "serverPower": 0
+        },
+        "rendererProof": {
+          "rows": [
+            {
+              "name": "station",
+              "model": "dgarr",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "dgarrbmp",
+              "nonBlackPixels": 1454
+            },
+            {
+              "name": "asteroid",
+              "model": "bgrnd05",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "bgrnd05bmp",
+              "nonBlackPixels": 2276
+            },
+            {
+              "name": "ship",
+              "model": "quizscoutv2",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "quizscout2bmp",
+              "nonBlackPixels": 224
+            },
+            {
+              "name": "missile",
+              "model": "mis05",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "mis05bmp",
+              "nonBlackPixels": 27
+            },
+            {
+              "name": "probe",
+              "model": "utl02",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "utl02bmp",
+              "nonBlackPixels": 677
+            },
+            {
+              "name": "treasure",
+              "model": "acs14",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "acs14bmp",
+              "nonBlackPixels": 590
+            },
+            {
+              "name": "projectile",
+              "model": "bgrnd55",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "bgrnd55bmp",
+              "nonBlackPixels": 3309
+            }
+          ]
+        },
+        "frames": {
+          "sampled": 3204,
+          "discarded": [],
+          "errors": []
+        },
+        "paintingsReady": true,
+        "first30Requests": 14,
+        "first30UniqueHashes": 14
+      },
+      {
+        "style": "Modern",
+        "first30": {
+          "stations": 0,
+          "hulls": 0,
+          "rocks": 25166172,
+          "planets": 8388728,
+          "globes": 8388728,
+          "scene": 4474466,
+          "other": 0
+        },
+        "first30Compressed": {
+          "stations": 0,
+          "hulls": 0,
+          "rocks": 8276880,
+          "planets": 2313836,
+          "globes": 672561,
+          "scene": 947445,
+          "other": 0
+        },
+        "beforePromotion": {
+          "id": 9188,
+          "typeId": 5,
+          "model": "drgsy",
+          "modelResident": false,
+          "texture": null,
+          "textureResident": false,
+          "visible": false,
+          "drawFrames": 0
+        },
+        "afterPromotion": {
+          "id": 9188,
+          "typeId": 5,
+          "model": "drgsy",
+          "modelResident": true,
+          "texture": "dregabmp",
+          "textureResident": true,
+          "visible": true,
+          "drawFrames": 29
+        },
+        "afterburner": {
+          "readoutActive": false,
+          "power": 0,
+          "afterburnerActive": true,
+          "serverPower": 0
+        },
+        "rendererProof": {
+          "rows": [
+            {
+              "name": "station",
+              "model": "dgarr",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "dgarrbmp",
+              "nonBlackPixels": 1454
+            },
+            {
+              "name": "asteroid",
+              "model": "bgrnd05",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "bgrnd05bmp",
+              "nonBlackPixels": 2276
+            },
+            {
+              "name": "ship",
+              "model": "quizscoutv2",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "quizscout2bmp",
+              "nonBlackPixels": 224
+            },
+            {
+              "name": "missile",
+              "model": "mis05",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "mis05bmp",
+              "nonBlackPixels": 27
+            },
+            {
+              "name": "probe",
+              "model": "utl02",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "utl02bmp",
+              "nonBlackPixels": 677
+            },
+            {
+              "name": "treasure",
+              "model": "acs14",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "acs14bmp",
+              "nonBlackPixels": 590
+            },
+            {
+              "name": "projectile",
+              "model": "bgrnd55",
+              "initialMissing": true,
+              "modelAfterPromotion": true,
+              "textureMissing": true,
+              "textureAfterPromotion": true,
+              "textureStem": "bgrnd55bmp",
+              "nonBlackPixels": 3309
+            }
+          ]
+        },
+        "frames": {
+          "sampled": 3350,
+          "discarded": [],
+          "errors": []
+        },
+        "paintingsReady": true,
+        "first30Requests": 16,
+        "first30UniqueHashes": 16
+      }
+    ]
+  },
+  "finalFastQualifications": [
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 6,
+      "passed": 6,
+      "maxCaseSeconds": 4.1077749
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 9,
+      "passed": 9,
+      "maxCaseSeconds": 5.2606011
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 3.1209465
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 1.4345491
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 4.3954352
+    },
+    {
+      "method": "Allegiance.Core.Tests.P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 0.9012185
+    },
+    {
+      "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 30,
+      "passed": 30,
+      "maxCaseSeconds": 1.8988386
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 12,
+      "passed": 12,
+      "maxCaseSeconds": 0.505685
+    },
+    {
+      "method": "Allegiance.Core.Tests.P865bCarrierRetaskTests.Relaunch_retasks_an_accepted_goto_onto_the_carrier_to_defend",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 0.3613514
+    },
+    {
+      "method": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts",
+      "processes": 3,
+      "processFailures": 0,
+      "cases": 3,
+      "passed": 3,
+      "maxCaseSeconds": 0.3964437
+    }
+  ]
+}

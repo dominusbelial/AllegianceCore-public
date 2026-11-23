@@ -39,12 +39,14 @@ public sealed class MoonRenderer : IDisposable
     private readonly List<Texture2D?> _textures = [];
 
     private bool _loaded;
+    private readonly AssetContentRevision _revision;
     private List<(Vector3 Dir, float HalfDeg, Texture2D Disc)> _moons = [];
     private Vector3 _towardLight = new(0, 0, 1);
 
     public MoonRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _revision = new(assets);
         _mdl = new MdlTexture2D(gd, assets, keyBelow: 10);
     }
 
@@ -174,6 +176,8 @@ public sealed class MoonRenderer : IDisposable
 
     private void EnsureLoaded()
     {
+        if (_revision.Changed() && _textures.Count < MoonArt.Length)
+        { _loaded = false; _textures.Clear(); }
         if (_loaded) return;
         foreach (var stem in MoonArt)
         {

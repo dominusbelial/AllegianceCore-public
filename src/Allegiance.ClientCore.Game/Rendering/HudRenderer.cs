@@ -1908,7 +1908,7 @@ public class HudRenderer
         DrawText(throttleFont, lbl, new Vector2(gx - sz.X / 2f, bottom + 14f), TextDim);
     }
 
-    /// <summary>Top-center afterburner status + reactor power readout.</summary>
+    /// <summary>Top-center afterburner status and burner power readout.</summary>
     private void DrawAfterburner(bool active, float power, float w)
     {
         string ab = active ? "AFTERBURNER ACTIVE" : "AFTERBURNER";

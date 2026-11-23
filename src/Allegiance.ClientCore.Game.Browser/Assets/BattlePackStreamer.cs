@@ -4,7 +4,7 @@ namespace Allegiance.ClientCore.Browser.Assets;
 /// atomic closure promotion. A failure leaves the stand-in until a later retry.</summary>
 public sealed class BattlePackStreamer : IAsyncDisposable
 {
-    private sealed class Request(string key) { internal readonly string Key = key; internal int Failures; internal long RetryAt; }
+    private sealed class Request(string key, int priority) { internal readonly string Key = key; internal int Priority = priority; internal int Failures; internal long RetryAt; internal long NotBefore = priority >= 2 ? Environment.TickCount64 + 30000 : 0; }
     private readonly Dictionary<string, StagedAsset[]> _packs;
     private readonly Dictionary<string, Request> _pending = new(StringComparer.Ordinal);
     private readonly HashSet<string> _ready = new(StringComparer.Ordinal);
@@ -31,10 +31,20 @@ public sealed class BattlePackStreamer : IAsyncDisposable
         _packs = manifest.Packs.ToDictionary(p => p.Key, p => p.Sources.Select(StagedManifest.Canonical).Distinct().Where(files.ContainsKey).Select(n => files[n]).ToArray(), StringComparer.Ordinal);
     }
 
-    public void RequestPack(string key)
+    public void RequestPack(string key) => RequestPack(key, 1);
+
+    /// <summary>Visible current-sector art precedes offscreen art and speculative
+    /// prefetch. Repeated interest can raise a queued pack's priority.</summary>
+    public void RequestPack(string key, int priority)
     {
-        if (_disposed || _ready.Contains(key) || !_packs.ContainsKey(key) || _pending.ContainsKey(key)) return;
-        _pending.Add(key, new(key));
+        if (_disposed || _ready.Contains(key) || !_packs.ContainsKey(key)) return;
+        if (_pending.TryGetValue(key, out var queued))
+        {
+            queued.Priority = Math.Min(queued.Priority, priority);
+            if (priority < 2) queued.NotBefore = 0;
+            return;
+        }
+        _pending.Add(key, new(key, priority));
         if (_worker is null || _worker.IsCompleted) _worker = RunAsync();
     }
 
@@ -45,7 +55,7 @@ public sealed class BattlePackStreamer : IAsyncDisposable
         {
             while (!_disposed && _pending.Count > 0)
             {
-                var request = _pending.Values.FirstOrDefault(r => r.RetryAt <= Environment.TickCount64);
+                var request = _pending.Values.OrderBy(r => r.Priority).FirstOrDefault(r => r.RetryAt <= Environment.TickCount64 && r.NotBefore <= Environment.TickCount64);
                 if (request is null) { await Task.Delay(100, _lifetime.Token); continue; }
                 try
                 {

@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Wire;
@@ -21,8 +22,14 @@ public sealed partial class Game1
     /// <summary>True when a battle pack with this key exists in the published manifest.</summary>
     public Func<string, bool>? BattlePackExists { get; set; }
 
-    /// <summary>Sector → content revision whose closures were already requested.</summary>
-    private readonly Dictionary<short, long> _sectorArtRequests = new();
+    public Action<string, int>? PrioritizeBattlePack { get; set; }
+    private double _sectorArtStartedAt = -1;
+    private Vector3 _sectorArtEye;
+    private bool _sectorArtCameraReady;
+    private double _nextSectorArtAt;
+    private short _lastArtSector = -1;
+    private int _lastArtStationCount = -1;
+    private readonly Dictionary<short, long> _stationDrawFrames = new();
 
     private static string? PosterDigits(string poster)
     {
@@ -54,29 +61,47 @@ public sealed partial class Game1
     public void RequestSectorArt(short sector, short? prefetch = null)
     {
         if (_flightSession?.World is not { } world) return;
-        RequestSectorArt(world, sector);
-        if (prefetch is { } next && next != sector) RequestSectorArt(world, next);
+        if (_lastArtSector == sector && _lastArtStationCount == world.Stations.Count
+            && _flightElapsedSeconds < _nextSectorArtAt) return;
+        _lastArtSector = sector; _lastArtStationCount = world.Stations.Count;
+        _nextSectorArtAt = _flightElapsedSeconds + .25;
+        if (_sectorArtStartedAt < 0) _sectorArtStartedAt = _flightElapsedSeconds;
+        RequestSectorArt(world, sector, false);
+        // Give the actual scene its first 30 seconds before speculative artwork.
+        if (_flightElapsedSeconds - _sectorArtStartedAt >= 30 && prefetch is { } next && next != sector)
+            RequestSectorArt(world, next, true);
     }
 
-    private void RequestSectorArt(ClientWorld world, short sector)
+    private void RequestSectorArt(ClientWorld world, short sector, bool prefetch)
     {
         if (RequestBattlePack is not { } request) return;
-        long revision = (_assets as Allegiance.ClientCore.Browser.Assets.StagedAssetSource)?.ContentRevision ?? 0;
-        if (_sectorArtRequests.TryGetValue(sector, out long previous) && previous == revision) return;
-        _sectorArtRequests[sector] = revision;
+        void Queue(string key, int priority)
+        {
+            if (PrioritizeBattlePack is { } prioritize) prioritize(key, prefetch ? 3 : priority);
+            else request(key);
+        }
+        // Re-evaluate the live roster even when no content revision changes:
+        // construction can add a station while every earlier pack is already ready.
         if (world.Clusters.TryGetValue(sector, out var cluster))
-            foreach (string key in SkyPackKeys(cluster)) request(key);
-        foreach (string key in WarpPackKeys(world, sector)) request(key);
-        foreach (var station in world.Stations.Values)
-            if (station.ClusterId == sector) request("station-" + station.StationTypeId);
-        foreach (var rock in RocksInSector(world, sector))
+            foreach (string key in SkyPackKeys(cluster)) Queue(key, 0);
+        foreach (string key in WarpPackKeys(world, sector)) Queue(key, 1);
+        foreach (var station in world.Stations.Values.Where(s => s.ClusterId == sector)
+            .OrderBy(s => Vector3.DistanceSquared(V(s.Position), _sectorArtEye)))
+        {
+            float radius = _shopCatalog?.StationTypes?.GetValueOrDefault(station.StationTypeId).Radius ?? 1;
+            int priority = _sectorArtCameraReady && BattleShipScene.RockInView(V(station.Position) - _sectorArtEye, radius, _rockFrustum) ? 0 : 2;
+            Queue("station-" + station.StationTypeId, priority);
+        }
+        foreach (var rock in RocksInSector(world, sector)
+            .OrderBy(r => Vector3.DistanceSquared(V(r.Position), _sectorArtEye)))
             if (!string.IsNullOrEmpty(rock.ModelName))
             {
                 // Generated maps use the native fixed table (mapgen-rock-*); an
                 // authored static map may reuse any model (static-rock-*). Both keys
                 // are requested; the streamer ignores one this generation lacks.
-                request("mapgen-rock-" + rock.ModelName.ToLowerInvariant());
-                request("static-rock-" + rock.ModelName.ToLowerInvariant());
+                int priority = _sectorArtCameraReady && BattleShipScene.RockInView(V(rock.Position) - _sectorArtEye, rock.Radius, _rockFrustum) ? 0 : 2;
+                Queue("mapgen-rock-" + rock.ModelName.ToLowerInvariant(), priority);
+                Queue("static-rock-" + rock.ModelName.ToLowerInvariant(), priority);
             }
     }
 
@@ -117,6 +142,7 @@ public sealed partial class Game1
                     modelResident = model is not null && _assets.Exists(model + ".mdl"),
                     texture, textureResident = texture is not null && _assets.Exists(texture + ".mdl"),
                     visible = model is not null && _assets.Exists(model + ".mdl"),
+                    drawFrames = _stationDrawFrames.GetValueOrDefault(station.StationId),
                 });
             }
             var rocks = new List<object>();

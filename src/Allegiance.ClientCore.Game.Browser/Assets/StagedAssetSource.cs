@@ -4,7 +4,7 @@ namespace Allegiance.ClientCore.Browser.Assets;
 
 /// <summary>Verified base streams and declared visual names. Deferred names use
 /// the prepared-texture hook; their bytes never trigger IO in Draw.</summary>
-public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource
+public sealed class StagedAssetSource : IAssetSource, IResidentTextureSource, IAssetContentRevision
 {
     private readonly Dictionary<string, byte[]> _files;
     internal StagedAssetSource(Dictionary<string, byte[]> files) => _files = files;

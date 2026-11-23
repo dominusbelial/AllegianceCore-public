@@ -10988,3 +10988,84 @@ remains ignored under `.scratch/p1071-fast-final/` and
 `.scratch/p1071-fast-final-isolated/`; the extracted per-case receipt is
 `.scratch/p1071-fast-final-isolated-results.json`. See the
 [P1071 report](reports/PERPETUAL_BATTLE_P1071.md) for implementation and other gates.
+
+
+## P1075 — browser follow-ups qualification (2026-11-22)
+
+Two initial full Fast sweeps were run with artwork and disabled build servers. The second
+sweep recorded **16,019 passed / 2 failed / 7 not executed** (16,028 cases), 602.0 s;
+all **9 infrastructure checks passed**, with a calibrated per-case limit of **11.575 s**.
+The browser suites (52 and 261 cases) and MonoGame suite (6,016 passed / 4 skips) were green.
+No simulation, NPC, bot, research or server-rule source was changed by P1075.
+
+- Earlier sweep: `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` failed
+  with the pursuer still at hull 1. The existing wake-mine family passed **3/3 alone**
+  immediately afterwards and another **3/3** in the final qualification below.
+- Second sweep: `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed`
+  failed at line 305 (expected state 16, got 320), the already ledgered throttle-state family.
+- Second sweep: `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one`
+  failed the target-instance assertion at line 285, also already ledgered.
+
+Second-sweep passing timing offenders were P814 gunner seats **13.650 s**, P796 varied loadout
+(civ 35) **14.132 s**, SC2 nanite selection (civ 25) **14.736 s**, P1000 profile
+(civ 3) **15.015 s**, P750 research rocks **16.091 s** and P942 research ordering
+(civ 201) **11.943 s**. The earlier sweep additionally had P999 catalog/buy gates
+(civ 5) **14.973 s**. These timing families are already ledgered above.
+
+Every implicated method ran in **three fresh isolated processes**, including every
+theory row selected by that method: **120/120 cases passed**, all below the sweep limit.
+
+| Method | Isolated cases, all three processes | Maximum case seconds |
+|---|---:|---:|
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 3/3 | 4.769 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 9/9 | 6.656 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 6/6 | 5.902 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 30/30 | 4.462 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | 30/30 | 1.561 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 3/3 | 1.434 |
+| `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable` | 30/30 | 0.905 |
+| `P877MineDamageLiveTests.Chased_bot_wake_mine_damages_pursuer` | 3/3 | 1.475 |
+| `NpcWingmanRangeMaintenanceLiveTests.Wingman_throttle_responds_to_target_closing_speed` | 3/3 | 0.391 |
+| `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one` | 3/3 | 0.760 |
+
+No assertion, timeout, tier, quarantine or calibration threshold was changed.
+The broad Fast gate remains red; isolated passes do not relabel it green.
+Detailed receipts are retained under ignored `.scratch/p1075/qualifications/` and
+the sanitized summary is [P1075 evidence](reports/P1075_assets/evidence.json).
+
+### P1075 final probe-constructor qualification
+
+After covering a probe constructed before its texture stem resolves, a third full
+Fast sweep ran on the final source: **16,018 passed / 3 failed / 7 not executed**,
+**638.2 s**, **9 infrastructure checks passed**, calibrated case limit **11.762 s**.
+Both browser suites and the full MonoGame suite passed again. Three existing
+assertion families failed in the broad sweep:
+
+- `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim`: skirmish/native sustained aim drift.
+- `P865bCarrierRetaskTests.Relaunch_retasks_an_accepted_goto_onto_the_carrier_to_defend`: no expected relaunch/re-task within 200 ticks.
+- `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts`: empty probe-broadcast receipt collection.
+
+Nine passing timing offenders covered SC2 (civs 3/25, 13.421/18.529 s), P796
+(civs 25/35, 12.266/14.797 s), P814 (18.353 s), P750 (17.834 s), P999
+(civ 5, 24.993 s), P942 (civ 201, 12.155 s) and P1000 (civ 3, 16.793 s).
+All assertion and timing families were already ledgered before this work.
+Every implicated method then passed in **three fresh isolated processes**,
+including all theory rows: **129/129 cases**, all below the calibrated limit.
+
+| Method | Isolated cases across three processes | Maximum case seconds |
+|---|---:|---:|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 6/6 | 4.108 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 9/9 | 5.261 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 3/3 | 3.121 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | 3/3 | 1.435 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 30/30 | 4.395 |
+| `P942ResearchOrderingTests.Generated_research_never_waits_for_a_drone_or_utility_base_while_a_development_is_buyable` | 30/30 | 0.901 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | 30/30 | 1.899 |
+| `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` | 12/12 | 0.506 |
+| `P865bCarrierRetaskTests.Relaunch_retasks_an_accepted_goto_onto_the_carrier_to_defend` | 3/3 | 0.361 |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | 3/3 | 0.396 |
+
+The full sweep remains red. No threshold, assertion, timeout, tier or quarantine
+was relaxed. Evidence is in the P1075 sanitized receipt and ignored
+`.scratch/p1075/qualifications-probe/`. The latest P1073 generated-map and P1074
+keyboard harnesses both passed; all owned proof hosts shut down cleanly.

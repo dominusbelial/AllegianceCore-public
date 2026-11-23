@@ -1,0 +1,369 @@
+[
+  {
+    "pack": "station-307",
+    "rawBytes": 15379422,
+    "gzipBytes": 9784590,
+    "files": [
+      {
+        "source": "ss93abmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 2834736,
+        "dependencies": []
+      },
+      {
+        "source": "ss303.png",
+        "rawBytes": 5503540,
+        "gzipBytes": 5504650,
+        "dependencies": []
+      },
+      {
+        "source": "beltersbay.png",
+        "rawBytes": 1430440,
+        "gzipBytes": 1426822,
+        "dependencies": []
+      },
+      {
+        "source": "ss303.mdl",
+        "rawBytes": 56580,
+        "gzipBytes": 18215,
+        "dependencies": [
+          "beltersbaybmp.mdl",
+          "ss303bmp.mdl",
+          "ss93abmp.mdl"
+        ]
+      },
+      {
+        "source": "beltersbaybmp.mdl",
+        "rawBytes": 74,
+        "gzipBytes": 86,
+        "dependencies": [
+          "beltersbay.png"
+        ]
+      },
+      {
+        "source": "ss303bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss303.png"
+        ]
+      }
+    ],
+    "nativeGeometryAudit": {
+      "model": "ss303",
+      "objectMeshes": 3,
+      "objectTriangles": 734,
+      "lodLevels": 1,
+      "objectAndLodMaterialStems": [
+        "ss93abmp",
+        "ss303bmp",
+        "beltersbaybmp"
+      ],
+      "method": "Existing mdl-to-glb inspect and no-texture export using the production native parser; each material appears in object and LOD mesh primitives."
+    }
+  },
+  {
+    "pack": "station-311",
+    "rawBytes": 15379422,
+    "gzipBytes": 9784590,
+    "files": [
+      {
+        "source": "ss93abmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 2834736,
+        "dependencies": []
+      },
+      {
+        "source": "ss303.png",
+        "rawBytes": 5503540,
+        "gzipBytes": 5504650,
+        "dependencies": []
+      },
+      {
+        "source": "beltersbay.png",
+        "rawBytes": 1430440,
+        "gzipBytes": 1426822,
+        "dependencies": []
+      },
+      {
+        "source": "ss303.mdl",
+        "rawBytes": 56580,
+        "gzipBytes": 18215,
+        "dependencies": [
+          "beltersbaybmp.mdl",
+          "ss303bmp.mdl",
+          "ss93abmp.mdl"
+        ]
+      },
+      {
+        "source": "beltersbaybmp.mdl",
+        "rawBytes": 74,
+        "gzipBytes": 86,
+        "dependencies": [
+          "beltersbay.png"
+        ]
+      },
+      {
+        "source": "ss303bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss303.png"
+        ]
+      }
+    ],
+    "nativeGeometryAudit": {
+      "model": "ss303",
+      "objectMeshes": 3,
+      "objectTriangles": 734,
+      "lodLevels": 1,
+      "objectAndLodMaterialStems": [
+        "ss93abmp",
+        "ss303bmp",
+        "beltersbaybmp"
+      ],
+      "method": "Existing mdl-to-glb inspect and no-texture export using the production native parser; each material appears in object and LOD mesh primitives."
+    }
+  },
+  {
+    "pack": "station-309",
+    "rawBytes": 13763457,
+    "gzipBytes": 8813585,
+    "files": [
+      {
+        "source": "bgrnd53bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3489230,
+        "dependencies": []
+      },
+      {
+        "source": "ss305.png",
+        "rawBytes": 3880343,
+        "gzipBytes": 3879593,
+        "dependencies": []
+      },
+      {
+        "source": "beltersbay.png",
+        "rawBytes": 1430440,
+        "gzipBytes": 1426822,
+        "dependencies": []
+      },
+      {
+        "source": "ss305.mdl",
+        "rawBytes": 63812,
+        "gzipBytes": 17773,
+        "dependencies": [
+          "beltersbaybmp.mdl",
+          "bgrnd53bmp.mdl",
+          "ss305bmp.mdl"
+        ]
+      },
+      {
+        "source": "beltersbaybmp.mdl",
+        "rawBytes": 74,
+        "gzipBytes": 86,
+        "dependencies": [
+          "beltersbay.png"
+        ]
+      },
+      {
+        "source": "ss305bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss305.png"
+        ]
+      }
+    ]
+  },
+  {
+    "pack": "station-313",
+    "rawBytes": 13763457,
+    "gzipBytes": 8813585,
+    "files": [
+      {
+        "source": "bgrnd53bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3489230,
+        "dependencies": []
+      },
+      {
+        "source": "ss305.png",
+        "rawBytes": 3880343,
+        "gzipBytes": 3879593,
+        "dependencies": []
+      },
+      {
+        "source": "beltersbay.png",
+        "rawBytes": 1430440,
+        "gzipBytes": 1426822,
+        "dependencies": []
+      },
+      {
+        "source": "ss305.mdl",
+        "rawBytes": 63812,
+        "gzipBytes": 17773,
+        "dependencies": [
+          "beltersbaybmp.mdl",
+          "bgrnd53bmp.mdl",
+          "ss305bmp.mdl"
+        ]
+      },
+      {
+        "source": "beltersbaybmp.mdl",
+        "rawBytes": 74,
+        "gzipBytes": 86,
+        "dependencies": [
+          "beltersbay.png"
+        ]
+      },
+      {
+        "source": "ss305bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss305.png"
+        ]
+      }
+    ]
+  },
+  {
+    "pack": "static-rock-ss300",
+    "rawBytes": 6253007,
+    "gzipBytes": 6135886,
+    "files": [
+      {
+        "source": "ss300.png",
+        "rawBytes": 4617661,
+        "gzipBytes": 4618350,
+        "dependencies": []
+      },
+      {
+        "source": "beltersbay.png",
+        "rawBytes": 1430440,
+        "gzipBytes": 1426822,
+        "dependencies": []
+      },
+      {
+        "source": "bgrnd03bmp.mdl",
+        "rawBytes": 131188,
+        "gzipBytes": 51253,
+        "dependencies": []
+      },
+      {
+        "source": "ss300.mdl",
+        "rawBytes": 73580,
+        "gzipBytes": 39294,
+        "dependencies": [
+          "beltersbaybmp.mdl",
+          "bgrnd03bmp.mdl",
+          "ss300bmp.mdl"
+        ]
+      },
+      {
+        "source": "beltersbaybmp.mdl",
+        "rawBytes": 74,
+        "gzipBytes": 86,
+        "dependencies": [
+          "beltersbay.png"
+        ]
+      },
+      {
+        "source": "ss300bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss300.png"
+        ]
+      }
+    ],
+    "nativeGeometryAudit": {
+      "model": "ss300",
+      "objectMeshes": 3,
+      "objectTriangles": 848,
+      "lodLevels": 1,
+      "objectAndLodMaterialStems": [
+        "bgrnd03bmp",
+        "ss300bmp",
+        "beltersbaybmp"
+      ],
+      "method": "Existing mdl-to-glb inspect and no-texture export using the production native parser; each material appears in object and LOD mesh primitives."
+    }
+  },
+  {
+    "pack": "static-rock-bgrnd57",
+    "rawBytes": 8412344,
+    "gzipBytes": 4306076,
+    "files": [
+      {
+        "source": "bgrnd57bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 4295909,
+        "dependencies": []
+      },
+      {
+        "source": "bgrnd57.mdl",
+        "rawBytes": 23620,
+        "gzipBytes": 10167,
+        "dependencies": [
+          "bgrnd57bmp.mdl"
+        ]
+      }
+    ]
+  },
+  {
+    "pack": "static-rock-ss307",
+    "rawBytes": 4116802,
+    "gzipBytes": 4018868,
+    "files": [
+      {
+        "source": "ss307.png",
+        "rawBytes": 3945794,
+        "gzipBytes": 3946230,
+        "dependencies": []
+      },
+      {
+        "source": "bgrnd03bmp.mdl",
+        "rawBytes": 131188,
+        "gzipBytes": 51253,
+        "dependencies": []
+      },
+      {
+        "source": "ss307.mdl",
+        "rawBytes": 39756,
+        "gzipBytes": 21304,
+        "dependencies": [
+          "bgrnd03bmp.mdl",
+          "ss307bmp.mdl"
+        ]
+      },
+      {
+        "source": "ss307bmp.mdl",
+        "rawBytes": 64,
+        "gzipBytes": 81,
+        "dependencies": [
+          "ss307.png"
+        ]
+      }
+    ]
+  },
+  {
+    "pack": "mapgen-rock-bgrnd53",
+    "rawBytes": 8398164,
+    "gzipBytes": 3493151,
+    "files": [
+      {
+        "source": "bgrnd53bmp.mdl",
+        "rawBytes": 8388724,
+        "gzipBytes": 3489230,
+        "dependencies": []
+      },
+      {
+        "source": "bgrnd53.mdl",
+        "rawBytes": 9440,
+        "gzipBytes": 3921,
+        "dependencies": []
+      }
+    ]
+  }
+]

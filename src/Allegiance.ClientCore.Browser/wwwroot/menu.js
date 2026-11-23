@@ -28,6 +28,9 @@ window.menuText = instance => {
       instance.invokeMethod('HangarLaunchVerb');
       return 'window';
     },
+    proofView: (kind, id) => instance.invokeMethod('ProofView', kind, id),
+    prepareLateArtProof: () => instance.invokeMethod('PrepareLateArtProof'),
+    probeLateArt: () => instance.invokeMethod('ProbeLateArt'),
     probeBrotli: bytes => instance.invokeMethodAsync('ProbeBrotli', bytes),
     // P1073 — which codecs the real browser runtime supports, on a real briefing frame.
     probeCodecs: bytes => instance.invokeMethodAsync('ProbeCodecs', bytes),

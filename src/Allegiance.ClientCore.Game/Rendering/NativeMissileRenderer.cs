@@ -55,12 +55,12 @@ public sealed class NativeMissileRenderer : IDisposable
 {
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
-    private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetStemIndex _diskStems;
     private readonly Dictionary<string, ProjectileModelRenderer.Geometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Matrix> _noseAlign = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingLogged;
     private readonly HdMaterialRenderer _hd;
     private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
@@ -72,14 +72,14 @@ public sealed class NativeMissileRenderer : IDisposable
         _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
         _ownsHd = hd is null;
         _assets = assets;
+        _missingLogged = new(assets);
         _effect = new BasicEffect(gd) { TextureEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
         // P593/P586b — case-insensitive index of every .mdl basename so a
         // model/texture stem resolves to its exact on-disk unit (native runs
         // case-insensitive; Linux File.Exists is not).
-        foreach (var rel in assets.Enumerate("."))
-            if (rel.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
-                _diskStems[Path.GetFileNameWithoutExtension(rel)] = Path.GetFileNameWithoutExtension(rel);
+        _diskStems = new(assets);
+
     }
 
     /// <summary>The exact on-disk basename (without .mdl) for a stem, resolved
@@ -128,6 +128,7 @@ public sealed class NativeMissileRenderer : IDisposable
     private bool TryParse(string modelName, out MdlFile file)
     {
         if (_parsed.TryGetValue(modelName, out file!)) return true;
+        if (_missingLogged.Contains(modelName)) { file = null!; return false; }
         var exact = ExactStem(modelName);
         if (exact is null)
         {
@@ -169,9 +170,9 @@ public sealed class NativeMissileRenderer : IDisposable
     public Texture2D? TextureFor(string modelName, string? overrideTextureName)
     {
         if (string.IsNullOrEmpty(modelName)) return null;
-        if (_textures.TryGetValue(modelName, out var t)) return t;
         var stem = TextureStemFor(modelName, overrideTextureName);
         if (stem is null) return null;
+        if (_textures.TryGetValue(stem, out var t)) return t;
         var exact = ExactStem(stem);
         if (exact is null) { LogMissing(stem, "not present"); return null; }
         try
@@ -179,7 +180,7 @@ public sealed class NativeMissileRenderer : IDisposable
             var mdlTex = NativeStationTexture.Decode(_gd, _assets, exact);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
-            _textures[modelName] = surf;
+            _textures[stem] = surf;
             return surf;
         }
         catch (Exception ex)

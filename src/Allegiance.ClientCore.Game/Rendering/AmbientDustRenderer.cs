@@ -93,7 +93,10 @@ public sealed class AmbientDustRenderer : IDisposable
     private VertexPositionColorTexture[] _vertices = [];
     private short[] _indices = [];
 #endif
-    private readonly Texture2D _softSprite;
+    private Texture2D _softSprite;
+    private readonly IAssetSource _assets;
+    private readonly AssetContentRevision _revision;
+    private bool _nativeSprite;
     private readonly BasicEffect _effect;
     private readonly BlendState _additiveSoft;
     private readonly RasterizerState _cullNone;
@@ -117,7 +120,8 @@ public sealed class AmbientDustRenderer : IDisposable
     /// </summary>
     public AmbientDustRenderer(GraphicsDevice gd, IAssetSource assets)
     {
-        _softSprite = LoadDebrisTexture(gd, assets);
+        _assets = assets; _revision = new(assets);
+        _softSprite = LoadDebrisTexture(gd, assets, out _nativeSprite);
 
         _effect = new BasicEffect(gd)
         {
@@ -151,6 +155,13 @@ public sealed class AmbientDustRenderer : IDisposable
     /// </summary>
     public void Draw(IReadOnlyList<AmbientDustView> grains, Vector3 cameraEye, Matrix view, Matrix projection)
     {
+        if (_revision.Changed() && !_nativeSprite)
+        {
+            _softSprite.Dispose();
+            _softSprite = LoadDebrisTexture(_effect.GraphicsDevice, _assets, out _nativeSprite);
+            _effect.Texture = _softSprite;
+        }
+
         if (grains.Count == 0) return;
 
         // Row-major orthonormal view: column 0 = camera right, column 1 = camera up.
@@ -226,8 +237,9 @@ public sealed class AmbientDustRenderer : IDisposable
     /// A missing or undecodable file falls back to a generated soft radial
     /// sprite and is reported on the console. Never throws.
     /// </summary>
-    private static Texture2D LoadDebrisTexture(GraphicsDevice gd, IAssetSource assets)
+    private static Texture2D LoadDebrisTexture(GraphicsDevice gd, IAssetSource assets, out bool native)
     {
+        native = false;
         string rel = DebrisBitmapMdl + ".mdl";
         try
         {
@@ -244,6 +256,7 @@ public sealed class AmbientDustRenderer : IDisposable
                 }
                 surface.SetData(colors);
                 Console.WriteLine($"[monogame] ambient dust decal: {tex.Width}x{tex.Height} '{rel}'");
+                native = true;
                 return surface;
             }
             Console.WriteLine($"[monogame] ambient dust decal missing ({rel}) — procedural soft-dot fallback");

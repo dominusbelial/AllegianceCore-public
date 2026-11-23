@@ -185,7 +185,7 @@ public sealed partial class Game1
             : new { received = false, TechMode = (string?)null, Epoch = (string?)null, steps = 0, SideId = (short)-1 },
         docked = _flightSession?.World.MyShipId is { } dockId && _flightSession.World.Ships.TryGetValue(dockId, out var dockShip)
             && dockShip.StationId >= 0,
-        hud = new { power = _ownSim.Power, afterburnerActive = (_ownSim.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+        hud = new { readoutActive = _ownSim.Power > 0f, power = _ownSim.Power, afterburnerActive = (_ownSim.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
             serverPower = _flightSession?.World.MyShipId is { } hpId && _flightSession.World.Ships.TryGetValue(hpId, out var hpShip) ? hpShip.Latest?.Power : null },
         battle = new { sectorShips = SectorShipCount, contacts = _flightContacts.Count, meshes = DrawnMeshes,
             standIns = DrawnStandIns, hullIds = _battleScene?.Ships.Select(s => s.HullId).Distinct().ToArray(),
@@ -486,8 +486,23 @@ public sealed partial class Game1
                 eye = camera.Eye; view = camera.View();
             }
         }
+        // Read-only dev camera for the loopback art/promotion proof. It changes
+        // neither the pilot's pose nor commands sent to the authoritative server.
+        float[]? proofPosition = null; float proofRadius = 100;
+        if (_proofViewKind == "station" && world.Stations.TryGetValue(_proofViewId, out var proofStation)
+            && proofStation.ClusterId == own.SectorId)
+        { proofPosition = proofStation.Position; proofRadius = _shopCatalog?.StationTypes?.GetValueOrDefault(proofStation.StationTypeId).Radius ?? 100; }
+        else if (_proofViewKind == "warp" && world.Warps.TryGetValue(_proofViewId, out var proofWarp)
+            && proofWarp.ClusterId == own.SectorId)
+        { proofPosition = proofWarp.Position; proofRadius = proofWarp.Radius; }
+        if (proofPosition is not null)
+        {
+            var center = V(proofPosition); eye = center + new Vector3(0, proofRadius, proofRadius * 5);
+            view = Matrix.CreateLookAt(Vector3.Zero, center - eye, Vector3.Up);
+        }
         _rockFrustum.Matrix = view * projection;
         _browserTargetEye = eye; // Input picking uses this exact rendered camera.
+        _sectorArtEye = eye; _sectorArtCameraReady = true;
         BeginScene(world, own, view, projection, eye);
         long shipPassStart = System.Diagnostics.Stopwatch.GetTimestamp();
         DrawnShips = DrawnMeshes = DrawnStandIns = 0;
@@ -556,6 +571,7 @@ public sealed partial class Game1
             var matrix = Matrix.CreateWorld(V(station.Position) - eye, V(facing.GetForward()), V(facing.GetUp()));
             _flightStations.Draw(mesh, texture is null ? null : _flightStations.TextureFor(texture), matrix, view, projection,
                 (type.Radius / Math.Max(.001f, mesh.MeshRadius)), _sceneLighting, type.ModelName, texture);
+            _stationDrawFrames[station.StationId] = _stationDrawFrames.GetValueOrDefault(station.StationId) + 1;
             if (BattleShipScene.RockInView(V(station.Position) - eye, type.Radius, _rockFrustum))
                 NativeScene.AppendStationLights(_flightStations, type.ModelName, V(station.Position),
                     PoseConverter.ToXnaRotation(facing), type.Radius, NativeStationResolver.ScaleForRadius(type.Radius, mesh.MeshRadius),

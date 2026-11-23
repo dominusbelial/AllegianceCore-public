@@ -31,7 +31,8 @@ public sealed class DistantObjectRenderer : IDisposable
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missing = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missing;
+    private readonly AssetContentRevision _revision;
 
     private List<Texture2D> _library = [];
     private bool _listed;
@@ -41,6 +42,7 @@ public sealed class DistantObjectRenderer : IDisposable
     {
         _gd = gd;
         _assets = assets;
+        _missing = new(assets); _revision = new(assets);
     }
 
     public int LibraryCount => _library.Count;
@@ -72,6 +74,7 @@ public sealed class DistantObjectRenderer : IDisposable
 
     private void EnsureListed()
     {
+        if (_revision.Changed() && _library.Count == 0) _listed = false;
         if (_listed) return;
         _listed = true;
         try

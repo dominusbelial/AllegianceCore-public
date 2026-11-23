@@ -215,37 +215,15 @@ public static class HangarScreen
         ScreenTransform.For(viewportWidth, viewportHeight)
             .Map(InTurretPaneX, InTurretPaneY, InTurretWidth, InTurretHeight);
 
-    /// <summary>
-    /// The port-only verbs' rectangles. Native has no hangar button for
-    /// <see cref="HangarAction.Buy"/> / <see cref="HangarAction.Default"/>, so
-    /// they are kept OUT of the 800×600 artwork: they sit in the letterbox
-    /// margin beside the scaled screen when the viewport has one (any aspect
-    /// other than 4:3 — a 16:9 window leaves 240 px per side at 1080p, a letter
-    /// 4:3 window leaves a strip below), and when the screen fills the viewport
-    /// exactly they fall back to the bottom-right corner inside the screen, past
-    /// the hover pane's right edge. Native's lowest/right-most control is the
-    /// hover text pane at x 100..700, y 561..585, so no native control is ever
-    /// covered; the cells only ever sit over the dark console pixels of the
-    /// background.
-    /// </summary>
+    /// <summary>Port-only cells inside the 800×600 art, to the right of the
+    /// hover pane and below every native hotspot (hangar.mdl:87-102). Keeping
+    /// them in authored coordinates also keeps them above browser page chrome.</summary>
     public const int PortVerbWidth = 46;
     public const int PortVerbHeight = 16;
 
-    public static Rectangle PortVerbRect(int viewportWidth, int viewportHeight, bool second)
-    {
-        var t = ScreenTransform.For(viewportWidth, viewportHeight);
-        int column = second ? PortVerbWidth + 2 : 0;   // 2 native px gutter between the cells
-        float marginX = (viewportWidth - NativeWidth * t.Scale) / 2f;
-        float marginY = (viewportHeight - NativeHeight * t.Scale) / 2f;
-        if (marginX >= 2 * PortVerbWidth * t.Scale + 8f)
-            return t.Map(NativeWidth + 2 + column, NativeHeight - PortVerbHeight - 2,
-                PortVerbWidth, PortVerbHeight);                            // right letterbox, bottom aligned
-        if (marginY >= PortVerbHeight * t.Scale + 6f)
-            return t.Map(NativeWidth - 2 * PortVerbWidth - 2 + column, NativeHeight + 2,
-                PortVerbWidth, PortVerbHeight);                            // bottom letterbox
-        return t.Map(NativeWidth - 2 * PortVerbWidth - 2 + column,
-            NativeHeight - PortVerbHeight - 2, PortVerbWidth, PortVerbHeight);   // 4:3: inside, bottom-right
-    }
+    public static Rectangle PortVerbRect(int viewportWidth, int viewportHeight, bool second) =>
+        ScreenTransform.For(viewportWidth, viewportHeight).Map(
+            704 + (second ? PortVerbWidth + 2 : 0), 562, PortVerbWidth, PortVerbHeight);
 
     /// <summary>Whether the given point hits a native control (or a port-only
     /// verb). <paramref name="developments"/> hides <see cref="HangarAction.Invest"/>

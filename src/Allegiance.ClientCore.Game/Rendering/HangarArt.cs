@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.IO;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
@@ -38,12 +38,13 @@ internal sealed class HangarArt : IDisposable
 {
     /// <summary>Per-source case-insensitive stem indexes (built once per asset
     /// source; the artwork root has ~10k files).</summary>
-    private static readonly ConcurrentDictionary<IAssetSource, Dictionary<string, string>> StemIndexes = new();
+    private static readonly ConditionalWeakTable<IAssetSource, AssetStemIndex> StemIndexes = new();
 
     private readonly GraphicsDevice _graphics;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D?> _textures = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _logged = new(StringComparer.Ordinal);
+    private readonly AssetMissCache _logged;
+    private readonly AssetContentRevision _revision;
     private readonly List<string> _missing = [];
     private Texture2D?[]? _launchFrames;
     private bool _disposed;
@@ -52,6 +53,7 @@ internal sealed class HangarArt : IDisposable
     {
         _graphics = graphics;
         _assets = assets;
+        _logged = new(assets); _revision = new(assets);
     }
 
     /// <summary>The bitmap stems resolvable without a GPU are probed by the
@@ -72,34 +74,12 @@ internal sealed class HangarArt : IDisposable
         {
             return null;
         }
-        var index = StemIndexes.GetOrAdd(assets, BuildStemIndex);
-        return index.TryGetValue(stem, out var path) ? path : null;
-    }
-
-    private static Dictionary<string, string> BuildStemIndex(IAssetSource assets)
-    {
-        var index = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        // ".". the artwork root: DirectoryAssetSource rejects an empty relative
-        // path, and every other source treats "." as its root too.
-        foreach (var directory in new[] { ".", "" })
+        try
         {
-            try
-            {
-                foreach (var path in assets.Enumerate(directory))
-                {
-                    if (!path.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase)) continue;
-                    string name = path[(path.LastIndexOf('/') + 1)..];
-                    index.TryAdd(name[..^4], path);           // first spelling wins, like a case-insensitive FS
-                }
-                if (index.Count > 0) break;
-            }
-            catch (Exception)
-            {
-                // An unwalkable source simply has no case-folded aliases:
-                // exact-name lookups still work.
-            }
+            var index = StemIndexes.GetValue(assets, static source => new(source));
+            return index.TryGetValue(stem, out var exactStem) ? exactStem + ".mdl" : null;
         }
-        return index;
+        catch (Exception) { return null; }
     }
 
     /// <summary>A bitmap's native pixel size, headless (no GraphicsDevice) —
@@ -168,6 +148,7 @@ internal sealed class HangarArt : IDisposable
     {
         get
         {
+            RefreshMissing();
             _launchFrames ??= LoadLaunchFrames();
             return _launchFrames.Length == 0 ? [] : Array.ConvertAll(_launchFrames, t => t!);
         }
@@ -213,8 +194,18 @@ internal sealed class HangarArt : IDisposable
     /// <c>WinTrek/hangarscreen.cpp:54</c>), so they are blitted opaque: the
     /// decoded RGBA keeps alpha 255 and the near-black surround is NOT keyed
     /// (the hangar interior has genuinely black areas).</summary>
+    private void RefreshMissing()
+    {
+        if (!_revision.Changed()) return;
+        foreach (string stem in _textures.Where(p => p.Value is null).Select(p => p.Key).ToArray())
+            _textures.Remove(stem);
+        if (_launchFrames is { Length: 0 }) _launchFrames = null;
+        _missing.Clear();
+    }
+
     public Texture2D? Get(string stem)
     {
+        RefreshMissing();
         if (_textures.TryGetValue(stem, out var cached)) return cached;
         Texture2D? texture = null;
         string? path = ResolvePath(_assets, stem);

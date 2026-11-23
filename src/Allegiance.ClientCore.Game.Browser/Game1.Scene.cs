@@ -48,6 +48,8 @@ public sealed partial class Game1
 
     private void ResetScene()
     {
+        _stationDrawFrames.Clear(); _lastArtSector = -1;
+        _sectorArtStartedAt = -1; _sectorArtCameraReady = false;
         _sceneEffects.Reset(); _sceneDust.Reset(); _sceneDebris.Clear(); _sceneDustViews.Clear();
         _sceneEngineViews.Clear(); _sceneTrailStrips.Clear();
         _hullUploads?.Reset();
@@ -140,6 +142,12 @@ public sealed partial class Game1
             }
             if (_flightSky.PromoteResidentLayers(BattlePackReady?.Invoke("scene-paintings") == true,
                     BattlePackReady?.Invoke("scene-giants") == true)) _sceneGlimpses!.InvalidateAll();
+            // P1075 — glimpse targets use DiscardContents. Prepare before the main
+            // sky/geometry pass; rebinding the backbuffer after it discards the scene.
+            _sceneEffects.GatherGlimpses(world, eye);
+            _sceneGlimpses!.Draw(_sceneEffects.Glimpses, eye, view, projection, cluster,
+                _sceneEffects.PulseStrength, static (_, _, _, _) => false, prepareOnly: true);
+            GraphicsDevice.Clear(Color.Black);
             NativeScene.DrawSky(_flightSky, view, projection, eye, frame);
         }
         if (_fullEffectLoad && _sceneDustRenderer is not null)
@@ -191,9 +199,8 @@ public sealed partial class Game1
         }
         if (_sceneGlimpses is not null && world.Clusters.TryGetValue(own.SectorId, out var cluster))
         {
-            _sceneEffects.GatherGlimpses(world, eye);
-            NativeScene.DrawGlimpses(_sceneGlimpses, _sceneEffects.Glimpses, eye, view, projection,
-                cluster, _sceneEffects.PulseStrength, static (_, _, _, _) => false);
+            _sceneGlimpses.Draw(_sceneEffects.Glimpses, eye, view, projection,
+                cluster, _sceneEffects.PulseStrength, static (_, _, _, _) => false, allowPreparation: false);
         }
     }
 

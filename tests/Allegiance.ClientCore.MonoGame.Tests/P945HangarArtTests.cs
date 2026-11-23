@@ -186,19 +186,17 @@ public sealed class P945HangarArtTests
     [Theory]
     [InlineData(1920, 1080)]   // side letterbox
     [InlineData(800, 600)]     // exact 4:3: no margin at all
-    public void Port_only_verbs_sit_outside_the_native_art_when_there_is_a_margin(int width, int height)
+    public void Port_only_verbs_stay_inside_the_native_art_with_or_without_a_margin(int width, int height)
     {
         // Buy/Default have no native hangar button. They must stay clickable and
-        // must not cover the 800×600 artwork unless the screen fills the window.
+        // sit inside unused console space in the 800×600 artwork (P1075).
         var t = HangarScreen.ScreenTransform.For(width, height);
         var screen = t.Map(0, 0, 800, 600);
         foreach (var second in new[] { false, true })
         {
             var rect = HangarScreen.PortVerbRect(width, height, second);
             Assert.False(rect.IsEmpty);
-            bool inScreen = screen.Contains(rect);
-            bool hasMargin = width > (int)MathF.Round(800 * t.Scale) || height > (int)MathF.Round(600 * t.Scale);
-            Assert.Equal(hasMargin, !inScreen);
+            Assert.True(screen.Contains(rect));
             Assert.True(rect.Right <= width && rect.Bottom <= height);
         }
         Assert.False(HangarScreen.PortVerbRect(width, height, false)

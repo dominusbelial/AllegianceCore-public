@@ -102,13 +102,14 @@ public sealed class NativeEffectTextures : IDisposable
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D[]?> _films = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AssetMissCache _missingLogged;
     private Texture2D? _softFallback;
 
     private NativeEffectTextures(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
         _assets = assets;
+        _missingLogged = new(assets);
     }
 
     /// <summary>Create a cache over <paramref name="assets"/> (typically
@@ -155,6 +156,7 @@ public sealed class NativeEffectTextures : IDisposable
     {
         if (string.IsNullOrEmpty(stem)) return null;
         if (_films.TryGetValue(stem, out var arr)) return arr;
+        if (_missingLogged.Contains(stem)) return null;
 
         Texture2D[]? loaded = null;
         try
@@ -167,7 +169,7 @@ public sealed class NativeEffectTextures : IDisposable
             return null;
         }
 
-        _films[stem] = loaded;
+        if (loaded is not null) _films[stem] = loaded;
         return loaded;
     }
 

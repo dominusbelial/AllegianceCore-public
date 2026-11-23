@@ -183,9 +183,7 @@ public sealed class HelpOverlayRenderer
             }
 
             // Footer note.
-            string note =
-                "Most keys are disabled while typing chat or in the quick-chat menu.  "
-                + "UP/DOWN topics   BACKSPACE back   PGUP/PGDN scroll   Esc closes.";
+            string note = NavigationFooter;
             var nsz = _small.MeasureString(note) * scale;
             Draw(note, new Vector2((w - nsz.X) / 2f, panelY + panelH - 24f),
                 NoteColor, scale);
@@ -195,6 +193,14 @@ public sealed class HelpOverlayRenderer
             _sb.End();
         }
     }
+
+    public static string NavigationFooter =>
+        "Most keys are disabled while typing chat or in the quick-chat menu.  " +
+#if BROWSER
+        "LEFT/RIGHT or PGUP/PGDN pages   UP/DOWN scroll   BACKSPACE back   Esc closes.";
+#else
+        "UP/DOWN topics   BACKSPACE back   PGUP/PGDN scroll   Esc closes.";
+#endif
 
     private HelpOverlayLayout.ControlTable ControlsTable(IReadOnlyList<KeyBindingTable.Group> groups,
         float width, float height)

@@ -165,6 +165,22 @@ list in **reverse**.
   Proof: `tools/p1065-battle-proof/Program.cs`, `tools/p1065-browser-battle.cjs`;
   parity: `docs/parity/p1065-browser-battle-ships.csv`; report:
   `docs/reports/BROWSER_BATTLE_SHIPS_P1065.md`. No desktop scene or native game-rule change.
+- **Late browser art and promotion frames (P1075)** — optional
+  `src/Allegiance.ClientCore.Game/Assets/AssetContentRevision.cs` supplies one
+  revision boundary for missing-resource caches and case-folded file indexes;
+  the browser's `Assets/StagedAssetSource.cs` in
+  `src/Allegiance.ClientCore.Game.Browser` advances it only on verified promotion.
+  Native renderers retain successful resources and retry misses once per revision.
+  `Game1.Scene.cs` in that browser project prepares aleph glimpse targets before
+  the main scene; its `Game1.SectorArt.cs` schedules in-view/distance-ordered art
+  before offscreen/prefetch closures. Shared HUD activity reads actual burner power;
+  supplemental hangar cells use interior artwork coordinates. Graphics proof:
+  `src/Allegiance.ClientCore.Game.Browser/Game1.ArtProof.cs` (dev-only),
+  `tools/p1075-browser-followups.cjs`, `tools/p1075-frame-probe.cjs`;
+  mid-session construction fixture: `tools/p1051-browser-host/LateStationProof.cs`.
+  Desktop captures: `tools/p1075-presentation-proof/Program.cs`; local-only native
+  graphics fixture closure: `tools/p1075-proof-pack.py`.
+  Report: `docs/reports/BROWSER_LIVE_FOLLOWUPS_P1075.md`.
 - **Generated-map browser parity and live gaps (P1073)** — the generated-map art
   namespace is enumerated once in `src/Allegiance.Core/MapGen/GeneratedMapArt.cs`
   (planet posters, `globeN`/`environmentNbmp` domes, `plnt19`/`plnt42`/`aleph` warp
