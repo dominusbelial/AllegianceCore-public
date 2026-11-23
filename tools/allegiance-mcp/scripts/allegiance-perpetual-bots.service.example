@@ -11,6 +11,11 @@
 # <ARTWORK_DIR>     artwork corpus readable by <BOT_USER>
 # <SERVER> <PORT>   public game server address and port
 # <CLIENT_VERSION>  the server's minimumClientVersion or later (dev builds report 0.0.0 and are refused)
+# <PUBLIC_ORIGIN>   optional: the public HTTPS origin (https://host) for WebSocket bots. To send a share of the
+#                   bots through the same WSS route browser players use (Caddy :443 -> webSocket listener), append
+#                   `--ws-fraction 0.5 --ws-url wss://<host>/game --ws-origin <PUBLIC_ORIGIN>` to ExecStart (P1072).
+#                   The origin must be listed in the server's webSocket.allowedOrigins. Needs a driver built at or
+#                   after P1072; omit it for TCP-only bots.
 #
 # Do not set ALLEGIANCE_PRIVILEGE_SECRET here unless the target server is configured with that
 # same bot secret. A rig's secret must never be sent to a public host. An empty game password

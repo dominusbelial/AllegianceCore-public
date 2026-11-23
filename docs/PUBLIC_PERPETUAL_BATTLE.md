@@ -68,6 +68,11 @@ Monthly files are selected by completion time in UTC. The writer appends and flu
   [`tools/allegiance-mcp/scripts/allegiance-perpetual-bots.service.example`](../tools/allegiance-mcp/scripts/allegiance-perpetual-bots.service.example)
   uses a self-contained published driver, `Restart=always` and a log file. A server redeploy or a lost link
   recovers by itself, and the driver refills seats after reconnecting.
+- **Mixed transports:** `--ws-fraction 0.5 --ws-url wss://<host>/game --ws-origin https://<host>` sends every
+  second bot over the public WebSocket route, so the bots exercise the same Caddy/WSS path as browser players.
+  The live host runs this split since 2026-11-23. The unit restarts the driver itself: after replacing the driver
+  or the start script, restart the unit (`systemctl restart allegiance-perpetual-bots`), never start a second copy
+  by hand.
 - **Do not reuse a rig's bot secret** (`ALLEGIANCE_PRIVILEGE_SECRET`) against a public host. An empty game
   password needs no `ALLEGIANCE_LAN_PASSWORD`: the join gate is skipped when the game has no password.
 - **Pass the client version** at or above the server's `minimumClientVersion`. A missing version reports `0.0.0`
