@@ -10,7 +10,8 @@ to lean on.
 
 Today it ships a **playable MonoGame client** (Windows, Linux and macOS Apple
 silicon; an **experimental** Android build is not complete and has no release
-download), **offline single player** (Skirmish, the native training
+download), a **browser client** (WebAssembly + WebGL, served by the lobby at
+`/play/`), **offline single player** (Skirmish, the native training
 missions, spectating), a **dedicated TCP server**, a **lobby**, **autonomous
 bots** and an **MCP bot driver**. Everything is cross-checked against the
 445k-line native C++ source (`src/`), with wire messages byte-exact.
@@ -23,7 +24,7 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   technology, difficulty, game speed Normal/Fast/Showcase), with an AI
   commander or **you** as commander. **Start as spectator** watches the whole
   battle (free camera, ship/station orbit, "hottest fight" follow) and lets you
-  drop in. Pause with Ctrl+P.
+  drop in, or travel between sectors. Pause with Ctrl+P.
 - **Training**: the native training set runs offline on an embedded host:
   Basic Flight, Basic Weaponry, Enemy Engagement, Command View, Practice Arena,
   Nanite and the Free Flight dev mission, with the Introduction and its slideshows.
@@ -33,6 +34,16 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   page lists live games with a **Join** link (`allegiance://`) that opens the
   installed client and asks before joining; password-protected games ask for
   the game password in the client, never in the link.
+- **In the browser (preview)**: the same game client runs as WebAssembly in
+  Chromium-based browsers. **Play now** on the lobby page joins as a guest
+  (an optional account keeps your name): pick a side, fit a ship in the hangar
+  and fly, with the full keyboard table, mouse flight and both HUD styles.
+  Art streams per sector, on-screen first, so flight starts before every
+  texture has arrived.
+- **Perpetual battle**: a public server preset runs one never-ending 5v5 on a
+  map rotation with random civilizations. Bots on a separate host fill empty
+  seats and step aside when a human joins, browser or desktop
+  ([`docs/PUBLIC_PERPETUAL_BATTLE.md`](docs/PUBLIC_PERPETUAL_BATTLE.md)).
 - **Showcase**: the intro's Showcase entry launches big AI battles (Small
   5v5 up to Grand 200v200 at Showcase pacing) plus the fixed-seed settings
   tune (seed 729, 5v5, 150 s ×3) that suggests and applies graphics settings.
@@ -59,7 +70,8 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   stars and glare, star streaks, subtle space dust and full 10 km visibility —
   each switchable back to the native rendering in Options → Visuals
   (`--visuals key=off`). Volumetric explosions, bloom and flash lighting, an
-  effects quality setting, and an optional HD sky pack. Native asteroid models,
+  effects quality setting, desktop MSAA (Off/2×/4×/8×), full ship detail at
+  every distance, and an optional HD sky pack. Native asteroid models,
   the native construction shell, aleph exit wobble, the ripcord spark ramp.
 - Keyboard, mouse, joystick and gamepad, all rebindable (F6). F1 shows every key.
 - Crash-safe: a rolling log plus a crash log on every run, and missing
@@ -113,15 +125,15 @@ architecture, and troubleshooting.
 
 ## Parity status
 
-How much of the original game's behaviour the port reproduces, as of 2026-11-12: **98.34 %
-weighted, 1,788 of 1,819 tracked rules** across all matrices. Each row of the
+How much of the original game's behaviour the port reproduces, as of 2026-11-22: **98.20 %
+weighted, 1,802 of 1,839 tracked rules** across all matrices. Each row of the
 [matrices](docs/parity/) cites the native source, and a row only earns credit with production code and
 a test. [`scripts/parity-scorecard.py`](scripts/parity-scorecard.py) validates them and produces these
 numbers, weighting rows by importance.
 
 | Area | Weighted | Rows complete |
 |---|---:|---:|
-| Core game systems (`parity-matrix.csv`) | 100.00 % | 671 / 671 |
+| Core game systems (`parity-matrix.csv`) | 99.61 % | 685 / 691 |
 | Lobby | 98.75 % | 30 / 31 |
 | Simulation rules | 99.03 % | 800 / 808 |
 | Effects | 100.00 % | 8 / 8 |
@@ -130,9 +142,11 @@ numbers, weighting rows by importance.
 | AllSrv admin UI | 100.00 % | 16 / 16 |
 | Training missions | 92.79 % | 213 / 235 |
 | Model tools | 100.00 % | 7 / 7 |
-| **All matrices** | **98.34 %** | **1,788 / 1,819** |
+| **All matrices** | **98.20 %** | **1,802 / 1,839** |
 
-Work is ongoing, so these are not final. Eight simulation rows are partial: three (tick order,
+Work is ongoing, so these are not final. The core matrix gained 20 rows since the last count; its six
+open rows are loadout features (saved custom loadouts, filling the cargo hold on Default, restoring the
+last loadout, turret gunner seats, and two server buy rules). Eight simulation rows are partial: three (tick order,
 collision order and broadcast order) are implemented behind default-off flags and stay partial until a
 200v200 comparison decides them, and five failed the P904 certification (the cluster-site callbacks
 and the IGC dump/export paths are not reached the way native reaches them). Model tools earn offline-tool credit: their export/import and optimize commands
@@ -159,6 +173,10 @@ The latest release is **v0.1.7** (2026-11-16); each release's notes list what ch
 web-listed game, install the client first, then use the lobby page's **Join** link. For local
 packaging and the release checklist, see
 [`packaging/README.md`](packaging/README.md).
+
+The browser client is not part of the release downloads: a lobby serves it from a published
+browser generation. How to build, publish and host one (cache headers, TLS proxy, guest admission,
+rollback) is in [`docs/BROWSER_HOSTING.md`](docs/BROWSER_HOSTING.md).
 
 ## Quick start
 
@@ -382,6 +400,9 @@ and left off are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
   credited). Clone it and set `ALLEGIANCE_SKY_PACK_PATH` (see Quick start).
 - **[Full guide](docs/GUIDE.md)** — everything: art paths, Docker, the experimental
   Android head, client flags, testing, architecture, troubleshooting.
+- **[Browser hosting](docs/BROWSER_HOSTING.md)** and the
+  **[public perpetual battle](docs/PUBLIC_PERPETUAL_BATTLE.md)** — serving the browser client
+  and running the always-on public game.
 - **[Contributing](CONTRIBUTING.md)** — build/test steps, the native-reference
   rule, coding conventions, PR checklist.
 - **[Security](SECURITY.md)** — reporting and the server's known non-hardened
