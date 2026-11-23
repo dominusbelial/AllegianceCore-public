@@ -27,6 +27,8 @@ public sealed partial class Game1
     private Vector3 _sectorArtEye;
     private bool _sectorArtCameraReady;
     private double _nextSectorArtAt;
+    private double _nextDockArtAt;
+    private short _lastDockArtStation = -1;
     private short _lastArtSector = -1;
     private int _lastArtStationCount = -1;
     private readonly Dictionary<short, long> _stationDrawFrames = new();
@@ -57,18 +59,42 @@ public sealed partial class Game1
         return keys.Order(StringComparer.Ordinal).ToArray();
     }
 
+    // Port-only delivery policy: native artwork is local (Igc/igc.h:2649;
+    // WinTrek/WinTrek.cpp:3622-3640). Home must be ready behind the launch camera.
+    internal static int StationArtPriority(short side, short? mySide, bool inView) =>
+        (mySide is >= 0 && side == mySide) || inView ? 0 : 2;
+
+    /// <summary>Use docked time for the actual station and sky, without starting
+    /// the flight scene's grace clock or requesting speculative sector artwork.</summary>
+    internal void RequestDockedSectorArt(ClientWorld world, ShipEntity own)
+    {
+        if (world.OwnIsGhost || own.StationId < 0 || RequestBattlePack is null
+            || !world.Stations.TryGetValue(own.StationId, out var station)) return;
+        if (_lastDockArtStation == own.StationId && _nowSeconds < _nextDockArtAt) return;
+        _lastDockArtStation = own.StationId;
+        _nextDockArtAt = _nowSeconds + .25;
+        void Queue(string key)
+        {
+            if (PrioritizeBattlePack is { } prioritize) prioritize(key, 0);
+            else RequestBattlePack(key);
+        }
+        Queue("station-" + station.StationTypeId);
+        if (world.Clusters.TryGetValue(station.ClusterId, out var cluster))
+            foreach (string key in SkyPackKeys(cluster)) Queue(key);
+    }
+
     /// <summary>Request every documented generated-map closure the sector actually uses.</summary>
     public void RequestSectorArt(short sector, short? prefetch = null)
     {
         if (_flightSession?.World is not { } world) return;
         if (_lastArtSector == sector && _lastArtStationCount == world.Stations.Count
-            && _flightElapsedSeconds < _nextSectorArtAt) return;
+            && _nowSeconds < _nextSectorArtAt) return;
         _lastArtSector = sector; _lastArtStationCount = world.Stations.Count;
-        _nextSectorArtAt = _flightElapsedSeconds + .25;
-        if (_sectorArtStartedAt < 0) _sectorArtStartedAt = _flightElapsedSeconds;
+        _nextSectorArtAt = _nowSeconds + .25;
+        if (_sectorArtStartedAt < 0) _sectorArtStartedAt = _nowSeconds;
         RequestSectorArt(world, sector, false);
         // Give the actual scene its first 30 seconds before speculative artwork.
-        if (_flightElapsedSeconds - _sectorArtStartedAt >= 30 && prefetch is { } next && next != sector)
+        if (_nowSeconds - _sectorArtStartedAt >= 30 && prefetch is { } next && next != sector)
             RequestSectorArt(world, next, true);
     }
 
@@ -89,7 +115,8 @@ public sealed partial class Game1
             .OrderBy(s => Vector3.DistanceSquared(V(s.Position), _sectorArtEye)))
         {
             float radius = _shopCatalog?.StationTypes?.GetValueOrDefault(station.StationTypeId).Radius ?? 1;
-            int priority = _sectorArtCameraReady && BattleShipScene.RockInView(V(station.Position) - _sectorArtEye, radius, _rockFrustum) ? 0 : 2;
+            int priority = StationArtPriority(station.SideId, world.MySideId,
+                _sectorArtCameraReady && BattleShipScene.RockInView(V(station.Position) - _sectorArtEye, radius, _rockFrustum));
             Queue("station-" + station.StationTypeId, priority);
         }
         foreach (var rock in RocksInSector(world, sector)
@@ -127,7 +154,8 @@ public sealed partial class Game1
         {
             if (_flightSession?.World is not { } world || world.MyShipId is not { } id
                 || !world.Ships.TryGetValue(id, out var own)) return null;
-            short sector = own.SectorId;
+            short sector = own.StationId >= 0 && world.Stations.TryGetValue(own.StationId, out var dock)
+                ? dock.ClusterId : own.SectorId;
             var stations = new List<object>();
             foreach (var station in world.Stations.Values)
             {
@@ -138,7 +166,9 @@ public sealed partial class Game1
                 string? texture = type is null ? null : _flightStations?.TextureStemFor(stationType.ModelName, stationType.TextureName);
                 stations.Add(new
                 {
-                    id = station.StationId, typeId = station.StationTypeId, model,
+                    id = station.StationId, typeId = station.StationTypeId, sideId = station.SideId, model,
+                    centerInView = _sectorArtCameraReady && BattleShipScene.RockInView(
+                        V(station.Position) - _sectorArtEye, 0, _rockFrustum),
                     modelResident = model is not null && _assets.Exists(model + ".mdl"),
                     texture, textureResident = texture is not null && _assets.Exists(texture + ".mdl"),
                     visible = model is not null && _assets.Exists(model + ".mdl"),

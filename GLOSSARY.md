@@ -181,6 +181,14 @@ list in **reverse**.
   Desktop captures: `tools/p1075-presentation-proof/Program.cs`; local-only native
   graphics fixture closure: `tools/p1075-proof-pack.py`.
   Report: `docs/reports/BROWSER_LIVE_FOLLOWUPS_P1075.md`.
+- **Home station artwork before launch (P1076)** — browser-only
+  `src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs` prioritizes own-side
+  current-sector stations even offscreen, and its throttled dock prefetch requests
+  the actual dock station and sector sky without consuming the flight grace.
+  Classic/Modern real-input look-back and separate hangar/flight byte receipts:
+  `tools/p1076-home-station.cjs`; GPU-free scheduling tests:
+  `tests/Allegiance.ClientCore.Game.Browser.Tests/P1076HomeStationArtTests.cs`.
+  Delivery policy only; report: `docs/reports/BROWSER_HOME_STATION_ART_P1076.md`.
 - **Generated-map browser parity and live gaps (P1073)** — the generated-map art
   namespace is enumerated once in `src/Allegiance.Core/MapGen/GeneratedMapArt.cs`
   (planet posters, `globeN`/`environmentNbmp` domes, `plnt19`/`plnt42`/`aleph` warp

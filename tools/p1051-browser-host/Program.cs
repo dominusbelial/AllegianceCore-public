@@ -87,7 +87,7 @@ server.Boot(new ServerConfig
     Showcase = new() { TechMode = options.MapGen is null ? "unlocked" : "research" },
     Games = [new() { Name = options.MapGen is null ? "P1061 public mission" : "P1073 generated " + options.MapGen,
         Map = options.MapGen is null ? "XXV_simple.igc" : "", MapGen = options.MapGen is null ? null : new() { Type = options.MapGen, Seed = options.MapSeed },
-        Teams = 2, CivIds = [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
+        Teams = 2, CivIds = options.CivIds ?? [1, 3], CivSeed = 1051, SideNames = ["Alpha", "Bravo"],
         Password = GamePassword, AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
 });
 using var proxy = Process.Start(new ProcessStartInfo("node") { UseShellExecute = false,
@@ -338,7 +338,7 @@ try
         lock (desktop.Gate) desktopState = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId, s.HullId, s.PoseSectorId, visible = s.CanDrawInSector(desktop.World.MyShipId is { } ownShip && desktop.World.Ships.TryGetValue(ownShip, out var viewer) ? viewer.SectorId : (short)-1) }).ToArray(), desktopShotsReceived };
-        var state = new { battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
+        var state = new { civIds = options.CivIds ?? [1, 3], battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
             { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, roll = s.Controls.Roll, throttle = s.Controls.Throttle, s.StateM,
                 forward = new[] { s.Orientation.GetForward().X, s.Orientation.GetForward().Y, s.Orientation.GetForward().Z },

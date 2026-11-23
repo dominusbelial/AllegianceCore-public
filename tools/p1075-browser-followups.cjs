@@ -19,14 +19,15 @@ const evidence={baseline,browser:browser.version(),runs:[]};
 try{for(const style of ['Classic','Modern']){
  const context=await browser.newContext({viewport:{width:1280,height:800},ignoreHTTPSErrors:true});
  await context.addInitScript(require('./p1075-frame-probe.cjs'));
- const page=await context.newPage();page.setDefaultTimeout(180000);const errors=[],requests=[],consoleLines=[];let launchAt=0,held=false;const releases=[];
+ const page=await context.newPage();page.setDefaultTimeout(180000);const errors=[],requests=[],hangarRequests=[],consoleLines=[];let launchAt=0,hangarAt=0,held=false;const releases=[];
  const stationType=Number((process.argv[7]||'4,5').split(',')[style==='Classic'?0:1]);
  const heldHashes=new Set(manifest.packs.find(p=>p.key==='station-'+stationType).sources.map(s=>assets.get(s)?.sha256));
  await context.route('**/*',async route=>{const u=new URL(route.request().url());assert.ok(['localhost','127.0.0.1'].includes(u.hostname));
-  const hash=u.pathname.split('/').pop();if(launchAt&&/^[a-f0-9]{64}$/.test(hash)){
+  const hash=u.pathname.split('/').pop();if(hangarAt&&/^[a-f0-9]{64}$/.test(hash)){
    const at=Date.now();if(held&&heldHashes.has(hash))await new Promise(r=>releases.push(r));
-   await wait(150); const response=await route.fetch();const body=await response.body();
-   requests.push({hash,family:families.get(hash)||'other',startedMs:at-launchAt,completedMs:Date.now()-launchAt,decodedBytes:body.length,networkBytes:Number(response.headers()['content-length'])||body.length,encoding:response.headers()['content-encoding']||'identity'});
+   if(launchAt)await wait(150); const response=await route.fetch();const body=await response.body();
+   const start=launchAt||hangarAt;
+   (launchAt?requests:hangarRequests).push({hash,family:families.get(hash)||'other',startedMs:at-start,completedMs:Date.now()-start,decodedBytes:body.length,networkBytes:Number(response.headers()['content-length'])||body.length,encoding:response.headers()['content-encoding']||'identity'});
    return route.fulfill({response,body});
   }return route.continue();});
  page.on('pageerror',e=>errors.push(e.message));
@@ -36,10 +37,10 @@ try{for(const style of ['Classic','Modern']){
  await page.locator('#guest-disclosure').waitFor();
  const password=fs.readFileSync(path.join(state,'game-password'),'utf8').trim();
  await page.locator('#join-password').evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))},password);
- await page.locator('.online-join:enabled').first().click();await page.locator('#online-panel[data-state="Sides"]').waitFor();await page.locator('.online-side').first().click();
+ await page.locator('.online-join:enabled').first().click();await page.locator('#online-panel[data-state="Sides"]').waitFor();hangarAt=Date.now();await page.locator('.online-side').first().click();
  await page.locator('#online-panel[data-state="Hangar"]').waitFor();await page.waitForFunction(()=>gameMenu.hangar().visible&&gameMenu.hangar().launchArt);
  await page.getByRole('button',{name:style,exact:true}).click();
- const run={style,errors,requests,consoleLines,captures:[]};console.log(style,"hangar");evidence.runs.push(run);
+ const run={style,errors,requests,hangarRequests,consoleLines,captures:[]};console.log(style,"hangar");evidence.runs.push(run);
  for(const [width,height] of [[1920,1080],[1280,800],[800,480]]){
   await page.setViewportSize({width,height});await wait(500);
   const h=await page.evaluate(()=>gameMenu.hangar());run['hangar-'+width]=h;
@@ -55,6 +56,7 @@ try{for(const style of ['Classic','Modern']){
  {const sector=(await page.evaluate(()=>gameMenu.metrics())).flight.sectorId;const warp=host().chart.find(w=>w.ClusterId===sector);if(warp)await page.evaluate(id=>gameMenu.proofView('warp',id),warp.WarpId);}
  await wait(Math.max(0,30000-(Date.now()-launchAt)));
  console.log(style,"first30",requests.length);
+ run.hangarCompressed=Object.fromEntries(['stations','hulls','rocks','planets','globes','scene','other'].map(f=>[f,hangarRequests.filter(r=>r.family===f).reduce((n,r)=>n+r.networkBytes,0)]));
  run.first30Compressed=Object.fromEntries(['stations','hulls','rocks','planets','globes','scene','other'].map(f=>[f,requests.filter(r=>r.family===f&&r.completedMs<=30000).reduce((n,r)=>n+r.networkBytes,0)]));
  run.first30=Object.fromEntries(['stations','hulls','rocks','planets','globes','scene','other'].map(f=>[f,requests.filter(r=>r.family===f&&r.completedMs<=30000).reduce((n,r)=>n+r.decodedBytes,0)]));
  run.metrics30=await page.evaluate(()=>gameMenu.metrics());run.frames30=await page.evaluate(()=>p1075Frames);
@@ -83,7 +85,7 @@ try{for(const style of ['Classic','Modern']){
  if(!baseline)await page.waitForFunction(()=>gameMenu.metrics().flight.scene.paintingsReady===true,null,{timeout:180000,polling:500});
  await wait(250);run.metricsFinal=await page.evaluate(()=>gameMenu.metrics());
  run.frames=await page.evaluate(()=>p1075Frames);if(!baseline){assert.ok(run.frames.sampled>30,'per-frame sampling ran');assert.deepEqual(run.frames.discarded,[],'zero discard-colour frames');assert.deepEqual(run.frames.errors,[]);}
- assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'followups.json'),JSON.stringify(evidence,null,2));await context.close();
+ assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'followups.json'),JSON.stringify(evidence,null,2));await context.unrouteAll({behavior:'ignoreErrors'});await context.close();
  }
  console.log('P1075_FOLLOWUPS_PASS',baseline?'baseline':'fixed');
 }catch(e){evidence.failure=String(e);fs.writeFileSync(path.join(out,'followups-failure.json'),JSON.stringify(evidence,null,2));throw e;}finally{await browser.close();}}

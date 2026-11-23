@@ -50,6 +50,7 @@ public sealed partial class Game1
     {
         _stationDrawFrames.Clear(); _lastArtSector = -1;
         _sectorArtStartedAt = -1; _sectorArtCameraReady = false;
+        _nextSectorArtAt = _nextDockArtAt = 0; _lastDockArtStation = -1;
         _sceneEffects.Reset(); _sceneDust.Reset(); _sceneDebris.Clear(); _sceneDustViews.Clear();
         _sceneEngineViews.Clear(); _sceneTrailStrips.Clear();
         _hullUploads?.Reset();

@@ -252,6 +252,7 @@ public sealed partial class Game1
             return;
         }
         if (own.StationId < 0) return;
+        RequestDockedSectorArt(world, own);
         _hangarSeconds += (float)_flightElapsedSeconds;
         var readiness = HangarLaunch.Of(_session);
         bool missionStarted = world.Mission?.Stage == MissionStageMessage.StageStarted;
