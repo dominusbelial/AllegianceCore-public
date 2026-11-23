@@ -100,11 +100,11 @@ P945 deliberately preferred letterbox placement for Buy/Def, with an interior fa
 
 | Size | Browser Classic / Modern | Desktop Classic / Modern |
 |---|---|---|
-| 1920×1080 | [Classic](P1075_assets/hangar-classic-1920x1080.jpg) / [Modern](P1075_assets/hangar-modern-1920x1080.jpg) | [Classic](P1075_assets/desktop-hangar-classic-1920x1080.png) / [Modern](P1075_assets/desktop-hangar-modern-1920x1080.png) |
-| 1280×800 | [Classic](P1075_assets/hangar-classic-1280x800.jpg) / [Modern](P1075_assets/hangar-modern-1280x800.jpg) | [Classic](P1075_assets/desktop-hangar-classic-1280x800.png) / [Modern](P1075_assets/desktop-hangar-modern-1280x800.png) |
-| 800×480 | [Classic](P1075_assets/hangar-classic-800x480.jpg) / [Modern](P1075_assets/hangar-modern-800x480.jpg) | [Classic](P1075_assets/desktop-hangar-classic-800x480.png) / [Modern](P1075_assets/desktop-hangar-modern-800x480.png) |
+| 1920×1080 | [Classic](P1075_assets/hangar-classic-1920x1080.jpg) / [Modern](P1075_assets/hangar-modern-1920x1080.jpg) | [Classic / Modern (identical)](P1075_assets/desktop-hangar-classic-1920x1080.png) |
+| 1280×800 | [Classic](P1075_assets/hangar-classic-1280x800.jpg) / [Modern](P1075_assets/hangar-modern-1280x800.jpg) | [Classic / Modern (identical)](P1075_assets/desktop-hangar-classic-1280x800.png) |
+| 800×480 | [Classic](P1075_assets/hangar-classic-800x480.jpg) / [Modern](P1075_assets/hangar-modern-800x480.jpg) | [Classic / Modern (identical)](P1075_assets/desktop-hangar-classic-800x480.png) |
 
-The native hangar art is intentionally identical between desktop styles; the corresponding PNG pairs are byte-identical. The desktop proof uses the actual shared renderers in a MonoGame software-GL window, not an HTML mockup. The browser captures include page chrome and its identity strip.
+The native hangar art is intentionally identical between desktop styles; the two styles captured byte-identical PNGs, so one file per size is kept (evidence.json still lists both captures). The desktop proof uses the actual shared renderers in a MonoGame software-GL window, not an HTML mockup. The browser captures include page chrome and its identity strip.
 
 The shared help renderer now names browser LEFT/RIGHT or PGUP/PGDN pages, UP/DOWN scroll, BACKSPACE back and Esc close under `BROWSER`. Desktop retains its prior text and navigation. Both real overlays were captured: [Classic](P1075_assets/help-classic.jpg), [Modern](P1075_assets/help-modern.jpg).
 

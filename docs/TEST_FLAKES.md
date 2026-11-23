@@ -11069,3 +11069,18 @@ The full sweep remains red. No threshold, assertion, timeout, tier or quarantine
 was relaxed. Evidence is in the P1075 sanitized receipt and ignored
 `.scratch/p1075/qualifications-probe/`. The latest P1073 generated-map and P1074
 keyboard harnesses both passed; all owned proof hosts shut down cleanly.
+
+## P1075 review — `tools/p1074-browser-keyboard.cjs` pointer-steering race (2026-11-22)
+
+- **Symptom:** the step "real nonzero pointer steering" timed out in 2 of 4 runs on the P1075 merge, against 3 of 3 passes
+  on the pre-P1075 generation.
+- **Cause:** under pointer lock, headless Chromium follows each `page.mouse.move` with an equal and opposite
+  `mousemove`. One move logged `[0,0] [+700,+400] [-700,-400]`. `Game1.Flight.cs` sums `_pointerDx/_pointerDy` per
+  frame, and `MouseFlightController` intentionally does not recentre. So the deflection is nonzero only when the two
+  events land in different frames. Even then the yaw lasts only one frame.
+- **Why P1075 made it worse:** its slightly heavier frames (warp previews prepared before the scene) made it more likely
+  that both events land in the same frame. This is a harness timing problem, not a game regression. Real browsers
+  don't emit the compensating event.
+- **Fix:** the harness retries the real mouse move up to 10 times, with a 1.5 s server poll after each. The assertion is
+  unchanged: the authoritative ship's yaw or pitch must become nonzero.
+- **After the fix:** 4 of 4 passed (`BROWSER_KEYBOARD_PASS 2` each), on the P1075 merge.

@@ -98,7 +98,11 @@ async function main(){
    await page.locator('#theCanvas').click();await page.waitForFunction(()=>document.pointerLockElement===document.getElementById('theCanvas'));
    await delay(1500);await steer('ArrowUp','pitch',1,'forward');await steer('ArrowLeft','yaw',1,'forward');
    // A nonzero virtual-stick deflection must also yield to a held key.
-   await page.mouse.move(700,400);await until(()=>Math.abs(own().yaw)>.01||Math.abs(own().pitch)>.01,'real nonzero pointer steering');await steer('ArrowRight','yaw',-1,'forward');await steer('KeyD','roll',-1,'up');
+   // Headless Chromium follows each locked mousemove with an equal opposite one (cursor reset), so the
+   // deflection is nonzero only when the pair lands in different frames. Retry real moves; same server assertion.
+   {const steered=()=>Math.abs(own().yaw)>.01||Math.abs(own().pitch)>.01;let ok=false;
+    for(let i=0;i<10&&!ok;i++){await page.mouse.move(i%2?640:700,400);const end=Date.now()+1500;while(Date.now()<end&&!(ok=steered()))await delay(50);}
+    assert.ok(ok,'real nonzero pointer steering');}await steer('ArrowRight','yaw',-1,'forward');await steer('KeyD','roll',-1,'up');
    await page.keyboard.press('Escape');await page.locator('#flight-keys').click();await until(async()=>(await metrics()).flight.keyboard.keyHelpOpen,'real in-game help');
    const labels=(await metrics()).flight.keyboard.bindings;assert.ok(labels.find(b=>b.action==='FireMissile').key.includes('(browser)'));
    const file='keyboard-'+style.toLowerCase()+'.jpg';await page.screenshot({path:path.join(out,file),type:'jpeg',quality:75});assert.ok(fs.statSync(path.join(out,file)).size<1024*1024);
