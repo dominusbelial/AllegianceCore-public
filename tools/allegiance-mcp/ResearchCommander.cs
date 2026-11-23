@@ -11,8 +11,29 @@ internal sealed partial class ResearchCommander
 {
     // Native mission default (igc.h:1331), also used by the current client investment pane.
     private const int MaxDronesPerType = 4;
-    internal sealed record Unit(short Id, short DroneType, short StationType, bool Alive, short Sector = -1);
-    internal sealed record Rock(short Id, short Capabilities, bool Available, bool Building = false, short Sector = -1, float Ore = 1);
+
+    // ── P1077 — constructor stall safety net (PORT-ONLY bot orchestration) ──
+    // A station step that can never complete must not block the plan for the rest
+    // of the match. These are policy numbers for the commander's own bookkeeping,
+    // not native rules: native's commander is a human, and native drones simply
+    // keep flying their accepted build plan (Igc/shipIGC.cpp:2810-2827).
+    /// <summary>No measurable progress toward the reserved rock for this long
+    /// releases the reservation and retargets another compatible rock. Measured
+    /// worst trip in the P1077 reproduction is 98-112 s (3748 units at the
+    /// constructor's 60 u/s cruise plus launch and approach), so 180 s is about
+    /// 1.6x that worst case and still far inside one match.</summary>
+    internal const double StationNoProgressSeconds = 180;
+    /// <summary>Hard cap on one station step that has not registered a build, for
+    /// snapshots without wire positions (no progress signal is available there).</summary>
+    internal const double StationStepCapSeconds = 600;
+    /// <summary>How long a station step deferred for lack of any alternative rock
+    /// waits before it is retried once through the unbuilt-station path.</summary>
+    internal const double StationRetrySeconds = 300;
+    private const int MaxStationRetries = 1;
+    internal sealed record Unit(short Id, short DroneType, short StationType, bool Alive, short Sector = -1,
+        float[]? Position = null);
+    internal sealed record Rock(short Id, short Capabilities, bool Available, bool Building = false, short Sector = -1, float Ore = 1,
+        float[]? Position = null);
     internal sealed record Funding(long Money, long Milliseconds);
     internal sealed record Snapshot(double Time, bool Started, int Wallet, TechTreeBitMask Developments,
         short[] Stations, HashSet<short> CompletedDevelopments, Unit[] Units, Rock[] Rocks,
@@ -41,12 +62,36 @@ internal sealed partial class ResearchCommander
         internal short? Rock;
         internal int? PendingWallet;
         internal long PendingFunding;
+        /// <summary>P1077 — last sim time the reserved-rock trip showed measurable
+        /// progress (the constructor's distance to the rock shrinking, or the rock
+        /// reporting a registered construction). NaN = not yet observed.</summary>
+        internal double ProgressAt = double.NaN;
+        /// <summary>P1077 — smallest distance from the constructor to its reserved
+        /// rock seen so far (float.MaxValue = none observed yet).</summary>
+        internal float ProgressDistance = float.MaxValue;
+        /// <summary>P1077 — sim time the current rock trip started (its reservation), the
+        /// fallback origin of the no-progress window before the first wire pose lands.</summary>
+        internal double TripAt = double.NaN;
+        /// <summary>P1077 — rocks this step gave up on after a no-progress stall;
+        /// the next rock pick skips them.</summary>
+        internal readonly HashSet<short> AvoidedRocks = new();
     }
+
+    /// <summary>P1077 — a station step the no-progress safety net removed from the
+    /// plan because no compatible rock was left. Retried once, later, through the
+    /// existing unbuilt-station (repair) path.</summary>
+    private sealed record DeferredStation(double RetryAt, string Name);
     private readonly ResearchTree _tree;
     private readonly ResearchPlan _plan;
     private readonly IReadOnlyList<BucketCatalog.BucketView> _buckets;
     private readonly Dictionary<int, Work> _work = new();
     private readonly Dictionary<short, Work> _repairs = new();
+    private readonly Dictionary<short, DeferredStation> _deferredStations = new();
+    /// <summary>P1077 — station types that spent their retry budget after a no-progress stall; the
+    /// unbuilt-station scan stops re-arming them so they cannot starve the plan.</summary>
+    private readonly HashSet<short> _abandonedStations = new();
+    /// <summary>P1077 — deferrals per station type (drives <see cref="MaxStationRetries"/>).</summary>
+    private readonly Dictionary<short, int> _stationStallAttempts = new();
     private readonly Dictionary<short, short> _reservations;
     private readonly bool _loop;
     private readonly double _researchTimeScale;
@@ -118,23 +163,36 @@ internal sealed partial class ResearchCommander
         // Retention in P702 is a planning assumption, not a live guarantee. Rebuild the earliest
         // lost prerequisite base (or its now-buyable successor), preserving interrupted work.
         ResearchStep? repair = null;
+        bool deferredRetry = false;
         var stationsToKeep = new[] { _tree.Civ.InitialStationTypeId }
             .Concat(_plan.Steps.Take(_index).Where(s => s.Action == "station").Select(s => s.Id)).Distinct();
         foreach (short id in stationsToKeep)
         {
             if (HasStation(world, id)) continue;
+            // P1077 — a station the safety net deferred is not "lost": wait for its retry window
+            // instead of re-arming the same unmovable step every tick. One whose retry budget is
+            // spent stays abandoned so it cannot starve the plan of rocks or constructors.
+            if (_abandonedStations.Contains(id) || AwaitingDeferredRetry(world, id)) continue;
             var effective = SuccessorUpgrade.StationSuccessor(_tree.Core, _tree.Core.StationTypes[id], world.Developments);
             var candidate = new ResearchStep { Action = "station", Id = effective.StationTypeId, Name = effective.Name,
                 AsteroidClass = (short)(effective.AabmBuild & -effective.AabmBuild) };
             if (CanBuy(world, _tree.Find("station", candidate.Id))) { repair = candidate; break; }
         }
 
+        // P1077 — retry a deferred station step once, later, through the same unbuilt-station path.
+        if (repair is null)
+            (repair, deferredRetry) = PromoteDeferredStation(world);
+
         if (_index >= _plan.Steps.Count && repair is null)
         {
             ReleaseReservations();
             Publish(world, null, null, "complete; idle", 1, 0);
             Announce(commands, $"Research plan {_plan.Name} complete. Standing by.");
-            if (_loop && _plan.Steps.Count > 0) { _cycles++; _index = 0; _work.Clear(); }
+            if (_loop && _plan.Steps.Count > 0)
+            {
+                _cycles++; _index = 0; _work.Clear();
+                _deferredStations.Clear(); _abandonedStations.Clear(); _stationStallAttempts.Clear();
+            }
             return commands;
         }
         if (repair is null && _index >= _plan.Steps.Count) return commands;
@@ -154,7 +212,7 @@ internal sealed partial class ResearchCommander
         }
         else if (!_repairs.TryGetValue(step.Id, out work!)) _repairs[step.Id] = work = new();
         if (double.IsNaN(work.Began)) work.Began = world.Time;
-        string prefix = repair is null ? "" : "rebuilding lost prerequisite: ";
+        string prefix = !deferredRetry ? repair is null ? "" : "rebuilding lost prerequisite: " : "retrying deferred station: ";
         Announce(commands, $"{prefix}{step.Action} {step.Name} (plan {_plan.Name}, step {_index + 1}/{_plan.Steps.Count}).");
 
         bool completed = false;
@@ -226,16 +284,29 @@ internal sealed partial class ResearchCommander
                     }
                     if (builder is not null) work.Constructor = builder.Id;
                     if (work.Rock is { } rock && !world.Rocks.Any(r => r.Id == rock && (r.Available || r.Building))) Release(work);
-                    if (work.Rock is null)
+                    // P1077 — the PORT-ONLY safety net: a constructor that cannot make measurable
+                    // progress toward its reserved rock must not hold the plan for the whole match.
+                    bool deferred = work.Constructor is { } tracking && work.Rock is { } trackedRock
+                        && CheckConstructorProgress(work, tracking, trackedRock, world, step);
+                    if (!deferred && work.Rock is null)
                     {
-                        var target = PickConstructionRock(world.Rocks, step.AsteroidClass!.Value, _reservations.Keys);
-                        if (target is not null) { work.Rock = target.Id; _reservations[target.Id] = Side; }
+                        var candidates = work.AvoidedRocks.Count == 0
+                            ? world.Rocks
+                            : world.Rocks.Where(r => !work.AvoidedRocks.Contains(r.Id));
+                        var target = PickConstructionRock(candidates, step.AsteroidClass!.Value, _reservations.Keys);
+                        if (target is not null) Reserve(work, target, world);
                     }
-                    if (work.Rock is null) { allowed = false; status = "waiting for available compatible asteroid"; }
-                    if (work.Constructor is { } constructor)
+                    if (deferred)
+                    {
+                        allowed = false;
+                        status = "step deferred: no constructor progress and no other compatible rock";
+                        if (repair is null) _index++; else _repairs.Remove(step.Id);
+                    }
+                    else if (work.Rock is null) { allowed = false; status = "waiting for available compatible asteroid"; }
+                    if (!deferred && work.Constructor is { } constructor && work.Rock is { } rockId)
                     {
                         allowed = false; progress = .5;
-                        if (work.Rock is { } rockId && !world.Rocks.Any(r => r.Id == rockId && r.Building) && world.Time - work.LastOrder >= 5)
+                        if (!world.Rocks.Any(r => r.Id == rockId && r.Building) && world.Time - work.LastOrder >= 5)
                         {
                             var rockSector = world.Rocks.First(r => r.Id == rockId).Sector;
                             var shipSector = world.Units.First(u => u.Id == constructor).Sector;
@@ -248,7 +319,7 @@ internal sealed partial class ResearchCommander
                                 work.LastOrder = world.Time;
                             }
                         }
-                        status = work.Rock is null ? status : "constructor travelling/building";
+                        status = "constructor travelling/building";
                     }
                 }
                 if (work.PendingWallet is { } pending && (world.Wallet != pending || funding.Money != work.PendingFunding
@@ -265,12 +336,158 @@ internal sealed partial class ResearchCommander
         if (completed)
         {
             Release(work);
+            if (step.Action == "station")
+            {
+                // P1077 — a completed station clears its stall bookkeeping.
+                _stationStallAttempts.Remove(step.Id);
+                _abandonedStations.Remove(step.Id);
+                _deferredStations.Remove(step.Id);
+            }
             Announce(commands, $"Complete: {step.Name}.");
             if (repair is null) _index++; else _repairs.Remove(step.Id);
             progress = 1;
         }
         Publish(world, step, work, prefix + status, progress, eta, displayedStep);
         return commands;
+    }
+
+    /// <summary>P1077 — the PORT-ONLY constructor-stall safety net for a station step.
+    /// <para><b>Progress</b> is the constructor's distance to its reserved rock
+    /// shrinking by at least one unit, or the rock reporting a registered
+    /// construction (<see cref="Rock.Building"/>, i.e. drilling arrived and
+    /// started). Neither for <see cref="StationNoProgressSeconds"/> (180 s ≈ 1.6×
+    /// the worst measured 98-112 s trip in the P1077 reproduction) → the rock
+    /// reservation is released, the rock is excluded for this step and another
+    /// compatible rock is reserved in the same tick; the next BUILD retargets the
+    /// constructor. With no alternative rock the step is deferred
+    /// (<see cref="StationRetrySeconds"/>, retried once later) and the plan moves on,
+    /// so a station step can never block the match again.</para>
+    /// <para><b>Never abandoned:</b> a rock that reports <c>Building</c> resets the
+    /// clock every tick, so a constructor that is drilling/building is untouched.
+    /// Native's constructor has no such policy (a human commander re-tasks by hand,
+    /// <c>FedSrv/FedSrv.CPP:3278-3285</c>); this is bot orchestration, not a
+    /// simulation rule.</para>
+    /// <returns><see langword="true"/> when the step was deferred because no
+    /// alternative compatible rock exists (the caller advances the plan).</returns>
+    private bool CheckConstructorProgress(Work work, short constructor, short rockId, Snapshot world,
+        ResearchStep step)
+    {
+        var sighting = world.Rocks.FirstOrDefault(r => r.Id == rockId);
+        if (sighting is { Building: true })
+        {
+            work.ProgressAt = world.Time;               // drilling/building — never abandoned
+            work.ProgressDistance = float.MaxValue;
+            return false;
+        }
+        double now = world.Time;
+        var unit = world.Units.FirstOrDefault(u => u.Id == constructor);
+        bool signal = false;
+        if (unit?.Position is { Length: 3 } up && sighting?.Position is { Length: 3 } rp)
+        {
+            signal = true;
+            float dx = up[0] - rp[0], dy = up[1] - rp[1], dz = up[2] - rp[2];
+            float distance = MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+            if (work.ProgressDistance == float.MaxValue)
+                work.ProgressDistance = distance;        // first sighting: baseline only, the clock keeps running
+            else if (distance < work.ProgressDistance - 1f)
+            {
+                work.ProgressDistance = distance;        // closing on the rock = measurable progress
+                work.ProgressAt = now;
+            }
+        }
+        // The no-progress window runs from the last measured progress, or from the start of the trip
+        // when no measurement has landed yet (a snapshot cadence coarser than the window must not
+        // postpone the check). Without wire positions there is no signal at all, so only the hard
+        // step cap applies; a trip that IS closing on its rock is healthy however long it takes.
+        double idle = !double.IsNaN(work.ProgressAt) ? now - work.ProgressAt : now - work.TripAt;
+        bool noProgress = signal && idle >= StationNoProgressSeconds;
+        bool capped = !signal && now - work.Began >= StationStepCapSeconds;
+        if (!noProgress && !capped) return false;
+
+        Release(work);                                  // drop the reservation
+        work.AvoidedRocks.Add(rockId);                   // never re-pick the same rock for this step
+        work.Constructor = null;
+        work.LastOrder = double.NegativeInfinity;
+        work.ProgressAt = double.NaN;
+        work.ProgressDistance = float.MaxValue;
+        var alternative = PickConstructionRock(
+            work.AvoidedRocks.Count == 0 ? world.Rocks : world.Rocks.Where(r => !work.AvoidedRocks.Contains(r.Id)),
+            step.AsteroidClass!.Value, _reservations.Keys);
+        if (alternative is not null)
+        {
+            Reserve(work, alternative, world);
+            work.Constructor = constructor;              // keep the ship; the next order retargets it
+            LogConstructorStall(step, constructor, rockId, idle,
+                $"released rock reservation, retargeted asteroid {alternative.Id}");
+            return false;
+        }
+        DeferStation(step, now, idle, constructor, rockId);
+        return true;
+    }
+
+    /// <summary>P1077 — reserve a rock for this step and start its progress clock. The clock starts
+    /// when the trip starts (not at the first wire pose) so a snapshot cadence coarser than
+    /// <see cref="StationNoProgressSeconds"/> cannot postpone the check indefinitely.</summary>
+    private void Reserve(Work work, Rock target, Snapshot world)
+    {
+        work.Rock = target.Id;
+        _reservations[target.Id] = Side;
+        work.TripAt = world.Time;
+        work.ProgressAt = double.NaN;
+        work.ProgressDistance = float.MaxValue;
+    }
+
+    /// <summary>P1077 — one clear log line per safety-net firing (side, step,
+    /// constructor, rock, seconds without progress) so an operator can
+    /// <c>grep '\[constructor-stall\]'</c> the match log and count them.</summary>
+    private void LogConstructorStall(ResearchStep step, short constructor, short rockId, double idleSeconds, string action) =>
+        Console.WriteLine(FormattableString.Invariant(
+            $"[constructor-stall] side={Side} step={Math.Min(_index + 1, _plan.Steps.Count)}/{_plan.Steps.Count} '{step.Name}' constructor={constructor} rock={rockId} no-progress={idleSeconds:0}s -> {action}"));
+
+    /// <summary>P1077 — remember a station step that could not progress and had no
+    /// alternative rock. It is retried once, later, through the unbuilt-station
+    /// path; a second failure drops it (logged) so the plan keeps moving.</summary>
+    private void DeferStation(ResearchStep step, double now, double idleSeconds, short constructor, short rockId)
+    {
+        int attempts = _stationStallAttempts[step.Id] = _stationStallAttempts.GetValueOrDefault(step.Id) + 1;
+        if (attempts > MaxStationRetries)
+        {
+            _abandonedStations.Add(step.Id);
+            LogConstructorStall(step, constructor, rockId, idleSeconds, "retry already spent; step abandoned");
+            return;
+        }
+        _deferredStations[step.Id] = new(now + StationRetrySeconds, step.Name);
+        LogConstructorStall(step, constructor, rockId, idleSeconds,
+            $"no other compatible rock; step deferred {StationRetrySeconds:0}s (retry {attempts}/{MaxStationRetries})");
+    }
+
+    /// <summary>P1077 — true while a station type sits in the deferral window, so the
+    /// unbuilt-prerequisite scan does not immediately re-arm the same step.</summary>
+    private bool AwaitingDeferredRetry(Snapshot world, short id)
+    {
+        if (!_deferredStations.TryGetValue(id, out var entry)) return false;
+        if (HasStation(world, id)) { _deferredStations.Remove(id); return false; }
+        return true;
+    }
+
+    /// <summary>P1077 — promote the earliest due deferred station step back into
+    /// work through the existing unbuilt-station (repair) path. Entries whose
+    /// retry budget is spent, whose station now exists, or whose type is no longer
+    /// buyable are dropped.</summary>
+    private (ResearchStep? Step, bool Retry) PromoteDeferredStation(Snapshot world)
+    {
+        if (_deferredStations.Count == 0) return (null, false);
+        foreach (var (id, entry) in _deferredStations.OrderBy(kv => kv.Value.RetryAt).ToArray())
+        {
+            if (HasStation(world, id)) { _deferredStations.Remove(id); continue; }
+            if (world.Time < entry.RetryAt) continue;
+            var effective = SuccessorUpgrade.StationSuccessor(_tree.Core, _tree.Core.StationTypes[id], world.Developments);
+            if (!CanBuy(world, _tree.Find("station", effective.StationTypeId))) continue;
+            _deferredStations.Remove(id);
+            return (new ResearchStep { Action = "station", Id = effective.StationTypeId, Name = effective.Name,
+                AsteroidClass = (short)(effective.AabmBuild & -effective.AabmBuild) }, true);
+        }
+        return (null, false);
     }
 
     /// <summary>Pure construction-rock choice from the commander's observed snapshot.</summary>

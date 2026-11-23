@@ -181,14 +181,6 @@ list in **reverse**.
   Desktop captures: `tools/p1075-presentation-proof/Program.cs`; local-only native
   graphics fixture closure: `tools/p1075-proof-pack.py`.
   Report: `docs/reports/BROWSER_LIVE_FOLLOWUPS_P1075.md`.
-- **Home station artwork before launch (P1076)** — browser-only
-  `src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs` prioritizes own-side
-  current-sector stations even offscreen, and its throttled dock prefetch requests
-  the actual dock station and sector sky without consuming the flight grace.
-  Classic/Modern real-input look-back and separate hangar/flight byte receipts:
-  `tools/p1076-home-station.cjs`; GPU-free scheduling tests:
-  `tests/Allegiance.ClientCore.Game.Browser.Tests/P1076HomeStationArtTests.cs`.
-  Delivery policy only; report: `docs/reports/BROWSER_HOME_STATION_ART_P1076.md`.
 - **Generated-map browser parity and live gaps (P1073)** — the generated-map art
   namespace is enumerated once in `src/Allegiance.Core/MapGen/GeneratedMapArt.cs`
   (planet posters, `globeN`/`environmentNbmp` domes, `plnt19`/`plnt42`/`aleph` warp
@@ -2680,6 +2672,22 @@ list in **reverse**.
   re-record with `tools/p987-bot-decision-corpus/record.sh`. Full inventory,
   uncovered reasons, drift proofs and overhead:
   `docs/reports/BOT_DECISION_CORPUS_SLICE2_P987.md`.
+- **Research commander** — the socket-free commander that spends a side's wallet,
+  donates to research buckets and orders constructors and drone types from the
+  observed world state: `tools/allegiance-mcp/ResearchCommander.cs` (bot policy;
+  purchases obey `sideigc.h:237-280`, wallet donations `FedSrv.CPP:7137-7208`,
+  constructor orders `FedSrv.CPP:11343-11380`). The snapshot it reads is built in
+  `tools/allegiance-mcp/BotManager.Research.cs`. Its **constructor-stall safety
+  net (P1077)** is port-only orchestration: a station step whose constructor makes
+  no measurable progress toward its reserved rock for 180 s releases the rock and
+  retargets another compatible rock, or defers the step (`[constructor-stall]` log
+  line) when no alternative exists. A repeated identical BUILD order is already
+  native on the server (`Ship.SetBuilderBuild` in `src/Allegiance.Core/Sim/Ship.cs`,
+  native `Igc/shipIGC.h:750-776`). Report:
+  `docs/reports/CONSTRUCTOR_STALL_P1077.md`; parity:
+  `docs/parity/p1077-constructor-stall.csv`; tests:
+  `tests/Allegiance.Core.Tests/P1077ConstructorStallTests.cs`,
+  `tests/Allegiance.ClientCore.Tests/P1077CommanderStallTests.cs`.
 - **Ordered miner / Piglet routines (P905)** — explicit `spawn_bot` behaviors
   `miner`, `docker`, `deathmatch`, `chatter` in
   `tools/allegiance-mcp/BotManager.Routines.cs`, with typed state and timers in

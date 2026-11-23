@@ -249,7 +249,12 @@ internal sealed partial class BotManager
         var units = world.ResearchProduction.Values.Where(p => p.SideId == side).Select(p =>
             new ResearchCommander.Unit(p.ShipId, p.DroneTypeId, p.StationTypeId,
                 world.IsResearchProductionAlive(p.ShipId),
-                world.Ships.TryGetValue(p.ShipId, out var ship) ? ship.SectorId : (short)-1)).ToArray();
+                world.Ships.TryGetValue(p.ShipId, out var ship) ? ship.SectorId : (short)-1,
+                // P1077 — the safety net measures "distance to the rock shrinking", so the
+                // snapshot carries the constructor's last wire pose (the client world keeps
+                // it in ShipEntity.Latest, ServerShipUpdate.Position).
+                world.Ships.TryGetValue(p.ShipId, out var posed) && posed.Latest is { } latest
+                    ? new[] { latest.Position.X, latest.Position.Y, latest.Position.Z } : null)).ToArray();
         var rocks = world.Asteroids.Values
             .Where(a => recordedRocks is null || recordedRocks.Contains(a.AsteroidId))
             .OrderByDescending(a => homeSectors.Contains(a.ClusterId)).ThenBy(a => a.AsteroidId)
@@ -257,7 +262,8 @@ internal sealed partial class BotManager
                 !world.BuildingEffects.ContainsKey(a.AsteroidId), world.BuildingEffects.ContainsKey(a.AsteroidId), a.ClusterId,
                 // Use the observing client's current known ore, including depletion
                 // (Igc/asteroidigc.h:187-190; FedSrv/fsship.cpp:909).
-                world.AsteroidLive.TryGetValue(a.AsteroidId, out var live) ? live.OreFraction * a.OreMax : a.Ore)).ToArray();
+                world.AsteroidLive.TryGetValue(a.AsteroidId, out var live) ? live.OreFraction * a.OreMax : a.Ore,
+                a.Position is { Length: 3 } ? a.Position : null)).ToArray();
         double time = world.SimulationTimeSeconds;
         return new(time, world.Mission?.Stage == MissionStageMessage.StageStarted, world.MyMoney ?? 0,
             world.DevelopmentTechsFor(side) ?? TechTreeBitMask.Empty, stations.Select(s => s.StationTypeId).ToArray(),
