@@ -43,6 +43,11 @@ def core_roots(data):
             if size != 524:
                 raise ValueError('Invalid missile record')
             roots.append(dict(key='missile-' + str(struct.unpack_from('<h', record, 446)[0]), model=text(24, 13), texture=text(37, 13)))
+        elif kind == 25:
+            # P1079: native DataProbeTypeIGC, Igc/igc.h:2003.
+            if size != 492:
+                raise ValueError('Invalid probe type record')
+            roots.append(dict(key='probe-' + str(struct.unpack_from('<h', record, 446)[0]), model=text(24, 13), texture=text(37, 13)))
         elif kind == 31:
             # P1073 — OT_stationType / DataStationTypeIGC (Igc/igc.h:2649). Same
             # 524-byte layout as the port's DataStationTypeIGC.Decode: modelName
@@ -51,7 +56,18 @@ def core_roots(data):
             if size != 524:
                 raise ValueError('Invalid station type record')
             roots.append(dict(key='station-' + str(struct.unpack_from('<h', record, 446)[0]), model=text(8, 14), texture=text(486, 13)))
-    return roots
+        # P1079: every buyable may become a treasure (Igc/treasureIGC.cpp:118-171).
+        # Expendable launchers carry the buyable model in LauncherDef; compact
+        # OT_partType launcher records carry no model of their own.
+        if kind in (23, 24, 25, 26) and size >= 440:
+            model = text(72, 14)
+            if model:
+                roots.append(dict(key='treasure-model-' + model, model=model, texture=''))
+        elif (kind == 30 and size >= 396) or (kind == 32 and size == 468):
+            model = text(8, 14)
+            if model:
+                roots.append(dict(key='treasure-model-' + model, model=model, texture=''))
+    return list({row['key']: row for row in roots}.values())
 
 
 def build(root, artwork):
@@ -67,6 +83,8 @@ def build(root, artwork):
             sources[name] = path
     roots = core_roots(sources['pcore001.igc'].read_bytes())
     roots.extend(dict(key='effect-' + stem, model=stem, texture='') for stem in ('exp22bmp', 'fx18bmp'))
+    roots.extend(dict(key='treasure-model-' + stem, model=stem, texture=stem + 'bmp') for stem in ('acs14', 'artifact'))
+    roots.append(dict(key='treasure-flags', model='biosflagbmp', texture=''))
     entries, packs, missing = {}, [], []
 
     def original(name):
@@ -136,7 +154,7 @@ def build(root, artwork):
                    stationTypes=len({r['key'] for r in roots if r['key'].startswith('station-')}),
                    coveredStationTypes=len({r['key'] for r in roots if r['key'].startswith('station-') and r not in missing}),
                    missing=missing,
-                   effects='Original bytes only. exp22bmp is 15360 pixels wide: task B must tile it before GPU upload. No effect renderer is added here.')
+                   effects='Original bytes only. exp22bmp is 15360 pixels wide; the P1079 browser native ExplosionAssets loader slices square frames before GPU upload.')
     (root / 'battle-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return receipt
 

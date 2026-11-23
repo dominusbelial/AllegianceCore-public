@@ -4,50 +4,116 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1079 — browser combat qualification (2026-11-23)
 
-## P1077 — constructor stall: Fast sweep and never-parks (2026-11-23)
+The initial Fast sweep executed **16,068 cases in 580.4 s**:
+**16,057 passed / 4 failed / 7 not executed**. All nine infrastructure checks
+passed. Both browser projects and the full MonoGame project passed. Three
+passing cases exceeded the unchanged calibrated **11.540 s** Fast limit.
+All seven failed/over-limit methods then ran **3× alone in fresh processes**,
+including every theory row: **53/54 cases passed**. The moving-target wire test
+also failed once in isolation, so this sweep remains **red**.
 
-P1077 changes one order-path branch in `Ship.SetBuilderBuild` (an identical repeated
-BUILD keeps the constructor's travel state) and the port-only research-commander
-safety net in `tools/allegiance-mcp/ResearchCommander.cs`. No combat, staging,
-mission-map or timing policy changed.
+| Method | Broad sweep observation | Three isolated processes | Maximum isolated case seconds |
+|---|---|---|---:|
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | Failed: bomber credit 0.625 versus 1.000 | pass / pass / pass; 3/3 cases passed | 3.064 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | Passed, 11.936 s (timing) | pass / pass / pass; 9/9 cases passed | 5.290 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed, 13.182 s (timing) | pass / pass / pass; 3/3 cases passed | 3.116 |
+| `P590PodRescueTests.Pod_pickup_order_arms_NPC_diverter_and_rescues` | Failed: NPC diverter did not rescue within pump bound | pass / pass / pass; 3/3 cases passed | 0.656 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Failed: peer collection held old-sector status only | pass / pass / pass; 3/3 cases passed | 0.307 |
+| `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | Failed: neither hull drop nor kill observed | pass / pass / fail; 2/3 cases passed | 2.964 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Passed, 16.184 s (timing) | pass / pass / pass; 30/30 cases passed | 4.416 |
 
-One full Fast sweep: **16,040 results in 567.0 s — 16,032 passed / 1 failed /
-7 not executed**; 9/9 infrastructure checks passed; calibrated limit **11.539 s**
-(P744 factor 1.154). Two executions exceeded it (both passed):
+These wire-credit, pod-rescue, transit receipt, moving-target damage receipt and
+load-sensitive bot purchase families already have entries below. P1079 changes
+browser presentation and local proof hooks; no simulation, nanite scoring, bot
+purchase rule, transit, wire, test assertion, deadline, tier, quarantine or
+calibration threshold was changed. Sanitized receipts are included in
+[the P1079 evidence](reports/P1079_assets/evidence.json).
 
-| Case | Sweep | Isolated reruns |
+### P1079 focused MonoGame follow-up
+
+The unchanged focused filter also selects
+`P910TrainingWireTests.Local_drone_policy_handles_miner_builder_layer_group_and_imported_buoy`
+through the word "miner". Its Classic row failed once with chat count **3 rather
+than 2** after the group-no-echo command. Three fresh isolated processes, including
+both HUD rows, produced **4/6 passed**, with Classic failing in processes 1 and 3.
+The **clean base commit `ba2d4ada`**, exported into an owned temporary source tree
+and built with the same SDK/artwork, reproduced the same assertion:
+**4/6 passed**, with Classic failing in processes 1 and 2. The identical focused
+filter then passed **283 cases with 2 existing skips** in the lane. No training,
+chat, echo, HUD, assertion or deadline was changed. All 25 new combat cases passed
+75/75 isolated executions. Full sanitized lane/base receipts are in the P1079
+evidence linked above.
+
+### P1079 final Fast sweep
+
+The final build executed **16,069 cases in 561.2 s**:
+**16,060 passed / 2 failed / 7 not executed**, with all **9 infrastructure checks
+passed**. Both browser projects, the full MonoGame project and ClientCore passed.
+The two Core failures are previously ledgered mining/probe receipt families.
+Two passing cases exceeded the automatically calibrated **11.532 s** limit.
+Every implicated method then ran **3× alone**, including all theory rows:
+**40/42 cases passed**. The mining-receipt assertion failed again in two of three
+isolated processes; the probe receipt and both timing methods passed all three.
+The final broad Fast gate remains **red**.
+
+| Method | Final sweep observation | Three isolated processes | Maximum isolated case seconds |
+|---|---|---|---:|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed, 13.494 s (timing) | pass / pass / pass; 6/6 cases passed | 4.048 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Failed: queued mining receipts expected 1, observed 2 | fail / pass / fail; 1/3 cases passed | 1.800 |
+| `ChaffTests.Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts` | Failed: probe export receipt collection empty | pass / pass / pass; 3/3 cases passed | 0.400 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed, 11.624 s (timing) | pass / pass / pass; 30/30 cases passed | 1.879 |
+
+No mining, launcher, nanite support, civilization, chat, simulation, assertion,
+deadline, tier, quarantine or calibration policy was changed. Both the initial
+and final sweep results and every isolated outcome remain in the P1079 evidence;
+a later passing run does not erase earlier failures.
+
+## P1076 — browser suite qualification (2026-11-23)
+
+Two unchanged browser-game tests failed on successive full-project runs during
+local browser/build qualification. Each then passed **3× alone** in fresh test
+processes; the final browser-game project passed **277/277**. The browser-head
+project passed **52/52**, and the 16 new P1076 cases passed **48/48** isolated
+executions (theories include every row). No assertion or timeout was relaxed.
+
+| Case | Full-project observation | Three isolated results / seconds |
 |---|---|---|
-| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | passed in 14.367 s | **3/3 passed**, 7 s for the pair |
-| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)` | passed in 14.630 s | **3/3 passed**, 7 s for the pair |
+| `P1075PackSchedulingTests.Visible_priority_overrides_offscreen_grace_and_shared_station_texture_downloads_once` | Timed out waiting for HTTP handler start at line 36 (5 s) | pass 0.134 / pass 0.134 / pass 0.133 |
+| `P1066BrowserSceneTests.Warm_browser_effect_preparation_including_live_sparks_allocates_zero_bytes` | Expected zero allocated bytes; observed 1112 (0.036 s) | pass 0.042 / pass 0.041 / pass 0.041 |
 
-Both are the existing timing-only families already ledgered under P1072/P1074/P985.
+The changed production code only schedules sector/dock artwork; neither the
+streamer implementation nor effect preparation changed. Machine-readable
+qualification receipts are summarized in the P1076 report evidence.
 
-| Case | Sweep | Isolated reruns |
-|---|---|---|
-| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` (expected 1 queued mining receipt, observed 2) | failed | **pass / fail / pass / pass / pass / pass** (six isolated runs; the failure is the same queued-receipt signature recorded under P1024/P1025/P1074). Existing mining-receipt family; P1077 touches no mining path. |
 
-Showcase never-parks (`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`),
-five serial runs: **4 passed / 1 failed / 0 skipped** (runs 1, 3, 4, 5 passed at
-4 m 18 s, 2 m 55 s, 3 m 26 s and 6 m 24 s). Run 2 failed only the end-of-window
-`reached >= 24` arrival assertion (`reached=19/30` at 480.0 s, shots 2380, hits
-1011, kills 6); its parking bound passed at **1.921 s** and the log contains no
-`[constructor-stall]` line. Three isolated reruns of that case: **3/3 passed**
-(4 m 42 s, 2 m 34 s, 2 m 34 s). This is the P939/P985-ledgered arrival-deadline
-shape, which the base also reproduces (P939's base control failed with
-`reached=17/30`); the 5 s parking bound — the property P700 exists to protect —
-held in every run.
 
-Isolated reruns of every new/affected test (3× each, with artwork):
+### P1076 final Fast sweep
 
-| Cases | Result |
-|---|---|
-| `P1077ConstructorStallTests` (7 cases) | **3 × 7 passed** (0.54 / 0.53 / 0.52 s) |
-| `P1077CommanderStallTests` (5 cases) | **3 × 5 passed** (0.07 s each) |
-| Constructor/build regression cohort: `P652*`, `P766*`, `P769*`, `P1032*`, `DirectNpcBuildOrderLiveTests`, `PlayerBuildCommandLiveTests`, `BuildingConstructionLiveTests`, `NpcBuilderDefaultOrderLiveTests` (185 cases) | **3 × 185 passed** (22 s each) |
-| Research-commander cohort: `P703*`, `P733*`, `P942*`, `P986*`, `P987*`, `P1001*`, `P1077*` | **82 passed / 2 skipped** (Live-gated rows) |
+The final Fast sweep executed **16,044 cases in 610.0 s**:
+**16,036 passed / 1 failed / 7 not executed**, with **9 infrastructure checks
+passed**. Both browser projects and the full MonoGame and ClientCore projects
+passed. The already-ledgered P467 gun/development test missed its single-round
+damage observation; five passing case executions exceeded the calibrated
+**11.540 s** limit. All six implicated methods then ran in
+**three fresh isolated processes each**, including every theory row:
+**81/81 cases passed**, all below the limit.
 
-Report: [CONSTRUCTOR_STALL_P1077.md](reports/CONSTRUCTOR_STALL_P1077.md).
+| Method | Broad sweep | Isolated cases, all passed | Maximum isolated case seconds |
+|---|---|---:|---:|
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | 15.237s (timing) | 3 | 3.340 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | 15.408s (timing) | 6 | 4.280 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | 11.844s (timing) | 9 | 5.567 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | 12.094s (timing) | 30 | 1.911 |
+| `P467E2eGunDamageDevLiveTests.Completing_dev_143_raises_gun_damage_in_combat` | Failed single-round damage observation (6.877s) | 3 | 1.423 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | 12.518s (timing) | 30 | 4.677 |
+
+These assertion/timing families were already ledgered before P1076 (including
+P467's identical observation failure). No gun, development, bot strategy, server
+rule, assertion, timeout, tier, quarantine or calibration threshold changed.
+The broad gate remains red. Sanitized counts, case durations and failure text:
+[the P1076 evidence](reports/P1076_assets/evidence.json).
 
 ## P1072 — WebSocket bots: final Fast follow-up (2026-11-22)
 

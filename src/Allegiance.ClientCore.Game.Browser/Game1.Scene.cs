@@ -48,6 +48,7 @@ public sealed partial class Game1
 
     private void ResetScene()
     {
+        ResetCombat();
         _stationDrawFrames.Clear(); _lastArtSector = -1;
         _sectorArtStartedAt = -1; _sectorArtCameraReady = false;
         _nextSectorArtAt = _nextDockArtAt = 0; _lastDockArtStation = -1;
@@ -164,6 +165,7 @@ public sealed partial class Game1
     {
         _sceneEffects.FinishParticles((float)_flightElapsedSeconds);
         _sceneSparks?.Draw(_sceneEffects.Sparks, eye, view, projection);
+        DrawCombatDebris(view, projection, eye);
         // P1069 — desktop pass order, after the teleport sparks: afterburner
         // exhaust (AddThrustParticles), then the nozzle glow decal (RenderGlow),
         // then ship strobes (already below), then the motion ribbons (TrailGeo).
@@ -207,6 +209,7 @@ public sealed partial class Game1
 
     private void DisposeScene()
     {
+        DisposeCombat();
         _sceneDustRenderer?.Dispose(); _sceneStrobes?.Dispose(); _sceneSparks?.Dispose();
         _sceneBuildings?.Dispose(); _sceneGlimpses?.Dispose(); _sceneTextures?.Dispose();
         _sceneEngineTrail?.Dispose(); _sceneNozzleGlow?.Dispose(); _sceneRibbons?.Dispose();

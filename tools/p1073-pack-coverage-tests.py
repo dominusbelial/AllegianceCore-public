@@ -49,7 +49,10 @@ class GeneratedMapPackCoverage(unittest.TestCase):
             root, art = Path(directory) / 'root', Path(directory) / 'art'
             (root / 'packs').mkdir(parents=True); art.mkdir()
             native = ['moonbmp', 'moon7bmp', 'moonnebbmp', 'f104bmp', 'f105bmp', 'f106bmp',
-                      'f101bmp', 'debris1bmp', 'e_telebmp', 'e_smokebmp', 'e_firebmp', 'build']
+                      'f101bmp', 'debris1bmp', 'e_telebmp', 'e_smokebmp', 'e_firebmp', 'build',
+                      'exp20bmp', 'exp22bmp', 'exp23bmp', 'exp24bmp', 'exp25bmp', 'fx18bmp',
+                      'fx09bmp', 'fx11bmp', 'f103bmp', 'utl10', 'fxminebmp', 'cc_cmtexbmp']
+            (art / 'lens30.x').write_text('fixture cap')
             for name in PLANETS + GLOBES + WARPS + ROCKS + [r + 'bmp' for r in ROCKS] + native + ['animlaunch', 'animlaunchbmp'] + [g.replace('globe', 'environment') + 'bmp' for g in GLOBES]:
                 (art / (name + '.mdl')).write_bytes(mdl([name] if name.startswith(('globe', 'bgrnd')) else []))
             # P1054 may leave a resident model whose surface was deferred to a

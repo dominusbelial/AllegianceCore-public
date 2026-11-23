@@ -98,6 +98,11 @@ def build(root, artwork):
     # decodes (e_firebmp.mdl / e_smokebmp.mdl scripts import e_fire/e_smoke.png).
     # The nozzle glow already uses f101bmp.mdl from scene-b1.
     engines = ['e_smokebmp.mdl', 'e_firebmp.mdl']
+    # P1079 — native LDR combat, delivered at priority 1 after join. Animated
+    # strips remain ORIGINAL bytes; ExplosionAssets slices before GPU upload.
+    combat = [name + '.mdl' for name in ('exp20bmp', 'exp22bmp', 'exp23bmp', 'exp24bmp', 'exp25bmp',
+              'fx18bmp', 'fx09bmp', 'fx11bmp', 'f103bmp', 'utl10', 'fxminebmp', 'cc_cmtexbmp',
+              'e_firebmp', 'e_smokebmp')] + ['lens30.x']
     paintings = sorted(n for n in paths if n.startswith(('p589obj/', 'p589gal/')) and n.endswith('.png'))
     giant_sectors = []
     giants = []
@@ -130,7 +135,12 @@ def build(root, artwork):
             data = paths[name].read_bytes()
             dependencies = []
             if name.endswith('.mdl'):
-                dependencies += [v.lower() + '.mdl' for v in flight.strings(data) if v.lower() + '.mdl' in paths]
+                for stem in flight.strings(data):
+                    candidate = stem.lower() + '.mdl'
+                    if candidate in paths:
+                        dependencies.append(candidate)
+                    elif candidate.endswith('bbmp.mdl') and candidate[:-8] + 'bmp.mdl' in paths:
+                        dependencies.append(candidate[:-8] + 'bmp.mdl')
                 if not data.startswith(b'\x00\xdf\xba\xde'):
                     dependencies += [v.lower() for v in re.findall(r'(?:ImportImageFromFile|ImageFromFile)\s*\(\s*"([^"]+)"', data.decode('latin1'))]
             if name == 'giant-objects.json':
@@ -181,7 +191,7 @@ def build(root, artwork):
             continue
         static_rocks.append(dict(key='static-rock-' + model, sources=sorted(closure(roots))))
     scene_packs = [dict(key=key, sources=sorted(closure(roots)))
-                   for key, roots in [('scene-b1', native), ('scene-engines', engines),
+                   for key, roots in [('scene-b1', native), ('scene-engines', engines), ('scene-combat', combat),
                                       ('scene-paintings', paintings),
                                       ('scene-build', ['build.mdl']), ('scene-giants', giants)] if roots]
     scene_packs += mapgen + hangar + static_rocks

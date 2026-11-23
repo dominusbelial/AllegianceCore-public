@@ -34,7 +34,7 @@ public sealed partial class Game1
     private double _nowSeconds, _flightElapsedSeconds;
     private long ClientNowMilliseconds => Environment.TickCount64;
     private CameraMode _cameraMode = CameraMode.Chase;
-    private readonly ChaseCamera _browserChase = new(350, 90, nearPlane: 10, farPlane: 10000, fieldOfViewDegrees: 50);
+    private readonly ChaseCamera _browserChase = new(350, 90, nearPlane: BrowserCombatEffects.FlightNearPlane, farPlane: 10000, fieldOfViewDegrees: 50);
     public void ToggleContactView() { Watch.Stop(); _cameraMode = _cameraMode == CameraMode.Chase ? CameraMode.ExternalFlyBy : CameraMode.Chase; }
     public bool ViewingContact => _cameraMode == CameraMode.ExternalFlyBy;
     // P1067 — the parked director b-roll camera ("Watch"): the desktop P580
@@ -177,7 +177,7 @@ public sealed partial class Game1
         sectorId = _flightSession?.World.MyShipId is { } sid && _flightSession.World.Ships.TryGetValue(sid, out var sectorShip) ? (short?)sectorShip.SectorId : null,
         textures = SectorTextureMetrics, starmapOpen = StarmapOpen, selectedMapSector = SelectedMapSector,
         drawnRockSurfaces = _drawnRockSurfaces,
-        sky = SectorSkyMetrics, scene = SceneMetrics,
+        sky = SectorSkyMetrics, scene = SceneMetrics, combat = CombatMetrics,
         // P1073 — live generated-map/live-battle evidence for the browser harness.
         sectorArt = SectorArtMetrics,
         research = _flightSession?.World.ResearchBriefing is { } briefing
@@ -445,6 +445,7 @@ public sealed partial class Game1
         {
             // P1070 — the docked screen is the desktop hangar / loadout screen inside
             // the game window (the browser copy of Game1.Hangar.cs/Game1.LoadoutV2.cs).
+            ResetCombat();
             DrawBrowserHangar();
             return;
         }
@@ -504,6 +505,7 @@ public sealed partial class Game1
         _browserTargetEye = eye; // Input picking uses this exact rendered camera.
         _sectorArtEye = eye; _sectorArtCameraReady = true;
         BeginScene(world, own, view, projection, eye);
+        BeginCombat(world, own);
         long shipPassStart = System.Diagnostics.Stopwatch.GetTimestamp();
         DrawnShips = DrawnMeshes = DrawnStandIns = 0;
         _visibleShipNames.Clear(); _flightContacts.Clear();
@@ -554,6 +556,19 @@ public sealed partial class Game1
             if (BattleShipScene.RockInView(V(p) - eye, (hull?.Length ?? 2) * .5f, _rockFrustum))
                 _sceneEffects.GatherShip(world, ship, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity,
                     o, hull, (float)_flightElapsedSeconds, nowMs, _flightWarps);
+            _combat.ObserveShip(ship.ShipId, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity, hull, o);
+            _combat.GatherDamage(ship, p, ship.ShipId == id ? _ownSim.Velocity : pose.Velocity,
+                o, (hull?.Length ?? 2) * .5f, (float)_flightElapsedSeconds, Vector3.Distance(V(p), eye), _fullEffectLoad);
+            if (hull?.HasCapability(DataHullTypeIGC.HabmLifepod) == true)
+            {
+                _combatPodCount++;
+                if (ship.ShipId == id)
+                {
+                    _combatOwnPodCount++;
+                    if (_hullUploads.Uploaded(ship.HullId) && hull is { } pod && _flightShips!.MeshFor(pod.ModelName) is not null)
+                        _combatOwnPodMeshes++;
+                }
+            }
             DrawnShips++; _visibleShipNames.Add(ship.CharacterName ?? $"Ship {ship.ShipId}");
         }
         // P1069 — ribbons for ships that left the drawn roster vanish at once
@@ -610,7 +625,10 @@ public sealed partial class Game1
             _flightBolts!.Draw(matrix, new(style.R, style.G, style.B), view, projection);
             _drawnProjectiles++;
         }
+        DrawCombatObjects(world, own, view, projection, eye);
+        DrawCombatTrails(view, projection, eye);
         DrawSceneExtras(world, own, view, projection, eye);
+        DrawCombatHits(world, own, view, projection, eye);
         float warpFlash = _sceneEffects.EndFrame(own, _ownSim.Position, _ownSim.Velocity, orientation, length * .5f);
         var frame = new HudFrame(up.HullFraction, up.ShieldFraction, up.AmmoFraction, up.FuelFraction, up.EnergyFraction,
             _ownSim.Power, _ownSim.Velocity.Length(), _throttle, (_ownSim.StateM & ShipControlState.AfterburnerButton) != 0,

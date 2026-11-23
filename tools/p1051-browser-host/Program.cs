@@ -26,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 var options = BattleOptions.Parse(args);
 string art = Path.GetFullPath(options.Artwork), assets = Path.GetFullPath(options.Assets), scratch = Path.GetFullPath(options.Scratch);
 Directory.CreateDirectory(scratch);
+CombatProof.ObserveLog(scratch);
 string brokerDirectory = Path.Combine(scratch, "identity-broker");
 Directory.CreateDirectory(brokerDirectory);
 File.Delete(Path.Combine(scratch, "battle-ready"));
@@ -185,6 +186,7 @@ try
     {
         server.TickSim();
         LateStationProof.Poll(server, scratch);
+        CombatProof.Poll(server, scratch);
         if (options.Bots > 0) AnswerBotIdentityRequests();
         if (battleBots.Error is { } botError) throw new IOException("Battle startup failed: " + botError);
         if (staleJoin.IsCompleted && oldVersionRefusal is null)
