@@ -345,7 +345,7 @@ public sealed partial class Game1
                 || !_session.World.Ships.TryGetValue(me, out var ownEnt)) return false;
             short sector = ownEnt.SectorId;
             SimVec? best = null; float bestD = float.MaxValue;
-            foreach (var ex in _session.World.Explosions)
+            foreach (var ex in _sceneExplosions)
             {
                 if (ex.ClusterId != sector) continue;
                 var d = ex.Position - ownEnt.Latest!.Position;
@@ -420,7 +420,7 @@ public sealed partial class Game1
 
             // Explosions: recency-scored, always high interest (native blast).
             long now = Environment.TickCount64;
-            foreach (var ex in world.Explosions)
+            foreach (var ex in _sceneExplosions)
             {
                 if (ex.ClusterId != mySector) continue;
                 float age = Math.Max(0f, (now - ex.ReceivedLocalMs) / 1000f);

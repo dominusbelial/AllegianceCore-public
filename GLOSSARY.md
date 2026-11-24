@@ -211,6 +211,18 @@ list in **reverse**.
   pack coverage: `tools/p1079-combat-pack-tests.py`; parity:
   `docs/parity/p1079-browser-combat.csv`; report:
   `docs/reports/BROWSER_COMBAT_VFX_P1079.md`. No desktop rendering or server rule change.
+- **Shared ejection hull blast (P1084)** — render-free previous-frame visible-hull
+  snapshots and KILL_SHIP cue sequencing in
+  `src/Allegiance.ClientCore.Game/Rendering/EjectBlastCues.cs` serve browser
+  `BrowserCombatEffects` and desktop `src/Allegiance.ClientCore.Game/Game1.EjectBlasts.cs`.
+  Desktop explosions share one snapshot for rendering, effect lights and director
+  subjects; sound requests drain once through the existing 207 sound router using
+  the old hull diameter. Native: `clintlib/appmsg.cpp:2846-2857`,
+  `WinTrek/trekigc.cpp:90-101,180-192`. Headless cases:
+  `tests/Allegiance.ClientCore.MonoGame.Tests/P1084EjectBlastTests.cs`; real TCP
+  Classic/Modern proof: `tools/p1084-eject-proof/Program.cs`; parity:
+  `docs/parity/p1084-desktop-eject-blast.csv`; report:
+  `docs/reports/DESKTOP_EJECT_BLAST_P1084.md`.
 - **Browser shader spike (P1083A)** — default-off `?dev=1&volumetric=1`
   selects the unchanged shared VolumetricRenderer through
   `src/Allegiance.ClientCore.Game.Browser/Game1.Volumetric.cs`; missing/unusable

@@ -4,6 +4,27 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1084 — desktop ejection blast qualification (2026-11-24)
+
+One complete Fast sweep ran (the initial all-tier invocation was stopped during its extra Live continuation after Fast qualification). Fast observed
+`BroadcastTelemetryUnitTests.Record_path_allocates_nothing_after_warmup`
+with **6,128 B instead of 0 B**. The unchanged method then passed **3/3 fresh
+isolated processes** (10 / 11 / 8 ms (TRX case time)); assertions and scheduling were not changed.
+This is a new exact-method observation in the existing shared-process allocation
+counter family described under P1049c/P1069 below; the precise cause is unproven.
+P1084 changes no telemetry or Core code. Three further unchanged Core methods
+failed under the broad run and ran **3 fresh exact-method processes** each:
+
+| Method | Broad observation | Isolated case seconds (TRX) | Classification |
+|---|---|---|---|
+| `Transport.ConsoleVerbosityLiveTests.Default_gate_off_emits_far_fewer_console_lines_than_verbose_on` | Rate-reduction assertion: before 351/s, after 44/s | 1.271 / 1.335 / 1.414 | Existing process-global console-capture family; new exact-method observation |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Only old-sector status in peer collection | 0.380 / 0.336 / 0.372 | Existing warp-receipt flake, repeatedly ledgered below |
+| `KillBonusLiveTests.Real_end_to_end_projectile_kill_increases_kill_bonus` | No KILL_SHIP receipt within budget | **fail** 3.228 / pass 0.627 / pass 0.562 | Existing combat-receipt family; first isolation also failed, so this is not a threefold isolated pass |
+
+Fast also had 15 over-limit executions across 12 methods already present by exact name in this ledger. Their three isolated runs (all theory rows) passed **105/105 cases in 36 hosts**, with a maximum case time of **9.334 s**, below the unchanged broad-run limit of **12.554 s**. The per-method table and receipts are in the P1084 report.
+
+No assertions, quarantine rules or filters were changed. The broad Fast result remains red: **16,142 cases, 16,131 passed / 4 failed / 7 skipped**, 662.7 s, plus 15 over-limit executions. All nine infrastructure checks passed. The extra Live continuation stopped with 41 reported passes, no reported failures and three skips; it has no complete verdict and Perf did not run. Details and sanitized receipts are in `docs/reports/DESKTOP_EJECT_BLAST_P1084.md`.
+
 ## P1078 — AFK seats qualification (2026-11-23)
 
 Three full Fast sweeps ran during the lane. The final-source sweep remains

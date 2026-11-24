@@ -261,6 +261,7 @@ public sealed partial class Game1
 
     protected override void Draw(GameTime gameTime)
     {
+        if (_state != ClientState.Flying || _dockedActive) ResetEjectBlasts();
         unchecked { _hudFrame++; }   // P786B — frame stamp for the side-scanner cache
         if (_benchReplay is { } replay)
             gameTime = new(TimeSpan.FromSeconds(replay.Frame / 60d), TimeSpan.FromSeconds(1d / 60));
@@ -370,6 +371,7 @@ public sealed partial class Game1
             if (TrySceneReference(world, out short me, out var myPose)
                 && _flightEffects.Generation == world.SectorGeneration)
             {
+                PrepareEjectBlasts(world, TrySceneSector(world, me, out short blastSector) ? blastSector : (short)-1);
                 var myPos = PoseConverter.ToXna(myPose.Position);
                 var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
                 var aspect = GraphicsDevice.Viewport.AspectRatio;
@@ -580,7 +582,7 @@ public sealed partial class Game1
                     lock (_session.Gate)
                     {
                         short flashSector = TrySceneSector(world, me, out var visibleSector) ? visibleSector : (short)-1;
-                        foreach (var blast in world.Explosions) _effectLights.Explosion(blast, flashSector, lightNow, cameraEye);
+                        foreach (var blast in _sceneExplosions) _effectLights.Explosion(blast, flashSector, lightNow, cameraEye);
                         foreach (var hit in world.HullHits)
                         {
                             if (hit.ClusterId == flashSector && _lightImpacts.Count < 64) _lightImpacts.Add(hit);
@@ -691,6 +693,12 @@ public sealed partial class Game1
                     // planar far clip (OFF = no-op, native's clip applies).
                     if (OutsideRadialView(xnaPos, cameraEye,
                             _shipRadiusById.TryGetValue(id, out var gateRadius) ? gateRadius : 0f)) continue;
+                    // Snapshot only hulls admitted to this actual draw pass;
+                    // never infer a blast for stale, hidden or out-of-sector ships.
+                    lock (_session.Gate)
+                        if (world.Ships.TryGetValue(id, out var drawn) && drawn.Latest is { } drawnPose)
+                            _ejectBlasts.ObserveShip(id, pose.Position, drawnPose.Velocity,
+                                _hullById.TryGetValue(drawn.HullId, out var drawnHull) ? drawnHull : null);
                     var eyeRel = xnaPos - cameraEye;                     // P612b camera-relative
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
@@ -1585,7 +1593,7 @@ public sealed partial class Game1
                     world.PruneExpiredExplosions(nowLocalMs);
                     if (TrySceneSector(world, me, out ownSectorId))
                     {
-                        foreach (var ex in world.Explosions)
+                        foreach (var ex in _sceneExplosions)
                             // P979 — radial visibility also applies to blast
                             // effects, so an off-axis blast past the range cannot
                             // show up over empty space.
@@ -1766,6 +1774,7 @@ public sealed partial class Game1
                     DrawAlephGlimpses(view, proj, cameraEye, world, gdc);
                 }
             }
+            else ResetEjectBlasts(); // No hulls were drawn in this frame.
 
             // 2D HUD overlay on top of the 3D scene (P211). P945 — replaced by
             // the hidden HUD model while the native hangar screen is up (the

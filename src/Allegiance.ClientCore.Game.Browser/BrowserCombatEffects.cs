@@ -28,12 +28,12 @@ public sealed class BrowserCombatEffects
     private readonly ITrailRandom _random = new RandomTrailSource(1079);
     // Port-only delivery/performance policy: keep the newest smoke at pressure.
     private readonly ParticleDensityBudget _fullTrails = new(384), _fullDebris = new(128), _reduced = new(128);
-    private readonly record struct ShipSnapshot(SimVec Position, SimVec Velocity, bool Fighter, long Frame, Orientation? Orientation);
+    private readonly record struct ShipSnapshot(SimVec Position, long Frame, Orientation? Orientation);
     private readonly Dictionary<short, ShipSnapshot> _ships = new();
     private readonly List<short> _staleShips = new();
-    private readonly List<ExplosionEntity> _expiredEjects = new();
-    public Dictionary<ExplosionEntity, short> EjectExplosions { get; } = new();
-    private long _frame, _killSequence;
+    private readonly EjectBlastCues _ejectBlasts = new();
+    public Dictionary<ExplosionEntity, short> EjectExplosions => _ejectBlasts.Explosions;
+    private long _frame;
     private long _mission = -1, _view = -1;
     private short _sector = -1;
     private double _clock;
@@ -42,8 +42,8 @@ public sealed class BrowserCombatEffects
     {
         Trails.Reset(); Debris.Reset(); HullHits.Reset(); Flares.Reset();
         Missiles.Clear(); TrailViews.Clear(); DebrisViews.Clear(); HitViews.Clear(); Flashes.Clear(); FlareViews.Clear();
-        _ships.Clear(); _staleShips.Clear(); EjectExplosions.Clear(); _expiredEjects.Clear();
-        _frame = _killSequence = 0;
+        _ships.Clear(); _staleShips.Clear(); _ejectBlasts.Reset();
+        _frame = 0;
         _mission = _view = -1; _sector = -1; _clock = 0;
     }
 
@@ -52,33 +52,12 @@ public sealed class BrowserCombatEffects
         if (_mission != world.MissionGeneration || _view != world.SectorGeneration || _sector != sector)
         {
             Reset(); _mission = world.MissionGeneration; _view = world.SectorGeneration; _sector = sector;
-            _killSequence = world.Events.KillSequence;
         }
         _frame++;
-        long now = nowLocalMs ?? Environment.TickCount64;
-        // Native KILL_SHIP adds a hull blast even when bDeathCredit is false
-        // (clintlib/appmsg.cpp:2850-2857), before EJECT replaces the hull. The
-        // port server emits 207 only for true deaths. Preserve the previous
-        // visible hull pose/velocity/type so the browser can make this native
-        // ejection cue without any server or desktop rendering change.
-        if (_killSequence != world.Events.KillSequence)
-        {
-            foreach (var kill in world.Events.KillsAfter(_killSequence))
-                if (!kill.BDeathCredit && _ships.TryGetValue(kill.ShipId, out var ship) && ship.Frame == _frame - 1
-                    && world.Ships.TryGetValue(kill.ShipId, out var present) && present.CanDrawInSector(sector))
-                    EjectExplosions.Add(new ExplosionEntity { ClusterId = sector,
-                        Type = ship.Fighter ? ExplosionType.SmallShip : ExplosionType.BigShip,
-                        Position = ship.Position, Velocity = ship.Velocity, ReceivedLocalMs = now }, kill.ShipId);
-            _killSequence = world.Events.KillSequence;
-        }
+        _ejectBlasts.BeginFrame(world, sector, nowLocalMs ?? Environment.TickCount64);
         _staleShips.Clear();
         foreach (var entry in _ships) if (entry.Value.Frame < _frame - 1) _staleShips.Add(entry.Key);
         foreach (short id in _staleShips) _ships.Remove(id);
-        _expiredEjects.Clear();
-        foreach (var blast in EjectExplosions.Keys)
-            if (now - blast.ReceivedLocalMs >= ExplosionPresets.For(blast.Type).TotalDurationSeconds * 1000)
-                _expiredEjects.Add(blast);
-        foreach (var blast in _expiredEjects) EjectExplosions.Remove(blast);
         _clock += Math.Max(0, dt);
         Missiles.Clear();
         Debris.Update(dt); HullHits.Update(dt); Flares.Update(dt);
@@ -92,24 +71,12 @@ public sealed class BrowserCombatEffects
 
     public void ObserveShip(short id, SimVec position, SimVec velocity, DataHullTypeIGC? hull, Orientation? orientation = null)
     {
-        if (hull is { } type) _ships[id] = new(position, velocity, type.HasCapability(DataHullTypeIGC.HabmFighter), _frame, orientation);
+        _ejectBlasts.ObserveShip(id, position, velocity, hull);
+        if (hull is not null) _ships[id] = new(position, _frame, orientation);
     }
 
     public void AppendEjectExplosions(ClientWorld world, List<ExplosionEntity> destination)
-    {
-        foreach (var blast in EjectExplosions.Keys)
-        {
-            // A future host may supply the native eject cue itself. An exact
-            // overlapping authoritative blast replaces this inferred one.
-            bool authoritative = false;
-            foreach (var server in world.Explosions)
-                if (server.ClusterId == blast.ClusterId && server.Type == blast.Type
-                    && Math.Abs(server.ReceivedLocalMs - blast.ReceivedLocalMs) < 1000
-                    && (server.Position - blast.Position).LengthSquared() < 1)
-                { authoritative = true; break; }
-            if (!authoritative) destination.Add(blast);
-        }
-    }
+        => _ejectBlasts.AppendExplosions(world, destination);
 
     public static void GatherExplosions(ClientWorld world, short sector, long now, List<ExplosionEntity> destination)
     {

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "receipt": {
+    "style": "classic",
+    "quality": "enhanced",
+    "hull": 15,
+    "pod": 33,
+    "deathCredit": false,
+    "cueCount": 1,
+    "soundRequests": 1,
+    "expectedTier": "Medium",
+    "type": 3,
+    "position": [
+      -0.16085887,
+      329.7156,
+      113.137436
+    ],
+    "velocity": [
+      0,
+      1.125,
+      0
+    ],
+    "screen": [
+      640.00006,
+      263.13547
+    ],
+    "age": 0.305,
+    "serverBlasts": 0,
+    "drawn": true,
+    "lights": 1,
+    "directorBlasts": 1,
+    "overrideFound": true
+  }
+}

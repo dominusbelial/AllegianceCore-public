@@ -1,0 +1,12 @@
+native/classic: [eject-blast] cues=1 sounds=1 type=3 tier=Medium position=Vector3 { X = 2.570755, Y = 331.71338, Z = 108.697174 }
+native/classic: P1084_BLAST {"style":"classic","quality":"native","hull":15,"pod":33,"deathCredit":false,"cueCount":1,"soundRequests":1,"expectedTier":"Medium","type":3,"position":[2.570755,331.71338,108.697174],"velocity":[0,0,0],"screen":[640.00006,292.53522],"age":0.31,"serverBlasts":0,"drawn":true,"lights":0,"directorBlasts":1,"overrideFound":true}
+native/classic: P1084_DESKTOP_PASS classic
+native/modern: [eject-blast] cues=1 sounds=1 type=3 tier=Medium position=Vector3 { X = -2.8370495, Y = 333.00546, Z = 112.57836 }
+native/modern: P1084_BLAST {"style":"modern","quality":"native","hull":15,"pod":33,"deathCredit":false,"cueCount":1,"soundRequests":1,"expectedTier":"Medium","type":3,"position":[-2.8370495,333.00546,112.57836],"velocity":[0,0,0],"screen":[640.00006,286.29398],"age":0.305,"serverBlasts":0,"drawn":true,"lights":0,"directorBlasts":1,"overrideFound":true}
+native/modern: P1084_DESKTOP_PASS modern
+enhanced/classic: [eject-blast] cues=1 sounds=1 type=3 tier=Medium position=Vector3 { X = -0.16085887, Y = 329.7156, Z = 113.137436 }
+enhanced/classic: P1084_BLAST {"style":"classic","quality":"enhanced","hull":15,"pod":33,"deathCredit":false,"cueCount":1,"soundRequests":1,"expectedTier":"Medium","type":3,"position":[-0.16085887,329.7156,113.137436],"velocity":[0,1.125,0],"screen":[640.00006,263.13547],"age":0.305,"serverBlasts":0,"drawn":true,"lights":1,"directorBlasts":1,"overrideFound":true}
+enhanced/classic: P1084_DESKTOP_PASS classic
+enhanced/modern: [eject-blast] cues=1 sounds=1 type=3 tier=Medium position=Vector3 { X = -1.7384477, Y = 337.3169, Z = 104.03166 }
+enhanced/modern: P1084_BLAST {"style":"modern","quality":"enhanced","hull":15,"pod":33,"deathCredit":false,"cueCount":1,"soundRequests":1,"expectedTier":"Medium","type":3,"position":[-1.7384477,337.3169,104.03166],"velocity":[0,0,0],"screen":[640.00006,270.5869],"age":0.314,"serverBlasts":0,"drawn":true,"lights":1,"directorBlasts":1,"overrideFound":true}
+enhanced/modern: P1084_DESKTOP_PASS modern

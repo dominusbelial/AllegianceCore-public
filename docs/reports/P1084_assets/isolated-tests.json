@@ -1,0 +1,365 @@
+{
+  "processes": 60,
+  "runs": [
+    {
+      "run": "P1079CombatTests.An_authoritative_blast_replaces_an_overlapping_eject_cue_and_view_reset_clears_it-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.An_authoritative_blast_replaces_an_overlapping_eject_cue_and_view_reset_clears_it-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.An_authoritative_blast_replaces_an_overlapping_eject_cue_and_view_reset_clears_it-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Authored_shield_cap_inputs_include_native_parent_scale_before_world_space_drawing-1",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Authored_shield_cap_inputs_include_native_parent_scale_before_world_space_drawing-2",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Authored_shield_cap_inputs_include_native_parent_scale_before_world_space_drawing-3",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Continuous_damage_uses_live_hull_and_reduced_load_sheds_smoke_but_keeps_hit_feedback-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Continuous_damage_uses_live_hull_and_reduced_load_sheds_smoke_but_keeps_hit_feedback-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Continuous_damage_uses_live_hull_and_reduced_load_sheds_smoke_but_keeps_hit_feedback-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Density_budget_draw_list_keeps_newest_and_never_exceeds_capacity-1",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Density_budget_draw_list_keeps_newest_and_never_exceeds_capacity-2",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Density_budget_draw_list_keeps_newest_and_never_exceeds_capacity-3",
+      "outcomes": {
+        "Passed": 3
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_excludes_true_deaths_hidden_models_and_stale_or_unknown_hulls-1",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_excludes_true_deaths_hidden_models_and_stale_or_unknown_hulls-2",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_excludes_true_deaths_hidden_models_and_stale_or_unknown_hulls-3",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_uses_previous_visible_hull_pose_and_velocity_without_a_server_explosion-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_uses_previous_visible_hull_pose_and_velocity_without_a_server_explosion-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Eject_blast_uses_previous_visible_hull_pose_and_velocity_without_a_server_explosion-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Every_explosion_category_uses_native_presets_and_only_current_sector_live_entries-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Every_explosion_category_uses_native_presets_and_only_current_sector_live_entries-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Every_explosion_category_uses_native_presets_and_only_current_sector_live_entries-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Missile_trails_survive_reduced_load_and_view_changes_clear_all_old_particles-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Missile_trails_survive_reduced_load_and_view_changes_clear_all_old_particles-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Missile_trails_survive_reduced_load_and_view_changes_clear_all_old_particles-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Only_the_exact_native_shield_cap_extends_the_visual_allowlist-1",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Only_the_exact_native_shield_cap_extends_the_visual_allowlist-2",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Only_the_exact_native_shield_cap_extends_the_visual_allowlist-3",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1079CombatTests.Own_and_remote_eject_remain_drawable_and_request_the_pod_pack_immediately-1",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1079CombatTests.Own_and_remote_eject_remain_drawable_and_request_the_pod_pack_immediately-2",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1079CombatTests.Own_and_remote_eject_remain_drawable_and_request_the_pod_pack_immediately-3",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_and_hull_hits_are_exclusive_sector_gated_and_expire_without_artwork-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_and_hull_hits_are_exclusive_sector_gated_and_expire_without_artwork-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_and_hull_hits_are_exclusive_sector_gated_and_expire_without_artwork-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_hit_uses_the_mesh_render_pose_and_preserves_the_authoritative_impact_offset-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_hit_uses_the_mesh_render_pose_and_preserves_the_authoritative_impact_offset-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Shield_hit_uses_the_mesh_render_pose_and_preserves_the_authoritative_impact_offset-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1079CombatTests.Small_pod_is_inside_browser_chase_frustum_instead_of_clipped_by_old_ten_unit_plane-1",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1079CombatTests.Small_pod_is_inside_browser_chase_frustum_instead_of_clipped_by_old_ten_unit_plane-2",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1079CombatTests.Small_pod_is_inside_browser_chase_frustum_instead_of_clipped_by_old_ten_unit_plane-3",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Non_fighter_eject_has_a_big_blast-1",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Non_fighter_eject_has_a_big_blast-2",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Non_fighter_eject_has_a_big_blast-3",
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_an_exact_overlapping_server_blast_replaces_visual_and_pending_sound-1",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_an_exact_overlapping_server_blast_replaces_visual_and_pending_sound-2",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_an_exact_overlapping_server_blast_replaces_visual_and_pending_sound-3",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_noncredited_previous_frame_visible_known_hulls_create_cues-1",
+      "outcomes": {
+        "Passed": 7
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_noncredited_previous_frame_visible_known_hulls_create_cues-2",
+      "outcomes": {
+        "Passed": 7
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Only_noncredited_previous_frame_visible_known_hulls_create_cues-3",
+      "outcomes": {
+        "Passed": 7
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Preset_duration_expires_the_cue_and_undrained_sound_at_the_boundary-1",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Preset_duration_expires_the_cue_and_undrained_sound_at_the_boundary-2",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Preset_duration_expires_the_cue_and_undrained_sound_at_the_boundary-3",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Sound_drains_exactly_once_and_uses_old_hull_diameter_for_native_tier-1",
+      "outcomes": {
+        "Passed": 5
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Sound_drains_exactly_once_and_uses_old_hull_diameter_for_native_tier-2",
+      "outcomes": {
+        "Passed": 5
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Sound_drains_exactly_once_and_uses_old_hull_diameter_for_native_tier-3",
+      "outcomes": {
+        "Passed": 5
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.View_boundaries_clear_blasts_sounds_and_old_observations-1",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.View_boundaries_clear_blasts_sounds_and_old_observations-2",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.View_boundaries_clear_blasts_sounds_and_old_observations-3",
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Visible_fighter_eject_has_one_small_blast_at_the_last_render_pose-1",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Visible_fighter_eject_has_one_small_blast_at_the_last_render_pose-2",
+      "outcomes": {
+        "Passed": 2
+      }
+    },
+    {
+      "run": "P1084EjectBlastTests.Visible_fighter_eject_has_one_small_blast_at_the_last_render_pose-3",
+      "outcomes": {
+        "Passed": 2
+      }
+    }
+  ]
+}
