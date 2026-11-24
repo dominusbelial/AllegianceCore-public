@@ -1,0 +1,17 @@
+{
+  "runs": [
+    {
+      "style": "Classic",
+      "keyboardOnlyMouseEvents": 0,
+      "samples": 32,
+      "capture": "keyboard-classic.jpg"
+    },
+    {
+      "style": "Modern",
+      "keyboardOnlyMouseEvents": 0,
+      "samples": 32,
+      "capture": "keyboard-modern.jpg"
+    }
+  ],
+  "pass": true
+}

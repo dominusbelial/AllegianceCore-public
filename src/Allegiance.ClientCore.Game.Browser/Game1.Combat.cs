@@ -36,7 +36,7 @@ public sealed partial class Game1
     private bool _combatReady;
     public object CombatMetrics => new {
         frame = FlightFrames, sector = _lastCombatSector, localMs = ClientNowMilliseconds,
-        ready = _combatReady, quality = "Native", density = _fullEffectLoad ? 512 : 128,
+        ready = _combatReady, quality = _browserVolumes is null ? "Native" : "Volumetric", volumetric = VolumetricMetrics, density = _fullEffectLoad ? 512 : 128,
         missiles = _combatMissileCount, missileTrailParticles = _combat.TrailViews.Count,
         explosions = _combatExplosionCount, shieldFlares = _combatFlares is null ? 0 : _combat.FlareViews.Count,
         hullSparks = _combatHits is null ? 0 : _combat.HitViews.Count + _combat.Flashes.Count, debris = _combat.DebrisViews.Count,
@@ -83,6 +83,7 @@ public sealed partial class Game1
     private void BeginCombat(ClientWorld world, ShipEntity own)
     {
         EnsureCombatRenderers();
+        EnsureBrowserVolumetric();
         // Warm the two sides' small pod closures before an eject can replace a
         // hull. The normal hull roster still requests remote pods and stand-ins
         // remain available if any request fails. Delivery policy only.
@@ -211,7 +212,8 @@ public sealed partial class Game1
         _combat.AppendEjectExplosions(world, _combatBlasts);
         if (_combatExplosions is not null)
         {
-            _combatExplosions.Draw(_combatBlasts, own.SectorId, now, eye, view, projection);
+            if (!DrawBrowserVolumetric(own.SectorId, now, eye, view, projection))
+                _combatExplosions.Draw(_combatBlasts, own.SectorId, now, eye, view, projection);
             _combatExplosionCount = _combatBlasts.Count;
             foreach (var blast in _combatBlasts)
                 if (_combatSeenBlasts.Add(blast))
@@ -242,6 +244,7 @@ public sealed partial class Game1
     }
     private void DisposeCombat()
     {
+        _browserVolumes?.Dispose(); _browserVolumes = null;
         _combatMissiles?.Dispose(); _combatTrails?.Dispose(); _combatExplosions?.Dispose(); _combatExplosionArt?.Dispose();
         _combatHits?.Dispose(); _combatFlares?.Dispose(); _combatDebris?.Dispose(); _combatMines?.Dispose();
         _combatChaff?.Dispose(); _combatTreasures?.Dispose(); _combatGem?.Dispose();

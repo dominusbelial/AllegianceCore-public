@@ -1,0 +1,47 @@
+[
+  {
+    "file": "Bloom.ogl.mgfxo",
+    "sha256": "a3ac394e0dd304e2105ded4e99a8d4e71ee4902646b8fd76d2b654ee4df88271",
+    "bytes": 5613
+  },
+  {
+    "file": "DisplacedSphere.ogl.mgfxo",
+    "sha256": "cba1b179d14c62e2af71274b88d68bf60c141dafdb1b9839291fa38fab9deccf",
+    "bytes": 18545
+  },
+  {
+    "file": "FsrEasu.ogl.mgfxo",
+    "sha256": "af315cf79a3c4673530001445c4387d66169558eee7aa78c4b890c0f4664ddb5",
+    "bytes": 14005
+  },
+  {
+    "file": "FsrRcas.ogl.mgfxo",
+    "sha256": "692577826c4af512887166cafe3bd63c70b2b81b0bbc3f50513bc263cd51f5e3",
+    "bytes": 11093
+  },
+  {
+    "file": "LinearDepth.ogl.mgfxo",
+    "sha256": "3bebcb24e7f494e06957bf51ecccb5422b195bdeefa1b1cfd2d78f767d0685ea",
+    "bytes": 1997
+  },
+  {
+    "file": "NativePbr.ogl.mgfxo",
+    "sha256": "38a46b6eaa99a6ce5a260efe8863f2f0056559069a42280b476371e8c9785ed3",
+    "bytes": 53682
+  },
+  {
+    "file": "SoftParticle.ogl.mgfxo",
+    "sha256": "1e042044daa7ddc8c1bc4107037378b7a208d430cf68ae0135b9ce0e380f9390",
+    "bytes": 2753
+  },
+  {
+    "file": "Tonemap.ogl.mgfxo",
+    "sha256": "df5ac5ea6dff28a97923e79f7ac7353ccb3243470f478f73cbfd34969d8c04f7",
+    "bytes": 4586
+  },
+  {
+    "file": "Volumetric.ogl.mgfxo",
+    "sha256": "e36330c9e40b61dd08929630fdf854ef2afa9a3840213e81eddd6c16d68b6aef",
+    "bytes": 106341
+  }
+]

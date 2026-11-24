@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="nkast.Xna.Framework.Content.Pipeline" Version="4.3.9001" />
+    <PackageReference Include="nkast.Xna.Framework.Content.Pipeline.Graphics" Version="4.3.9001" />
+    <!-- The Mojo processor has no standalone package in 4.3.9001; Builder ships it. -->
+    <PackageReference Include="nkast.Xna.Framework.Content.Pipeline.Builder" Version="4.3.9001" GeneratePathProperty="true" ExcludeAssets="build" />
+    <Reference Include="Xna.Framework.Content.Pipeline.Graphics.MojoProcessor">
+      <HintPath>$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/Xna.Framework.Content.Pipeline.Graphics.MojoProcessor.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpFont"><HintPath>$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/SharpFont.dll</HintPath></Reference>
+    <None Include="$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/CppNet.dll;$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/SharpDX.dll;$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/SharpDX.D3DCompiler.dll;$(Pkgnkast_Xna_Framework_Content_Pipeline_Builder)/tools/libmojoshader_64.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -29,7 +29,7 @@ public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePac
         {
             if (asset is null) throw new InvalidDataException("Null battle asset.");
             string name = StagedManifest.Canonical(asset.Source);
-            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal) && name != "giant-objects.json" && name != "lens30.x")
+            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal) && name != "giant-objects.json" && name != "lens30.x" && name != "content/shaders/volumetric.xnb")
                 throw new InvalidDataException("Only visual battle assets may be deferred.");
             if (!deferredNames.Add(name)) throw new InvalidDataException("Duplicate battle source.");
             if (metadata.TryGetValue(name, out var old) && (old.Sha256 != asset.Sha256 || old.ByteSize != asset.ByteSize || old.ContentType != asset.ContentType ||

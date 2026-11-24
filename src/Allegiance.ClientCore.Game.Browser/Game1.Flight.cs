@@ -501,6 +501,13 @@ public sealed partial class Game1
             var center = V(proofPosition); eye = center + new Vector3(0, proofRadius, proofRadius * 5);
             view = Matrix.CreateLookAt(Vector3.Zero, center - eye, Vector3.Up);
         }
+        if (_proofViewKind == "volumetric")
+        {
+            // Existing dev-only ProofView gate: same world axes, 150-unit
+            // distance and 50-degree FOV as P834's desktop reference.
+            eye = position + Vector3.Up * 200;
+            view = Matrix.CreateLookAt(Vector3.Zero, -Vector3.UnitZ, Vector3.Up);
+        }
         _rockFrustum.Matrix = view * projection;
         _browserTargetEye = eye; // Input picking uses this exact rendered camera.
         _sectorArtEye = eye; _sectorArtCameraReady = true;

@@ -211,6 +211,20 @@ list in **reverse**.
   pack coverage: `tools/p1079-combat-pack-tests.py`; parity:
   `docs/parity/p1079-browser-combat.csv`; report:
   `docs/reports/BROWSER_COMBAT_VFX_P1079.md`. No desktop rendering or server rule change.
+- **Browser shader spike (P1083A)** — default-off `?dev=1&volumetric=1`
+  selects the unchanged shared VolumetricRenderer through
+  `src/Allegiance.ClientCore.Game.Browser/Game1.Volumetric.cs`; missing/unusable
+  verified effects fall back to P1079 native explosions. Pinned KNI tool and
+  source-matched MGFX11→MGFX10 container bridge:
+  `tools/p1083-kni-shaders/Program.cs`, `tools/p1083-kni-shaders/LegacyVolumetric.cs`.
+  Exact deferred XNB delivery: `tools/p1083-shader-pack.py` and
+  `src/Allegiance.ClientCore.Game.Browser/Content/Shaders/Volumetric.xnb`.
+  Actual-context capabilities are exposed in browser metrics by
+  `src/Allegiance.ClientCore.Browser/wwwroot/webgl-capabilities.js`.
+  Proof/cost: `tools/p1083a-browser-volumetric.cjs`; parity:
+  `docs/parity/p1083-browser-shaders.csv`; report:
+  `docs/reports/BROWSER_SHADERS_SPIKE_P1083A.md`. Port-only presentation;
+  no desktop shader or native game-rule change.
 - **Home station artwork before launch (P1076)** — browser-only
   `src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs` prioritizes own-side
   current-sector stations even offscreen, and its throttled dock prefetch requests

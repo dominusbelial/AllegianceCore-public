@@ -1,0 +1,102 @@
+{
+  "browser": "153.0.8010.0",
+  "runs": [
+    {
+      "style": "Classic",
+      "case": "missing",
+      "final": {
+        "requested": true,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": "verified effect pack missing"
+      },
+      "sampledFrames": 116,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "fallbackLogs": 1
+    },
+    {
+      "style": "Classic",
+      "case": "unusable",
+      "final": {
+        "requested": true,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": "Asset does not appear to be a valid XNB file."
+      },
+      "sampledFrames": 118,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "fallbackLogs": 1
+    },
+    {
+      "style": "Modern",
+      "case": "missing",
+      "final": {
+        "requested": true,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": "verified effect pack missing"
+      },
+      "sampledFrames": 116,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "fallbackLogs": 1
+    },
+    {
+      "style": "Modern",
+      "case": "unusable",
+      "final": {
+        "requested": true,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": "Asset does not appear to be a valid XNB file."
+      },
+      "sampledFrames": 116,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "fallbackLogs": 1
+    }
+  ],
+  "pass": true
+}

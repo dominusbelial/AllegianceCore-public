@@ -27,6 +27,7 @@ python3 tools/p1054-browser-packs.py --root "$stage/publish/wwwroot" --artwork "
     docs/reports/BROWSER_SECTOR_PACKS_P1054_assets/desktop-modern.json
 python3 tools/p1065-battle-packs.py --root "$stage/publish/wwwroot" --artwork "$ALLEGIANCE_ARTWORK_PATH"
 python3 tools/p1066-scene-packs.py --root "$stage/publish/wwwroot" --artwork "$ALLEGIANCE_ARTWORK_PATH"
+python3 tools/p1083-shader-pack.py --root "$stage/publish/wwwroot"
 mapping_args=()
 if [[ -n "${BROWSER_CLIENT_VERSION:-}" ]]; then mapping_args=(--client-version "$BROWSER_CLIENT_VERSION"); fi
 python3 tools/p1053-browser-publish.py "$stage/publish/wwwroot" "${mapping_args[@]}"

@@ -4,7 +4,7 @@
   const app = document.getElementById('app');
   const assets = JSON.parse(document.currentScript?.dataset.assets || '{}');
   const asset = name => { const mapped = assets[name.replace(/^\.\//, '')]; return mapped ? (name.startsWith('./') ? './' : '') + mapped : name; };
-  const measurements = { firstFrameMs: null, cpu: [], interval: [] };
+  const measurements = { firstFrameMs: null, cpu: [], interval: [], webgl: null };
   let frameId = 0;
   let startupTimer;
   const pacing = window.FramePacing ? new window.FramePacing() : null;
@@ -41,7 +41,16 @@
         catch { fail('The renderer stopped. Reload to retry.'); return; }
         const end = performance.now();
         if (!drawn) return;
-        if (measurements.firstFrameMs === null) { measurements.firstFrameMs = end; clearTimeout(startupTimer); }
+        if (measurements.firstFrameMs === null) {
+          measurements.firstFrameMs = end; clearTimeout(startupTimer);
+          if (window.allegianceWebGLCapabilities) {
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (gl) {
+              measurements.webgl = window.allegianceWebGLCapabilities(gl);
+              console.info('[browser] WebGL capabilities ' + JSON.stringify(measurements.webgl));
+            }
+          }
+        }
         if (measurements.cpu.length < 1200) {
           measurements.cpu.push(end - start);
           if (previous) measurements.interval.push(now - previous);

@@ -69,6 +69,7 @@ public partial class Menu
             var dimensions = await JsRuntime.InvokeAsync<int[]>("menuViewport");
             StopGame();
             _game = new Game1(_assets, _style, dimensions[0], dimensions[1]);
+            _game.ConfigureBrowserVolumetric(BrowserShaderOptions.Volumetric(new Uri(Nav.Uri).Query, _dev));
             if (_dev) _game.ConfigureWatchSeed(BrowserEntry.DirectorSeed(new Uri(Nav.Uri).Query, dev: true));
             _game.OpenOnline = () => _ = OpenOnlineAsync();
             _game.DownloadScreenshot = () => _ = ScreenshotAsync();

@@ -1,0 +1,412 @@
+{
+  "browser": "153.0.8010.0",
+  "rendererMode": "headless SwiftShader SOFTWARE; not representative of a GPU",
+  "policy": "normal adaptive player presentation",
+  "controlled": {
+    "type": 3,
+    "distance": 150,
+    "fovDegrees": 50,
+    "counts": [
+      0,
+      1,
+      4,
+      10
+    ],
+    "costBurstMs": 1500,
+    "repeats": 3,
+    "settleAfterWarmupMs": 45000,
+    "captureCadenceMs": 250,
+    "captureMechanism": "canvas export after game RAF"
+  },
+  "runs": [
+    {
+      "style": "Classic",
+      "mode": "native",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "final": {
+        "requested": false,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": null
+      },
+      "sampledFrames": 2670,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "shaderRequests": 0,
+      "cost": [
+        {
+          "count": 0,
+          "frames": 273,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 272,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 271,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 250,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.30000000000291,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "style": "Classic",
+      "mode": "volumetric",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "final": {
+        "requested": true,
+        "loaded": true,
+        "usable": true,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Volumetric",
+        "submissions": 29505,
+        "volumes": 8,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 8,
+        "pixelSteps": 3336396,
+        "budget": 10500000,
+        "failure": null
+      },
+      "sampledFrames": 1767,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "shaderRequests": 1,
+      "cost": [
+        {
+          "count": 0,
+          "frames": 276,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 245,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.30000000000291,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 181,
+          "p50Ms": 16.70000000001164,
+          "p95Ms": 50,
+          "buffers": [
+            {
+              "width": 640,
+              "height": 348
+            },
+            {
+              "width": 960,
+              "height": 522
+            },
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 179,
+          "p50Ms": 16.70000000001164,
+          "p95Ms": 33.5,
+          "buffers": [
+            {
+              "width": 640,
+              "height": 348
+            },
+            {
+              "width": 960,
+              "height": 522
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "style": "Modern",
+      "mode": "native",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "final": {
+        "requested": false,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": null
+      },
+      "sampledFrames": 2664,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "shaderRequests": 0,
+      "cost": [
+        {
+          "count": 0,
+          "frames": 277,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 274,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 273,
+          "p50Ms": 16.699999999982538,
+          "p95Ms": 16.79999999998836,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 241,
+          "p50Ms": 16.699999999982538,
+          "p95Ms": 33.30000000001746,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "style": "Modern",
+      "mode": "volumetric",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "final": {
+        "requested": true,
+        "loaded": true,
+        "usable": true,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Volumetric",
+        "submissions": 30486,
+        "volumes": 8,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 8,
+        "pixelSteps": 3336396,
+        "budget": 10500000,
+        "failure": null
+      },
+      "sampledFrames": 1781,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "pageErrors": [],
+      "shaderRequests": 1,
+      "cost": [
+        {
+          "count": 0,
+          "frames": 273,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 242,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.39999999999418,
+          "buffers": [
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 179,
+          "p50Ms": 16.70000000001164,
+          "p95Ms": 50,
+          "buffers": [
+            {
+              "width": 640,
+              "height": 348
+            },
+            {
+              "width": 960,
+              "height": 522
+            },
+            {
+              "width": 1280,
+              "height": 696
+            }
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 175,
+          "p50Ms": 16.70000000001164,
+          "p95Ms": 33.5,
+          "buffers": [
+            {
+              "width": 640,
+              "height": 348
+            },
+            {
+              "width": 960,
+              "height": 522
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pass": true
+}

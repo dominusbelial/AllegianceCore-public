@@ -90,6 +90,21 @@ internal static class CombatProof
                     Position = pilot.Position + impact * pilot.HullType.Length * .5f, Normal = impact,
                     AbsorbedByShield = action == "shield", SourceId = -1 });
                 break;
+            case "volumetric":
+            {
+                // P1083 spike: a bounded, simultaneous native-event burst. The
+                // read-only proof camera is 200 units above the real pilot,
+                // with the blast 150 units straight ahead (same as P834 full).
+                int count = data.RootElement.GetProperty("count").GetInt32();
+                if (count is not (0 or 1 or 4 or 10)) throw new InvalidDataException("Volumetric proof count must be 0, 1, 4 or 10.");
+                var origin = pilot.Position + new SimVec(0, 200, 0);
+                var blast = origin + new SimVec(0, 0, -150);
+                for (int i = 0; i < count; i++)
+                    Invoke("SendExplosionEvent", peers, ExplosionType.SmallShip, sector.Id, blast, SimVec.Zero, pilot.HullType.Length);
+                details = new { count, type = (int)ExplosionType.SmallShip, distance = 150,
+                    eye = new[] { origin.X, origin.Y, origin.Z }, position = new[] { blast.X, blast.Y, blast.Z } };
+                break;
+            }
             case "explosion":
                 Invoke("SendExplosionEvent", peers, ExplosionType.SmallShip, sector.Id, center, SimVec.Zero, pilot.HullType.Length);
                 break;

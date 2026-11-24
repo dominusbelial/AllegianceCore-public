@@ -14,7 +14,7 @@ window.menuViewport = () => {
 window.menuText = instance => {
   window.menuDetachText?.();
   window.gameMenu = {
-    metrics: () => instance.invokeMethod('Metrics'),
+    metrics: () => ({...instance.invokeMethod('Metrics'), webgl: window.preview?.measurements.webgl ?? null}),
     // P1070 — the docked hangar/loadout in the game window: state for a harness to
     // wait on, a pointer feed (the canvas has no KNI mouse), and the launch verb, so
     // future harnesses never need the dev-only HTML launch button.

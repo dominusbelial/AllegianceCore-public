@@ -1,0 +1,55 @@
+{
+  "browser": "153.0.8010.0",
+  "teamSize": 5,
+  "runs": [
+    {
+      "style": "Classic",
+      "sampleSeconds": 120,
+      "samples": 1038,
+      "timing": {
+        "frames": 7205,
+        "p50Ms": 16.699999999982538,
+        "p95Ms": 16.79999999998836
+      },
+      "presentedFrames": 9398,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "correlatedExplosions": 0,
+      "captureCount": 40,
+      "fixtures": [
+        "missile",
+        "shield",
+        "props",
+        "explosion",
+        "pod"
+      ],
+      "shaderRequested": false,
+      "volumetricSubmissions": 0
+    },
+    {
+      "style": "Modern",
+      "sampleSeconds": 120,
+      "samples": 1031,
+      "timing": {
+        "frames": 7203,
+        "p50Ms": 16.699999999982538,
+        "p95Ms": 16.70000000001164
+      },
+      "presentedFrames": 9398,
+      "discardedFrames": 0,
+      "probeErrors": [],
+      "correlatedExplosions": 9,
+      "captureCount": 40,
+      "fixtures": [
+        "missile",
+        "shield",
+        "props",
+        "explosion",
+        "pod"
+      ],
+      "shaderRequested": false,
+      "volumetricSubmissions": 0
+    }
+  ],
+  "pass": true
+}

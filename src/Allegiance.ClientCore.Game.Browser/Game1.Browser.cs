@@ -84,6 +84,12 @@ public sealed partial class Game1 : Game
             // HiDef permits those dimensions; every render surface/effect here is still LDR.
             GraphicsProfile = GraphicsProfile.HiDef, PreferredBackBufferFormat = SurfaceFormat.Color,
         };
+        // Shared VolumetricRenderer temporarily leaves the main target for its
+        // half/quarter passes. Desktop Game1.cs uses the same preservation rule.
+        _graphics.PreparingDeviceSettings += (_, settings) => {
+            if (_browserVolumeRequested)
+                settings.GraphicsDeviceInformation.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
+        };
         IsFixedTimeStep = false;
         IsMouseVisible = true;
         Content = new ResidentContentManager(Services, assets) { RootDirectory = "Content" };
@@ -92,7 +98,7 @@ public sealed partial class Game1 : Game
         MouseOptions.Apply(_mouseFlight, prefs);
         _visuals = VisualOptions.Resolve(prefs.Visuals, null, out _);
         _chatFilterChatsToAll = prefs.FilterChatsToAll;
-        Console.WriteLine("[browser] LDR Color backbuffer. LinearDepth, SoftParticle, Bloom, Volumetric, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap disabled: desktop .mgfxo bytecode is not KNI/WebGL content; using built-in SpriteBatch.");
+        Console.WriteLine("[browser] LDR Color backbuffer. Custom effects default off; Volumetric requires dev=1&volumetric=1 and a verified KNI-compatible effect. LinearDepth, SoftParticle, Bloom, DisplacedSphere, NativePbr, FsrEasu, FsrRcas and Tonemap remain disabled.");
     }
 
     protected override void LoadContent()
