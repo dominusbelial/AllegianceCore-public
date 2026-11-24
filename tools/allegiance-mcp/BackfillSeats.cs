@@ -1,6 +1,6 @@
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record BackfillPilot(string Name, short Side, bool Bot, bool Protected, string Role, bool Owned);
+internal sealed record BackfillPilot(string Name, short Side, bool Bot, bool Protected, string Role, bool Owned, bool Ready = true);
 internal sealed record BackfillDecision(short Side, int Humans, int Bots, string Action, string? Name = null);
 
 /// <summary>Port orchestration, not a native rule. Monotonic wall time keeps the
@@ -15,7 +15,7 @@ internal sealed class BackfillSeats(int seats, double graceSeconds = 30)
     internal BackfillDecision? Decide(short side, IReadOnlyList<BackfillPilot> roster, double now)
     {
         var pilots = roster.Where(p => p.Side == side).ToArray();
-        int humans = pilots.Count(p => !p.Bot), bots = pilots.Length - humans;
+        int humans = pilots.Count(p => !p.Bot && p.Ready), bots = pilots.Count(p => p.Bot);
         bool first = _seen.Add(side);
         bool humanLeft = humans < _humans.GetValueOrDefault(side, humans);
         _humans[side] = humans;

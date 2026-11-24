@@ -5,9 +5,12 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <Using Include="Xunit" />
+    <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/P1078AfkRosterTests.cs" Link="P1078AfkRosterTests.cs" />
+    <Compile Include="../Allegiance.ClientCore.Tests/P1078PlayerActivityTests.cs" Link="P1078PlayerActivityTests.cs" />
     <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/P1075PresentationTests.cs" Link="P1075PresentationTests.cs" />
     <Compile Include="../../tools/p1051-browser-host/BattleOptions.cs" Link="BattleOptions.cs" />
     <!-- Exercise the actual source-generated browser listing contract. -->
+    <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserSeatNavigation.cs" Link="BrowserSeatNavigation.cs" />
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserServer.cs" Link="BrowserServer.cs" />
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserJoinPolicy.cs" Link="BrowserJoinPolicy.cs" />
     <Compile Include="../../src/Allegiance.ClientCore.Browser/Pages/BrowserJoinFailure.cs" Link="BrowserJoinFailure.cs" />

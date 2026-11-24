@@ -162,6 +162,10 @@
         @if (_onlineBusy && (_dev || _onlineState != "Hangar")) { <p id="launch-status" role="status">@BusyStatus()</p> }
         @if (_onlineError is not null) { <p role="alert">@_onlineError</p> }
         @if (_nameConflict) { <button id="guest-try-another" disabled="@_onlineBusy" @onclick="TryAnotherNameAsync">Try another name</button> }
+        @if (_onlineState is "Sides" or "Hangar" or "Flight")
+        {
+            <button id="online-afk" aria-pressed="@(_playerActivity.ManualAfk ? "true" : "false")" @onclick="TogglePlayerAfk">@(_playerActivity.ManualAfk ? "I'm back" : "Set AFK")</button>
+        }
         <button id="online-close" @onclick="CloseOnlineAsync">Disconnect and return to menu</button>
     </section>
 }

@@ -273,6 +273,7 @@ public partial class Menu
                 return System.Text.Json.JsonSerializer.Deserialize(json, ResearchBriefingJsonContext.Default.ResearchBriefing)
                     ?? throw new InvalidDataException("Empty research briefing");
             };
+            _playerActivity = new(); _ownReady = false;
             session.EnableAutoReconnect();
             session.World.MissionCoreResolver = name => string.Equals(Path.GetFileNameWithoutExtension(name), Path.GetFileNameWithoutExtension(server.CoreFile), StringComparison.OrdinalIgnoreCase) ? core : null;
             // The complete verified starter snapshot already exists. Fetch a fresh
@@ -330,6 +331,11 @@ public partial class Menu
         _onlineBusy = true; _onlineError = null;
         try
         {
+            if (_playerActivity.ManualAfk)
+            {
+                _playerActivity.ClearManualAfk(); _ownReady = true;
+                session.SendPlayerReady(true, session.World.MyShipId ?? session.World.JoinedShipId ?? session.Ack!.ShipID);
+            }
             session.SendPositionReq(side);
             await WaitOnlineAsync(session, () => session.World.MySideId == side && session.World.MyShipId is not null);
             if (!ReferenceEquals(_session, session)) return;
@@ -369,6 +375,7 @@ public partial class Menu
         _onlineBusy = true; _onlineError = null;
         try
         {
+            _playerActivity.ClearManualAfk(); _ownReady = true;
             session.SendPlayerReady(true, shipId); ++_readySends;
             await WaitOnlineForStartAsync(session);
             if (!session.World.Ships.TryGetValue(shipId, out var ship)) throw new InvalidOperationException("No ship was assigned by the server.");
@@ -393,6 +400,9 @@ public partial class Menu
     /// so the game window's status line never disagrees with the page.</summary>
     private async Task LaunchFromGameWindowAsync()
     {
+        // A request that races a launch already in progress is not a failure: the
+        // running attempt reports to the hangar when it finishes (P1078 review).
+        if (_onlineBusy) return;
         try { await LaunchOnlineAsync(); }
         catch (Exception ex) { _onlineError = RequestError(ex); }
         bool launched = !_onlineBusy && _onlineState == "Flight";
@@ -485,11 +495,19 @@ public partial class Menu
         if (_game?.TakeHangarLaunchRequest() == true) _ = LaunchFromGameWindowAsync();
         if (_session is { } session)
         {
+            string next = BrowserSeatNavigation.Next(_onlineState, _onlineBusy, session.Reconnecting,
+                session.World.MySideId, session.World.MyShipId is not null);
+            if (next != _onlineState)
+            {
+                _game?.AttachOnlineSession(next == "Sides" ? null : session);
+                if (next == "Sides") _ = JsRuntime.InvokeVoidAsync("gameFlight.release");
+                _onlineState = next;
+            }
             if (_onlineState == "Flight" && session.World.MyShipId is { } ownId && session.World.Ships.TryGetValue(ownId, out var ownShip) && ownShip.StationId >= 0) _onlineState = "Hangar";
             // P1070 — the hangar launched from the game window with the desktop's own
             // BUY_LOADOUT(fLaunch) (the server's SET_CLUSTER undocks); the toolbar and
             // the flight input follow the same state change the HTML button caused.
-            if (_onlineState is "Hangar" or "Sides" && session.World.MyShipId is { } flyingId
+            if (_onlineState is "Hangar" or "Sides" && session.World.MySideId is >= 0 && session.World.MyShipId is { } flyingId
                 && session.World.Ships.TryGetValue(flyingId, out var flying) && flying.StationId < 0 && flying.Latest is not null)
             {
                 _onlineState = "Flight";

@@ -2341,6 +2341,7 @@ public sealed partial class ClientWorld
         _countdownClockLocalMs = null;
         _mission = null;
         _gameOver = null;
+        _ownLeaderGameOverPending = false;
         _gameOverPlayers.Clear();
         _gameOverPlayerRowByName.Clear();
         _gameOverPlayersDropped = 0;
@@ -5413,6 +5414,27 @@ public sealed partial class ClientWorld
             Params = def.Params,
         };
         _missionTimeStartMs = def.TimeStart;
+        ApplyMissionDefCivilizations(def);
+    }
+
+    /// <summary>Native re-applies every side's civilization from each MISSIONDEF
+    /// (clintlib/appmsg.cpp:2410-2424 -> CmissionIGC::UpdateSides,
+    /// Igc/missionigc.cpp:3751-3757: civilizationID = rgCivID[sid]). A carried-forward
+    /// player gets the next match's MISSIONDEF but no fresh SIDE_ROSTER, so without
+    /// this the side's previous-match civilization stayed current (P1078 review, live
+    /// 2026-11-24: the browser no longer recognised its own lifepod and relaunched it).
+    /// Only the civilization identity is mirrored; the random-faction flag is kept.</summary>
+    private void ApplyMissionDefCivilizations(MissionDef def)
+    {
+        int teams = Math.Min(Math.Min((int)def.NTems, def.RgCivId.Length), GameState.MaxSides);
+        if (teams <= 0) return;
+        for (short side = 0; side < teams; side++)
+            _sideCivilizations[side] = new(def.RgCivId[side],
+                _sideCivilizations.TryGetValue(side, out var previous) && previous.Random);
+        if (SideRoster is { } roster)
+            SideRoster = new SideRoster { Sides = roster.Sides.Select(s => s.SideId >= 0 && s.SideId < teams
+                ? s with { CivId = def.RgCivId[s.SideId] } : s).ToArray() };
+        MarkSnapshotDirty();
     }
 
     private void Apply(MissionStageMessage stage)
@@ -5637,6 +5659,7 @@ public sealed partial class ClientWorld
     /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
+        RecordOwnLeaderGameOver();
         _constructionVisuals.Clear();
         _lastBases = new();
         _waitingForRestart = true;

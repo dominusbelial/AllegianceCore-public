@@ -1928,50 +1928,7 @@ public sealed partial class Server
                 // Keep P654's sender-id correction and bounded fan-out policy.
                 try
                 {
-                    var ready = command.Read<PlayerReady>();
-                    if (!_peerShips.TryGetValue(from, out var readyLive))
-                    {
-                        ConsoleLog.Write($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
-                    }
-                    else if (readyLive.Ship.Mission is not Mission mission)
-                    {
-                        // Native shared PLAYER_READY/FORCE_TEAM_READY mission gate (:6991).
-                    }
-                    else
-                    {
-                        // P654 (H-24) — budget-charge the relay (bounded fan-out).
-                        if (!TryChargeChatBudget(from))
-                        {
-                            ConsoleLog.Write($"[ready] {from}: budget exhausted — PLAYER_READY dropped (H-24)");
-                        }
-                        else
-                        {
-                            var targets = _peerShips
-                                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
-                                .Select(kv => kv.Key)
-                                .ToArray();
-                            // P654 (H-19) — re-encode the relay with the sender's
-                            // OWN ship id, never the client's forged ShipId (native
-                            // TrapHackBoot(shipID == GetShipID()), FedSrv.CPP:7019) —
-                            // so a peer can only mark ITSELF ready, and the relay is
-                            // exact-size (H-05).
-                            ready.ShipId = readyLive.Ship.Id;
-                            byte[] packet = FedPacket.Pack(new[] { ready.Encode() });
-                            foreach (var t in targets) SendPeer(t, packet);
-                            Console.WriteLine($"[ready] {from} ship {ready.ShipId} side {sideStr(readyLive.Ship.SideId)} fReady={ready.FReady} -> {targets.Length} peer(s)");
-
-                            // P180 — the real trigger point. This port's analogue of
-                            // native's `PlayerReadyChange` (fsmission.cpp:5485-5489):
-                            // a player's own ready flag just changed, so remember it
-                            // and recompute the side's aggregate readiness, which may
-                            // fire a TEAM_READY broadcast and, in turn, the ready-up
-                            // auto-start. Runs AFTER the existing relay (the real
-                            // client still needs the raw relay for its own roster
-                            // UI — the message is sent to everyone on the team).
-                            _playerReady[from] = ready.FReady;
-                            RecomputeSideReady(readyLive.Ship);
-                        }
-                    }
+                    HandlePlayerReady(from, command.Read<PlayerReady>());
                 }
                 catch (Exception e)
                 {

@@ -1366,8 +1366,11 @@ public sealed class ServerConfig
     /// <c>fsmission.cpp:4729-4774</c>) — there is no timer that seats a silent
     /// client. <c>null</c> or any value &lt;= 0 (the default) means OFF: only
     /// peers with a recorded <c>POSITIONREQ</c> choice are drained, matching
-    /// native. Set it to 30 to restore the pre-P763 port behaviour (e.g. a rig
-    /// with AFK bots); the auto-seat is then opt-in only.
+    /// native. Set it to 30 for opt-in unattended seating. P1078: a player's
+    /// explicit PLAYER_READY(false) blocks the timer, while explicit position
+    /// requests still work. While enabled, a docked AFK player who never
+    /// launched returns to the team lobby at the next match boundary. These
+    /// automatic-seat policies are port adaptations.
     /// </summary>
     public double? SideSelectAutoSeatSeconds { get; set; }
 

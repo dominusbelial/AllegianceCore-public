@@ -1030,11 +1030,8 @@ public sealed partial class Game1 : Game
     private bool _settingsKeyWasDown, _settingsUpWasDown, _settingsDownWasDown,
         _settingsLeftWasDown, _settingsRightWasDown, _settingsConfirmWasDown,
         _settingsSpaceWasDown, _settingsEscWasDown;
-    // P598 — the ship id this client last sent PLAYER_READY(true) for. The
-    // server re-seats a migrated peer after a game-over rotation with a FRESH
-    // ship id (new SET_CLUSTER), so a non-null mismatch here means the mission
-    // rotated and we must re-propagate the ready intent to the new ship (native
-    // lobby flow: re-ready on the fresh NotStarted mission).
+    // Last ready-check ship identity; the server preserves AFK at rotation
+    // (FedSrv/fsmission.cpp:3468-3481). Identity changes never re-ready a player.
     private short? _readyConfirmedShip;
 
     // P268 — docked/hangar loadout shop state. When the local ship is docked

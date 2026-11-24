@@ -39,6 +39,8 @@ internal sealed class RelativeMouse(Func<IRelativeMouseBackend?> createBackend, 
     private bool _loaded, _discardNext, _loggedRelative, _loggedWarp, _disposed;
     internal MouseCaptureOwner Owner { get; private set; }
     internal bool IsRelative { get; private set; }
+    private bool _activity;
+    internal bool TakeActivity() { bool activity = _activity; _activity = false; return activity; }
 
     internal bool SetOwner(MouseCaptureOwner owner)
     {
@@ -70,6 +72,7 @@ internal sealed class RelativeMouse(Func<IRelativeMouseBackend?> createBackend, 
         var delta = IsRelative ? _backend!.ReadDelta() : (pointerX - centerX, pointerY - centerY);
         if (!IsRelative) warp(centerX, centerY);
         if (_discardNext) { _discardNext = false; return (0, 0); }
+        _activity |= delta != (0, 0);
         return delta;
     }
 

@@ -5,6 +5,7 @@ function fixture({delayedResume=false}={}){
  class Bus{constructor(){this.handlers=new Map()}addEventListener(n,f){let a=this.handlers.get(n)||[];a.push(f);this.handlers.set(n,a)}removeEventListener(n,f){this.handlers.set(n,(this.handlers.get(n)||[]).filter(x=>x!==f))}dispatch(n,data={}){const event={isTrusted:true,code:'',key:'',repeat:false,altKey:false,buttons:0,target:this,preventDefault(){this.prevented=true},...data};for(const f of this.handlers.get(n)||[])f(event);return event}closest(){return null}}
  const window=new Bus(),document=new Bus(),canvas=new Bus(),calls=[],order=[],audio=[];let lockCalls=0,fullCalls=0;
  class AudioContext{constructor(){this.state='running';this.resumeRequests=[];audio.push(this)}suspend(){this.state='suspended';return Promise.resolve()}resume(){if(delayedResume)return new Promise(resolve=>this.resumeRequests.push(()=>{this.state='running';resolve()}));this.state='running';return Promise.resolve()}}
+ window.setInterval=()=>1;window.clearInterval=()=>{};
  window.AudioContext=AudioContext;document.hidden=false;document.activeElement=canvas;document.pointerLockElement=null;
  document.getElementById=id=>id==='theCanvas'?canvas:{dataset:{state:'Flight'}};
  canvas.focus=()=>document.activeElement=canvas;
@@ -26,7 +27,7 @@ test('pointer refusal retries only on a deliberate canvas click and Escape relea
  assert.equal(f.document.pointerLockElement,null);assert.ok(f.calls.some(c=>c[0]==='ReleaseFlightInput'));f.detach();
 });
 test('Alt+Enter requests fullscreen inside the real event and never during installation',()=>{
- const f=fixture();assert.equal(f.fullCalls,0);f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true});assert.equal(f.fullCalls,1);assert.equal(f.order[0],'fullscreen');assert.equal(f.document.fullscreenElement,f.document.documentElement);
+ const f=fixture();assert.equal(f.fullCalls,0);f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true});assert.equal(f.fullCalls,1);assert.equal(f.order.filter(name=>name!=='PlayerActivityTick')[0],'fullscreen');assert.equal(f.document.fullscreenElement,f.document.documentElement);
  f.window.dispatch('keydown',{code:'Enter',key:'Enter',altKey:true,repeat:true});assert.equal(f.fullCalls,1);f.detach();
 });
 test('toolbar fullscreen keeps the page chrome and the same control can exit',()=>{

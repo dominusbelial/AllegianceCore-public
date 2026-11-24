@@ -15,6 +15,7 @@ function fixture(source=fs.readFileSync('src/Allegiance.ClientCore.Browser/wwwro
  canvas.requestPointerLock=()=>{locks++;return Promise.reject(Error('refused'))};
  document.exitPointerLock=()=>{document.pointerLockElement=null;document.dispatch('pointerlockchange')};
  document.documentElement={requestFullscreen:()=>Promise.resolve()};
+ window.setInterval=()=>1;window.clearInterval=()=>{};
  vm.runInNewContext(source,{window,document,navigator:{getGamepads:()=>[]},console:{info(){}},Set,Promise});
  const detach=window.installFlightInput({invokeMethod(name,...args){calls.push([name,...args]);return name==='MouseToggleKey'&&args[0].includes('KeyM')}});
  return {window,document,canvas,button,input,select,calls,detach,get locks(){return locks},set state(value){state=value},keys(){return Array.from(calls.findLast(c=>c[0]==='FlightKeys')?.[1]||[])}};

@@ -4,6 +4,49 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1078 — AFK seats qualification (2026-11-23)
+
+Three full Fast sweeps ran during the lane. The final-source sweep remains
+**red**: **16,109 cases in 565.1 s, 16,100 passed / 2 failed / 7 not executed**,
+plus three passing cases over the unchanged calibrated **11.541 s** limit.
+All nine infrastructure checks passed, as did all P1078 tests and every browser,
+MonoGame, lobby and updater project. The final failures were the existing
+combat-deletion receipt and warp-transit receipt families below.
+
+Sweep 1: **16,105 cases, 16,094 passed / 4 failed / 7 not executed**, 563.4 s,
+four timing overruns. Two failures were deterministic constructor-bypassing UI
+fixtures missing the newly initialized activity policy. Those fixtures were
+corrected; both passed three isolated runs and both subsequent full sweeps.
+They are not classified as flakes. Sweep 2: **16,109 cases, 16,099 passed /
+3 failed / 7 not executed**, 571.0 s, three timing overruns.
+
+All ten existing failing or over-limit methods across the three sweeps then ran
+**3× alone in fresh processes against final source**, including all theory rows:
+**87/87 cases passed in 30 hosts**. Isolated passes do not turn the full sweep green.
+
+| Method | Broad sweep observation | Final three isolated processes | Maximum isolated case seconds |
+|---|---|---|---:|
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed over limit in all three sweeps (12.822 / 13.664 / 13.110 s) | pass / pass / pass; 3/3 cases | 3.106 |
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed over limit in sweeps 1 and 2 (12.936 / 13.183 s, civ 25) | pass / pass / pass; 6/6 cases | 3.965 |
+| `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` | Sweep 2: victim never died within 4,800 ticks | pass / pass / pass; 3/3 cases | 1.675 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Sweeps 1 and 2: extra mining receipt (expected 1, got 2; nonempty collection) | pass / pass / pass; 3/3 cases | 1.781 |
+| `LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience` | Sweep 3: no SHIP_DELETE within 900 ticks | pass / pass / pass; 3/3 cases | 1.323 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Sweep 3: passed over limit (13.820 s, civ 3) | pass / pass / pass; 30/30 cases | 1.862 |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | Sweeps 1 and 3: passed over limit (13.352 / 12.949 s) | pass / pass / pass; 3/3 cases | 1.432 |
+| `P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell` | Sweep 2: first sell never observed; also over limit (13.649 s) | pass / pass / pass; 3/3 cases | 5.730 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Sweep 1: passed over limit (16.453 s, civ 5) | pass / pass / pass; 30/30 cases | 4.420 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Sweeps 1 and 3: observer collection contained old-sector status only | pass / pass / pass; 3/3 cases | 0.304 |
+
+The first sweep also triggered an earlier set of isolated reruns. Mining was
+**pass / fail / fail** there (extra queued `AsteroidMined` receipts: expected 1,
+got 2, then a nonempty collection). Its later three passes above do not establish
+a mining fix. The six earlier methods produced **46/48 passed** overall.
+These mining, spectator, suicide deletion, transit receipt and load-sensitive
+purchase/asset families have prior entries in this ledger. No simulation,
+combat, mining, assertion, deadline, tier, quarantine or calibration threshold
+was changed for P1078. Sanitized counts and exact method names are preserved in
+[the P1078 validation receipt](reports/AFK_SEATS_P1078_assets/validation.json).
+
 ## P1079 — browser combat qualification (2026-11-23)
 
 The initial Fast sweep executed **16,068 cases in 580.4 s**:
@@ -11193,3 +11236,16 @@ keyboard harnesses both passed; all owned proof hosts shut down cleanly.
 - **Fix:** the harness retries the real mouse move up to 10 times, with a 1.5 s server poll after each. The assertion is
   unchanged: the authoritative ship's yaw or pitch must become nonzero.
 - **After the fix:** 4 of 4 passed (`BROWSER_KEYBOARD_PASS 2` each), on the P1075 merge.
+
+### P1078 review — workstation Fast sweep (2026-11-24)
+
+The sweep ran concurrently with the P1068/P1074 Chromium checks, which explains the lower calibrated limit (10 s)
+and the five timing overruns (P814b, P999 civ 5, two NpcDodge, P777). **16,112 tests, 703.6 s, red.** Four
+assertion failures, each already ledgered above, each **3/3 passed alone**:
+- `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` (expected -2, actual 0
+  at line 229, the ledgered side-view signature);
+- `NpcAutopilotLiveTests.Damaged_npc_take_cover_now_produces_observable_movement`;
+- `NpcWingmanDefendLiveTests.Defender_switches_to_closer_threat_near_charge_while_chasing_distant_one`;
+- `P813cReconnectGraceTests.Wrong_token_refuses_only_the_claimant_and_the_original_resumes`.
+
+Quarantine: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` failed once and passed on retry.

@@ -63,6 +63,9 @@ public sealed class P713LobbyScreenLiveTests
         GC.SuppressFinalize(game);
         const BindingFlags hidden = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(Game1).GetField("_session", hidden)!.SetValue(game, commander);
+        var activity = new PlayerActivity();
+        activity.ToggleManualAfk();
+        typeof(Game1).GetField("_playerActivity", hidden)!.SetValue(game, activity);
         void Click() => typeof(Game1).GetMethod("ToggleTeamReady", hidden)!.Invoke(game, null);
         bool Forced(bool value)
         {
@@ -73,6 +76,7 @@ public sealed class P713LobbyScreenLiveTests
                     commander.World.TeamReadyBySideId.TryGetValue(1, out var r) && r == value;
         }
         Click();
+        Assert.False(activity.ManualAfk); // native Team Ready releases the commander's manual AFK
         Drain(() => Forced(true));
         short id = commander.World.MyShipId!.Value;
         Drain(() => { lock (teammate.Gate) return teammate.World.Roster.ReadyByShipId.TryGetValue(id, out var r) && r; });

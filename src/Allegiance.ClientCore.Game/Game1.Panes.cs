@@ -1373,7 +1373,6 @@ public sealed partial class Game1
             case State.GameOverBackAction.TeamLobbyReadyCheck:
                 Console.WriteLine("[monogame] game-over Back: team lobby (ready-check for the next game)");
                 _session.World.ClearGameOver();
-                _ownReady = false;
                 _state = ClientState.ReadyCheck;
                 break;
 
@@ -1581,6 +1580,12 @@ public sealed partial class Game1
     {
         UiSounds?.PlayMapClick();   // native mouseclickSound, teamscreen.cpp:2209/2217
         Console.WriteLine($"[monogame] side-select: requesting side {sideId}");
+        // Explicit Join releases manual AFK (teamscreen.cpp:2915-2916).
+        if (_playerActivity.ManualAfk && _session.Ack is { } ack)
+        {
+            _playerActivity.ClearManualAfk(); _ownReady = true;
+            _session.SendPlayerReady(true, _session.World.MyShipId ?? _session.World.JoinedShipId ?? ack.ShipID);
+        }
         _session.SendPositionReq(sideId);
     }
 
@@ -1719,22 +1724,9 @@ public sealed partial class Game1
         // P572 — --auto-ready: send PLAYER_READY(true) once seated (one-shot).
         ApplyAutoProofReadyCheck();
 
-        // P598 — re-ready after a mission rotation. After a game-over the
-        // server re-seats this peer on the rebuilt NotStarted mission with a
-        // fresh ship id; if the player's ready intent is already on (_ownReady,
-        // or --auto-ready), re-propagate it to the new ship so the rotated
-        // mission can auto-start (native lobby flow: re-ready on the fresh
-        // NotStarted mission). Re-sends once per new ship id.
-        if (_readyConfirmedShip != pid)
-        {
-            bool wantReady = _ownReady || _autoPlan.AutoReady;
-            _readyConfirmedShip = pid;
-            if (wantReady)
-            {
-                _session.SendPlayerReady(true, pid);
-                Console.WriteLine($"[monogame] ready-check: re-readied for ship {pid} after rotation (PLAYER_READY true)");
-            }
-        }
+        // Native preserves individual AFK through rotation; the server's join
+        // snapshot carries it. Only the explicit proof mode re-readies itself.
+        _readyConfirmedShip = pid;
 
         // P853b — the host-editing panes own the keyboard while open, exactly
         // like native's modal popups: the team-settings dialog is an IPopup that
@@ -1760,8 +1752,7 @@ public sealed partial class Game1
         bool y = ActionDown(ks, "ReadyToggle") || nav.Accept;
         if (y && !_rcYWasDown)
         {
-            _ownReady = !_ownReady;
-            _session.SendPlayerReady(_ownReady, pid);
+            SetManualPlayerReady(!_ownReady, pid);
             Console.WriteLine($"[monogame] ready-check: toggled own ready -> {_ownReady} (PLAYER_READY ship {pid})");
         }
         _rcYWasDown = y;
@@ -1991,8 +1982,7 @@ public sealed partial class Game1
             {
                 if (toggle.Contains(tx, ty))
                 {
-                    _ownReady = !_ownReady;
-                    _session.SendPlayerReady(_ownReady, pid);
+                    SetManualPlayerReady(!_ownReady, pid);
                     Console.WriteLine($"[monogame] ready-check: tapped toggle -> {_ownReady} (PLAYER_READY ship {pid})");
                     return;
                 }
@@ -2014,6 +2004,7 @@ public sealed partial class Game1
         _session.SendForceTeamReady(a.ForceReady, a.SideId);
         if (a.ReadySelf)
         {
+            _playerActivity.ClearManualAfk();
             _ownReady = true;
             _session.SendPlayerReady(true, a.ShipId);
         }

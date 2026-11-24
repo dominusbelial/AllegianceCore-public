@@ -191,6 +191,7 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
+        UpdatePlayerActivity();
         SyncMouseCapture();
         _hudSkinKeysRead = false;
         try { UpdateFrame(gameTime); }
@@ -301,7 +302,7 @@ public sealed partial class Game1
             _briefingDismissed = false;
             _missionCountdownSound.Reset();
             _gameOverCuePlayed = false;
-            _ownReady = false;
+            // Individual AFK survives rotation (fsmission.cpp:3468-3481).
             // P789 — a rotated next match is a NEW match: mark the recorder
             // restart so each match's numbers (and score) stay per-match. The
             // restart itself waits until the game-over panel is gone.

@@ -55,6 +55,7 @@ public sealed class P764UiSoundSeamTests
     {
         var game = (Game1)RuntimeHelpers.GetUninitializedObject(typeof(Game1)); GC.SuppressFinalize(game);
         Set(game, "_session", session);
+        Set(game, "_playerActivity", new PlayerActivity());
         Set(game, "_uiSoundOverride", sink);
         // P764b — AttemptTeleportTo resolves station types (the c_sabmRestart
         // check) through the shop catalogue; every teleport test below needs a

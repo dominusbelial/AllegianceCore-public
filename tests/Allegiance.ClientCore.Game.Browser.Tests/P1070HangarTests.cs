@@ -387,6 +387,30 @@ public sealed class P1070HangarTests
         Assert.True(hangar.LaunchSent);
     }
 
+    /// <summary>P1078 review (live, 2026-11-24): a second Launch while the first waits
+    /// for the next match must not re-ask the page (which answered "still completing
+    /// the previous launch request" and cleared the wait). The wait line shows the
+    /// start countdown once the server begins it.</summary>
+    [Fact]
+    public void A_second_launch_while_waiting_for_the_mission_start_is_ignored()
+    {
+        var (session, hangar) = Docked();
+        var wire = new Wire(session.World);
+        wire.Attach(hangar);
+        Start(session, hangar, missionStarted: false);
+
+        hangar.Launch(session.World, Own(session), Ready(), missionStarted: false);
+        Assert.True(hangar.TakeLaunchRequest());
+        hangar.Launch(session.World, Own(session), Ready(), missionStarted: false);
+
+        Assert.False(hangar.TakeLaunchRequest());                 // no second request
+        Assert.True(hangar.LaunchPending);
+        Assert.Equal("", hangar.Status);
+        Assert.Empty(wire.Buys);
+        Assert.Equal(HangarLaunchText.WaitingForServer, HangarLaunchText.Waiting(null));
+        Assert.Equal("Next match starts in 12 seconds…", HangarLaunchText.Waiting(12));
+    }
+
     [Fact]
     public void The_undock_button_always_leaves_without_buying()
     {

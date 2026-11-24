@@ -224,7 +224,10 @@ public sealed partial class Game1
         if (cat?.Core?.Civilizations is { } civs)
         {
             short? civId = null;
-            if (_session.World.SideRoster is { } sr)
+            // The side's current civilization (MISSIONDEF / CHANGE_TEAM_CIV) wins over a
+            // side-select roster that may describe the previous match.
+            if (_session.World.SideCivilizations.TryGetValue(sideId, out var current)) civId = current.CivId;
+            else if (_session.World.SideRoster is { } sr)
             {
                 foreach (var s in sr.Sides)
                 {

@@ -1,0 +1,495 @@
+{
+  "task": "P1078",
+  "implementationComplete": true,
+  "fullyQualified": false,
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolBuild": {
+    "projects": 154,
+    "warnings": 0,
+    "errors": 0
+  },
+  "focusedCSharp": {
+    "methods": 54,
+    "isolatedHosts": 162,
+    "cases": 270,
+    "passed": 270,
+    "skipped": 0
+  },
+  "focusedJavaScript": {
+    "cases": 30,
+    "isolatedHosts": 90,
+    "passed": 90
+  },
+  "fullFastSweeps": [
+    {
+      "name": "fast",
+      "seconds": 563.4462244280148,
+      "cases": 16105,
+      "outcomes": {
+        "Passed": 16094,
+        "NotExecuted": 7,
+        "Failed": 4
+      },
+      "failedCases": [
+        "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+        "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+        "Allegiance.ClientCore.MonoGame.Tests.P764UiSoundSeamTests.SideSelectRowConfirm_PlaysTheTeamRowClickCue_AndSendsTheJoin",
+        "Allegiance.ClientCore.MonoGame.Tests.P713LobbyScreenLiveTests.Non_owner_commander_screen_toggles_real_team_ready_and_readies_self"
+      ],
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 12.9358049
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 12.8218254
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+          "outcome": "Passed",
+          "seconds": 16.4532716
+        },
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 13.3524713
+        }
+      ],
+      "fastLimitSeconds": 11.53236074270557,
+      "infrastructureChecks": 9,
+      "infrastructureExitCode": 0,
+      "passed": false
+    },
+    {
+      "name": "fast-final",
+      "seconds": 570.9536285649519,
+      "cases": 16109,
+      "outcomes": {
+        "Passed": 16099,
+        "NotExecuted": 7,
+        "Failed": 3
+      },
+      "failedCases": [
+        "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip",
+        "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+        "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity"
+      ],
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 13.6636767
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+          "outcome": "Passed",
+          "seconds": 13.1833528
+        },
+        {
+          "name": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+          "method": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+          "outcome": "Failed",
+          "seconds": 13.6490462
+        }
+      ],
+      "fastLimitSeconds": 11.53076923076923,
+      "infrastructureChecks": 9,
+      "infrastructureExitCode": 0,
+      "passed": false
+    },
+    {
+      "name": "fast-qualified",
+      "seconds": 565.1201541320188,
+      "cases": 16109,
+      "outcomes": {
+        "Passed": 16100,
+        "NotExecuted": 7,
+        "Failed": 2
+      },
+      "failedCases": [
+        "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+        "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange"
+      ],
+      "timingOffenders": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+          "outcome": "Passed",
+          "seconds": 13.1096772
+        },
+        {
+          "name": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes(civ: 3)",
+          "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+          "outcome": "Passed",
+          "seconds": 13.8200794
+        },
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 12.9490183
+        }
+      ],
+      "fastLimitSeconds": 11.540848806366048,
+      "infrastructureChecks": 9,
+      "infrastructureExitCode": 0,
+      "passed": false
+    }
+  ],
+  "existingFailureAndTimingFinalIsolation": [
+    {
+      "method": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+      "observation": "Passed over limit in all three sweeps (12.822 / 13.664 / 13.110 s)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 3.105698
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts",
+      "observation": "Passed over limit in sweeps 1 and 2 (12.936 / 13.183 s, civ 25)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 2
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 2
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 2
+        }
+      ],
+      "cases": 6,
+      "outcomes": {
+        "Passed": 6
+      },
+      "maxCaseSeconds": 3.9653433
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip",
+      "observation": "Sweep 2: victim never died within 4,800 ticks",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 1.6747043
+    },
+    {
+      "method": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "observation": "Sweeps 1 and 2: extra mining receipt (expected 1, got 2; nonempty collection)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 1.7811203
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveSuicideShipDeleteTests.Combat_death_produces_ship_delete_to_same_audience",
+      "observation": "Sweep 3: no SHIP_DELETE within 900 ticks",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 1.3229863
+    },
+    {
+      "method": "Allegiance.Core.Tests.P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes",
+      "observation": "Sweep 3: passed over limit (13.820 s, civ 3)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 10
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 10
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 10
+        }
+      ],
+      "cases": 30,
+      "outcomes": {
+        "Passed": 30
+      },
+      "maxCaseSeconds": 1.8618959
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "observation": "Sweeps 1 and 3: passed over limit (13.352 / 12.949 s)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 1.43222
+    },
+    {
+      "method": "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell",
+      "observation": "Sweep 2: first sell never observed; also over limit (13.649 s)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 5.7301444
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "observation": "Sweep 1: passed over limit (16.453 s, civ 5)",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 10
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 10
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 10
+        }
+      ],
+      "cases": 30,
+      "outcomes": {
+        "Passed": 30
+      },
+      "maxCaseSeconds": 4.4198632
+    },
+    {
+      "method": "Allegiance.Core.Tests.WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange",
+      "observation": "Sweeps 1 and 3: observer collection contained old-sector status only",
+      "isolatedRuns": [
+        {
+          "repeat": 1,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 2,
+          "passed": true,
+          "cases": 1
+        },
+        {
+          "repeat": 3,
+          "passed": true,
+          "cases": 1
+        }
+      ],
+      "cases": 3,
+      "outcomes": {
+        "Passed": 3
+      },
+      "maxCaseSeconds": 0.3043336
+    }
+  ],
+  "earlierMiningIsolation": {
+    "outcomes": [
+      "Passed",
+      "Failed",
+      "Failed"
+    ],
+    "reason": "Extra queued mining receipts; subsequent isolated pass does not remove the observed race."
+  },
+  "browserRequiredChecks": [
+    {
+      "script": "tools/p1068-browser-guest.cjs",
+      "status": "blocked",
+      "reason": "Playwright module unavailable; no installs permitted. Workstation rerun required."
+    },
+    {
+      "script": "tools/p1074-browser-keyboard.cjs",
+      "status": "blocked",
+      "reason": "Playwright module unavailable; no installs permitted. Workstation rerun required."
+    }
+  ],
+  "browserAdditionalProof": {
+    "runs": [
+      {
+        "browser": "HeadlessChrome/153.0.8010.0",
+        "hidden": false,
+        "idleMs": 91010,
+        "readyFlags": [
+          true,
+          false,
+          true,
+          false,
+          true
+        ],
+        "focusWoke": false,
+        "pointerWoke": true,
+        "manualSuppressedInput": true,
+        "errors": []
+      },
+      {
+        "browser": "HeadlessChrome/153.0.8010.0",
+        "hidden": false,
+        "idleMs": 90952,
+        "readyFlags": [
+          true,
+          false,
+          true,
+          false,
+          true
+        ],
+        "focusWoke": false,
+        "pointerWoke": true,
+        "manualSuppressedInput": true,
+        "errors": []
+      },
+      {
+        "browser": "HeadlessChrome/153.0.8010.0",
+        "hidden": false,
+        "idleMs": 90953,
+        "readyFlags": [
+          true,
+          false,
+          true,
+          false,
+          true
+        ],
+        "focusWoke": false,
+        "pointerWoke": true,
+        "manualSuppressedInput": true,
+        "errors": []
+      }
+    ],
+    "allPassed": true,
+    "hiddenTabObserved": false,
+    "idleMilliseconds": [
+      91010,
+      90952,
+      90953
+    ]
+  },
+  "classicAndModernCapturesReviewed": true,
+  "commits": 0,
+  "pushes": 0
+}

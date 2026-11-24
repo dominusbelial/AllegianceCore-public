@@ -64,6 +64,16 @@
       const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
       request?.catch(() => console.info('[browser] Fullscreen request refused; try another gesture.'));
     };
+    // Page-wide input, including HTML fields and toolbar buttons. Only actual
+    // page events count; blur/visibility changes and renderer frames do not.
+    const activity = event => {
+      if (event.isTrusted && !document.hidden && (event.type !== 'pointermove'
+          || event.movementX || event.movementY)) invoke('PlayerActivityTick', true);
+    };
+    for (const name of ['pointermove', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'wheel'])
+      on(window, name, activity, { capture: true, passive: true });
+    const activityTimer = window.setInterval(() => invoke('PlayerActivityTick', false), 1000);
+    listeners.push(() => window.clearInterval(activityTimer));
     on(window, 'keydown', event => {
       if (event.isTrusted) audio(!document.hidden, true);
       if (!owns()) return;
@@ -165,7 +175,7 @@
       if ((playing() || docked()) && event.target.closest?.('#online-panel button, #menu-controls button')) focusCanvas();
     });
     window.gameFlight = {
-      activate: focusCanvas, audioStates: () => [...contexts].map(c => c.state),
+      activate: focusCanvas, release, audioStates: () => [...contexts].map(c => c.state),
       pacing(slow) { if (framesLate !== slow) { framesLate = slow; audio(!document.hidden); } },
       frame() {
         // Poll once per game frame; only the W3C standard layout is portable.

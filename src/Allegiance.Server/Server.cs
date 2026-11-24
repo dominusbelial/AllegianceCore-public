@@ -479,7 +479,9 @@ public sealed partial class Server : IDisposable
     // field on Ship, because readiness is a lobby-era concept that must outlive
     // the peer's ship placement and is orthogonal to the sim's Ship model.
     // Present only for peers that have sent a PLAYER_READY; absence is treated
-    // as not-ready. Sim-thread only, like the sibling maps. P180.
+    // as not-ready by the native side aggregate. P1078's opt-in seating and
+    // bot orchestration distinguish unknown from an explicit false to retain
+    // legacy-client behavior. Includes pending side-select peers. Sim-thread only.
     private readonly Dictionary<ConnectionId, bool> _playerReady = new();
 
     // P654 (H-24) — per-peer message/chat token budget, the port of native's

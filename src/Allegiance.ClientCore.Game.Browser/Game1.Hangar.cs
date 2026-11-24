@@ -355,7 +355,7 @@ public sealed partial class Game1
         string? line = hangar.QuitConfirm
             ? $"Leave this mission?  {KeyLabel("MenuConfirm")} confirm / {KeyLabel("MainMenu")} cancel"
             : hangar.Status.Length > 0 ? hangar.Status
-            : hangar.LaunchPending ? HangarLaunchText.WaitingForServer
+            : hangar.LaunchPending ? HangarLaunchText.Waiting(_flightSession?.World.CountdownRemainingSeconds())
             : null;
         if (line is null) return;
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);

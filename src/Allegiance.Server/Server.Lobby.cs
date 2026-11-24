@@ -1043,9 +1043,20 @@ public sealed partial class Server
                     continue;
                 }
                 short oldSide = live.Ship.SideId ?? -1;
-                // P660 policy: spectators/unseated peers also enter the next match.
-                // Preserve existing seats; auto-complete side selection for the rest.
-                if (!tail.FreshSideIds.Contains(oldSide) && (_config.LiveSettings?.AutoNextMatch?.Enabled ?? true))
+                // P1078 port adaptation, limited to opt-in automatic seating:
+                // an explicitly AFK player who never launched frees their seat
+                // at this boundary. No kick; preserve AFK and the connection.
+                // Native intent: ignore AFK during automatic distribution
+                // (FedSrv/fsmission.cpp:5228-5241). LastLaunchTime is never reset
+                // on docking/death, and a currently flying player is protected.
+                bool afk = IsExplicitlyAfk(conn);
+                if (TimedAutoSeatEnabled && afk && live.Ship.StationId is not null
+                    && double.IsNegativeInfinity(live.Ship.LastLaunchTime))
+                    oldSide = -1;
+                // Preserve seats of everyone who launched. With timed seating
+                // off, keep the legacy carry-forward policy too; when opted in,
+                // AFK NOAT stays NOAT while active players can be distributed.
+                if (!(TimedAutoSeatEnabled && afk) && !tail.FreshSideIds.Contains(oldSide) && (_config.LiveSettings?.AutoNextMatch?.Enabled ?? true))
                     oldSide = tail.Fresh.Sides.OrderBy(side => tail.Prepared.Count(p => p.SideId == side.Id)
                         + tail.Migrants.Count(p => p.Live.Ship.SideId == side.Id)).ThenBy(side => side.Id).First().Id;
                 short newShipId = AllocateShipId();
@@ -1060,13 +1071,13 @@ public sealed partial class Server
                 // the spawner is a join-time placement policy for NEW joiners; a
                 // migrated peer is an EXISTING player being re-seated, so a test
                 // spawner must not hijack (or crash on) its re-placement.
-                var newLive = AssignMigratedShip(tail.Fresh, newShipId, oldSide != -1 ? oldSide : null);
+                var newLive = AssignMigratedShip(tail.Fresh, newShipId, oldSide >= 0 ? oldSide : null);
                 // Placement needs the original side to select its hangar, but these
                 // prepared peers have not joined yet. Otherwise CountPlayersOnSide
                 // sees every migrant in phase 2 and elects no leader at all.
                 // Native AddPlayerToSide elects the first joined player
                 // (fsmission.cpp:601-624); the ordering below preserves the old leader.
-                newLive.Ship.SideId = null;
+                newLive.Ship.SideId = tail.FreshSideIds.Contains(oldSide) ? null : SideTeamLobby;
 
                 // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
                 // already starts at 0). Ready is PRESERVED, not cleared — native
@@ -5296,9 +5307,13 @@ private void CompleteStartCountdown(Mission mission, double now)
                     if (teammate.Ship.Id != shipId && teammate.Ship.WingId != 0)
                         lobbyState.Add(new SetWingId { ShipID = teammate.Ship.Id,
                             WingId = teammate.Ship.WingId, BCommanded = true }.Encode());
-                    if (_playerReady.TryGetValue(peer, out var ready) && ready)
-                        lobbyState.Add(new PlayerReady { ShipId = teammate.Ship.Id, FReady = true }.Encode());
                 }
+            // Ready is mission-wide, including false and opposing players.
+            // Native PLAYER_READY audience: FedSrv.CPP:7025. The snapshot uses
+            // the same message so late bot probes see current AFK, not history.
+            foreach (var (peer, player) in _peerShips)
+                if (ReferenceEquals(player.Ship.Mission, lobbyMission) && _playerReady.TryGetValue(peer, out bool ready))
+                    lobbyState.Add(new PlayerReady { ShipId = player.Ship.Id, FReady = ready }.Encode());
             if (lobbyState.Count > 0) SendPeer(from, FedPacket.Pack(lobbyState));
             // P1033: initial election's SET_TEAM_INFO cannot reach the joining
             // leader before _peerShips registration. Seed current squads after
@@ -5727,8 +5742,12 @@ private void CompleteStartCountdown(Mission mission, double now)
         var lobbyInfos = new List<byte[]>();
         foreach (var (peer, player) in _peerShips)
             if (ReferenceEquals(player.Ship.Mission, mission))
+            {
                 AppendPlayerInfoForRecipient(to, player.Ship, player.Ship.SideId ?? SideTeamLobby,
                     _peerNames.TryGetValue(peer, out var playerName) ? playerName : "", lobbyInfos);
+                if (_playerReady.TryGetValue(peer, out bool ready))
+                    lobbyInfos.Add(new PlayerReady { ShipId = player.Ship.Id, FReady = ready }.Encode());
+            }
         foreach (var sector in mission.Sectors)
             foreach (var model in sector.Models)
                 if (model is Ship { IsNpc: true } npc)
@@ -5810,11 +5829,9 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// (<c>null</c>/&lt;=0 = off, the default). With it off, a peer that never
     /// chose stays pending — exactly like native's unanswered request — and
     /// still never blocks the P180 ready-up auto-start because pending peers are
-    /// side-less and absent from _peerShips. When the option is set, a silent/AFK
-    /// client is eventually seated and launched instead of hanging at the
-    /// side-select screen. 30 s (the pre-P763 value) is comfortably longer than
-    /// the 15 s P188 briefing countdown and ample for a 2-option pick, yet short
-    /// enough that an abandoned join recycles quickly.</summary>
+    /// side-less and absent from _peerShips. P1078: when enabled, the timer
+    /// skips explicitly AFK peers (native distribution intent, fsmission.cpp:
+    /// 5228-5241). An explicit POSITIONREQ always remains authoritative.</summary>
     private void AdvanceSideSelection(double now)
     {
         if (_pendingSideSelect.Count == 0) return;
@@ -5830,7 +5847,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // pre-P281; racing client receive-threads otherwise shuffled sides.
         var ready = _pendingSideSelect
             .Where(kv => kv.Value.RequestedSide is not null
-                      || (autoSeat && now - kv.Value.ConnectSimTime >= autoSeatSeconds))
+                      || (autoSeat && !IsExplicitlyAfk(kv.Key) && now - kv.Value.ConnectSimTime >= autoSeatSeconds))
             .OrderBy(kv => kv.Value.JoinSeq)
             .Select(kv => (Key: kv.Key, Pending: kv.Value))
             .ToList();

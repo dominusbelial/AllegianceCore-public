@@ -44,7 +44,11 @@ internal sealed partial class BotManager
                     bool ours = owned.TryGetValue(p.CharacterName, out var local);
                     bool leader = names.TryGetValue(p.CharacterName, out short id) && world.TeamLeaderShipIdFor(p.SideId) == id;
                     return new BackfillPilot(p.CharacterName, p.SideId, BotNameRules.IsBot(patterns, p.CharacterName),
-                        !ours || local.Protected || leader, ours ? local.Role : "commander/external", ours);
+                        !ours || local.Protected || leader, ours ? local.Role : "commander/external", ours,
+                        // Port-only orchestration: unknown readiness retains the
+                        // old count; an explicit PLAYER_READY(false) frees a seat.
+                        !names.TryGetValue(p.CharacterName, out short readyId)
+                            || !world.Roster.ReadyByShipId.TryGetValue(readyId, out bool ready) || ready);
                 }).ToArray());
         }
     }

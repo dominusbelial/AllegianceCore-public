@@ -118,6 +118,22 @@ list in **reverse**.
   `src/Allegiance.ClientCore.Browser/Pages/Menu.Online.cs`. Chromium timing/control/layout proof:
   `tools/p1053-browser-polish.cjs`. Static-file cache contract:
   `docs/BROWSER_HOSTING.md`. Report: `docs/reports/BROWSER_POLISH_P1053.md`.
+- **AFK activity and seats (P1078)** — shared native 90-second NOAT / 180-second
+  inactivity and manual suppression in `src/Allegiance.ClientCore/State/PlayerActivity.cs`;
+  desktop `src/Allegiance.ClientCore.Game/Game1.PlayerActivity.cs` and page input/timer
+  `src/Allegiance.ClientCore.Browser/Pages/Menu.PlayerActivity.cs` feed it without
+  resetting AFK at rotation. `src/Allegiance.ClientCore/State/ClientWorld.PlayerActivity.cs`
+  captures outgoing leader game-over before the old roster is retired.
+  `src/Allegiance.Server/Server.PlayerActivity.cs` accepts
+  pending-player readiness and relays it mission-wide. Opt-in timed seating skips
+  AFK; its match boundary returns AFK never-launched players to the lobby, preserving
+  launched players. These seating rules and active-human counting in
+  `tools/allegiance-mcp/BackfillSeats.cs` are port adaptations. Real five-seat loopback:
+  `tests/Allegiance.ClientCore.Tests/P1078AfkSeatsLiveTests.cs`; both-style captures:
+  `tools/p1078-afk-proof/Program.cs`; actual page timer/input proof without npm:
+  `tools/p1078-browser-afk.cjs`. Browser NOAT/hangar transitions are in
+  `src/Allegiance.ClientCore.Browser/Pages/BrowserSeatNavigation.cs`.
+  Report: `docs/reports/AFK_SEATS_P1078.md`.
 - **Browser launch gate and console levels (P1058)** — the hangar's ready/launch
   affordance is one shared decision, `src/Allegiance.ClientCore/State/HangarLaunch.cs`
   (`MyShipId ?? JoinedShipId`, blocked while the session is between sockets), consumed

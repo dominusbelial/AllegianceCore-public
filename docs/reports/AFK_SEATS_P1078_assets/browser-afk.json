@@ -1,0 +1,59 @@
+{
+  "runs": [
+    {
+      "browser": "HeadlessChrome/153.0.8010.0",
+      "hidden": false,
+      "idleMs": 91010,
+      "readyFlags": [
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "focusWoke": false,
+      "pointerWoke": true,
+      "manualSuppressedInput": true,
+      "errors": []
+    },
+    {
+      "browser": "HeadlessChrome/153.0.8010.0",
+      "hidden": false,
+      "idleMs": 90952,
+      "readyFlags": [
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "focusWoke": false,
+      "pointerWoke": true,
+      "manualSuppressedInput": true,
+      "errors": []
+    },
+    {
+      "browser": "HeadlessChrome/153.0.8010.0",
+      "hidden": false,
+      "idleMs": 90953,
+      "readyFlags": [
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "focusWoke": false,
+      "pointerWoke": true,
+      "manualSuppressedInput": true,
+      "errors": []
+    }
+  ],
+  "allPassed": true,
+  "hiddenTabObserved": false,
+  "idleMilliseconds": [
+    91010,
+    90952,
+    90953
+  ]
+}

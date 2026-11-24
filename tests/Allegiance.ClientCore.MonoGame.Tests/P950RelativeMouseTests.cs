@@ -5,6 +5,24 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 
 public sealed class P950RelativeMouseTests
 {
+    [Fact]
+    public void Afk_activity_observes_real_captured_motion_without_consuming_flight_deltas_or_warps()
+    {
+        var backend = new Backend();
+        using var mouse = new RelativeMouse(() => backend, _ => { });
+        mouse.SetOwner(MouseCaptureOwner.Flight);
+        backend.Delta = (999, 999);
+        Assert.Equal((0, 0), mouse.ReadDelta(0, 0, 640, 360, (_, _) => Assert.Fail("warp")));
+        Assert.False(mouse.TakeActivity()); // capture flush is not input
+        backend.Delta = (4, -3);
+        Assert.Equal((4, -3), mouse.ReadDelta(0, 0, 640, 360, (_, _) => Assert.Fail("warp")));
+        mouse.ReadDelta(0, 0, 640, 360, (_, _) => Assert.Fail("warp"));
+        Assert.True(mouse.TakeActivity()); // zero delta does not erase real motion
+        Assert.False(mouse.TakeActivity());
+        mouse.SetOwner(MouseCaptureOwner.None);
+        Assert.False(mouse.TakeActivity());
+    }
+
     private sealed class Backend(bool available = true) : IRelativeMouseBackend
     {
         internal readonly List<bool> Modes = [];

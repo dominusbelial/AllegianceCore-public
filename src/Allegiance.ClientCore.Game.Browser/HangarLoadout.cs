@@ -425,7 +425,10 @@ public sealed class BrowserHangarModel
     public void Launch(ClientWorld world, ShipEntity own, HangarLaunch.Readiness readiness,
         bool missionStarted)
     {
-        if (!Active || LaunchSent || _launchSequence.AwaitingDisembark) return;
+        // A launch already waiting for the mission start owns the request: a second
+        // click must not re-ask the page, which would answer it as busy and clear
+        // the wait (P1078 review, live 2026-11-24).
+        if (!Active || LaunchSent || LaunchPending || _launchSequence.AwaitingDisembark) return;
         if (own.ParentId >= 0)
         {
             _boardFailureSnapshot = world.BoardFailureRevision;
@@ -444,6 +447,7 @@ public sealed class BrowserHangarModel
         {
             LaunchRequested = true;
             LaunchPending = true;
+            Status = "";
             LastAction = "launch requested (ready -> mission start -> dock)";
             return;
         }

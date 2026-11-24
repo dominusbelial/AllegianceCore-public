@@ -26,4 +26,10 @@ public static class HangarLaunchText
     /// HTML panel's <c>#launch-status</c> shows (<c>Menu.Online.cs</c>
     /// <c>BusyStatus</c>), minus the countdown the page keeps to itself.</summary>
     public const string WaitingForServer = "Ready. Waiting for the server to start the mission…";
+
+    /// <summary>The pending launch's wait line: the start countdown once the server
+    /// has begun it, otherwise the ready-up wait. Same text as the page's busy line
+    /// (<c>Menu.Online.cs</c> <c>BusyStatus</c>).</summary>
+    public static string Waiting(int? countdownSeconds) => countdownSeconds is { } seconds
+        ? $"Next match starts in {seconds} seconds…" : WaitingForServer;
 }
