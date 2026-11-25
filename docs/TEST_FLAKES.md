@@ -11270,3 +11270,14 @@ assertion failures, each already ledgered above, each **3/3 passed alone**:
 - `P813cReconnectGraceTests.Wrong_token_refuses_only_the_claimant_and_the_original_resumes`.
 
 Quarantine: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_position` failed once and passed on retry.
+
+## P1083B workstation sweep — 2026-11-24
+
+| Test | Sweep observation | Three isolated runs | Classification |
+|---|---|---|---|
+| `P1042bScreenChromeTests.View_and_career_chrome_allocate_nothing_per_frame` | 984 bytes, expected 0 | pass / pass / pass | Allocation-under-load family, first observation of this test. |
+| `CommandedDroneBuildKeyLiveTests.Live_client_commands_builder_drone_to_build_creating_real_station` | construction did not register within 4 s | pass / pass / pass | Existing construction receipt timing entry (see P1039c). |
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | read-only profile file | fail / fail / fail; writable scratch configuration pass / pass / pass | Existing P761 sandbox profile obstruction. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | terminal travel 1155.35 m versus 1848.56 m | pass / pass / pass | Existing earlier-destruction signature. |
+| `DroneSpawnLoadoutTests.Spawned_wingman_defends_a_charge_and_damages_a_threat_without_manual_arming` | no damage after 20,000 ticks, 36.025 s | pass / pass / pass | Existing P1044 wingman failure and timing signature. |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | passed in 16.373 s, above Fast limit | all 10 theory rows pass in each run; civ 5 took 2 / 2 / 3 s | Existing load-sensitive timing signature. |

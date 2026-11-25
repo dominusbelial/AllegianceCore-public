@@ -59,12 +59,10 @@ NativePbr, SoftParticle and Volumetric. Passing **`Defines=OPENGL=1`** fixes tha
 without editing a source. Every input then reaches the same native-library
 failure. There is no evidence yet of an HLSL intrinsic/loop/array rejection.
 
-The complete runner command and a Windows/Wine command for the workstation are
-in the tool README. Run the **whole runner** under the existing Windows .NET
-SDK, rather than setting `MGFXC_WINE_PATH` on native Linux `dotnet`. The existing
-Wine prefix described in `docs/SHADERS.md` has .NET 8; the runner uses compatible
-APIs and can be built there with `-p:TargetFramework=net8.0`. This command is
-prepared but cannot be executed here; no installation is requested.
+The Windows/Wine command prepared in this lane was not tested here. The
+corrected Linux-build/Wine-execution recipe and later workstation results are
+in `tools/p1083-kni-shaders/README.md` and
+`docs/reports/BROWSER_SHADERS_KNI_P1083B.md`.
 
 The normal compiler writes KNIFX12, and `Effect.cs:70-178` also recognizes
 KNIFX11. The legacy alternative is supported explicitly by KNI:

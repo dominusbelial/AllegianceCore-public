@@ -1,9 +1,7 @@
 {
-  "format": "KNI XNB containing MGFX10; legacy WebGL translation",
+  "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
   "compilerVersion": "4.3.9001",
-  "sourceSha256": "ff7cd6ab0af6ac6e796160ee4a45e771d94af2f50908ae031cb375b3e2eb0e00",
-  "desktopSha256": "e36330c9e40b61dd08929630fdf854ef2afa9a3840213e81eddd6c16d68b6aef",
-  "outputSha256": "a7e5d8bf64e977f3be45dc235dcfdb6cad98938c850cc1f3039ca81944bbe30f",
-  "outputBytes": 106146,
-  "shaderCodeChanged": false
+  "sourceSha256": "d8ede21da5969e6979a2d92ce9a45d768fa93646de4a4af830ac1c43250da592",
+  "outputSha256": "2d451f887b60c1da349cb53cb30d7ed9976e7e059f501957741451aafb47c38d",
+  "outputBytes": 109805
 }

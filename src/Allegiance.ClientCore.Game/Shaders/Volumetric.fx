@@ -54,7 +54,11 @@
 
 #if OPENGL
 #define VS_SHADERMODEL vs_3_0
+#if __GLES__
+#define PS_SHADERMODEL ps_4_0
+#else
 #define PS_SHADERMODEL ps_3_0
+#endif
 #endif
 
 float4x4 WorldViewProj;
@@ -138,6 +142,27 @@ struct VS_OUT
     float  Seed     : TEXCOORD6;
     float  ViewDepth: TEXCOORD7; // positive view distance (for depth fade)
 };
+#if __GLES__
+// Reflection cannot accept POSITION and VPOS as two system positions.
+struct PS_IN
+{
+    float3 WorldPos : TEXCOORD0;
+    float3 Center   : TEXCOORD1;
+    float  Radius   : TEXCOORD2;
+    float3 Tint     : TEXCOORD3;
+    float  Age      : TEXCOORD4;
+    float  Life     : TEXCOORD5;
+    float  Seed     : TEXCOORD6;
+    float  ViewDepth: TEXCOORD7; // positive view distance (for depth fade)
+};
+#define PIXEL_INPUT PS_IN
+#define PIXEL_POSITION float4
+#define PIXEL_XY(v) v.xy
+#else
+#define PIXEL_INPUT VS_OUT
+#define PIXEL_POSITION float2
+#define PIXEL_XY(v) v
+#endif
 VS_OUT VS(in VS_IN i)
 {
     VS_OUT o;
@@ -211,8 +236,14 @@ float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float l
     float3 acc = 0.0;
     float trans = 1.0;
     int steps = slices * inner;
+    #if __GLES__
+    [loop]
+    #endif
     for (int si = 0; si < slices; si++)
     {
+        #if __GLES__
+        [loop]
+        #endif
         for (int j = 0; j < inner; j++)
         {
             int idx = si * inner + j;
@@ -248,7 +279,7 @@ float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float l
 // closer than this fragment (melts the volume onto hulls instead of slicing).
 // P834 — the scene depth is fetched ONCE per fragment in the pixel shader and
 // passed here and to ClampVisible (P579's DepthFade used its own fetch).
-float DepthFadeScene(VS_OUT i, float scene)
+float DepthFadeScene(PIXEL_INPUT i, float scene)
 {
     float vol = (i.ViewDepth - Near) * InvRange;
     // Same normalized-depth slope as SoftParticle.fx (SoftnessInv = 1/0.004,
@@ -285,12 +316,12 @@ bool ClampVisible(float3 rd, float scene, inout float t0, inout float t1)
 
 // P579 coverage-LOD: Low(64) = biggest on-screen; Ultra(510) = smallest.
 // dt normalised to 1/steps keeps brightness uniform across levels.
-float4 PS_Low(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+float4 PS_Low(PIXEL_INPUT i, in PIXEL_POSITION vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, PIXEL_XY(vpos) * InvViewportSize)).x;
     if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
@@ -302,45 +333,45 @@ float4 PS_Low(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
 // 64-step Low level; the bigger stride is masked by the quarter-res render
 // scale the CPU picks for volumes this large. 32 steps aliased the finest fBm
 // octave on a radius-165 volume (step ≈ cell size) and read visibly brighter.
-float4 PS_Minimal(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+float4 PS_Minimal(PIXEL_INPUT i, in PIXEL_POSITION vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, PIXEL_XY(vpos) * InvViewportSize)).x;
     if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
                     1.0/48.0, t0, t1, span, 1, 48, 1.3333333) * DepthFadeScene(i, scene);
 }
-float4 PS_Med(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+float4 PS_Med(PIXEL_INPUT i, in PIXEL_POSITION vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, PIXEL_XY(vpos) * InvViewportSize)).x;
     if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
                     1.0/128.0, t0, t1, span, 1, 128, 1.0) * DepthFadeScene(i, scene);
 }
-float4 PS_High(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+float4 PS_High(PIXEL_INPUT i, in PIXEL_POSITION vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, PIXEL_XY(vpos) * InvViewportSize)).x;
     if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,
                     1.0/255.0, t0, t1, span, 1, 255, 1.0) * DepthFadeScene(i, scene);
 }
-float4 PS_Ultra(VS_OUT i, in float2 vpos: VPOS0) : COLOR0
+float4 PS_Ultra(PIXEL_INPUT i, in PIXEL_POSITION vpos: VPOS0) : COLOR0
 {
     float3 rd = normalize(i.WorldPos - EyePos);
     float t0, t1;
     if (!RaySphere(EyePos, rd, i.Center, i.Radius, t0, t1)) clip(-1);
-    float scene = DecodeFloatRGBA(tex2D(DepthSampler, vpos * InvViewportSize)).x;
+    float scene = DecodeFloatRGBA(tex2D(DepthSampler, PIXEL_XY(vpos) * InvViewportSize)).x;
     if (!ClampVisible(rd, scene, t0, t1)) clip(-1);
     float span = max(t1 - t0, 1e-4);
     return MarchAcc(EyePos, rd, i.Center, i.Radius, i.Age, i.Life, i.Tint, i.Seed,

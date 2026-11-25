@@ -237,6 +237,14 @@ list in **reverse**.
   `docs/parity/p1083-browser-shaders.csv`; report:
   `docs/reports/BROWSER_SHADERS_SPIKE_P1083A.md`. Port-only presentation;
   no desktop shader or native game-rule change.
+- **KNI shader compilation (P1083B)** — GLES-only shader profile and input
+  fixes in `src/Allegiance.ClientCore.Game/Shaders/DisplacedSphere.fx`,
+  `src/Allegiance.ClientCore.Game/Shaders/SoftParticle.fx` and
+  `src/Allegiance.ClientCore.Game/Shaders/Volumetric.fx` compile all nine through
+  the pinned runner. Fixed-path desktop rebuilds stay byte-identical; the
+  preprocessing guard is `tools/p1083b-desktop-preprocess-tests.py`. Evidence:
+  `docs/reports/BROWSER_SHADERS_KNI_P1083B.md`. Only the existing opt-in volume
+  pack uses an effect; other browser integration is deferred.
 - **Home station artwork before launch (P1076)** — browser-only
   `src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs` prioritizes own-side
   current-sector stations even offscreen, and its throttled dock prefetch requests

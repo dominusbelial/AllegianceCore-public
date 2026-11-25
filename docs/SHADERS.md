@@ -66,6 +66,12 @@ The prefix needs the Windows .NET SDK (`8.0.401`) and `d3dcompiler_47.dll`,
 which the setup script provisions. `MGFXC_WINE_PATH` is also exported in
 `~/.profile`.
 
+For KNI's browser shader compiler, build the runner with Linux .NET and run
+the resulting assembly under Windows .NET in Wine; running the .NET build CLI
+under Wine crashes on the measured workstation. The complete recipe and
+matrix are in `tools/p1083-kni-shaders/README.md` and
+`docs/reports/BROWSER_SHADERS_KNI_P1083B.md`.
+
 ## GL / MojoShader limits (why the OpenGL profile, why set every parameter)
 
 - DesktopGL and Android both execute the OpenGL profile through **MojoShader**,

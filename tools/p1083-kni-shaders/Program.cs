@@ -73,7 +73,7 @@ foreach (string file in Directory.GetFiles(source, "*.fx").Order(StringComparer.
             format = "KNI XNB containing KNIFX12; BlazorGL/GLES", compilerVersion = "4.3.9001",
             sourceSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant(),
             outputSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(target))).ToLowerInvariant(),
-            outputBytes = bytes, sourceChanged = false,
+            outputBytes = bytes,
         }, new JsonSerializerOptions { WriteIndented = true }));
     rows.Add(new { shader = stem + ".fx", compiled = error is null, error, outputBytes = bytes,
         sourceSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant(),

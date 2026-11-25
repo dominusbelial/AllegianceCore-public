@@ -21,12 +21,13 @@
 # env var, the command, and the GL/MojoShader limits).
 #
 # Usage:  scripts/build-shaders.sh
+# Optional SHADER_OUT_DIR selects a scratch output without changing source paths.
 # Exit:   0 on success (a line per compiled shader), non-zero on any failure.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SRC_DIR="$REPO/src/Allegiance.ClientCore.Game/Shaders"
-OUT_DIR="$REPO/src/Allegiance.ClientCore.MonoGame/Content/Shaders"
+OUT_DIR="${SHADER_OUT_DIR:-$REPO/src/Allegiance.ClientCore.MonoGame/Content/Shaders}"
 MGFXC="${MGFXC:-$HOME/.dotnet/tools/mgfxc}"
 
 mkdir -p "$OUT_DIR"

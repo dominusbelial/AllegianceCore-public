@@ -22,7 +22,11 @@
 
 #if OPENGL
 #define VS_SHADERMODEL vs_3_0
+#if __GLES__
+#define PS_SHADERMODEL ps_4_0
+#else
 #define PS_SHADERMODEL ps_3_0
+#endif
 #endif
 
 float4x4 WorldView;
@@ -85,9 +89,19 @@ VS_OUT VS(in float3 pos : POSITION0, in float2 uv : TEXCOORD0, in float4 color :
     return o;
 }
 
+#if __GLES__
+// KNI reflection needs a four-component VPOS without a second POSITION input.
+struct PS_IN { float2 UV : TEXCOORD0; float4 Color : COLOR0; float ViewDepth : TEXCOORD1; };
+float4 PS(in PS_IN i, in float4 vpos : VPOS0) : COLOR0
+#else
 float4 PS(in VS_OUT i, in float2 vpos : VPOS0) : COLOR0
+#endif
 {
-    float2 duv = vpos * InvViewportSize;          // pixel -> [0,1]
+#if __GLES__
+    float2 duv = vpos.xy * InvViewportSize;
+#else
+    float2 duv = vpos * InvViewportSize;
+#endif          // pixel -> [0,1]
     float sceneNorm = DecodeFloatRGBA(tex2D(DepthSampler, duv));
     float particleNorm = (i.ViewDepth - Near) * InvRange;
     // Fade to 0 where the scene is closer than the particle by more than

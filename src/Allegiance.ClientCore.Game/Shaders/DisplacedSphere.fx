@@ -14,7 +14,12 @@
 //   scripts/build-shaders.sh   (=> Content/Shaders/DisplacedSphere.ogl.mgfxo)
 
 #if OPENGL
+// KNI reflects SM4 without the level-9 vertex limit, then translates SM3.
+#if __GLES__
+#define VS_SHADERMODEL vs_4_0
+#else
 #define VS_SHADERMODEL vs_3_0
+#endif
 #define PS_SHADERMODEL ps_3_0
 #endif
 
