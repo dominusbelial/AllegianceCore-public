@@ -1,11 +1,11 @@
 // CLI surface belongs only to this loopback proof tool, never ServerConfig.
 internal sealed record BattleOptions(string Artwork, string Assets, string Scratch, int Bots, int Seconds, bool Guests = false,
-    string? MapGen = null, int MapSeed = 1073, int[]? CivIds = null)
+    string? MapGen = null, int MapSeed = 1073, int[]? CivIds = null, int HttpsPort = 8443, int LobbyPort = 8049)
 {
     internal static BattleOptions Parse(string[] args)
     {
-        if (args.Length < 3) throw new ArgumentException("p1051-browser-host ARTWORK PUBLISHED_WWWROOT SCRATCH [--bots 0..10] [--seconds N] [--guests 0|1] [--map-gen SingleRing|PinWheel|DoubleRing] [--map-seed N] [--civ-ids A,B]");
-        int bots = 0, seconds = 0, mapSeed = 1073; bool guests = false; string? mapGen = null;
+        if (args.Length < 3) throw new ArgumentException("p1051-browser-host ARTWORK PUBLISHED_WWWROOT SCRATCH [--bots 0..10] [--seconds N] [--guests 0|1] [--map-gen SingleRing|PinWheel|DoubleRing] [--map-seed N] [--civ-ids A,B] [--https-port N] [--lobby-port N]");
+        int bots = 0, seconds = 0, mapSeed = 1073, httpsPort = 8443, lobbyPort = 8049; bool guests = false; string? mapGen = null;
         int[]? civIds = null;
         var seen = new HashSet<string>();
         for (int i = 3; i < args.Length; i += 2)
@@ -34,9 +34,12 @@ internal sealed record BattleOptions(string Artwork, string Assets, string Scrat
                 case "--bots" when value is >= 0 and <= 10: bots = value; break;
                 case "--seconds" when value is >= 1 and <= 21600: seconds = value; break;
                 case "--map-seed": mapSeed = value; break;
+                case "--https-port" when value is > 1023 and <= 65535: httpsPort = value; break;
+                case "--lobby-port" when value is > 1023 and <= 65535: lobbyPort = value; break;
                 default: throw new ArgumentException("--bots must be 0..10; --seconds must be 1..21600; --guests must be 0 or 1; --map-gen SingleRing|PinWheel|DoubleRing; --map-seed N.");
             }
         }
-        return new(args[0], args[1], args[2], bots, seconds, guests, mapGen, mapSeed, civIds);
+        if (httpsPort == lobbyPort) throw new ArgumentException("Proof ports must differ.");
+        return new(args[0], args[1], args[2], bots, seconds, guests, mapGen, mapSeed, civIds, httpsPort, lobbyPort);
     }
 }

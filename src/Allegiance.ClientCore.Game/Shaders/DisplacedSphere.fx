@@ -14,12 +14,7 @@
 //   scripts/build-shaders.sh   (=> Content/Shaders/DisplacedSphere.ogl.mgfxo)
 
 #if OPENGL
-// KNI reflects SM4 without the level-9 vertex limit, then translates SM3.
-#if __GLES__
-#define VS_SHADERMODEL vs_4_0
-#else
 #define VS_SHADERMODEL vs_3_0
-#endif
 #define PS_SHADERMODEL ps_3_0
 #endif
 
@@ -47,10 +42,16 @@ float Fbm(float3 p)
 {
     float s=0.0,a=0.5,f=1.619;
     s+=Noise(p*f)*a; a*=0.5; f*=2.073;
+#if __GLES__
+    // P1083C: one octave fits KNI's level-9.3 vertex reflection limit.
+    // Browser-only visual difference: smoother displacement than desktop's four.
+    return s/0.5;
+#else
     s+=Noise(p*f)*a; a*=0.5; f*=2.069;
     s+=Noise(p*f)*a; a*=0.5; f*=2.061;
     s+=Noise(p*f)*a;
     return s/(0.5+0.25+0.125+0.0625);
+#endif
 }
 
 // 1D ramp by displacement: low = dark smoke, high = hot core; tinted by the type.

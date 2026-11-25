@@ -1,0 +1,76 @@
+[
+  {
+    "name": "Bloom",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "8ca450d82e01b7954d8d4350b0a99c6d936377b825384452dc810a64597e4f24",
+    "outputSha256": "22842ffa26902d0f5dc954171c5837724fac8f9db23a3d223ca023568513abfa",
+    "outputBytes": 5384
+  },
+  {
+    "name": "DisplacedSphere",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "52d6ed57609d13425743b68dbac1b22e0a8011eaf758e578dc65513b05866c54",
+    "outputSha256": "9b892828186fca2e90de8ccc4e6c1894dab94913bfc8304fb7be7b048796ef82",
+    "outputBytes": 8299
+  },
+  {
+    "name": "FsrEasu",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "642cba6b4e63007e862e3948f5e94ba47830d083de9d50a2808eaecdbe5b1050",
+    "outputSha256": "d925cbc8a1a3fef3eab69f1303932af01e372b286aa3a903987398a1a2ac4204",
+    "outputBytes": 14015
+  },
+  {
+    "name": "FsrRcas",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "b0ac75a0d4fc1b88a2fedf7befed7e1d447124347518342789073e1d9dbacc75",
+    "outputSha256": "0789b2f0136a0b172903f0c4073abdce1a08a4b645ab8c6b47fe8eab72646ca0",
+    "outputBytes": 10874
+  },
+  {
+    "name": "LinearDepth",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "07068fc3f76db722018cd1e84c51865f2af7d01b91c7195fc41858652a477a3c",
+    "outputSha256": "dcb7e99cf16c12614e52e123754a3f647101eb85452c46a7d6532313cde3ffa3",
+    "outputBytes": 1942
+  },
+  {
+    "name": "NativePbr",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "4c9851c3667ce6696a35b626015a03ceee7d6718ed997c817351deda41297373",
+    "outputSha256": "5f05dc484d9c22d1d258db07b1176731fdcf31a09b2d3d4ead3212ec2da240b9",
+    "outputBytes": 52767
+  },
+  {
+    "name": "SoftParticle",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "a2a4042d2fb71c633c53262649e60d0927c30155c6068bfa994c22ce11e52137",
+    "outputSha256": "9db60f38e7ad771b50a60601b62896c380f7d484f519615910e4dd8f34cda440",
+    "outputBytes": 3168
+  },
+  {
+    "name": "Tonemap",
+    "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "8a5c3f5aab017622c40ddcdd4ccedcad15cae015ef195174498f2c9908b20a3a",
+    "outputSha256": "effa4100369946afdb8fadff85357c1a28b0e57231351196b9de9585e453410d",
+    "outputBytes": 4469
+  },
+  {
+    "name": "Volumetric",
+    "format": "KNI XNB containing MGFX10; legacy WebGL translation",
+    "compilerVersion": "4.3.9001",
+    "sourceSha256": "d8ede21da5969e6979a2d92ce9a45d768fa93646de4a4af830ac1c43250da592",
+    "desktopSha256": "e36330c9e40b61dd08929630fdf854ef2afa9a3840213e81eddd6c16d68b6aef",
+    "outputSha256": "a7e5d8bf64e977f3be45dc235dcfdb6cad98938c850cc1f3039ca81944bbe30f",
+    "outputBytes": 106146,
+    "shaderCodeChanged": false
+  }
+]

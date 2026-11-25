@@ -22,11 +22,7 @@
 
 #if OPENGL
 #define VS_SHADERMODEL vs_3_0
-#if __GLES__
-#define PS_SHADERMODEL ps_4_0
-#else
 #define PS_SHADERMODEL ps_3_0
-#endif
 #endif
 
 float4x4 WorldView;
@@ -75,35 +71,57 @@ struct VS_OUT
     float4 Pos : POSITION0;
     float2 UV : TEXCOORD0;
     float4 Color : COLOR0;
+#if __GLES__
+    // Keep all four WorldView rows live: KNI 4.3.9001 mispacks a matrix
+    // constant buffer when only its z row survives DX9 reflection.
+    float4 ViewPosition : TEXCOORD1;
+    float4 ScreenPos : TEXCOORD2;
+#else
     float ViewDepth : TEXCOORD1;   // particle depth: positive view distance
+#endif
 };
 
 VS_OUT VS(in float3 pos : POSITION0, in float2 uv : TEXCOORD0, in float4 color : COLOR0)
 {
     VS_OUT o;
     o.Pos = mul(float4(pos.xyz, 1), WorldViewProj);
+#if __GLES__
+    // Homogeneous top-left pixel coordinates survive perspective interpolation.
+    // Keep InvViewportSize in both stages to preserve the renderer's parameter
+    // contract; the PS converts pixels back to depth-texture UVs after /w.
+    o.ScreenPos = o.Pos;
+    o.ScreenPos.xy = (o.Pos.xy * float2(0.5, -0.5) + o.Pos.w * 0.5) / InvViewportSize;
+#endif
     float4 vp = mul(float4(pos.xyz, 1), WorldView);
+#if __GLES__
+    o.ViewPosition = vp;
+#else
     o.ViewDepth = -vp.z;           // positive distance from the eye
+#endif
     o.UV = uv;
     o.Color = color;
     return o;
 }
 
 #if __GLES__
-// KNI reflection needs a four-component VPOS without a second POSITION input.
-struct PS_IN { float2 UV : TEXCOORD0; float4 Color : COLOR0; float ViewDepth : TEXCOORD1; };
-float4 PS(in PS_IN i, in float4 vpos : VPOS0) : COLOR0
+// KNI's level-9.3 reflection rejects VPOS. Pass screen position from the VS.
+struct PS_IN { float2 UV : TEXCOORD0; float4 Color : COLOR0; float4 ViewPosition : TEXCOORD1; float4 ScreenPos : TEXCOORD2; };
+float4 PS(in PS_IN i) : COLOR0
 #else
 float4 PS(in VS_OUT i, in float2 vpos : VPOS0) : COLOR0
 #endif
 {
 #if __GLES__
-    float2 duv = vpos.xy * InvViewportSize;
+    float2 duv = (i.ScreenPos.xy / i.ScreenPos.w) * InvViewportSize;
 #else
     float2 duv = vpos * InvViewportSize;
 #endif          // pixel -> [0,1]
     float sceneNorm = DecodeFloatRGBA(tex2D(DepthSampler, duv));
+#if __GLES__
+    float particleNorm = (-i.ViewPosition.z - Near) * InvRange;
+#else
     float particleNorm = (i.ViewDepth - Near) * InvRange;
+#endif
     // Fade to 0 where the scene is closer than the particle by more than
     // softness; smooth between (soft intersection). Saturate keeps it in [0,1].
     float fade = saturate((sceneNorm - particleNorm) * SoftnessInv);

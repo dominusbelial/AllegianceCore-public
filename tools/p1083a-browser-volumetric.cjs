@@ -9,6 +9,7 @@ const fallbacks = process.argv.includes('--fallbacks-only');
 const hardwareIndex = process.argv.indexOf('--hardware-gl');
 const hardware = hardwareIndex >= 0 ? process.argv[hardwareIndex + 1] : null;
 if (hardwareIndex >= 0) assert.ok(hardware && !hardware.startsWith('--'), '--hardware-gl requires a Chromium executable');
+const origin = JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json'))).origin || 'https://localhost:8443';
 const {chromium: playwright} = require(path.join(npm, 'node_modules/playwright'));
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(test, label, timeout = 120000) {
@@ -86,10 +87,10 @@ async function main() {
     try {
       const cdp = await context.newCDPSession(page); await cdp.send('WebAuthn.enable');
       await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
-      await page.goto('https://localhost:8443/identity.html');
+      await page.goto(origin + '/identity.html');
       await page.locator('#callsign').fill('Shader1083' + Date.now().toString().slice(-8));
       await page.locator('#register').click(); await page.locator('#account').waitFor({state:'visible'});
-      await page.goto('https://localhost:8443/play/menu.html?dev=1' + (enabled ? '&volumetric=1' : ''));
+      await page.goto(origin + '/play/menu.html?dev=1' + (enabled ? '&volumetric=1' : ''));
       await page.waitForFunction(() => window.preview?.measurements.firstFrameMs != null);
       await page.getByRole('button',{name:style,exact:true}).click();
       await page.locator('#online-open').click(); await page.locator('#join-password').waitFor();
@@ -102,6 +103,18 @@ async function main() {
       await page.waitForFunction(() => gameMenu.metrics().flight.clockReady && gameMenu.metrics().flight.combat.ready);
       await page.evaluate(() => gameMenu.proofView('volumetric',0));
       const metrics = () => page.evaluate(() => gameMenu.metrics());
+      if (fixedScale && !hardware) {
+        // Page chrome can change between briefs. Match P1083A's actual drawing
+        // buffer, not its assumed 104px toolbar; keep the cost assertion below.
+        const buffer = (await metrics()).flight.viewport;
+        if (buffer.width !== 1280 || buffer.height !== 696) {
+          const window = page.viewportSize();
+          await page.setViewportSize({width: window.width + 1280 - buffer.width,
+            height: window.height + 696 - buffer.height});
+          await until(async () => {const v=(await metrics()).flight.viewport;
+            return v.width===1280 && v.height===696;}, 'P1083A fixed drawing buffer');
+        }
+      }
       let initial = await metrics(); const id = initial.online.shipId;
       assert.equal(initial.gameStyle, style); assert.equal(initial.style, style);
       if (fallbacks) {

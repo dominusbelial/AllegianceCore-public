@@ -6,7 +6,9 @@ const https = require('node:https'), http = require('node:http'), net = require(
 const cert = fs.readFileSync(process.argv[2]), key = fs.readFileSync(process.argv[3]);
 const lobbyPort = Number(process.argv[4]), gamePort = Number(process.argv[5]), controls = path.resolve(process.argv[6]);
 if (![lobbyPort, gamePort].every(p => Number.isInteger(p) && p > 0 && p < 65536)) throw Error('Invalid loopback port');
-const origin = 'https://localhost:8443';
+const tlsPort = Number(process.argv[7] || 8443);
+if (!Number.isInteger(tlsPort) || tlsPort < 1024 || tlsPort > 65535) throw Error('Invalid TLS port');
+const origin = 'https://localhost:' + tlsPort;
 // The proof host is reached from a documentation-range client address, so the
 // server's source accounting sees a non-loopback peer through the trusted proxy.
 const clientAddress = '203.0.113.7';
@@ -44,5 +46,5 @@ server.on('upgrade', (req, socket, head) => {
   upstream.on('error', () => socket.destroy()); socket.on('error', () => upstream.destroy());
   socket.on('close', () => upstream.destroy()); upstream.on('close', () => socket.destroy());
 });
-server.listen(8443, '127.0.0.1', () => console.log('P1061_PROXY_READY ' + origin));
+server.listen(tlsPort, '127.0.0.1', () => console.log('P1061_PROXY_READY ' + origin));
 process.on('SIGTERM', () => { clearInterval(monitor); for (const socket of sockets) socket.destroy(); server.close(() => process.exit()); });

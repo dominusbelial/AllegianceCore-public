@@ -13,6 +13,25 @@ EFFECT = Path(__file__).resolve().parents[1] / 'src/Allegiance.ClientCore.Game.B
 
 
 class ShaderPackTests(unittest.TestCase):
+    def test_all_nine_exact_effects_have_independent_verified_packs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); (root / 'packs').mkdir()
+            (root / 'join-manifest.json').write_text('{"version":2,"assets":[]}')
+            (root / 'battle-manifest.json').write_text('{"version":1,"assets":[],"packs":[]}')
+            for name in pack.NAMES:
+                receipt = pack.build(root, EFFECT.with_name(name + '.xnb'), name)
+                self.assertTrue(receipt['joinUnchanged'])
+                self.assertFalse(receipt['defaultRequested'])
+            manifest = json.loads((root / 'battle-manifest.json').read_text())
+            self.assertEqual(len(manifest['assets']), 9)
+            self.assertEqual({p['key'] for p in manifest['packs']}, {'shader-' + n.lower() for n in pack.NAMES})
+            for asset in manifest['assets']:
+                self.assertEqual(hashlib.sha256((root / asset['path']).read_bytes()).hexdigest(), asset['sha256'])
+            before = (root / 'battle-manifest.json').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'Unknown shader'):
+                pack.build(root, EFFECT, '../other')
+            self.assertEqual((root / 'battle-manifest.json').read_bytes(), before)
+
     def test_shader_is_verified_deferred_and_join_unchanged(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); (root / 'packs').mkdir()

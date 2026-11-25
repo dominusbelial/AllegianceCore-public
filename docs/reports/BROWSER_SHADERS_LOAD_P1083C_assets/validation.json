@@ -1,0 +1,737 @@
+{
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "toolsBuild": {
+    "projects": 156,
+    "warnings": 0,
+    "errors": 0
+  },
+  "requiredIsolatedGates": [
+    {
+      "label": "p1083-tests-1",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-tests-1",
+      "exitCode": 0
+    },
+    {
+      "label": "capability-tests-1",
+      "exitCode": 0
+    },
+    {
+      "label": "desktop-preprocess-1",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-builder-1",
+      "exitCode": 0
+    },
+    {
+      "label": "p1083-tests-2",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-tests-2",
+      "exitCode": 0
+    },
+    {
+      "label": "capability-tests-2",
+      "exitCode": 0
+    },
+    {
+      "label": "desktop-preprocess-2",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-builder-2",
+      "exitCode": 0
+    },
+    {
+      "label": "p1083-tests-3",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-tests-3",
+      "exitCode": 0
+    },
+    {
+      "label": "capability-tests-3",
+      "exitCode": 0
+    },
+    {
+      "label": "desktop-preprocess-3",
+      "exitCode": 0
+    },
+    {
+      "label": "pack-builder-3",
+      "exitCode": 0
+    }
+  ],
+  "p1083Cases": [
+    {
+      "repeat": 1,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_container_keeps_every_shader_byte_and_does_not_touch_desktop_artifact",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Modern)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_conversion_rejects_stale_sources_unknown_versions_and_truncation",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Classic)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Deferred_shader_allowlist_accepts_only_the_nine_exact_effects_and_preserves_canonical_validation",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_container_keeps_every_shader_byte_and_does_not_touch_desktop_artifact",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_conversion_rejects_stale_sources_unknown_versions_and_truncation",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Modern)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Deferred_shader_allowlist_accepts_only_the_nine_exact_effects_and_preserves_canonical_validation",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Classic)",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_conversion_rejects_stale_sources_unknown_versions_and_truncation",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Classic)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Deferred_shader_allowlist_accepts_only_the_nine_exact_effects_and_preserves_canonical_validation",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Legacy_container_keeps_every_shader_byte_and_does_not_touch_desktop_artifact",
+          "outcome": "Passed"
+        },
+        {
+          "name": "Allegiance.ClientCore.Browser.Tests.P1083ShaderTests.Opt_in_is_explicit_and_independent_of_style(style: Modern)",
+          "outcome": "Passed"
+        }
+      ]
+    }
+  ],
+  "fast": {
+    "total": 16142,
+    "seconds": 666.6950143650174,
+    "outcomes": {
+      "Passed": 16131,
+      "Failed": 6,
+      "NotExecuted": 5
+    },
+    "projects": {
+      "Allegiance.ClientCore.Browser.Tests": {
+        "count": 52,
+        "outcomes": {
+          "Passed": 52
+        }
+      },
+      "Allegiance.ClientCore.Game.Browser.Tests": {
+        "count": 325,
+        "outcomes": {
+          "Passed": 325
+        }
+      },
+      "Allegiance.Lobby.Tests": {
+        "count": 327,
+        "outcomes": {
+          "Passed": 327
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 55,
+        "outcomes": {
+          "Passed": 55
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 6047,
+        "outcomes": {
+          "Passed": 6043,
+          "Failed": 1,
+          "NotExecuted": 3
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 2523,
+        "outcomes": {
+          "Passed": 2520,
+          "Failed": 3
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 6813,
+        "outcomes": {
+          "Passed": 6809,
+          "Failed": 2,
+          "NotExecuted": 2
+        }
+      }
+    },
+    "infrastructure": {
+      "count": 9,
+      "seconds": 0.04608068597735837,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "calibration": {
+      "factor": 0.9519893899204244,
+      "referenceMs": 3.589,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [
+      {
+        "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+        "outcome": "Passed",
+        "seconds": 11.2100661
+      },
+      {
+        "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+        "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+        "outcome": "Passed",
+        "seconds": 10.3862973
+      },
+      {
+        "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+        "outcome": "Passed",
+        "seconds": 10.4187175
+      }
+    ],
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+        "duration": "00:00:00.1333840",
+        "classification": "ledgered resume ship-association receipt; expected 8096 versus null"
+      },
+      {
+        "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+        "duration": "00:00:07.2788317",
+        "classification": "ledgered proactive pod-rescue fixture tick budget"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+        "duration": "00:00:00.7891086",
+        "classification": "ledgered side-export ordering receipt; expected -2 versus 0"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+        "duration": "00:00:03.8812102",
+        "classification": "ledgered remote death-latch delivery poll budget"
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+        "duration": "00:00:06.1084692",
+        "classification": "ledgered nanite repair-credit wire receipt"
+      },
+      {
+        "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+        "duration": "00:00:00.0288107",
+        "classification": "ledgered sandbox profile-restore obstruction; isolated with writable scratch XDG_CONFIG_HOME"
+      }
+    ],
+    "passed": false,
+    "classificationLedger": "docs/TEST_FLAKES.md"
+  },
+  "fastIsolated": [
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0514246
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0510232
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+          "outcome": "Passed",
+          "seconds": 0.0626503
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.487296
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.5653199
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn",
+          "outcome": "Passed",
+          "seconds": 1.5181589
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+          "outcome": "Passed",
+          "seconds": 1.8793636
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+          "outcome": "Passed",
+          "seconds": 1.8924857
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose",
+          "outcome": "Passed",
+          "seconds": 1.8447548
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+          "outcome": "Passed",
+          "seconds": 3.4946536
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+          "outcome": "Passed",
+          "seconds": 3.4107034
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire",
+          "outcome": "Passed",
+          "seconds": 3.5251109
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 0.9616228
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 0.9531792
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues",
+          "outcome": "Passed",
+          "seconds": 0.9652507
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.5707825
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.4186478
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names",
+          "outcome": "Passed",
+          "seconds": 1.4402459
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.2524242
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.316337
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+          "outcome": "Passed",
+          "seconds": 9.0875932
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8363487
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+          "outcome": "Passed",
+          "seconds": 3.8716312
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+          "outcome": "Passed",
+          "seconds": 3.0605558
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 4.188087
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.6759438
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+          "outcome": "Passed",
+          "seconds": 3.3462934
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+          "outcome": "Passed",
+          "seconds": 3.4718818
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+          "outcome": "Passed",
+          "seconds": 2.698899
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+          "outcome": "Passed",
+          "seconds": 2.7569915
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 1.7401664
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+          "outcome": "Passed",
+          "seconds": 3.5111474
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+          "outcome": "Passed",
+          "seconds": 3.0824493
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+          "outcome": "Passed",
+          "seconds": 3.9069282
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+          "outcome": "Passed",
+          "seconds": 3.3394174
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 1.7434907
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 4.2127559
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.68993
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+          "outcome": "Passed",
+          "seconds": 2.7613346
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8228673
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+          "outcome": "Passed",
+          "seconds": 2.6953246
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 4)",
+          "outcome": "Passed",
+          "seconds": 3.8769922
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 1)",
+          "outcome": "Passed",
+          "seconds": 3.3654481
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)",
+          "outcome": "Passed",
+          "seconds": 2.8151466
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 18)",
+          "outcome": "Passed",
+          "seconds": 3.4802992
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 3)",
+          "outcome": "Passed",
+          "seconds": 4.1873425
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 201)",
+          "outcome": "Passed",
+          "seconds": 2.7627195
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 35)",
+          "outcome": "Passed",
+          "seconds": 1.7509967
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 2)",
+          "outcome": "Passed",
+          "seconds": 2.6809698
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 101)",
+          "outcome": "Passed",
+          "seconds": 3.0555399
+        },
+        {
+          "name": "Allegiance.Core.Tests.P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 25)",
+          "outcome": "Passed",
+          "seconds": 2.6957809
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+          "outcome": "Passed",
+          "seconds": 3.5790277
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+          "outcome": "Passed",
+          "seconds": 3.5946319
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification",
+          "outcome": "Passed",
+          "seconds": 3.5794702
+        }
+      ]
+    }
+  ],
+  "glossaryPaths": 1167,
+  "parityRows": 3
+}

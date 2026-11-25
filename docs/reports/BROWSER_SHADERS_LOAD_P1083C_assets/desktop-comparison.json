@@ -1,0 +1,60 @@
+{
+  "fixedOutputPath": true,
+  "allIdentical": true,
+  "rows": [
+    {
+      "shader": "Bloom",
+      "equal": true,
+      "beforeSha256": "f642c1845282893c3ea244fc2ec0722a7b133b727b1205dfc7bf69b11e364a0e",
+      "afterSha256": "f642c1845282893c3ea244fc2ec0722a7b133b727b1205dfc7bf69b11e364a0e"
+    },
+    {
+      "shader": "DisplacedSphere",
+      "equal": true,
+      "beforeSha256": "85a31a50432f5a387595f2f1852f40bb7bf816828a4893b490677a1f07bf3afa",
+      "afterSha256": "85a31a50432f5a387595f2f1852f40bb7bf816828a4893b490677a1f07bf3afa"
+    },
+    {
+      "shader": "FsrEasu",
+      "equal": true,
+      "beforeSha256": "d0f7e920794f8ef13d1864a251abd0f22e00a72f02713944bc3f40e964da0712",
+      "afterSha256": "d0f7e920794f8ef13d1864a251abd0f22e00a72f02713944bc3f40e964da0712"
+    },
+    {
+      "shader": "FsrRcas",
+      "equal": true,
+      "beforeSha256": "a491aac9bf8b216a8f3b1060c43ace0d4e5f9f5654d797486df05a96a4db35fb",
+      "afterSha256": "a491aac9bf8b216a8f3b1060c43ace0d4e5f9f5654d797486df05a96a4db35fb"
+    },
+    {
+      "shader": "LinearDepth",
+      "equal": true,
+      "beforeSha256": "30d9d791ad418c51a05f8f819ecc71f016934352853673090d1ec6525c74f16f",
+      "afterSha256": "30d9d791ad418c51a05f8f819ecc71f016934352853673090d1ec6525c74f16f"
+    },
+    {
+      "shader": "NativePbr",
+      "equal": true,
+      "beforeSha256": "6dfe9a609a29d80790c7931f10a96851c9a762b981ea03679e126fe0af39204b",
+      "afterSha256": "6dfe9a609a29d80790c7931f10a96851c9a762b981ea03679e126fe0af39204b"
+    },
+    {
+      "shader": "SoftParticle",
+      "equal": true,
+      "beforeSha256": "1e8172b96bc8d175f35e1961a33b87d91c331e71aee639b242f07b1a2a390051",
+      "afterSha256": "1e8172b96bc8d175f35e1961a33b87d91c331e71aee639b242f07b1a2a390051"
+    },
+    {
+      "shader": "Tonemap",
+      "equal": true,
+      "beforeSha256": "f61e48fb28b8be9ee15f00b34080cb2da56cfd09f990abf439bdc5b60de06f21",
+      "afterSha256": "f61e48fb28b8be9ee15f00b34080cb2da56cfd09f990abf439bdc5b60de06f21"
+    },
+    {
+      "shader": "Volumetric",
+      "equal": true,
+      "beforeSha256": "8c61024dd3e5e4f021a1725faac4e6248236ad15268203f11fb04651083485ac",
+      "afterSha256": "8c61024dd3e5e4f021a1725faac4e6248236ad15268203f11fb04651083485ac"
+    }
+  ]
+}

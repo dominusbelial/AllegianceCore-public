@@ -1,0 +1,686 @@
+{
+  "allPassed": true,
+  "effectsPerRun": 9,
+  "techniquesPerRun": 16,
+  "passesPerRun": 21,
+  "runs": [
+    {
+      "repeat": 1,
+      "passed": true,
+      "browser": "153.0.8010.0",
+      "rendererMode": "headless SwiftShader SOFTWARE",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "probe": {
+        "profile": "HiDef",
+        "rows": [
+          {
+            "name": "Bloom",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Bloom",
+                "pass": "BrightPass",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Composite",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Blur",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "DisplacedSphere",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "DisplacedSphere",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          },
+          {
+            "name": "FsrEasu",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Easu",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "FsrRcas",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Rcas",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasNeutralGraded",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasAcesGraded",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "LinearDepth",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "LinearDepth",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "NativePbr",
+            "techniques": 4,
+            "passes": [
+              {
+                "technique": "NativePbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "NativePbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "SoftParticle",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "SoftParticle",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Tonemap",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Output",
+                "pass": "Neutral",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Output",
+                "pass": "Aces",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Volumetric",
+            "techniques": 5,
+            "passes": [
+              {
+                "technique": "RaymarchMinimal",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchLow",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchMed",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchHigh",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchUltra",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          }
+        ],
+        "softParticle": {
+          "rendererUsable": true,
+          "perspectiveDepthMask": [
+            255,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "gl": {
+        "active": false,
+        "draws": 22,
+        "compiled": 30,
+        "linked": 21,
+        "errors": []
+      },
+      "errors": [],
+      "verifiedShaderDownloads": 9
+    },
+    {
+      "repeat": 2,
+      "passed": true,
+      "browser": "153.0.8010.0",
+      "rendererMode": "headless SwiftShader SOFTWARE",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "probe": {
+        "profile": "HiDef",
+        "rows": [
+          {
+            "name": "Bloom",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Bloom",
+                "pass": "BrightPass",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Composite",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Blur",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "DisplacedSphere",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "DisplacedSphere",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          },
+          {
+            "name": "FsrEasu",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Easu",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "FsrRcas",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Rcas",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasNeutralGraded",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasAcesGraded",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "LinearDepth",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "LinearDepth",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "NativePbr",
+            "techniques": 4,
+            "passes": [
+              {
+                "technique": "NativePbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "NativePbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "SoftParticle",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "SoftParticle",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Tonemap",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Output",
+                "pass": "Neutral",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Output",
+                "pass": "Aces",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Volumetric",
+            "techniques": 5,
+            "passes": [
+              {
+                "technique": "RaymarchMinimal",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchLow",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchMed",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchHigh",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchUltra",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          }
+        ],
+        "softParticle": {
+          "rendererUsable": true,
+          "perspectiveDepthMask": [
+            255,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "gl": {
+        "active": false,
+        "draws": 22,
+        "compiled": 30,
+        "linked": 21,
+        "errors": []
+      },
+      "errors": [],
+      "verifiedShaderDownloads": 9
+    },
+    {
+      "repeat": 3,
+      "passed": true,
+      "browser": "153.0.8010.0",
+      "rendererMode": "headless SwiftShader SOFTWARE",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "probe": {
+        "profile": "HiDef",
+        "rows": [
+          {
+            "name": "Bloom",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Bloom",
+                "pass": "BrightPass",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Composite",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Bloom",
+                "pass": "Blur",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "DisplacedSphere",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "DisplacedSphere",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          },
+          {
+            "name": "FsrEasu",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Easu",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "FsrRcas",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Fsr",
+                "pass": "Rcas",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasNeutralGraded",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Fsr",
+                "pass": "RcasAcesGraded",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "LinearDepth",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "LinearDepth",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "NativePbr",
+            "techniques": 4,
+            "passes": [
+              {
+                "technique": "NativePbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "NativePbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "EffectLitPbrHdr",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "SoftParticle",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "SoftParticle",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Tonemap",
+            "techniques": 1,
+            "passes": [
+              {
+                "technique": "Output",
+                "pass": "Neutral",
+                "drawn": true,
+                "changedPixels": 256
+              },
+              {
+                "technique": "Output",
+                "pass": "Aces",
+                "drawn": true,
+                "changedPixels": 256
+              }
+            ]
+          },
+          {
+            "name": "Volumetric",
+            "techniques": 5,
+            "passes": [
+              {
+                "technique": "RaymarchMinimal",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchLow",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchMed",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchHigh",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              },
+              {
+                "technique": "RaymarchUltra",
+                "pass": "Pass0",
+                "drawn": true,
+                "changedPixels": 0
+              }
+            ]
+          }
+        ],
+        "softParticle": {
+          "rendererUsable": true,
+          "perspectiveDepthMask": [
+            255,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "gl": {
+        "active": false,
+        "draws": 22,
+        "compiled": 30,
+        "linked": 21,
+        "errors": []
+      },
+      "errors": [],
+      "verifiedShaderDownloads": 9
+    }
+  ]
+}

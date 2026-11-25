@@ -34,11 +34,11 @@ public sealed class P1083ShaderTests
         Assert.False(BrowserShaderOptions.Volumetric("?volumetric=%31", true));
     }
     [Fact]
-    public void Deferred_shader_allowlist_accepts_only_the_exact_effect_and_preserves_canonical_validation()
+    public void Deferred_shader_allowlist_accepts_only_the_nine_exact_effects_and_preserves_canonical_validation()
     {
         var core = Asset("core.igc", [1]);
         var resident = new StagedManifest(2, [core]);
-        foreach (string name in new[] { "content/shaders/volumetric.xnb", "Content/Shaders/Volumetric.xnb" })
+        foreach (string name in Game1.ShaderProofNames.SelectMany(n => new[] { $"content/shaders/{n.ToLowerInvariant()}.xnb", $"Content/Shaders/{n}.xnb" }))
         {
             var effect = Asset(name, [2]);
             new BattleManifest(1, [effect], [new("shader-volumetric", [name])]).Validate(resident);

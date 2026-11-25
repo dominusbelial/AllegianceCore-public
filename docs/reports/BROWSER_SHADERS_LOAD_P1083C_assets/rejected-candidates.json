@@ -1,0 +1,21 @@
+{
+  "compilerVersion": "4.3.9001",
+  "platform": "BlazorGL",
+  "profile": "HiDef",
+  "rows": [
+    {
+      "shader": "DisplacedSphere.fx",
+      "compiled": false,
+      "sourceSha256": "633c8e0fb6862866d216208748dd66dbf0f91e0e8e7dce5c0b36feba4b3d7194",
+      "error": "InvalidContentException: X5615:Compiled shader code uses too many instruction slots (269). Max. allowed by the target (vs_2_x) is 256.",
+      "decision": "Two GLES noise octaves exceed the level-9.3 vertex instruction limit; ship one normalized octave."
+    },
+    {
+      "shader": "Volumetric.fx",
+      "compiled": false,
+      "sourceSha256": "1143933d2346597a662d3cf55e163674f5f44f8ff165be82bb31ef1d3c750974",
+      "error": "InvalidContentException: X3511:unable to unroll loop, loop does not appear to terminate in a timely manner (5 iterations) or unrolled loop is too large, use the [unroll(n)] attribute to force an exact higher number",
+      "decision": "Direct SM3 reflection cannot unroll the existing raymarch loops; retain the unchanged MGFX10 bridge under HiDef."
+    }
+  ]
+}

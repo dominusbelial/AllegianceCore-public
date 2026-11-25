@@ -245,6 +245,15 @@ list in **reverse**.
   preprocessing guard is `tools/p1083b-desktop-preprocess-tests.py`. Evidence:
   `docs/reports/BROWSER_SHADERS_KNI_P1083B.md`. Only the existing opt-in volume
   pack uses an effect; other browser integration is deferred.
+- **Browser shader loading (P1083C)** — unchanged HiDef with GLES-only SM3
+  displacement/screen-position adaptations; eight direct KNIFX12 effects plus
+  the legacy Volumetric bridge. Exact deferred packs in
+  `tools/p1083-shader-pack.py` load through the game content path. Dev-only
+  `src/Allegiance.ClientCore.Game.Browser/Game1.ShaderProof.cs` and
+  `tools/p1083c-browser-shaders.cjs` exercise every technique/pass with real
+  headless WebGL draws and a perspective SoftParticle depth mask. Report:
+  `docs/reports/BROWSER_SHADERS_LOAD_P1083C.md`. Other effects remain unintegrated;
+  no native game rule or desktop shader bytecode changes.
 - **Home station artwork before launch (P1076)** — browser-only
   `src/Allegiance.ClientCore.Game.Browser/Game1.SectorArt.cs` prioritizes own-side
   current-sector stations even offscreen, and its throttled dock prefetch requests

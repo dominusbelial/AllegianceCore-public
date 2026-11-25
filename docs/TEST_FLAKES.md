@@ -4,6 +4,31 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1083C — browser shader load gate (2026-11-24)
+
+One full Fast run completed: **16,142 cases, 16,131 passed / 6 failed / 5 not
+executed**, **666.7 s**. All nine infrastructure checks and both browser test
+projects passed. Three assertion-passing cases exceeded the unchanged calibrated
+10-second limit. Every distinct failed/over-limit method then ran **3× alone**
+in fresh processes: **54/54 cases passed across 27 hosts**, including all ten
+P999 theory rows. No game rule, fixture, timeout, tier or calibration changed.
+
+| Method | Full sweep | Isolated reruns |
+|---|---|---|
+| `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` | Read-only real profile restore | pass / pass / pass with writable scratch `XDG_CONFIG_HOME`; existing sandbox obstruction |
+| `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose` | Expected side -2, observed 0 | pass / pass / pass; existing side-export ordering family |
+| `DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn` | Remote death never latched within delivery budget | pass / pass / pass; existing receipt family |
+| `NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire` | Bomber repair credit 0 versus 1 | pass / pass / pass; existing repair-credit wire receipt family |
+| `P590PodRescueTests.Proactive_assignment_diverts_nearest_idle_diverter_and_rescues` | Proactive diverter did not rescue within fixture budget | pass / pass / pass; existing rescue-budget family |
+| `Transport.P1051ResumeAuthenticationTests.Valid_WS_resume_retires_both_prelogon_deadlines_and_restores_human_classification` | Expected ship 8096, observed null | pass / pass / pass; existing resume receipt family |
+| `P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names` | Passed, 11.210 s | pass / pass / pass; existing asset-load timing family |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Civ 5 passed, 10.386 s | all 30 theory executions passed; existing purchase/asset timing family |
+| `P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured` | Passed, 10.419 s | pass / pass / pass, 9.252 / 9.316 / 9.088 s; existing near-limit physics family |
+
+The broad sweep remains **red**; isolated passes classify these existing
+families and do not establish fixes. Sanitized exact counts and durations:
+[the P1083C validation receipt](reports/BROWSER_SHADERS_LOAD_P1083C_assets/validation.json).
+
 ## P1084 — desktop ejection blast qualification (2026-11-24)
 
 One complete Fast sweep ran (the initial all-tier invocation was stopped during its extra Live continuation after Fast qualification). Fast observed

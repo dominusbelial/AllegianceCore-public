@@ -1,0 +1,601 @@
+{
+  "passed": true,
+  "browser": "153.0.8010.0",
+  "presentationPolicy": "fixed scale 1 and full effect load (proof only); shared volume budget remains adaptive",
+  "rendererMode": "headless SwiftShader SOFTWARE; not representative of a GPU",
+  "controlled": {
+    "type": 3,
+    "distance": 150,
+    "fovDegrees": 50,
+    "counts": [
+      0,
+      1,
+      4,
+      10
+    ],
+    "costBurstMs": 1500,
+    "repeats": 3,
+    "settleAfterWarmupMs": 45000,
+    "captureCadenceMs": 250,
+    "captureMechanism": "canvas export after game RAF"
+  },
+  "effect": {
+    "source": "content/shaders/volumetric.xnb",
+    "path": "packs/a7e5d8bf64e977f3be45dc235dcfdb6cad98938c850cc1f3039ca81944bbe30f",
+    "byteSize": 106146,
+    "sha256": "a7e5d8bf64e977f3be45dc235dcfdb6cad98938c850cc1f3039ca81944bbe30f",
+    "contentType": "application/octet-stream",
+    "dependencies": [],
+    "provenance": "AllegianceCore MIT; Volumetric.fx port enhancement; KNI XNB containing MGFX10; legacy WebGL translation; source d8ede21da5969e6979a2d92ce9a45d768fa93646de4a4af830ac1c43250da592"
+  },
+  "runs": [
+    {
+      "style": "Classic",
+      "mode": "native",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "cost": [
+        {
+          "count": 0,
+          "frames": 274,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.80000000000291,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 271,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 263,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.79999999998836,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.80000000000291,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 228,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.39999999999418,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 33.30000000000291,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        }
+      ],
+      "final": {
+        "requested": false,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": null
+      },
+      "errors": [],
+      "shaderRequests": 0,
+      "sampledFrames": 2633,
+      "discardedFrames": [],
+      "probeErrors": [],
+      "failure": null,
+      "captures": [
+        {
+          "file": "classic-native-0.jpg",
+          "ageMs": 34,
+          "elapsedMs": 0
+        },
+        {
+          "file": "classic-native-1.jpg",
+          "ageMs": 284,
+          "elapsedMs": 250
+        },
+        {
+          "file": "classic-native-2.jpg",
+          "ageMs": 539,
+          "elapsedMs": 500
+        },
+        {
+          "file": "classic-native-3.jpg",
+          "ageMs": 788,
+          "elapsedMs": 750
+        },
+        {
+          "file": "classic-native-4.jpg",
+          "ageMs": 1034,
+          "elapsedMs": 1000
+        },
+        {
+          "file": "classic-native-5.jpg",
+          "ageMs": 1287,
+          "elapsedMs": 1250
+        },
+        {
+          "file": "classic-native-6.jpg",
+          "ageMs": 1539,
+          "elapsedMs": 1500
+        },
+        {
+          "file": "classic-native-7.jpg",
+          "ageMs": 1805,
+          "elapsedMs": 1766.6000000000058
+        }
+      ]
+    },
+    {
+      "style": "Classic",
+      "mode": "volumetric",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "cost": [
+        {
+          "count": 0,
+          "frames": 273,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 221,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.39999999999418,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 33.30000000000291,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 145,
+          "p50Ms": 33.30000000000291,
+          "p95Ms": 50,
+          "p1083aP50Ms": 33.30000000001746,
+          "p1083aP95Ms": 50.10000000000582,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 94,
+          "p50Ms": 50,
+          "p95Ms": 66.70000000001164,
+          "p1083aP50Ms": 50.10000000000582,
+          "p1083aP95Ms": 100,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        }
+      ],
+      "final": {
+        "requested": true,
+        "loaded": true,
+        "usable": true,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Volumetric",
+        "submissions": 22085,
+        "volumes": 8,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 8,
+        "pixelSteps": 11679824,
+        "budget": 10500000,
+        "failure": null
+      },
+      "errors": [],
+      "shaderRequests": 1,
+      "sampledFrames": 1524,
+      "discardedFrames": [],
+      "probeErrors": [],
+      "failure": null,
+      "captures": [
+        {
+          "file": "classic-volumetric-0.jpg",
+          "ageMs": 41,
+          "elapsedMs": 0
+        },
+        {
+          "file": "classic-volumetric-1.jpg",
+          "ageMs": 293,
+          "elapsedMs": 250
+        },
+        {
+          "file": "classic-volumetric-2.jpg",
+          "ageMs": 567,
+          "elapsedMs": 516.5
+        },
+        {
+          "file": "classic-volumetric-3.jpg",
+          "ageMs": 818,
+          "elapsedMs": 766.5
+        },
+        {
+          "file": "classic-volumetric-4.jpg",
+          "ageMs": 1060,
+          "elapsedMs": 1016.5
+        },
+        {
+          "file": "classic-volumetric-5.jpg",
+          "ageMs": 1317,
+          "elapsedMs": 1266.5999999999767
+        },
+        {
+          "file": "classic-volumetric-6.jpg",
+          "ageMs": 1566,
+          "elapsedMs": 1516.5
+        },
+        {
+          "file": "classic-volumetric-7.jpg",
+          "ageMs": 1816,
+          "elapsedMs": 1766.5
+        }
+      ]
+    },
+    {
+      "style": "Modern",
+      "mode": "native",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "cost": [
+        {
+          "count": 0,
+          "frames": 274,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 273,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.80000000000291,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 264,
+          "p50Ms": 16.699999999982538,
+          "p95Ms": 16.80000000000291,
+          "p1083aP50Ms": 16.699999999982538,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 222,
+          "p50Ms": 16.70000000001164,
+          "p95Ms": 33.30000000001746,
+          "p1083aP50Ms": 16.699999999982538,
+          "p1083aP95Ms": 33.30000000001746,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        }
+      ],
+      "final": {
+        "requested": false,
+        "loaded": false,
+        "usable": false,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Native",
+        "submissions": 0,
+        "volumes": 0,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 0,
+        "pixelSteps": 0,
+        "budget": 0,
+        "failure": null
+      },
+      "errors": [],
+      "shaderRequests": 0,
+      "sampledFrames": 2609,
+      "discardedFrames": [],
+      "probeErrors": [],
+      "failure": null,
+      "captures": [
+        {
+          "file": "modern-native-0.jpg",
+          "ageMs": 17,
+          "elapsedMs": 0
+        },
+        {
+          "file": "modern-native-1.jpg",
+          "ageMs": 276,
+          "elapsedMs": 250
+        },
+        {
+          "file": "modern-native-2.jpg",
+          "ageMs": 520,
+          "elapsedMs": 500
+        },
+        {
+          "file": "modern-native-3.jpg",
+          "ageMs": 772,
+          "elapsedMs": 750
+        },
+        {
+          "file": "modern-native-4.jpg",
+          "ageMs": 1042,
+          "elapsedMs": 1016.5999999999767
+        },
+        {
+          "file": "modern-native-5.jpg",
+          "ageMs": 1294,
+          "elapsedMs": 1266.5999999999767
+        },
+        {
+          "file": "modern-native-6.jpg",
+          "ageMs": 1537,
+          "elapsedMs": 1516.5
+        },
+        {
+          "file": "modern-native-7.jpg",
+          "ageMs": 1789,
+          "elapsedMs": 1766.5
+        }
+      ]
+    },
+    {
+      "style": "Modern",
+      "mode": "volumetric",
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "colorBufferFloat": true,
+        "colorBufferHalfFloat": true,
+        "textureFloatLinear": true,
+        "maxTextureUnits": 32,
+        "maxCombinedTextureUnits": 64,
+        "fragmentHighp": true,
+        "fragmentHighpPrecision": {
+          "precision": 23,
+          "rangeMin": 127,
+          "rangeMax": 127
+        },
+        "renderer": "WebKit WebGL",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "cost": [
+        {
+          "count": 0,
+          "frames": 274,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 16.70000000001164,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 16.70000000001164,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "frames": 221,
+          "p50Ms": 16.69999999999709,
+          "p95Ms": 33.39999999999418,
+          "p1083aP50Ms": 16.69999999999709,
+          "p1083aP95Ms": 33.30000000000291,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 4,
+          "frames": 146,
+          "p50Ms": 33.30000000000291,
+          "p95Ms": 50,
+          "p1083aP50Ms": 33.30000000001746,
+          "p1083aP95Ms": 50.10000000000582,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        },
+        {
+          "count": 10,
+          "frames": 95,
+          "p50Ms": 50,
+          "p95Ms": 66.70000000001164,
+          "p1083aP50Ms": 50.10000000000582,
+          "p1083aP95Ms": 100,
+          "buffers": [
+            [
+              1280,
+              696
+            ]
+          ]
+        }
+      ],
+      "final": {
+        "requested": true,
+        "loaded": true,
+        "usable": true,
+        "technique": "RaymarchA",
+        "effectiveQuality": "Volumetric",
+        "submissions": 21828,
+        "volumes": 8,
+        "fullRes": 0,
+        "halfRes": 0,
+        "quarterRes": 8,
+        "pixelSteps": 11679828,
+        "budget": 10500000,
+        "failure": null
+      },
+      "errors": [],
+      "shaderRequests": 1,
+      "sampledFrames": 1514,
+      "discardedFrames": [],
+      "probeErrors": [],
+      "failure": null,
+      "captures": [
+        {
+          "file": "modern-volumetric-0.jpg",
+          "ageMs": 47,
+          "elapsedMs": 0
+        },
+        {
+          "file": "modern-volumetric-1.jpg",
+          "ageMs": 314,
+          "elapsedMs": 266.5999999999767
+        },
+        {
+          "file": "modern-volumetric-2.jpg",
+          "ageMs": 548,
+          "elapsedMs": 500
+        },
+        {
+          "file": "modern-volumetric-3.jpg",
+          "ageMs": 803,
+          "elapsedMs": 750
+        },
+        {
+          "file": "modern-volumetric-4.jpg",
+          "ageMs": 1074,
+          "elapsedMs": 1016.5999999999767
+        },
+        {
+          "file": "modern-volumetric-5.jpg",
+          "ageMs": 1336,
+          "elapsedMs": 1266.5999999999767
+        },
+        {
+          "file": "modern-volumetric-6.jpg",
+          "ageMs": 1580,
+          "elapsedMs": 1516.5999999999767
+        },
+        {
+          "file": "modern-volumetric-7.jpg",
+          "ageMs": 1829,
+          "elapsedMs": 1766.5999999999767
+        }
+      ]
+    }
+  ]
+}

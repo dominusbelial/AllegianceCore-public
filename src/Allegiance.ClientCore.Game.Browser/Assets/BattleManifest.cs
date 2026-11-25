@@ -8,6 +8,14 @@ public sealed record BattlePack(string Key, string[] Sources);
 /// collision or simulation data can be supplied by this deferred manifest.</summary>
 public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePack[] Packs)
 {
+    // Exact effect allowlist: no arbitrary executable content or path expansion.
+    public static bool IsShaderSource(string name) => name is
+        "content/shaders/bloom.xnb" or "content/shaders/displacedsphere.xnb" or
+        "content/shaders/fsreasu.xnb" or "content/shaders/fsrrcas.xnb" or
+        "content/shaders/lineardepth.xnb" or "content/shaders/nativepbr.xnb" or
+        "content/shaders/softparticle.xnb" or "content/shaders/tonemap.xnb" or
+        "content/shaders/volumetric.xnb";
+
     public short[]? SceneGiantSectors { get; init; }
 
     public void Validate(StagedManifest resident)
@@ -29,7 +37,7 @@ public sealed record BattleManifest(int Version, StagedAsset[] Assets, BattlePac
         {
             if (asset is null) throw new InvalidDataException("Null battle asset.");
             string name = StagedManifest.Canonical(asset.Source);
-            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal) && name != "giant-objects.json" && name != "lens30.x" && name != "content/shaders/volumetric.xnb")
+            if (!name.EndsWith(".mdl", StringComparison.Ordinal) && !name.EndsWith(".png", StringComparison.Ordinal) && name != "giant-objects.json" && name != "lens30.x" && !IsShaderSource(name))
                 throw new InvalidDataException("Only visual battle assets may be deferred.");
             if (!deferredNames.Add(name)) throw new InvalidDataException("Duplicate battle source.");
             if (metadata.TryGetValue(name, out var old) && (old.Sha256 != asset.Sha256 || old.ByteSize != asset.ByteSize || old.ContentType != asset.ContentType ||

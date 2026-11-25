@@ -1,7 +1,7 @@
 {
   "format": "KNI XNB containing KNIFX12; BlazorGL/GLES",
   "compilerVersion": "4.3.9001",
-  "sourceSha256": "8b458f6bfa54de818e5825afb73d084714ea860a2e71c4e85af8e61b6b199bee",
-  "outputSha256": "939faf482a2622eb5ede7a12f1204d2e3c55f33a68277e6853d7c1227b8d7cd8",
-  "outputBytes": 2611
+  "sourceSha256": "a2a4042d2fb71c633c53262649e60d0927c30155c6068bfa994c22ce11e52137",
+  "outputSha256": "9db60f38e7ad771b50a60601b62896c380f7d484f519615910e4dd8f34cda440",
+  "outputBytes": 3168
 }

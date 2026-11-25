@@ -40,7 +40,7 @@ freePort.Start(); int tcpPort = ((System.Net.IPEndPoint)freePort.LocalEndpoint).
 File.Delete(Path.Combine(scratch, "stop"));
 // One proof origin, exactly the production shape: HTTPS on loopback terminated by a
 // local proxy, lobby and game listener behind it on their own loopback ports.
-const string Origin = "https://localhost:8443";
+string origin = $"https://localhost:{options.HttpsPort}";
 const string ClientVersion = "2.0.0";
 const string GamePassword = "p1061-proof-password";
 var (certPath, keyPath) = WriteCertificate(scratch);
@@ -49,8 +49,8 @@ File.WriteAllText(Path.Combine(scratch, "client-version"), ClientVersion);
 // Keep test private key material in a Linux anonymous memory file. The actual
 // production signer imports it through its ordinary path-based constructor.
 using var signingMaterial = MemorySigningMaterial.Create();
-using var lobby = new ProofLobby(scratch, signingMaterial.Path, assets, art);
-lobby.UseKestrel(8049);
+using var lobby = new ProofLobby(scratch, signingMaterial.Path, assets, art, origin);
+lobby.UseKestrel(options.LobbyPort);
 using var http = lobby.CreateClient(); // starts the actual app with unchanged admission/CSRF/limits
 var lobbyHttp = lobby.CreateClient();
 var identities = lobby.Services.GetRequiredService<IdentityStore>();
@@ -71,8 +71,8 @@ server.Boot(new ServerConfig
     // no plaintext loopback exception, enforced minimum client version.
     MinimumClientVersion = ClientVersion,
     Discovery = new() { Enabled = false },
-    WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = [Origin],
-        KnownProxies = ["127.0.0.1"], AllowLoopbackDevelopment = false, PublicUrl = "wss://localhost:8443/game" },
+    WebSocket = new() { Enabled = true, Port = 0, BindAddress = "127.0.0.1", AllowedOrigins = [origin],
+        KnownProxies = ["127.0.0.1"], AllowLoopbackDevelopment = false, PublicUrl = $"wss://localhost:{options.HttpsPort}/game" },
     LiveSettings = options.Bots == 0 || options.MapGen is not null ? new() : new()
     {
         DebugMode = true,
@@ -82,7 +82,7 @@ server.Boot(new ServerConfig
     },
     Reconnect = new() { Enabled = true, GraceSeconds = 10 },
     Identity = new() { Issuer = identitySettings.PublicUrl, Audience = approved.ServerId, PublicKeyFile = identitySettings.PublicKeyFile, AllowAnonymous = options.Guests },
-    Lobby = new() { Url = "http://127.0.0.1:8049", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
+    Lobby = new() { Url = $"http://127.0.0.1:{options.LobbyPort}", PublicAddress = "127.0.0.1", DisplayName = "P1061 loopback", EnrollmentFile = enrollment },
     // P1073 — an optional generated-map + showcase-research match (the live
     // P1071 preset shape). Default stays the static XXV_simple proof.
     Showcase = new() { TechMode = options.MapGen is null ? "unlocked" : "research" },
@@ -92,7 +92,7 @@ server.Boot(new ServerConfig
         Password = GamePassword, AutoStart = true, AllowEmptyTeams = true, StartCountdownSeconds = 0 }],
 });
 using var proxy = Process.Start(new ProcessStartInfo("node") { UseShellExecute = false,
-    ArgumentList = { "tools/p1051-loopback-proxy.cjs", certPath, keyPath, "8049", server.WebSocketPort.ToString(), scratch } })!;
+    ArgumentList = { "tools/p1051-loopback-proxy.cjs", certPath, keyPath, options.LobbyPort.ToString(), server.WebSocketPort.ToString(), scratch, options.HttpsPort.ToString() } })!;
 using var desktop = new ConnectionSession();
 using var keeper = new ConnectionSession();
 var desktopAccount = identities.CreateAccount("DesktopPilot");
@@ -340,7 +340,7 @@ try
         lock (desktop.Gate) desktopState = new { joined = desktopJoin?.IsCompletedSuccessfully == true, error = desktopJoin?.Exception?.GetBaseException().Message,
             desktop.World.MyShipId, desktop.World.MySideId, desktopLaunched, desktopNavigation, knownClusters = desktop.World.Clusters.Count, knownWarps = desktop.World.Warps.Count, stage = desktop.World.Mission?.Stage, desktopShotLaunchers = desktopShotLaunchers.ToArray(),
             ships = desktop.World.Ships.Values.Select(s => new { s.ShipId, s.CharacterName, s.SectorId, s.StationId, s.HullId, s.PoseSectorId, visible = s.CanDrawInSector(desktop.World.MyShipId is { } ownShip && desktop.World.Ships.TryGetValue(ownShip, out var viewer) ? viewer.SectorId : (short)-1) }).ToArray(), desktopShotsReceived };
-        var state = new { civIds = options.CivIds ?? [1, 3], battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
+        var state = new { origin, civIds = options.CivIds ?? [1, 3], battle = new { size = options.Bots, targetSector = battleSector, ready = battleBots.Ready, error = battleBots.Error, driverPid = battleBots.DriverPid, identityRequired = !options.Guests, accounts = botAccounts.Count }, sampledAt = Environment.TickCount64, poseReceipts, chart, listing = listingInfo, oldVersionRefusal, keeper = new { keeper.World.MyShipId, keeper.World.MySideId }, desktop = desktopState,
             controlHistory, projectiles = server.Missions.SelectMany(m => m.Sectors).Sum(s => s.Models.Count(m => m is Projectile)), players = server.LivePlayerNames, ships = server.Missions.SelectMany(m => m.GetShips()).Select(s => new
             { s.Id, s.Name, s.SideId, s.StationId, hullId = s.HullType.HullId, sectorId = s.Sector?.Id, s.Ammo, weaponCount = s.Weapons.Count, parts = s.Parts.Select(p => new { p.PartId, p.MountId, p.Amount, p.FractionMounted }).ToArray(), yaw = s.Controls.Yaw, pitch = s.Controls.Pitch, roll = s.Controls.Roll, throttle = s.Controls.Throttle, s.StateM,
                 forward = new[] { s.Orientation.GetForward().X, s.Orientation.GetForward().Y, s.Orientation.GetForward().Z },
@@ -374,7 +374,7 @@ static (string Cert, string Key) WriteCertificate(string directory)
     return (certPath, keyPath);
 }
 
-sealed class ProofLobby(string scratch, string signingPath, string assets, string artwork) : WebApplicationFactory<ServerRegistry>
+sealed class ProofLobby(string scratch, string signingPath, string assets, string artwork, string origin) : WebApplicationFactory<ServerRegistry>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -388,7 +388,7 @@ sealed class ProofLobby(string scratch, string signingPath, string assets, strin
             services.RemoveAll<IdentitySettings>();
             services.AddSingleton(new IdentitySettings
             {
-                PublicUrl = "https://localhost:8443",
+                PublicUrl = origin,
                 ConnectionString = "Data Source=" + Path.Combine(scratch, "accounts.db"),
                 SigningKeyFile = signingPath,
                 PublicKeyFile = Path.Combine(scratch, "public.pem"),
@@ -399,7 +399,7 @@ sealed class ProofLobby(string scratch, string signingPath, string assets, strin
             services.AddSingleton(new BrowserPreviewSettings
             {
                 Enabled = true, Prefix = "/play", BundlePath = assets, ArtworkPath = artwork,
-                PublicOrigin = "https://localhost:8443", WebSocketPath = "/game",
+                PublicOrigin = origin, WebSocketPath = "/game",
             });
         });
     }

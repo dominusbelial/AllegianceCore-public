@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame;
 using System.IO.Compression;
 using Microsoft.JSInterop;
 
@@ -18,6 +19,24 @@ public partial class Menu
 
     [JSInvokable]
     public object? ProbeLateArt() => _dev ? _game?.ProbeLateArt() : null;
+
+    [JSInvokable]
+    public bool PrepareShaderProof()
+    {
+        if (!_dev || _battleStreamer is null) return false;
+        bool ready = true;
+        foreach (string name in Game1.ShaderProofNames)
+        {
+            string key = "shader-" + name.ToLowerInvariant();
+            if (!_battleStreamer.HasPack(key)) throw new InvalidDataException("Missing proof pack: " + key);
+            _battleStreamer.RequestPack(key);
+            ready &= _battleStreamer.IsReady(key);
+        }
+        return ready;
+    }
+
+    [JSInvokable]
+    public object? ProbeShaders() => _dev ? _game?.ProbeShaders() : null;
 
     [JSInvokable]
     public byte[] DecodeBrotli(byte[] input) => _briefingDecoder!.Invoke<byte[]>("decode", input);

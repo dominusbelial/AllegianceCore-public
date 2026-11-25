@@ -1,0 +1,172 @@
+{
+  "before": {
+    "failure": "SoftParticle depth coordinates incorrect: 255,255,255,255",
+    "vertexUniforms": {
+      "vs_uniforms_vec4[0]": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[1]": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[2]": [
+        0,
+        0,
+        -1.010101079940796,
+        -0.10101010650396347
+      ],
+      "vs_uniforms_vec4[3]": [
+        0,
+        0,
+        -1,
+        0
+      ],
+      "vs_uniforms_vec4[4]": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[5]": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "posFixup": [
+        1,
+        -1,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[0]": [
+        0.03125,
+        0.03125,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[1]": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[2]": [
+        0.10000000149011612,
+        0,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[3]": [
+        100,
+        0,
+        0,
+        0
+      ],
+      "ps_s0": 0,
+      "ps_s1": 1
+    }
+  },
+  "after": {
+    "mask": [
+      255,
+      0,
+      0,
+      0
+    ],
+    "vertexUniforms": {
+      "vs_uniforms_vec4[0]": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[1]": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[2]": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "vs_uniforms_vec4[3]": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "vs_uniforms_vec4[4]": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[5]": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "vs_uniforms_vec4[6]": [
+        0,
+        0,
+        -1.010101079940796,
+        -0.10101010650396347
+      ],
+      "vs_uniforms_vec4[7]": [
+        0,
+        0,
+        -1,
+        0
+      ],
+      "vs_uniforms_vec4[8]": [
+        0.03125,
+        0.03125,
+        0,
+        0
+      ],
+      "posFixup": [
+        1,
+        -1,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[0]": [
+        0.03125,
+        0.03125,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[1]": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[2]": [
+        0.10000000149011612,
+        0,
+        0,
+        0
+      ],
+      "ps_uniforms_vec4[3]": [
+        100,
+        0,
+        0,
+        0
+      ],
+      "ps_s0": 0,
+      "ps_s1": 1
+    }
+  },
+  "explanation": "Keeping all four WorldView rows live prevents compacted matrix registers from shifting WorldView and InvViewportSize in KNI 4.3.9001."
+}
