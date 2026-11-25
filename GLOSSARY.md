@@ -897,6 +897,17 @@ list in **reverse**.
   `docs/reports/PERPETUAL_BATTLE_P1071.md`. Analytics/backfill are port orchestration;
   native imbalance exceptions and admission stay unchanged.
 
+- **Backfill recovery (P1085)** — private fresh-probe seating and commander registration in
+  `tools/allegiance-mcp/BotManager.Backfill.cs`; the tracked recovery task and
+  per-side combat admission pacing live in `tools/allegiance-mcp/BackfillDriver.cs`.
+  `tools/allegiance-mcp/BackfillRetry.cs` supplies bounded exponential delays with
+  jitter and a once-per-episode ten-minute not-ready signal. Probe replacement
+  respects owned reconnects and reuses native ready-up. Real loopback outage,
+  exhausted resume, initial validation failure and disposal proof:
+  `tests/Allegiance.ClientCore.Tests/P1085BackfillRecoveryLiveTests.cs`; schedule and
+  liveness checks: `tests/Allegiance.ClientCore.Tests/P1085BackfillRecoveryTests.cs`.
+  Report: `docs/reports/BACKFILL_PROBE_RECOVERY_P1085.md`. Port orchestration only.
+
 - **Boot / config** — arg parsing and config load/override (`--config`,
   `--key value`, `--map-seed`). `src/Allegiance.Server/Program.cs`,
   `src/Allegiance.Server/ServerConfig.cs` (`ServerConfigLoader.ApplyCli`).

@@ -1,6 +1,8 @@
 using Allegiance.Core;
 using Allegiance.Core.Identity;
 using Allegiance.Core.Model;
+using Allegiance.ClientCore.Session;
+using System.Diagnostics;
 
 namespace Allegiance.Tools.McpSpawner;
 
@@ -9,16 +11,92 @@ internal sealed partial class BotManager
     private readonly bool _backfill;
     private readonly string _backfillClientVersion;
     private readonly Dictionary<string, ActiveBot> _backfillFinaleMembers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly BackfillRetry _probeRetry = new();
+    private readonly Dictionary<short, BackfillRetry> _commanderRetries = new();
+    private bool _probeRecoveryLogged;
+    private static double BackfillNow => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
+    private sealed class BackfillRetryPendingException : Exception;
 
     internal void PrepareBackfill(int seats)
     {
         if (!_backfill) throw new InvalidOperationException("Backfill was not enabled at startup");
         // Same existing small-battle preset used by the owned skirmish driver.
         ConfigureMeetingEngagement(seats <= 6);
-        foreach (short side in ValidSides()) EnsureCommander(side);
     }
 
-    internal (long Generation, bool Ready, short[] Sides, BackfillPilot[] Pilots) BackfillRoster(string[] patterns)
+    private static string? ProbeFailure(ConnectionSession probe)
+    {
+        if (probe.IsDisposed) return "probe disposed";
+        if (probe.Reconnecting) return null; // the owned reconnect window gets first refusal
+        if (probe.Lost) return "probe lost";
+        if (!probe.Connected) return "probe disconnected";
+        if (probe.Ack is not { FValidated: true }) return "probe not validated";
+        return null;
+    }
+
+    /// <summary>Called by the driver's single tracked background task. A fresh
+    /// probe stays private until seating/ready-up succeeds. Publication uses the
+    /// behavior/research owner gates; the driver drains admissions before recovery.</summary>
+    internal void MaintainBackfillSessions(bool recoverProbe)
+    {
+        if (_loopCts.IsCancellationRequested) return;
+        var old = Probe;
+        if (ProbeFailure(old) is { } reason)
+        {
+            if (!_probeRecoveryLogged)
+            {
+                Console.WriteLine($"[backfill] probe lost reason={reason}");
+                _probeRecoveryLogged = true;
+            }
+            if (recoverProbe && _probeRetry.Due(BackfillNow))
+            try
+            {
+                using var ownership = new PendingOwnership(DisposePeer);
+                var fresh = ownership.Own(new ConnectionSession());
+                fresh.World.CountOnlyProjectiles = true;
+                fresh.World.ReckonRemotes = false;
+                short side = ConnectProbe(fresh);
+                _loopCts.Token.ThrowIfCancellationRequested();
+                lock (_pauseGate)
+                lock (_researchPauseGate)
+                lock (_commanders)
+                {
+                    foreach (short key in _commanders.Where(p => ReferenceEquals(p.Value, old)).Select(p => p.Key).ToArray())
+                        _commanders.Remove(key);
+                    // Auto-pick may choose a different side after the outage.
+                    // The probe still doubles as exactly one commander.
+                    if (_commanders.Remove(side, out var replaced)) DisposePeer(replaced);
+                    ProbeSide = side;
+                    _probeReadyShipId = fresh.World.MyShipId!.Value;
+                    _commanders[side] = fresh;
+                    _commanderRetries.Remove(side); // this side was successfully seated by the probe
+                    Probe = fresh;
+                    ownership.Transfer();
+                }
+                DisposePeer(old);
+                _probeRetry.Succeeded();
+                _probeRecoveryLogged = false;
+                Console.WriteLine($"[backfill] probe restored side={side} ship={fresh.World.MyShipId}");
+            }
+            catch (OperationCanceledException) when (_loopCts.IsCancellationRequested) { return; }
+            catch (Exception ex)
+            {
+                double delay = _probeRetry.Failed(BackfillNow, Random.Shared.NextDouble());
+                Console.WriteLine($"[backfill] probe retry in {delay:F1}s: {ex.Message}");
+            }
+        }
+        // A probe's resume clears its world/briefing. Commander maintenance
+        // must not depend on that stale briefing or on probe recovery succeeding.
+        if (ProbeSide < 0) return;
+        foreach (short side in ValidSides())
+        {
+            if (_loopCts.IsCancellationRequested) return;
+            try { EnsureCommander(side); }
+            catch (BackfillRetryPendingException) { } // other sides can still recover
+        }
+    }
+
+    internal (long Generation, bool Ready, short[] Sides, BackfillPilot[] Pilots, string? NotReadyReason) BackfillRoster(string[] patterns)
     {
         // Snapshot owned combat clients before the probe gate, matching the
         // behavior loop's lock order. Commander/research peers live only in
@@ -31,13 +109,16 @@ internal sealed partial class BotManager
                 || hull.HasCapability(DataHullTypeIGC.HabmBuilder);
             return (economic, b.Role);
         }, StringComparer.OrdinalIgnoreCase);
-        lock (Probe.Gate)
+        var probe = Probe;
+        lock (probe.Gate)
         {
-            var world = Probe.World;
+            var world = probe.World;
+            string? reason = ProbeFailure(probe) ?? (probe.Reconnecting ? "probe reconnecting"
+                : world.Mission?.Stage == Allegiance.Core.Wire.MissionStageMessage.StageOver ? "stage over"
+                : !world.WorldReady || world.MySideId is not >= 0 ? "world not ready" : null);
             var names = world.Ships.Values.Where(s => s.Player is { IsHuman: true })
                 .ToDictionary(s => s.Player!.CharacterName, s => s.ShipId, StringComparer.OrdinalIgnoreCase);
-            return (world.MissionGeneration, Probe.Connected && !Probe.Lost && !Probe.Reconnecting
-                && world.WorldReady && world.MySideId is >= 0 && world.Mission?.Stage != Allegiance.Core.Wire.MissionStageMessage.StageOver,
+            return (world.MissionGeneration, reason is null,
                 world.SideRoster?.Sides.Where(s => s.SideId >= 0).Select(s => s.SideId).ToArray() ?? [],
                 world.ScoreRoster.Select(p =>
                 {
@@ -49,7 +130,7 @@ internal sealed partial class BotManager
                         // old count; an explicit PLAYER_READY(false) frees a seat.
                         !names.TryGetValue(p.CharacterName, out short readyId)
                             || !world.Roster.ReadyByShipId.TryGetValue(readyId, out bool ready) || ready);
-                }).ToArray());
+                }).ToArray(), reason);
         }
     }
 

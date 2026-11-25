@@ -4,6 +4,48 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P1085 — backfill recovery qualification (2026-11-25)
+
+Final-source affected qualification passed **51/51 cases in 39 fresh hosts**:
+13 exact methods × 3 runs, including every theory row, the new real outage /
+exhausted-resume proofs and existing rotation, five-seat AFK and mixed 10v10
+recovery scenarios. Solution and all **156** tool projects built with zero
+warnings/errors.
+
+One complete Fast sweep ran: **16,148 cases in 573.1 s — 16,139 passed / 2 failed /
+7 skipped**. All nine infrastructure checks passed; a final direct recheck also
+passed **9/9 in 0.031 s**. Five assertion-passing cases exceeded the unchanged
+calibrated **11.525 s** limit. Every failed or over-limit exact method was already
+present in this ledger. All seven then ran **3 times alone**, including all theory
+rows: **83/84 cases passed across 21 hosts**. The miner-capacity method remained
+intermittent in isolation; its second run again received queued mining reports.
+
+| Method | Full Fast observation | Three isolated runs | Maximum case seconds per host |
+|---|---|---|---|
+| `SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts` | Passed, civ 25: 14.142 s | pass / pass / pass; 6/6 cases | 4.913 / 4.807 / 4.956 |
+| `P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases` | Passed, civ 35: 12.345 s | pass / pass / pass; 9/9 cases | 5.987 / 5.700 / 5.398 |
+| `P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats` | Passed: 14.822 s | pass / pass / pass; 3/3 cases | 3.200 / 3.202 / 3.203 |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | Unexpected queued mining receipts after capacity | pass / **fail** / pass; 2/3 cases | 1.794 / 1.806 / 1.757 |
+| `P1000CivProfileTests.Every_loaded_civ_has_immutable_specs_and_legal_routes` | Passed, civ 3: 11.939 s | pass / pass / pass; 30/30 cases | 1.562 / 1.551 / 1.562 |
+| `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates` | Passed, civ 5: 11.934 s | pass / pass / pass; 30/30 cases | 4.385 / 4.432 / 4.408 |
+| `WarpTransitServerTests.ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange` | Only old-sector status reached the peer | pass / pass / pass; 3/3 cases | 0.303 / 0.309 / 0.303 |
+
+The broad Fast gate remains **red**. Isolated successes do not establish fixes;
+the isolated mining failure is retained. These are existing receipt and asset /
+purchase timing families. P1085 changes the external driver only; no Core/server
+behavior, assertion, timeout, calibration, quarantine or test filter was changed.
+
+The initial all-tier invocation continued into extra Live and was stopped during
+the unrelated real-window training replay matrix to reserve the brief's
+three-hour cap for the required light-gate classification. Its partial output
+reported **40 passes / 4 skips / no failures**, including the 605-second flight
+soak. Live has no complete verdict; Perf did not run. The affected Live backfill
+scenarios independently passed all three isolated repetitions.
+
+Details and sanitized source-linked receipts:
+[BACKFILL_PROBE_RECOVERY_P1085.md](reports/BACKFILL_PROBE_RECOVERY_P1085.md),
+[validation.json](reports/BACKFILL_PROBE_RECOVERY_P1085_assets/validation.json).
+
 ## P1083C — browser shader load gate (2026-11-24)
 
 One full Fast run completed: **16,142 cases, 16,131 passed / 6 failed / 5 not

@@ -71,7 +71,9 @@ internal sealed partial class BotManager
                     foreach (var side in ValidSides().Where(s => !HumanCommands(s) && (!HasMultipleEnemies || MultiSideActive(s))).OrderBy(s => s == ProbeSide ? 1 : 0))
                     {
                         if (_loopCts.IsCancellationRequested) break;
-                        var peer = EnsureCommander(side);
+                        ConnectionSession peer;
+                        try { peer = EnsureCommander(side); }
+                        catch (BackfillRetryPendingException) { continue; }
                         ReadyResearchPeer(peer);
                         peer.SendPing();
                         // Read pilots before taking the commander gate: the combat

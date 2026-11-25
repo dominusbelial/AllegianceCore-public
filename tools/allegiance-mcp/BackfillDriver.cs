@@ -10,7 +10,12 @@ internal sealed class BackfillDriver
     private readonly BotManager _manager;
     private readonly BackfillSeats _policy;
     private readonly string[] _patterns;
-    private readonly Dictionary<short, Task<string?>> _pending = new();
+    private readonly Dictionary<short, (bool Joining, Task<string?> Work)> _pending = new();
+    private readonly Dictionary<short, BackfillRetry> _admissionRetries = new();
+    private readonly BackfillLiveness _liveness = new();
+    private Task? _maintenance;
+    private bool _probeRecoveryPending;
+    private object? _rosterProbe;
     private readonly Dictionary<short, double> _settle = new();
     private readonly HashSet<short> _protectedLogged = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
@@ -46,7 +51,8 @@ internal sealed class BackfillDriver
         {
             // Manager owns all connections and is disposed by the caller after
             // outstanding admission attempts finish. Never abandon a spawn task.
-            await Task.WhenAll(_pending.Values);
+            await Task.WhenAll(_pending.Values.Select(p => p.Work));
+            if (_maintenance is not null) await _maintenance;
         }
     }
 
@@ -54,21 +60,43 @@ internal sealed class BackfillDriver
     {
         double now = _clock.Elapsed.TotalSeconds;
         var roster = _manager.BackfillRoster(_patterns);
-        foreach (short side in _pending.Where(p => p.Value.IsCompleted).Select(p => p.Key).ToArray())
+        foreach (short side in _pending.Where(p => p.Value.Work.IsCompleted).Select(p => p.Key).ToArray())
         {
-            _ = _pending[side].GetAwaiter().GetResult();
+            var pending = _pending[side];
+            string? joined = pending.Work.GetAwaiter().GetResult();
+            if (pending.Joining)
+            {
+                var retry = _admissionRetries[side];
+                if (joined is null) retry.Failed(now, Random.Shared.NextDouble());
+                else retry.Succeeded();
+            }
             _pending.Remove(side);
             _settle[side] = now + 1; // wait for the native roster echo after admission/removal
         }
-        if (roster.Generation != _generation)
+        if (_liveness.Observe(now, roster.NotReadyReason) is { } stalled) Console.WriteLine(stalled);
+        if (_maintenance?.IsCompleted == true)
         {
+            _maintenance.GetAwaiter().GetResult();
+            _maintenance = null;
+        }
+        if (_maintenance is null)
+        {
+            // A ready snapshot may go stale before the worker starts. Never
+            // authorize replacement on a tick that can also admit a combat peer.
+            bool recoverProbe = !roster.Ready && _pending.Count == 0;
+            _probeRecoveryPending = recoverProbe;
+            _maintenance = Task.Run(() => _manager.MaintainBackfillSessions(recoverProbe));
+        }
+        if (roster.Generation != _generation || !ReferenceEquals(_rosterProbe, _manager.Probe))
+        {
+            _rosterProbe = _manager.Probe;
             _generation = roster.Generation;
             _generationAt = now;
             _policy.NewMatch();
             _protectedLogged.Clear();
             Console.WriteLine($"[backfill] generation={_generation} roster settling");
         }
-        if (!roster.Ready || now - _generationAt < 2) return;
+        if (!roster.Ready || now - _generationAt < 2 || _probeRecoveryPending) return;
         foreach (short side in roster.Sides)
         {
             if (_pending.ContainsKey(side) || _settle.GetValueOrDefault(side) > now) continue;
@@ -80,10 +108,13 @@ internal sealed class BackfillDriver
                 continue;
             }
             _protectedLogged.Remove(side);
+            if (!_admissionRetries.TryGetValue(side, out var admissionRetry))
+                _admissionRetries[side] = admissionRetry = new();
+            if (decision.Action == "join" && !admissionRetry.Due(now)) continue;
             Log(decision, decision.Action == "quit" ? $"quit {decision.Name}" : "join combat bot");
             // A slow purchase on one side must not delay a human's eviction on
             // another side. At most one outstanding operation per side.
-            _pending[side] = Task.Run(() =>
+            _pending[side] = (decision.Action == "join", Task.Run(() =>
             {
                 try
                 {
@@ -100,7 +131,7 @@ internal sealed class BackfillDriver
                     Console.WriteLine($"[backfill] side {side} {decision.Action} failed: {ex.Message}");
                     return null;
                 }
-            });
+            }));
         }
         if (!_finaleArmed && _pending.Count == 0 && roster.Sides.Length >= 2 && roster.Sides.All(side =>
             roster.Pilots.Count(p => p.Side == side) >= _seats

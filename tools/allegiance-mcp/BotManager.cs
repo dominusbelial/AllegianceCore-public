@@ -183,7 +183,7 @@ internal sealed partial class BotManager : IDisposable
     /// and rare, but bounded anyway).</summary>
     public const int MaxDodgeTraces = 512;
 
-    public ConnectionSession Probe { get; }
+    public ConnectionSession Probe { get; private set; }
 
     /// <summary>The side the server actually seated the probe on (authoritative
     /// world state). Spawned bots default to this side so the probe can see them
@@ -233,9 +233,21 @@ internal sealed partial class BotManager : IDisposable
         Probe = ownership.Own(new ConnectionSession());
         Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
-        ConnectProbe();
+        try
+        {
+            ProbeSide = ConnectProbe(Probe);
+            _probeReadyShipId = Probe.World.MyShipId!.Value;
+        }
+        catch (Exception ex) when (_backfill)
+        {
+            // Backfill is a perpetual driver, including when its first logon
+            // cannot validate. All later attempts use the same recovery budget.
+            DisposePeer(Probe);
+            double delay = _probeRetry.Failed(BackfillNow, Random.Shared.NextDouble());
+            Console.WriteLine($"[backfill] initial probe failed; retry in {delay:F1}s: {ex.Message}");
+        }
         _transportBotOffset = Math.Max(0, ValidSides().Count - (_backfill ? 1 : 0));
-        if (_backfill) lock (_commanders) _commanders[ProbeSide] = Probe;
+        if (_backfill && ProbeSide >= 0) lock (_commanders) _commanders[ProbeSide] = Probe;
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
         _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
         if (Partition is null || Partition.Index == 0) _researchThread.Start();
@@ -287,28 +299,36 @@ internal sealed partial class BotManager : IDisposable
     /// <summary>Connect the probe to the real server and seat it before serving
     /// any tool call, exactly like <c>AttachMain</c> seats its spectator. Throws
     /// with a specific message if the server is unreachable / never answers —
-    /// startup therefore fails loudly instead of serving tools against nothing.</summary>
-    private void ConnectProbe()
+    /// interactive startup fails loudly; perpetual backfill schedules recovery.</summary>
+    private short ConnectProbe(ConnectionSession probe)
     {
         // Native mission names are unique. Include both worker identity and a
         // fresh suffix so separate supervisors/single managers can coexist.
         string name = $"mcp-probe-w{(Partition?.Index ?? 0) + 1}-{Guid.NewGuid().ToString("N")[..6]}";
-        ConnectBotTransport(Probe, name, _host, _port);
-        Probe.SendLogonRequest(Request(name));
-        if (!WaitUntil(() => Probe.Ack is not null || Probe.Lost, 12000))
+        ConnectBotTransport(probe, name, _host, _port);
+        probe.SendLogonRequest(Request(name));
+        if (!WaitUntil(() => probe.Ack is not null || probe.Lost, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
-        if (Probe.Ack is not { FValidated: true })
-            throw new InvalidOperationException($"startup probe: logon refused: {Probe.Ack?.CharNameOrFailureReason ?? "connection lost"}");
-        _stallTelemetry.MarkLogon(Probe);
-        short side = ProbeSidePref();
-        Probe.SendPositionReq(side);
-        if (!WaitUntil(() => Probe.World.MyShipId is not null && Probe.World.MySideId is not null || Probe.LastPositionRefusal is not null || Probe.Lost, 15000))
+        if (probe.Ack is not { FValidated: true })
+            throw new InvalidOperationException($"startup probe: logon refused: {probe.Ack?.CharNameOrFailureReason ?? "connection lost"}");
+        _stallTelemetry.MarkLogon(probe);
+        // ACK precedes SIDE_ROSTER on the wire. A replacement must observe the
+        // roster before resolving the original optional roster-index preference.
+        if (_backfill && !WaitUntil(() =>
+            {
+                lock (probe.Gate) return probe.World.SideRoster is { Sides.Length: > 0 } || probe.Lost;
+            }, 12000))
+            throw new InvalidOperationException("startup probe: no side roster after logon");
+        short side = ProbeSidePref(probe);
+        probe.SendPositionReq(side);
+        if (!WaitUntil(() => probe.World.MyShipId is not null && probe.World.MySideId is not null || probe.LastPositionRefusal is not null || probe.Lost, 15000))
             throw new InvalidOperationException("startup probe: never seated (no ship assigned by the server)");
-        if (Probe.LastPositionRefusal is { } refusal)
+        if (probe.LastPositionRefusal is { } refusal)
             throw new InvalidOperationException($"startup probe: side {refusal.SideId} refused: {refusal.Reason}");
-        if (Probe.Lost) throw new InvalidOperationException("startup probe: connection lost while selecting a side");
-        lock (Probe.Gate)
-            ProbeSide = Probe.World.MySideId ?? (short)(side >= 0 ? side : 0);
+        if (probe.Lost) throw new InvalidOperationException("startup probe: connection lost while selecting a side");
+        short probeSide;
+        lock (probe.Gate)
+            probeSide = probe.World.MySideId ?? (short)(side >= 0 ? side : 0);
 
         // P485 — the freeze root-cause fix. A NON-debug map holds
         // MissionStage.NotStarted until every occupied side's connected players
@@ -321,10 +341,11 @@ internal sealed partial class BotManager : IDisposable
         // its Showcase ReadyUp phase). The MCP harness does the latter: it readies
         // its OWN probe (and every bot it seats, below) exactly as a human pilot
         // clicks Ready, so the mission auto-starts on normal maps too.
-        short probeShip = Probe.World.MyShipId!.Value;
-        Probe.SendPlayerReady(true, probeShip);
-        _probeReadyShipId = probeShip;   // P598: ready state recorded so re-ready only fires on a real rotation
-        Console.WriteLine($"[p485] probe ready-up for ship {probeShip} on side {ProbeSide} — enables the normal-map lobby auto-start (PLAYER_READY)");
+        // Native active-player ready intent: WinTrek/WinTrek.cpp:8188-8195.
+        short probeShip = probe.World.MyShipId!.Value;
+        probe.SendPlayerReady(true, probeShip);
+        Console.WriteLine($"[p485] probe ready-up for ship {probeShip} on side {probeSide} — enables the normal-map lobby auto-start (PLAYER_READY)");
+        return probeSide;
     }
 
     private static bool WaitUntil(Func<bool> done, int maxMs)
@@ -365,10 +386,10 @@ internal sealed partial class BotManager : IDisposable
         }
     }
 
-    private short ProbeSidePref()
+    private short ProbeSidePref(ConnectionSession probe)
     {
-        lock (Probe.Gate)
-            if (Probe.World.SideRoster is { Sides.Length: > 0 } sr)
+        lock (probe.Gate)
+            if (probe.World.SideRoster is { Sides.Length: > 0 } sr)
             {
                 // P539c test seam: ALLEGIANCE_MCP_PROBE_SIDE_IDX forces which
                 // roster side the probe (and thus the "probe's side") seats on,
@@ -1163,28 +1184,55 @@ internal sealed partial class BotManager : IDisposable
     {
         lock (_commanders)
         {
-            if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
+            _commanders.TryGetValue(side, out var existing);
+            if (existing is not null && existing.Connected && !existing.Lost && !existing.IsDisposed
+                && (!_backfill || existing.Ack is { FValidated: true } && !existing.Reconnecting))
                 return existing;
-            DisposePeer(existing);
-            string name = $"{(_backfill ? "mcp-cmd" : "research-cmd")}{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
-            using var ownership = new PendingOwnership(DisposePeer);
-            var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
-            cs.World.CountOnlyProjectiles = true;
-            cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
-            ConnectBotTransport(cs, name, _host, _port,
-                ValidSides().Order().Where(s => !_backfill || s != ProbeSide).ToList().IndexOf(side) + 1);
-            cs.SendLogonRequest(Request(name));
-            if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.Ack is { FValidated: true }, 12000))
-                throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
-            _stallTelemetry.MarkLogon(cs);
-            // A commander must retain the side whose wallet it will manage.
-            SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
-                () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: false);
-            cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
-            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — native player wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
-            _commanders[side] = cs;
-            ownership.Transfer();
-            return cs;
+            BackfillRetry? retry = null;
+            if (_backfill)
+            {
+                // Only probe recovery owns this seat. Never replace the probe
+                // with a second commander while its owned resume is in flight.
+                if (side == ProbeSide || existing?.Reconnecting == true)
+                    throw new BackfillRetryPendingException();
+                if (!_commanderRetries.TryGetValue(side, out retry))
+                    _commanderRetries[side] = retry = new();
+                if (!retry.Due(BackfillNow)) throw new BackfillRetryPendingException();
+            }
+            try
+            {
+                DisposePeer(existing);
+                _commanders.Remove(side);
+                string name = $"{(_backfill ? "mcp-cmd" : "research-cmd")}{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
+                using var ownership = new PendingOwnership(DisposePeer);
+                var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
+                cs.World.CountOnlyProjectiles = true;
+                cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
+                ConnectBotTransport(cs, name, _host, _port,
+                    ValidSides().Order().Where(s => !_backfill || s != ProbeSide).ToList().IndexOf(side) + 1);
+                cs.SendLogonRequest(Request(name));
+                if (!WaitUntil(() => _loopCts.IsCancellationRequested || cs.Lost || cs.Ack is not null, 12000))
+                    throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
+                _loopCts.Token.ThrowIfCancellationRequested();
+                if (cs.Lost || cs.Ack is not { FValidated: true })
+                    throw new InvalidOperationException($"commander: side {side} logon refused or lost");
+                _stallTelemetry.MarkLogon(cs);
+                // A commander must retain the side whose wallet it will manage.
+                SeatWithRetry(name, side, () => cs.World.MyShipId is not null, () => cs.Connected && !cs.Lost,
+                    () => cs.LastPositionRefusal, cs.SendPositionReq, allowAutoPick: false);
+                cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
+                Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — native player wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
+                _commanders[side] = cs;
+                ownership.Transfer();
+                retry?.Succeeded();
+                return cs;
+            }
+            catch (Exception ex) when (_backfill && !_loopCts.IsCancellationRequested)
+            {
+                double delay = retry!.Failed(BackfillNow, Random.Shared.NextDouble());
+                Console.WriteLine($"[backfill] commander side={side} retry in {delay:F1}s: {ex.Message}");
+                throw new BackfillRetryPendingException();
+            }
         }
     }
 
