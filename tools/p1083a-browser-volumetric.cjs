@@ -142,7 +142,11 @@ async function main() {
           cell.samples.push(...samples.filter((s,i) => i>0 && s.count===count && samples[i-1].count===count));
         }
         assert.ok(cell.samples.length >= 12,'enough actual '+count+'-explosion RAF samples');
-        if(fixedScale) assert.ok(cell.samples.every(s=>s.viewport.width===1280 && s.viewport.height===696),'fixed 1280x696 cost buffer');
+        // Headless is 1280x696; a visible window's chrome changes the height by a few pixels,
+        // so --hardware-gl only requires one constant full-scale buffer for the whole cell.
+        if(fixedScale) assert.ok(cell.samples.every(s=>s.viewport.width===1280 && (hardware
+          ? s.viewport.height===cell.samples[0].viewport.height && s.viewport.height>=680
+          : s.viewport.height===696)),'fixed 1280x696 cost buffer');
         if(enabled && count>0) assert.ok(cell.samples.some(s => s.volumes>0),'real shared renderer submissions');
         const intervals = cell.samples.map(s=>s.gap);
         cell.frames=intervals.length;cell.p50Ms=percentile(intervals,.5);cell.p95Ms=percentile(intervals,.95);

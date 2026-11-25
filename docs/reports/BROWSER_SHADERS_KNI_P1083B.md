@@ -113,3 +113,29 @@ there is no native game rule to port.
 Use KNI's WebGL content pipeline with GLES-only source branches while keeping
 desktop preprocessing and output intact. Further browser renderer integration
 and hardware-GPU validation remain outside this brief.
+
+## Correction after hardware-GPU qualification (2026-11-24)
+
+The P1083B `Volumetric.xnb` compiled but **did not load** in the browser: KNI refused it with *"Shader model 4.0 is not
+supported by the current graphics profile 'HiDef'."* (visible Chrome on an Intel Arc Pro B50, `--hardware-gl`). The
+browser game runs in `GraphicsProfile.HiDef` (`Game1.Browser.cs:85`), so the `ps_4_0`/`vs_4_0` reflection profiles chosen
+above make the effects unloadable even though compilation succeeds. The P1083A legacy-bridge `Volumetric.xnb` and its
+receipt (and the matching shipped-XNB test assertion) were restored. DisplacedSphere and SoftParticle XNBs have the same
+issue and are not wired yet. P1083C finds a loadable form and adds a real in-browser load test.
+
+Hardware results with the restored Volumetric (1280×699 visible window, fixed scale, three bursts per cell, 120 Hz
+display; whole rAF intervals, not GPU timers):
+
+| HUD | Explosions | Native p50 / p95 ms | Volumetric p50 / p95 ms |
+|---|---:|---:|---:|
+| Classic | 0 | 8.3 / 16.7 | 8.3 / 16.7 |
+| Classic | 1 | 8.3 / 16.7 | 8.3 / 16.7 |
+| Classic | 4 | 8.4 / 16.7 | 8.4 / 16.7 |
+| Classic | 10 | 8.4 / 16.7 | 16.6 / 16.7 |
+| Modern | 0 | 8.4 / 16.7 | 8.3 / 16.7 |
+| Modern | 1 | 8.4 / 16.7 | 8.4 / 16.7 |
+| Modern | 4 | 8.4 / 16.7 | 8.4 / 16.7 |
+| Modern | 10 | 8.4 / 16.7 | 16.6 / 16.7 |
+
+Zero page errors in all four runs; up to 40 submitted volumes per frame. Against the SwiftShader table in P1083A
+(10 volumes: 50.1 / 100.0 ms) the Arc stays at or under one 60 Hz frame even with ten volumes.

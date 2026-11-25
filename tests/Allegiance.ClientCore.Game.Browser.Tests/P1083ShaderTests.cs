@@ -64,7 +64,7 @@ public sealed class P1083ShaderTests
         byte[] shipped = File.ReadAllBytes(xnb);
         Assert.Contains("Microsoft.Xna.Framework.Content.EffectReader", Encoding.UTF8.GetString(shipped));
         Assert.DoesNotContain("ReflectiveReader", Encoding.UTF8.GetString(shipped));
-        Assert.True(shipped.AsSpan().IndexOf("KNIF"u8) >= 0, "Shipped XNB contains a KNI-compiled effect");
+        Assert.True(shipped.AsSpan().IndexOf(result) >= 0, "Shipped XNB contains this exact source-matched effect");
     }
     [Fact]
     public void Legacy_conversion_rejects_stale_sources_unknown_versions_and_truncation()
