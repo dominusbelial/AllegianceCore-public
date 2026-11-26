@@ -1,59 +1,65 @@
 AllegianceCore: portable bundles plus Windows setup and Linux AppImage.
 
-## New since v0.1.6
+## New since v0.1.7
 
-This release brings a new loadout screen, fixes for the bugs testers reported in v0.1.6, and a
-large round of server and lobby hardening.
+This release fixes three desktop crashes, closes four security findings in the new WebSocket
+transport, and brings a round of skirmish, hangar and sound fixes. It is also the first release
+whose server can host the new browser client.
 
-**New loadout screen (on by default)**
-- A redesigned hangar loadout screen: hulls, slots and parts side by side, with an inline part list,
-  a stats bar, the price, and Buy / Launch / Back buttons.
-- Ship stats use the original game's labels and formulas, with better/worse arrows when you swap a
-  part. Shield recharge is shown in seconds to refill, as in the original.
-- Hovering a weapon slot marks its mount on the rotating ship; turret slots show their aim guide and
-  the seated gunner's name.
-- Works with mouse, keyboard and controller: **Tab** (or pad X) moves between columns, and the number
-  keys still restore your saved custom loadouts, as in the original.
-- Buying follows the original rules: Launch does nothing if you can't afford the ship, Buy asks your
-  team for the shortfall, and refusals use the original wording. **Need $X** turns into **Buy** as
-  soon as you have the money.
-- Switching hulls works like the original: nothing carries over, the hull starts from your saved or
-  default loadout, and saved loadouts are re-bought with the closest available parts.
-- Your first dock now shows the parts your ship really has (it could appear empty before).
-- Prefer the old screen? **Options → Visuals → Loadout V2** switches back.
+**Crash fixes**
+- Choosing the **Grand** skirmish size no longer crashes the game.
+- **F12** (credits) no longer crashes with the default black sky.
+- The loadout screen no longer crashes in a small window.
 
-**Fixes from tester reports**
-- Escape no longer opens a main menu on top of the intro, and an open popup keeps your keys and text.
-- Hangar and loadout controls only work on their own screen; the mission briefing shows only while the
-  game is starting; undocking always clears the hangar.
-- The afterburner sound plays only when you have a working afterburner (pods and empty tanks are
-  silent), with the original afterburner sounds for inside and outside views.
-- Asteroids spin at the right speed even when a big battle slows the game down.
-- Skirmish: your station no longer raises an alert for harmless scout fire.
+**Skirmish and spectating**
+- The spectator can travel between sectors: fly the free camera into an aleph to come out of the
+  linked one, **Home**/**End** step through sectors, and **Tab** opens a clickable sector map.
+- Seat hotkeys only work while spectating.
+- Remote ships move more smoothly in single player (at least 20 updates a second).
+- AI commanders recover a constructor that never reaches its asteroid.
 
-**Joining games**
-- The server list shows whether a running game still has team slots (`[team slots open]` / `[full]` /
-  `[no team slots]`), and full-looking games can still be joined.
-- Clearer connection errors: HTTP error, unreachable, timed out or invalid response.
-- On a password game, Enter jumps to the password field and Enter again joins.
+**Hangar, ships and sound**
+- A lifepod that docks is always offered a fresh ship, and the restore no longer gets stuck.
+- Buying a loadout keeps a part you already own even when the tech tree would drop it.
+- Guns stop looping after you pod, dock or leave flight; space ambient sounds stop while docked
+  and when you switch to spectating.
+- After the death camera ends you return to the cockpit.
+- The flight scene no longer shows through the hangar's side margins.
+- Ejecting now shows the original ejection blast.
 
-**Servers and lobby: hardening**
-- Two security reviews of what a broken or hostile client could send to a server or the lobby led to
-  about twenty fixes, including:
-  - limits on relayed chat, wrong-password guessing, inbound messages and connection setup;
-  - mission settings that reject invalid numbers;
-  - treasure only revealed to sides that can see it;
-  - combat, ripcord, boarding and squad actions checked the way the original server checks them.
-- Buying parts is closer to the original for every client: every bought part is armed, passengers are
-  re-seated after a buy, and keeping your spawn kit through a buy costs nothing.
+**Visuals and options**
+- Desktop **MSAA** (Off / 2x / 4x / 8x, default Off) in the graphics options.
+- Ship trails at every distance, and full ship detail at every distance by default
+  (**Options → Visuals**, `ships.fullDetail`).
+- The controls help (**F1**) now has two pages.
+
+**Multiplayer and servers**
+- Players marked AFK (automatically after 180 s idle, as in the original) are not given seats.
+- Pressing Launch again while waiting for the match to start shows the countdown instead of an
+  error.
+- The game server can also accept players over **WebSocket** (off by default). This is the
+  transport the browser client uses; a security review of it found four issues, all fixed in this
+  release.
+- A perpetual public battle preset: one never-ending 5v5 with random civilizations, where bots fill
+  empty seats and step aside when a human joins (`docs/PUBLIC_PERPETUAL_BATTLE.md`). The bot
+  driver now recovers on its own and backs off between reconnects.
+- The client stops sending to a server after it disconnects.
+
+**Browser client (preview, not a download)**
+- The game client now runs in Chromium-based browsers. A lobby that hosts it shows **Play now**:
+  join as a guest, pick a side, fit a ship and fly, with the full keyboard table and both HUD
+  styles. Art streams per sector so flight starts quickly. Hosting it is described in
+  `docs/BROWSER_HOSTING.md`.
 
 **Experimental (off by default)**
-- **Jet HUD**: a military-style green vector HUD in development (pitch ladder, heading and speed tapes,
-  flight-path marker, target box and missile lock). Try it with `--visuals hud.jetSkin=on`, then
-  **Shift+F12** to cycle Classic → Modern → Jet. It is incomplete; feedback welcome.
+- **Jet HUD**: further work on the vector HUD (stores block, master caution panel, RWR-style
+  radar, console and chat, an amber palette, and Jet-styled screens). Turn it on with
+  `--visuals hud.jetSkin=on`, then **Shift+F12** to cycle Classic → Modern → Jet. Still incomplete;
+  feedback welcome.
 
-**Known limits**: the Android client is experimental and has no download. Behaviour parity with native
-Allegiance is about 99.6 % of the tracked rules; the per-area scorecard is in `docs/parity/`.
+**Known limits**: the Android client is experimental and has no download. The browser client is a
+preview for Chromium-based browsers. Behaviour parity with native Allegiance is about 99.6 % of the
+tracked rules; the per-area scorecard is in `docs/parity/`.
 
 ## Downloads (all self-contained, with native artwork and the complete sky pack):
 
