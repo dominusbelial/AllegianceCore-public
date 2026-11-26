@@ -261,6 +261,7 @@ public sealed partial class Sector : IClusterIgc
     // a physics body for the rest of the tick either. Reused (P780 precedent,
     // no per-tick allocation) and never carried across ticks.
     private readonly HashSet<Ship> _shipRescueDone = [];
+    private List<Ship>? _rescueCandidates;
 
     /// <summary>P301 — this tick's station-side pod rescues (detected by
     /// <see cref="ResolveStationRescueEvents"/>: a drifting <c>c_habmLifepod</c>
@@ -1407,19 +1408,43 @@ public sealed partial class Sector : IClusterIgc
     /// the pod and clears the <c>StationId</c> latch for subsequent ticks,
     /// mirroring how the dock pass's latch prevents re-fire.</para>
     /// </remarks>
-    private void ResolveRescueEvents()
+    /// <returns>Whether the sector entered the ordered pair scan.</returns>
+    internal bool ResolveRescueEvents()
     {
-        if (_models.Count < 2) return;               // nothing to pair
+        if (_models.Count < 2) return false;
 
-        // Candidate ships: flying (not docked), placed, alive, sided — the
-        // same eligibility the dock pass applies before its own gates.
-        var ships = new List<Ship>();
-        foreach (var model in _models)
-            if (model is Ship s && s.Mission is not null && s.SideId is not null
-                && !s.Dead && s.StationId is null)
+        // A site callback can nest a sector pass. Lend the scratch list to
+        // this invocation alone and release its ship references on every exit.
+        var ships = _rescueCandidates ?? [];
+        _rescueCandidates = null;
+        try
+        {
+            bool hasPod = false, hasRescuer = false;
+            foreach (var model in _models)
+            {
+                if (model is not Ship s || s.Mission is null || s.SideId is null
+                    || s.Dead || s.StationId is not null) continue;
                 ships.Add(s);
-        if (ships.Count < 2) return;
 
+                // shipIGC.cpp:1023-1035. IsRescueCapablePair needs exactly one
+                // lifepod and a non-pod partner with the rescue capability.
+                if (s.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) hasPod = true;
+                else if (s.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) hasRescuer = true;
+            }
+            if (!hasPod || !hasRescuer) return false;
+
+            ResolveRescuePairs(ships);
+            return true;
+        }
+        finally
+        {
+            ships.Clear();
+            _rescueCandidates = ships;
+        }
+    }
+
+    private void ResolveRescuePairs(List<Ship> ships)
+    {
         var done = _shipRescueDone;                  // one rescue per ship per tick (P790, shared with the contact trigger)
         for (int i = 0; i < ships.Count; i++)
         {

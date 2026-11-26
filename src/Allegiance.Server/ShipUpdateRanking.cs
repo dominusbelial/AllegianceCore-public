@@ -25,12 +25,14 @@ internal sealed class ShipUpdateRanking
             else _heap.EnqueueDequeue((ship, i), (ship.Deviation, -i));
         }
         while (_heap.TryDequeue(out var entry, out _)) _selected.Add(entry);
-        _selected.Sort(static (a, b) =>
+        // Reverse min-heap order gives highest deviation first, then earliest
+        // ordinal. The complete order is fixed before callers can mutate a ship.
+        for (int i = _selected.Count - 1; i >= 0; i--)
         {
-            int d = b.Ship.Deviation.CompareTo(a.Ship.Deviation);
-            return d != 0 ? d : a.Ordinal.CompareTo(b.Ordinal);
-        });
-        foreach (var entry in _selected) { _served[entry.Ordinal] = true; yield return entry.Ship; }
+            var entry = _selected[i];
+            _served[entry.Ordinal] = true;
+            yield return entry.Ship;
+        }
         for (int i = 0; i < Candidates.Count; i++) if (!_served[i]) yield return Candidates[i];
     }
 }
