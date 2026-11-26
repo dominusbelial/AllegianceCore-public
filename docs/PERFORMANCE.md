@@ -25,6 +25,12 @@ machine with other work, the battles died in mass "no write progress" disconnect
 converge on Alderan. The economy runs, the research commander unlocks tech, and a bounded finale ends each match. Civilisations are picked
 at random per match.
 
+**Local simulation benchmark.** With artwork configured, run
+`dotnet run -c Release --project tools/P835Bench -- 400 240 60` to measure first contact and sustained
+`Mission.Update` separately. The default repairs surviving fighters between updates and checks the live flying
+population every pass. The historical fixture is available with `--legacy-fixture`.
+[P1086 measurements and population audit](reports/P835_LIVING_FLEET_P1086.md).
+
 **One A/B batch** = deploy one build or setting to the rig, let **2–3 full matches** finish unattended (game over → next
 match → game over), and compare with the previous batch. We never cut a match in the middle. Batches are numbered (b39,
 b50, b55, …).

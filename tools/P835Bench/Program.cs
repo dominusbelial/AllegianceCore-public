@@ -5,55 +5,67 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 
-// P835 — clash-peak sector benchmark. Reconstructs the rig's 200v200 clash-peak
-// mix in ONE sector (two sides of moving ships + a sustained salvo of
-// projectiles + a minefield + real asteroids) and measures Mission.Update —
-// the server's `step:update` bucket — per tick, with the tick profiler's
-// per-sub-bucket breakdown, at several ship counts, so the phase that grows at
-// the clash peak can be attributed and optimised.
-//
-// Unlike P667Bench (a tightly-packed static cloud, maximal collision load —
-// itself removed with its flag in P858),
-// this bench spreads the ships across a fixed-radius sphere so the per-pass mix
-// matches a real dogfight: ship-ship overlaps are rare, projectile-ship
-// detection is continuous, the every-10th-pass cross-side visibility sweep
-// scores hundreds of scanner/target pairs, and the models loop walks every
-// ship each tick.
-//
-// Usage:
-//   ALLEGIANCE_ARTWORK_PATH=/path/to/Artwork dotnet run --project tools/P835Bench -- [shipCount] [projectiles] [mines]
+// P835 sector benchmark. From the repo with ALLEGIANCE_ARTWORK_PATH set:
+//   dotnet run -c Release --project tools/P835Bench -- [ships] [projectiles] [mines] [map] [--legacy-fixture]
+// Defaults: 400 ships, 240 replenished rounds, 60 initial mines, m2xspiderw.igc.
+// First contact samples passes 1–10 of 20 fresh scenes. Sustained measures passes
+// 61–560 in one scene. Between updates, repair surviving ships in the living fixture.
+// --legacy-fixture retains the original controls and damage accumulation. Both modes
+// finish printing diagnostics and exit 1 if fewer than 95% of ships are flying.
+
+bool legacy = args.Contains("--legacy-fixture");
+var positional = args.Where(arg => arg != "--legacy-fixture").ToArray();
+if (positional.Length > 4 || positional.Any(arg => arg.StartsWith("--")) ||
+    !ReadCount(0, 400, out int shipCount) || !ReadCount(1, 240, out int projectileCount) ||
+    !ReadCount(2, 60, out int mineCount))
+{
+    Console.Error.WriteLine("Usage: P835Bench [nonnegative ships] [nonnegative projectiles] [nonnegative mines] [map] [--legacy-fixture]");
+    return 2;
+}
+
+bool ReadCount(int index, int fallback, out int value)
+{
+    value = fallback;
+    return index >= positional.Length || int.TryParse(positional[index], out value) && value >= 0;
+}
 
 var artRoot = ExternalPaths.Resolve(ExternalResourceKind.Artwork);
-Console.WriteLine($"P835-BENCH: artwork = {artRoot}");
-if (!Directory.Exists(artRoot)) { Console.WriteLine("no artwork; set ALLEGIANCE_ARTWORK_PATH"); return; }
+if (!Directory.Exists(artRoot))
+{
+    Console.Error.WriteLine("No artwork. Set ALLEGIANCE_ARTWORK_PATH.");
+    return 2;
+}
 
-int shipCount = args.Length > 0 ? int.Parse(args[0]) : 400;
-int projectileCount = args.Length > 1 ? int.Parse(args[1]) : 240;
-int mineCount = args.Length > 2 ? int.Parse(args[2]) : 60;
-Console.WriteLine($"P835-BENCH: ships={shipCount} projectiles={projectileCount} mines={mineCount} cpu={Environment.ProcessorCount}");
+int minimumLive = (int)Math.Ceiling(shipCount * 0.95m);
+Console.WriteLine($"P835-BENCH: fixture={(legacy ? "legacy" : "living")} ships={shipCount} projectiles={projectileCount} mines={mineCount} minimumLive={minimumLive} cpu={Environment.ProcessorCount}");
 Console.WriteLine($"P928 baseline: serverGC={System.Runtime.GCSettings.IsServerGC} nativeGotoPlan=true nativeShipPhases=false nativeCollisionQueue=false");
 
-var (core, map) = LoadCoreAndMap(artRoot, args.Length > 3 ? args[3] : "m2xspiderw.igc");
+var (core, map) = LoadCoreAndMap(artRoot, positional.Length > 3 ? positional[3] : "m2xspiderw.igc");
 Console.WriteLine($"P835-BENCH: core={core.HullTypes.Count} hulls, {core.ProjectileTypes.Count} projectiles, {core.MineTypes.Count} mines; map clusters={map.Clusters.Count}");
 
 var hull = PickHull(core, artRoot);
 Console.WriteLine($"P835-BENCH: hull={hull.ModelName} scannerRange={hull.ScannerRange}");
 
-var bench = new ClashBench(core, map, artRoot, hull, shipCount, projectileCount, mineCount);
-var (walls, snap) = bench.Measure(ticks: 500);
-PrintStats($"ships={shipCount}", walls);
-double wallSum = walls.Sum();
-Console.WriteLine("P835-BENCH: per-bucket breakdown (amortised mean ms per tick / conditional mean / p95 / share of tick wall):");
-foreach (var (bucket, v) in snap.OrderByDescending(kv => kv.Value.TotalMs))
-    Console.WriteLine($"  {bucket,-34} amort={v.TotalMs / Math.Max(1, walls.Count),8:0.00}  mean={v.MeanMs,8:0.00} (n={v.Count,4})  p95={v.P95Ms,8:0.00}  {100.0 * v.TotalMs / wallSum,5:0.#}%");
+ClashBench NewScene() => new(core, map, artRoot, hull, shipCount, projectileCount, mineCount, legacy);
 
-static void PrintStats(string label, List<double> walls)
-{
-    var s = walls.OrderBy(x => x).ToList();
-    double mean = s.Average();
-    double p95 = s[(int)Math.Ceiling(0.95 * s.Count) - 1];
-    Console.WriteLine($"P835-BENCH {label}: Mission.Update mean={mean,6:0.00} ms  median={s[s.Count / 2],6:0.00} ms  p95={p95,6:0.00} ms  p99={s[(int)Math.Ceiling(.99 * s.Count) - 1],6:0.00} ms  max={s[^1],6:0.00} ms  ({s.Count} ticks)");
-}
+// Exercise the instrumented code on a disposable scene before measuring fresh sightings.
+TickProfiler.Configure(true, 3600, null);
+NewScene().Run(60, minimumLive);
+TickProfiler.Shutdown();
+
+const int contactScenes = 20, contactPasses = 10, sustainedPasses = 500;
+var contact = new Measurements("first-contact", contactScenes * contactPasses);
+bool valid = true;
+for (int scene = 1; scene <= contactScenes; scene++)
+    valid &= NewScene().Run(contactPasses, minimumLive, contact, $"contact-{scene}");
+contact.Report();
+
+var clash = NewScene();
+valid &= clash.Run(60, minimumLive, label: "warm-up");
+var sustained = new Measurements("sustained", sustainedPasses);
+valid &= clash.Run(sustainedPasses, minimumLive, sustained, "sustained");
+sustained.Report();
+return valid ? 0 : 1;
 
 static (StaticCore core, MissionMap map) LoadCoreAndMap(string artRoot, string mapName)
 {
@@ -95,11 +107,14 @@ internal sealed class ClashBench
     private readonly List<DataProjectileTypeIGC> _projectileTypes;
     private readonly Random _rng = new(835);
     private readonly int _projectileTarget;
+    private readonly bool _legacy;
+    private int _pass;
     private short _nextId = 9800;
 
     public ClashBench(StaticCore core, MissionMap map, string artRoot, DataHullTypeIGC hull,
-        int shipCount, int projectileCount, int mineCount)
+        int shipCount, int projectileCount, int mineCount, bool legacy)
     {
+        _legacy = legacy;
         var hulls = new CollisionHullCache(name =>
         {
             var p = Path.Combine(artRoot, name + ".cvh");
@@ -112,9 +127,7 @@ internal sealed class ClashBench
         _m.NativeGotoPlanEnabled = true;
         foreach (var s in _m.Sectors) s.CollisionHulls = hulls;
         _sector = _m.Sectors.OrderByDescending(s => s.Mineable.Count).First();
-        // P863: sustain the population; lethal random salvos previously killed
-        // all ships during warmup and measured an empty sector. Keep collision
-        // geometry/dispatch but use negligible damage in BOTH benchmark arms.
+        // P863 low-power salvo/mine mix, identical in both fixtures.
         _projectileTypes = core.ProjectileTypes.Values.Where(pt => pt.Power > 0f && pt.Speed > 0f)
             .Select(pt => pt with { Power = 0.000001f, BlastPower = 0.000001f }).ToList();
         var mineTypes = core.MineTypes.Values.Where(mt => mt.Power > 0f)
@@ -126,6 +139,8 @@ internal sealed class ClashBench
             var pos = RandomInSphere(SectorRadius);
             var vel = 60f * RandomUnit();
             var ship = new Ship(_nextId++, hull, pos, vel, Orientation.Identity) { SideId = (short)(i % 2) };
+            // Opposed turns at cruise throttle keep bare fighters moving within scanner range.
+            if (!legacy) ship.Controls = new ControlData(i % 2 == 0 ? 0.5f : -0.5f, 0f, 0f, 0f);
             _m.PlaceShip(ship, _sector);
         }
 
@@ -171,48 +186,74 @@ internal sealed class ClashBench
         }
     }
 
-    public (List<double> walls, Dictionary<string, (int Count, double MeanMs, double P95Ms, double MaxMs, double TotalMs)> snap)
-        Measure(int ticks)
+    private readonly record struct Population(int Ships, int Moving, int Projectiles, int Mines)
     {
-        var walls = new List<double>(ticks);
-        double t = _m.LastUpdate;
-        // Warmup (JIT, detector caches) — not measured.
-        for (int i = 0; i < 60; i++) { t += 0.053; _m.Update(t); TopUpProjectiles(); }
-        TickProfiler.Configure(enabled: true, reportIntervalSeconds: 1000, csvPath: null);
-        // P838 — baseline the GC counters AFTER warmup so the deltas below cover
-        // exactly the measured loop. `step:update` is wrapped around
-        // Mission.Update with the server's own bucket name so the profiler's
-        // P838 per-step allocation attribution fills and the top-alloc table is
-        // comparable with a real server run.
-        long a0 = GC.GetTotalAllocatedBytes(precise: false);
-        double p0 = GC.GetTotalPauseDuration().TotalMilliseconds;
-        long g00 = GC.CollectionCount(0), g10 = GC.CollectionCount(1), g20 = GC.CollectionCount(2);
+        public override string ToString() => $"ships={Ships} projectiles={Projectiles} mines={Mines} moving={Moving}";
+    }
+
+    private Population Census(bool repair)
+    {
+        int ships = 0, moving = 0, projectiles = 0, mines = 0;
+        var models = _sector.Models;
+        for (int i = 0; i < models.Count; i++)
+        {
+            switch (models[i])
+            {
+                case Ship { Dead: false, StationId: null, ParentShip: null } ship:
+                    ships++;
+                    if (ship.Velocity.LengthSquared() > 1f) moving++;
+                    if (repair) ship.SetFraction(1f);
+                    break;
+                case Projectile:
+                    projectiles++;
+                    break;
+                case Mine:
+                    mines++;
+                    break;
+            }
+        }
+        return new(ships, moving, projectiles, mines);
+    }
+
+    public bool Run(int ticks, int minimumLive, Measurements? measurements = null, string? label = null)
+    {
+        var population = Census(repair: false);
+        int lowest = population.Ships;
+        int? firstLow = lowest < minimumLive ? _pass : null;
+        var checkpoints = new List<(int Pass, Population Count)>(12) { (_pass, population) };
+        var start = Measurements.Counters.Read();
         for (int i = 0; i < ticks; i++)
         {
-            var sw = Stopwatch.StartNew();
+            long tickStart = Stopwatch.GetTimestamp();
             TickProfiler.EnterTick();
-            t += 0.053;
             using (TickProfiler.Enter("step:update"))
-                _m.Update(t);
+            {
+                double nextTime = _m.LastUpdate + 0.053;
+                long updateStart = Stopwatch.GetTimestamp();
+                _m.Update(nextTime);
+                measurements?.Updates.Add(Stopwatch.GetElapsedTime(updateStart).TotalMilliseconds);
+            }
             TickProfiler.EndTick();
             TopUpProjectiles();
-            sw.Stop();
-            walls.Add(sw.Elapsed.TotalMilliseconds);
+            measurements?.FixtureWalls.Add(Stopwatch.GetElapsedTime(tickStart).TotalMilliseconds);
+
+            _pass++;
+            population = Census(repair: !_legacy);
+            lowest = Math.Min(lowest, population.Ships);
+            if (population.Ships < minimumLive) firstLow ??= _pass;
+            if (_pass is 1 or 5 or 10 or 20 or 24 or 40 || _pass % 100 == 0 || i == ticks - 1)
+                checkpoints.Add((_pass, population));
         }
-        long allocBytes = GC.GetTotalAllocatedBytes(precise: false) - a0;
-        double pauseMs = GC.GetTotalPauseDuration().TotalMilliseconds - p0;
-        long dg0 = GC.CollectionCount(0) - g00, dg1 = GC.CollectionCount(1) - g10, dg2 = GC.CollectionCount(2) - g20;
-        double wallSum = walls.Sum();
-        Console.WriteLine(
-            $"P838-GC: alloc={allocBytes / 1048576.0:0.0}MB ({allocBytes / 1024.0 / ticks:0.0}KB/tick) " +
-            $"pause={pauseMs:0.0}ms ({pauseMs / ticks:0.000}ms/tick, {100.0 * pauseMs / wallSum:0.0}% of measured wall) " +
-            $"gc gen0={dg0} gen1={dg1} gen2={dg2} ticks={ticks}");
-        foreach (var (bucket, bytes) in TickProfiler.SnapshotAlloc().OrderByDescending(kv => kv.Value).Take(8))
-            Console.WriteLine($"P838-GC: step-alloc {bucket,-34} {bytes / 1048576.0,8:0.0}MB total  {bytes / 1024.0 / ticks,8:0.0}KB/tick");
-        Console.WriteLine($"P863 population: ships={_sector.Models.OfType<Ship>().Count()} projectiles={_sector.Models.OfType<Projectile>().Count()}");
-        var snap = TickProfiler.Snapshot()
-            .ToDictionary(kv => kv.Key, kv => (kv.Value.Count, kv.Value.MeanMs, kv.Value.P95Ms, kv.Value.MaxMs, kv.Value.TotalMs));
-        TickProfiler.Configure(enabled: false, reportIntervalSeconds: 1000, csvPath: null);
-        return (walls, snap);
+        measurements?.Accumulate(start);
+        if (label != null)
+        {
+            foreach (var (pass, count) in checkpoints)
+                Console.WriteLine($"population {label} pass={pass} {count}");
+            Console.WriteLine($"population {label} minLive={lowest} required={minimumLive}");
+            if (label == "sustained") Console.WriteLine($"P863 population: {population}");
+            if (firstLow.HasValue)
+                Console.Error.WriteLine($"FAIL population guard: {label} first below 95% at pass={firstLow}, minimum live={lowest}, required={minimumLive}.");
+        }
+        return firstLow is null;
     }
 }

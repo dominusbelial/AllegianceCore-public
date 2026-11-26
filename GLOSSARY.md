@@ -656,7 +656,8 @@ list in **reverse**.
   `sim.visibilitySpotterCache` on/off flag; the identity rule is native
   behaviour and is wire-observable in OBJECT_SPOTTED). Clash-peak cost
   analysis + bench: `tools/P835Bench/`, report
-  `docs/reports/P835_CLASH_PEAK_COST.md`; P858 flag removal:
+  `docs/reports/P835_CLASH_PEAK_COST.md`; P1086 living-fleet guard, first-contact
+  and sustained timings: `docs/reports/P835_LIVING_FLEET_P1086.md`; P858 flag removal:
   `docs/reports/P858_DROP_REJECTED_FLAGS.md`.
 - **Spotting side effects (P851)** — what native books on the false→true edge of
   a side's own scanner: the first-sight score credits (`AddTargetSpot` for a

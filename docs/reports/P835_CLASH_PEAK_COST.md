@@ -73,6 +73,9 @@ At the 24-ship clash it already costs ~25.7 ms on each sweep (amortised 2.57 ms/
 
 ### 2b. `tools/P835Bench` — rig-scale density attribution
 
+> **P1086 population correction.** The historical harness counted dead ship objects. For verified
+> first-contact and sustained timings, see the [living-fleet measurements](P835_LIVING_FLEET_P1086.md).
+
 New one-off bench (built by `tools/build-tools.sh`): reconstructs the clash-peak mix in ONE sector
 of `m2xspiderw.igc` (Alderan, richest asteroid field), two sides of moving fighter hulls, a
 sustained 240-projectile salvo, 60 mines, profiler on; measures `Mission.Update` (= `step:update`)
