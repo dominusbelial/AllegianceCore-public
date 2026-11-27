@@ -41,18 +41,38 @@ public sealed partial class Server
         if (_broadcastTelemetry is { } sweepTelemetry) sweepTelemetry.MarkSweep(peer.Key, sweepTelemetry.SimNowMs);
         if (all.Count <= 2)
         {
-            foreach (var ship in all)
+            if (cadence is null)
             {
-                if (ship == self || ship == target || !ShipPoseVisible(self, ship, admin)) continue;
-                heavy.Add(ship); ship.Deviation = 0;
+                foreach (var ship in all)
+                    if (ship != self && ship != target && ShipPoseVisible(self, ship, admin))
+                        AddSmallHeavy(ship);
+            }
+            else
+            {
+                foreach (var ship in cadence.Visible)
+                    if (ship != target) AddSmallHeavy(ship);
+            }
+
+            void AddSmallHeavy(Ship ship)
+            {
+                heavy.Add(ship);
+                ship.Deviation = 0;
             }
         }
         else
         {
             var others = ranking.Candidates;
             others.Clear();
-            foreach (var ship in all)
-                if (ship != self && ship != target && ShipPoseVisible(self, ship, admin)) others.Add(ship);
+            if (cadence is null)
+            {
+                foreach (var ship in all)
+                    if (ship != self && ship != target && ShipPoseVisible(self, ship, admin)) others.Add(ship);
+            }
+            else
+            {
+                foreach (var ship in cadence.Visible)
+                    if (ship != target) others.Add(ship);
+            }
             int targetSlot = target is not null ? 1 : 0;
             int scaledHeavy = Math.Max(2,
                 (int)Math.Ceiling(Math.Max(1, others.Count) / (double)DeadReckonExtrapolationTicks) + targetSlot);

@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Profiling;
@@ -161,7 +163,15 @@ internal sealed class ViewerPoseCadence
     internal readonly PoseAgeWindow TierWindow = new();
     internal long ExtraBytes, PacketBytes;
     internal int Older1, Older3;
+    // Ranking breaks equal deviations by this sector insertion order.
+    internal ReadOnlySpan<Ship> Visible => CollectionsMarshal.AsSpan(_visible);
     internal int TrackedCount => _stamps.Count;
+
+    internal (Ship Ship, double LastPose, bool HasPose, int Generation) TestReadStamp(short id)
+    {
+        var stamp = _stamps[id];
+        return (stamp.Ship, stamp.LastPose, stamp.HasPose, stamp.Generation);
+    }
 
     /// <summary>P983 — whether this viewer currently tracks <paramref name="shipId"/>
     /// as visible, so the update-age diagnostic can ignore a stamp left by a ship
@@ -198,7 +208,10 @@ internal sealed class ViewerPoseCadence
             var ship = candidates[i];
             if (ship == self || !Server.ShipPoseVisible(self, ship, adminSpectator)) continue;
             _visible.Add(ship);
-            if (!_stamps.TryGetValue(ship.Id, out var stamp) || stamp.Ship != ship)
+            // Run the optional callback before borrowing a dictionary slot.
+            int tier = tierServer is null && classify is not null ? classify(self, ship) : 0;
+            ref var stamp = ref CollectionsMarshal.GetValueRefOrAddDefault(_stamps, ship.Id, out bool found);
+            if (!found || stamp.Ship != ship)
                 stamp = new Stamp { Ship = ship, LastPose = now };
             stamp.Generation = _generation;
             if (tierServer is not null)
@@ -208,8 +221,7 @@ internal sealed class ViewerPoseCadence
                 else if (stamp.Interest.LastEvaluation == 1) cells++;
                 else if (stamp.Interest.LastEvaluation == 2) cached++;
             }
-            else if (classify is not null) stamp.Tier = classify(self, ship);
-            _stamps[ship.Id] = stamp;
+            else if (classify is not null) stamp.Tier = tier;
             // Sample BEFORE this tick's sends, so a due update cannot hide its age.
             double age = Math.Max(0, now - stamp.LastPose);
             if (age > 1) Older1++;
@@ -331,10 +343,10 @@ internal sealed class ViewerPoseCadence
 
     internal void MarkPose(short id, double now)
     {
-        if (!_stamps.TryGetValue(id, out var stamp)) return;
+        ref var stamp = ref CollectionsMarshal.GetValueRefOrNullRef(_stamps, id);
+        if (Unsafe.IsNullRef(ref stamp)) return;
         stamp.LastPose = now;
         stamp.HasPose = true;
-        _stamps[id] = stamp;
     }
 
     /// <summary>P813a — record that this ship was served at its current
@@ -373,12 +385,14 @@ internal sealed class ViewerPoseCadence
         for (int n = 0; n < _visible.Count; n++)
         {
             var ship = _visible[(_cursor + n) % _visible.Count];
-            var stamp = _stamps[ship.Id];
+            // Begin installed a stamp for every ship in this sweep.
+            ref var stamp = ref CollectionsMarshal.GetValueRefOrNullRef(_stamps, ship.Id);
             bool due = now - stamp.LastPose >= 1 / hz;
             if ((n < quota || due) && (!stamp.HasPose || stamp.LastPose != now))
             {
                 _floorDue[count++] = ship;
-                MarkPose(ship.Id, now);
+                stamp.LastPose = now;
+                stamp.HasPose = true;
                 ExtraBytes += HeavyShipUpdateEntry.Width;
             }
         }
