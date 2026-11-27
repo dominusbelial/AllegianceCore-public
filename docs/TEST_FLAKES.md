@@ -11429,3 +11429,13 @@ at `28debb3c` produced exactly the same two local hashes as the change, with
 zero layout errors. Classic was `C100F69A43C7A4E8` and Modern was
 `1093B39B5B9BA161` (SHA-256 prefixes). The sibling ClassicArt case passed.
 This is a reproducible local golden discrepancy. [P1097 qualification](reports/SECTOR_WARMUP_DECODE_P1097.md)
+
+## P1094–P1097 merge gate, 2026-11-27
+
+An unfiltered `Allegiance.ClientCore.Tests` run on the merged tree (1,978 cases, including the Live tier) failed two
+already-ledgered tests. `ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`
+failed once (770 ms) and then passed three isolated reruns. `SC2SupportPhaseLiveTests.Support_pilots_follow_the_side_phase_instead_of_parking_at_home`
+(Live, about 15 min) failed after 15 m 4 s while its process was spinning near one core; the run was stopped and the
+gate re-run with the light-gate selection. Neither test touches the merged changes. Separately, the two P1091
+1920×1080 HUD SHA-256 checks fail on a software-GL (llvmpipe) host at base and pass on a hardware GPU; see the P1095
+entry above.
