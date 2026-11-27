@@ -2183,6 +2183,7 @@ public sealed partial class Game1 : Game
 
     protected override void UnloadContent()
     {
+        _sectorTextures?.Dispose();
         _sceneAntialiasing?.Dispose();
         ReleaseTraining();
         DisposeBenchmark();

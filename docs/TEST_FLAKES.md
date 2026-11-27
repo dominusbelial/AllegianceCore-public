@@ -11419,3 +11419,13 @@ build order and pumping the server. The case passed in the first full sweep,
 failed in the second and passed in three fresh method-only hosts (1.430,
 1.463 and 1.483 s). The server and its construction fixture used the base source.
 The cause remains unresolved. [P1096 Fast sweeps](reports/LABEL_LAYOUT_TILES_P1096.md#fast-sweeps)
+## P1097 DesktopGL HUD matrix baseline, 2026-11-27
+
+The 1920-wide default Classic and Modern cases of
+`P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct`
+consistently missed their pinned RGBA hashes on this software renderer. Three
+isolated runs reproduced the failures. Three controls with the base renderer
+at `28debb3c` produced exactly the same two local hashes as the change, with
+zero layout errors. Classic was `C100F69A43C7A4E8` and Modern was
+`1093B39B5B9BA161` (SHA-256 prefixes). The sibling ClassicArt case passed.
+This is a reproducible local golden discrepancy. [P1097 qualification](reports/SECTOR_WARMUP_DECODE_P1097.md)

@@ -197,6 +197,12 @@ public sealed partial class Game1
         try { UpdateFrame(gameTime); }
         finally
         {
+            // Flight handles the aleph approach alongside the pose gather. The
+            // hangar and ready screen already know the launch sector before then.
+            if (_state == ClientState.ReadyCheck || (_state == ClientState.Flying && _dockedActive))
+                UpdateSectorLoad();
+            else if (_state != ClientState.Flying && _warmWorld is not null)
+                ResetSectorWarmup(null, 0);
             if (_hudSkins is not null)
                 UpdateHudSkinInput(_hudSkinKeysRead ? _hudSkinKeys : Keyboard.GetState(), IsActive);
             CommitHudSkinChange();

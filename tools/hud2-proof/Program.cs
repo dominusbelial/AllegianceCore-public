@@ -55,6 +55,12 @@ if (args is ["--overlaps", var width, var style, var scaleCase, ..])
     return overlap.Errors;
 }
 
+if (args is ["--sector-pixels", var sectorSkin])
+{
+    SectorPixelProof.Run(Enum.Parse<HudStyle>(sectorSkin));
+    return 0;
+}
+
 if (args is ["--particle-pixels", var skin])
 {
     ParticlePixelProof.Run(Enum.Parse<HudStyle>(skin));

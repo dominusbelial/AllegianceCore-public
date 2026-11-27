@@ -56,11 +56,24 @@ public static partial class NativeStationTexture
     public static Texture2D Load(GraphicsDevice gd, IAssetSource assets, string stem)
     {
         var decoded = Decode(gd, assets, stem);
-        var texture = new Texture2D(gd, decoded.Width, decoded.Height);
+        return Upload(gd, decoded.Width, decoded.Height, decoded.Rgba);
+    }
+
+    internal static Texture2D Upload(GraphicsDevice gd, int width, int height, byte[] rgba)
+    {
+        var texture = new Texture2D(gd, width, height);
         // P862 — upload the decoded RGBA bytes straight (SurfaceFormat.Color is
         // RGBA8); the Color[] staging doubled the peak allocation of every station
         // texture, and a cold sector loads a whole station's set in one frame.
-        texture.SetData(decoded.Rgba);
-        return texture;
+        try
+        {
+            texture.SetData(rgba);
+            return texture;
+        }
+        catch
+        {
+            texture.Dispose();
+            throw;
+        }
     }
 }

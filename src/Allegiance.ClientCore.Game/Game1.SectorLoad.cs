@@ -86,6 +86,10 @@ public sealed partial class Game1
     /// The scan is a handful of distance tests; it does not need every frame.</summary>
     private const long WarmupApproachScanMs = 200;
 
+    private SectorTexturePreparation? _sectorTextures;
+    private Allegiance.ClientCore.State.ClientWorld? _warmWorld;
+    private long _warmMission;
+    private uint _warmFrame = uint.MaxValue;
     private SectorWarmupQueue? _warmQueue;
     private WarmupBudget? _warmBudget;
     private bool _warmConfigured;
@@ -184,6 +188,9 @@ public sealed partial class Game1
             Console.WriteLine("[sector-warm] DISABLED by ALLEGIANCE_SECTOR_PREWARM — assets load lazily on first draw (P862 A/B baseline)");
             return;
         }
+        _sectorTextures = new SectorTexturePreparation(_assets);
+        _nativeAsteroidRenderer.Preparation = _sectorTextures;
+        _hdSky.Planet.Preparation = _nativeSky.Planet.Preparation = _blackSky.Planet.Preparation = _sectorTextures;
         _warmQueue = new SectorWarmupQueue();
         _warmBudget = new WarmupBudget(WarmupFlightFrameMs);
         Console.WriteLine($"[sector-warm] enabled: own-sector at mission data, aleph approach within {AlephPromoteRadius:0} u, "
@@ -193,8 +200,8 @@ public sealed partial class Game1
     /// <summary>
     /// P862 — one frame of sector load work: detect a sector change (accounting),
     /// seed the own sector / an approached sector, then drain the queue under the
-    /// frame budget. Called once per flying frame, right after the render poses are
-    /// gathered, so it runs on the render thread next to every other world read.
+    /// frame budget. Flight calls this after the pose gather. The hangar and
+    /// ready screen can start the same work before launch.
     /// </summary>
     private void UpdateSectorLoad()
     {
@@ -207,8 +214,12 @@ public sealed partial class Game1
         Vector3 ownPos = Vector3.Zero;
         bool haveOwn = false;
         bool docked = true;
+        long mission;
+        bool ready;
         lock (_session.Gate)
         {
+            mission = world.MissionGeneration;
+            ready = world.WorldReady;
             if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var mine))
             {
                 ownSector = RenderSector(mine.SectorId);
@@ -228,7 +239,8 @@ public sealed partial class Game1
             haveOwn = true;
         }
 
-        bool ready = world.WorldReady;
+        if (_warmWorld != world || _warmMission != mission || (!ready && _warmSectorsSeeded.Count > 0))
+            ResetSectorWarmup(world, mission);
 
         // 1) The own sector, as soon as its definitions are known. The type
         //    catalogue is required for station models, so a sector is only marked
@@ -246,14 +258,37 @@ public sealed partial class Game1
         }
 
         // 3) Drain under the budget.
+        if (_warmQueue.PendingCount == 0 || _warmFrame == _hudFrame) return;
+        _warmFrame = _hudFrame;
         _warmBudget.FrameBudgetMs = docked ? WarmupIdleFrameMs : WarmupFlightFrameMs;
         _warmBudget.BeginFrame();
-        while (_warmQueue.PendingCount > 0 && _warmBudget.CanStart())
+        var preparation = _sectorTextures!;
+        preparation.BeginFrame(_warmBudget.FrameBudgetMs);
+        SectorTexture? first = null;
+        int lookahead = Math.Min(4, _warmQueue.PendingCount);
+        for (int i = 0; i < lookahead && preparation.HasTime; i++)
         {
-            if (!_warmQueue.TryTake(out var asset)) break;
+            if (ColdSectorTexture(_warmQueue.Pending[i]) is not { } candidate) continue;
+            if (first is { } prior && candidate.SamePixels(prior)) continue;
+            if (!preparation.Offer(candidate, first is null)) break;
+            if (first.HasValue) break;
+            first = candidate;
+        }
+        while (_warmQueue.PendingCount > 0 && _warmBudget.CanStart() && preparation.HasTime)
+        {
+            var asset = _warmQueue.Pending[0];
             var tally = TallyFor(asset.SectorId);   // before the item, so `elapsed` includes it
             long started = Stopwatch.GetTimestamp();
-            int outcome = WarmAssetItem(asset);
+            var textureResult = WarmTextureResult.Resident;
+            if (ColdSectorTexture(asset) is { } texture)
+            {
+                preparation.Offer(texture, first: true);
+                textureResult = preparation.Upload(GraphicsDevice, texture, required: false);
+                if (textureResult == WarmTextureResult.Pending) break;
+            }
+            _warmQueue.TryTake(out _);
+            int outcome = WarmAssetItem(asset, textureResult == WarmTextureResult.Deferred);
+            if (textureResult == WarmTextureResult.Created) outcome = 1;
             double ms = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             _warmBudget.Spend(ms);
             _warmQueue.Complete(asset, created: outcome > 0, failed: outcome < 0);
@@ -272,6 +307,18 @@ public sealed partial class Game1
             tally.Ms += ms;
             if (_warmQueue.PendingFor(asset.SectorId) == 0) ReportSectorWarmComplete(asset.SectorId, tally);
         }
+    }
+
+    private void ResetSectorWarmup(Allegiance.ClientCore.State.ClientWorld? world, long mission)
+    {
+        _sectorTextures?.Reset();
+        _warmWorld = world;
+        _warmMission = mission;
+        _warmQueue = new SectorWarmupQueue();
+        _warmSectorsSeeded.Clear();
+        _warmTallies.Clear();
+        _warmApproachSector = -1;
+        _warmNextApproachScan = 0;
     }
 
     private WarmTally TallyFor(short sectorId)
@@ -387,7 +434,7 @@ public sealed partial class Game1
         // destination sector while the own ship closes on the aleph, so a hull
         // texture first seen a second before the transit must still be warmed
         // (measured: one late hull still cost 982 ms inside the arrival frame).
-        // Seeding is idempotent — the queue dedupes every (kind, stem).
+        // The queue ignores keys already accepted on earlier scans.
         // Optionally capture the departure side: one frame with the aleph filling
         // the view, ~1.5 km out, just before the crossing (ALLEGIANCE_SECTOR_SHOTS).
         if (_sectorShotsDir.Length > 0 && bestSq <= 1800f * 1800f && !_sectorShotPreArmed)
@@ -434,17 +481,30 @@ public sealed partial class Game1
         return _warmQueue.Enqueue(Rendering.SectorWarmupPlanner.GlimpseSky(sectorId)) ? 1 : 0;
     }
 
+    private PlanetPoster ActivePlanet => _skyTier.Equals("hd", StringComparison.OrdinalIgnoreCase) ? _hdSky.Planet
+        : _skyTier.Equals("black", StringComparison.OrdinalIgnoreCase) ? _blackSky.Planet : _nativeSky.Planet;
+
+    private SectorTexture? ColdSectorTexture(in WarmAsset asset)
+    {
+        if (asset.Kind == WarmAssetKind.Sky && asset.Stem.Length > 0)
+            return ActivePlanet.ColdTexture(asset.Stem);
+        if (asset.Kind == WarmAssetKind.Rock && _asteroidsNative
+            && _nativeAsteroidRenderer.TextureStemFor(asset.Stem, asset.Hint) is { } stem)
+            return _nativeAsteroidRenderer.ColdTexture(stem);
+        return null;
+    }
+
     /// <summary>Warm ONE item by calling the renderer that owns it. Returns 1 when
     /// a new resource was created, 0 when it was already resident, -1 when the art
     /// is unavailable (the renderer has already logged it once).</summary>
-    private int WarmAssetItem(in WarmAsset asset)
+    private int WarmAssetItem(in WarmAsset asset, bool deferTexture)
     {
         switch (asset.Kind)
         {
             case WarmAssetKind.Rock:
             {
                 if (!_asteroidsNative) return 0;
-                int created = _nativeAsteroidRenderer.Warm(asset.Stem, asset.Hint);
+                int created = deferTexture ? 0 : _nativeAsteroidRenderer.Warm(asset.Stem, asset.Hint);
                 if (created < 0) return created;
                 string? tex = _nativeAsteroidRenderer.TextureStemFor(asset.Stem, asset.Hint);
                 if (_hdMaterials is not null && tex is not null
@@ -477,7 +537,7 @@ public sealed partial class Game1
                 int created = 0;
                 // Planet poster: each tier owns one PlanetPoster, so warm the
                 // ACTIVE tier's instance (the one that will draw it).
-                if (!string.IsNullOrEmpty(asset.Stem))
+                if (!deferTexture && !string.IsNullOrEmpty(asset.Stem))
                 {
                     int planet = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase) ? _hdSky.WarmPlanet(asset.Stem)
                         : string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? _blackSky.WarmPlanet(asset.Stem)

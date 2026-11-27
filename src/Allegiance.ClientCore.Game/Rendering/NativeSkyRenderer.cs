@@ -68,6 +68,9 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     // P588 — the native planet poster, shared with the black/HD tiers so all
     // three draw the identical native alien planet billboard.
     private readonly PlanetPoster _planet;
+#if !BROWSER
+    internal PlanetPoster Planet => _planet;
+#endif
 
     public NativeSkyRenderer(GraphicsDevice gd, IAssetSource assets)
     {

@@ -1861,6 +1861,12 @@ list in **reverse**.
   Corpus/export tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P916TextureOrientationTests.cs`,
   `tests/Allegiance.Core.Tests/P916TextureExportTests.cs`; proof:
   `tools/p916-texture-proof/`; report `docs/reports/P916_REPORT.md`.
+- **Sector texture preparation (P1097)** — the desktop approach queue resolves native rock
+  and planet image namespaces through the renderer. Two bounded workers decode RGBA
+  before sliced graphics-thread uploads. Draw finishes an outstanding texture on demand.
+  Ownership and limits live in `src/Allegiance.ClientCore.Game/Rendering/SectorTexturePreparation.cs`.
+  PNG imports share `src/Allegiance.Core/Data/RgbPng.cs` with the model-authoring tool.
+  Replay and first-frame evidence are in `docs/reports/SECTOR_WARMUP_DECODE_P1097.md`.
 - **Sector asset warm-up (P862)** — a warp must not load a sector in its transit
   frame. Per-type assets (native rock/station/hull meshes + 2048² native textures,
   the planet poster, the tier's dome) are created lazily by the renderer that

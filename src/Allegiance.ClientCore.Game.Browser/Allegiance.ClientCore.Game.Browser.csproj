@@ -54,6 +54,7 @@
                ../Allegiance.ClientCore.Game/Training/**;
                ../Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs;
                ../Allegiance.ClientCore.Game/Rendering/FsrPostProcessor.cs;
+               ../Allegiance.ClientCore.Game/Rendering/SectorTexturePreparation.cs;
                ../Allegiance.ClientCore.Game/CommandFanout.cs;
                ../Allegiance.ClientCore.Game/QuickChat/QuickChatOrderResolver.cs;
                ../Allegiance.ClientCore.Game/Flight/CommandActionInput.cs;

@@ -39,6 +39,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </remarks>
 public sealed class NativeAsteroidRenderer : IDisposable
 {
+#if !BROWSER
+    internal SectorTexturePreparation? Preparation { get; set; }
+
+    internal SectorTexture? ColdTexture(string stem) =>
+        _textures.ContainsKey(stem) || _missingTextureLogged.Contains(stem) ? null : new(stem, false, _textures);
+#endif
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
     private readonly Dictionary<string, NativeShipRenderer.NativeShipGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
@@ -126,6 +132,10 @@ public sealed class NativeAsteroidRenderer : IDisposable
         if (_assets is IResidentTextureSource resident && resident.TryGetTexture(textureStem, false, out var prepared)) return prepared;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
         if (_missingTextureLogged.Contains(textureStem)) return null;
+#if !BROWSER
+        if (Preparation?.Upload(_gd, new(textureStem, false, _textures), required: true) == WarmTextureResult.Created)
+            return _textures[textureStem];
+#endif
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
@@ -135,13 +145,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
                 return null;
             }
             var mdlTex = NativeStationTexture.Decode(_gd, _assets, textureStem);
-            var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
-            // P862 — upload the decoder's RGBA bytes straight (SurfaceFormat.Color IS
-            // RGBA8, and the decoder already writes alpha 255 for every texel). The
-            // old Color[] staging cost a 16.7 MB array plus a 4.2M-iteration loop per
-            // 2048² texture — ~33 MB of garbage per texture, and a cold sector loads
-            // several in one frame (the P862 transit hitch).
-            surf.SetData(mdlTex.Rgba);
+            var surf = NativeStationTexture.Upload(_gd, mdlTex.Width, mdlTex.Height, mdlTex.Rgba);
             _textures[textureStem] = surf;
             AssetLoadLog.Note("rock texture", textureStem, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
                 $"{mdlTex.Width}x{mdlTex.Height}");

@@ -43,9 +43,11 @@ public enum WarmAssetKind
 /// priority (an aleph approach promotes the sector being approached).</param>
 public readonly record struct WarmAsset(WarmAssetKind Kind, string Stem, string? Hint, short SectorId)
 {
-    /// <summary>Dedupe key: one resource per (kind, stem) regardless of sector —
-    /// two sectors sharing a rock model load it exactly once.</summary>
-    public string Key => $"{(int)Kind}/{Stem}";
+    /// <summary>Shared across sectors. A rock model with a different texture
+    /// override needs its own warm item for that texture.</summary>
+    public string Key => Kind == WarmAssetKind.Rock && !string.IsNullOrEmpty(Hint)
+        ? $"{(int)Kind}/{Stem}\0{Hint}"
+        : $"{(int)Kind}/{Stem}";
 }
 
 /// <summary>
@@ -93,7 +95,7 @@ public sealed class SectorWarmupQueue
     /// <summary>Items whose load failed (missing art — logged by the renderer).</summary>
     public int FailedCount { get; private set; }
 
-    /// <summary>Every (kind, stem) the queue has ever accepted, warmed or not.</summary>
+    /// <summary>Every asset key the queue has accepted, including pending work.</summary>
     public int KnownCount => _known.Count;
 
     /// <summary>Pending items, front = next to warm (diagnostics/tests).</summary>

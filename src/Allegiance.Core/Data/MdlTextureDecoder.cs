@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Runtime.InteropServices;
 
 // Lives in Allegiance.Core (moved there in P824 so the authoring pipeline in
 // tools/mdl-to-glb can decode AND write textures headless — MdlFile, the mesh
@@ -49,6 +50,9 @@ public static class MdlTextureDecoder
     /// <c>false</c> for native mesh materials and top-left-origin HUD images.
     /// </summary>
     public static MdlTexture Decode(byte[] data, bool flipVertical = true)
+        => Decode(data, flipVertical, int.MaxValue);
+
+    public static MdlTexture Decode(byte[] data, bool flipVertical, int maxRgbaBytes)
     {
         if (data is null) throw new ArgumentNullException(nameof(data));
         if (data.Length < 24)
@@ -98,6 +102,8 @@ public static class MdlTextureDecoder
         if (sizeX <= 0 || sizeY <= 0)
             throw new InvalidDataException($"invalid texture size {sizeX}x{sizeY}");
 
+        if ((long)sizeX * sizeY > maxRgbaBytes / 4)
+            throw new InvalidDataException("decoded texture exceeds the byte budget");
         int pixelCount = sizeX * sizeY;
         // Native consumes pitch·sizeY bytes (modeler.cpp:724 MovePointer) — the
         // rows are pitch-padded, not packed, when 2·sizeX isn't 4-aligned
@@ -106,6 +112,21 @@ public static class MdlTextureDecoder
             throw new InvalidDataException("truncated .mdl texture (pixel data)");
 
         var rgba = new byte[pixelCount * 4];
+        // The installed flight surfaces use canonical RGB565. Expand each packed
+        // texel with the same rounded channel values as the general mask path.
+        if (BitConverter.IsLittleEndian && redMask == 0xf800 && greenMask == 0x07e0 && blueMask == 0x001f)
+        {
+            var output = MemoryMarshal.Cast<byte, uint>(rgba.AsSpan());
+            var table = Rgb565.Pixels;
+            for (int y = 0; y < sizeY; y++)
+            {
+                var row = MemoryMarshal.Cast<byte, ushort>(data.AsSpan(pos + y * pitch, sizeX * 2));
+                int dest = (flipVertical ? sizeY - 1 - y : y) * sizeX;
+                for (int x = 0; x < row.Length; x++) output[dest + x] = table[row[x]];
+            }
+            return new MdlTexture(sizeX, sizeY, rgba);
+        }
+
         int pixelBase = pos;
         for (int srcRow = 0; srcRow < sizeY; srcRow++)       // row 0 = top of the file's pixel rows
         {
@@ -127,6 +148,23 @@ public static class MdlTextureDecoder
         return new MdlTexture(sizeX, sizeY, rgba);
     }
 
+    private static class Rgb565
+    {
+        internal static readonly uint[] Pixels = Build();
+        private static uint[] Build()
+        {
+            var table = new uint[1 << 16];
+            for (int v = 0; v < table.Length; v++)
+            {
+                uint r = (uint)MathF.Round((v >> 11) / 31f * 255f);
+                uint g = (uint)MathF.Round(((v >> 5) & 63) / 63f * 255f);
+                uint b = (uint)MathF.Round((v & 31) / 31f * 255f);
+                table[v] = 0xff000000u | (b << 16) | (g << 8) | r;
+            }
+            return table;
+        }
+    }
+
     /// <summary>
     /// Convert a decoded opaque texture into the PREMULTIPLIED, transparent-background
     /// form the HUD renders. The original gauge bitmaps are authored with a black
@@ -141,6 +179,13 @@ public static class MdlTextureDecoder
     {
         var src = tex.Rgba;
         var outBuf = new byte[tex.ByteCount];
+        WritePremultipliedRgba(src, outBuf, keyBelow);
+        return outBuf;
+    }
+
+    // The preparation worker owns its pixels exclusively and can key them in place.
+    public static void WritePremultipliedRgba(byte[] src, byte[] outBuf, int keyBelow)
+    {
         for (int i = 0; i < src.Length; i += 4)
         {
             byte r = src[i], g = src[i + 1], b = src[i + 2];
@@ -157,7 +202,6 @@ public static class MdlTextureDecoder
                 outBuf[i + 3] = 255;
             }
         }
-        return outBuf;
     }
 
     private static uint ReadU32(byte[] d, ref int pos)

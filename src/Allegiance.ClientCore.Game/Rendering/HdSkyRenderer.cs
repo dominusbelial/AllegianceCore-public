@@ -77,6 +77,9 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     // all three draw the identical native alien planet billboard (with the HD
     // tier's global intensity tint applied on draw).
     private readonly PlanetPoster _planet;
+#if !BROWSER
+    internal PlanetPoster Planet => _planet;
+#endif
 
     /// <summary>Global sky intensity (P577 readability guard; default 1.0).</summary>
     public float SkyIntensity { get; set; } = 1.0f;

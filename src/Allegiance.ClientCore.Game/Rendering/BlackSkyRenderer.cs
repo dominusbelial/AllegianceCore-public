@@ -72,6 +72,9 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
     private readonly Starfield _starMid;
     private readonly Starfield _starFar;
     private readonly PlanetPoster _planet;
+#if !BROWSER
+    internal PlanetPoster Planet => _planet;
+#endif
     private readonly LensFlareRenderer _lensFlare;
     private readonly MoonRenderer _moons;
     private readonly DistantObjectRenderer _distant;

@@ -22,6 +22,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public sealed class PlanetPoster : IDisposable
 {
+#if !BROWSER
+    internal SectorTexturePreparation? Preparation { get; set; }
+
+    internal SectorTexture? ColdTexture(string stem) =>
+        _textures.ContainsKey(stem) || _missing.Contains(stem) ? null : new(stem, true, _textures);
+#endif
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private static readonly Color XnaWhite = Color.White;
@@ -167,6 +173,10 @@ public sealed class PlanetPoster : IDisposable
         if (_assets is IResidentTextureSource resident && resident.TryGetTexture(planetName, true, out var prepared)) return prepared;
         if (_textures.TryGetValue(planetName, out var t)) return t;
         if (_missing.Contains(planetName)) return null;
+#if !BROWSER
+        if (Preparation?.Upload(_gd, new(planetName, true, _textures), required: true) == WarmTextureResult.Created)
+            return _textures[planetName];
+#endif
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
@@ -181,10 +191,7 @@ public sealed class PlanetPoster : IDisposable
                 // Colour-key the near-black surround (the planet art sits on a
                 // black backing; native keys it transparent via the surface colorkey).
                 var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
-                var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
-                // P862 — upload the premultiplied RGBA bytes straight (SurfaceFormat.Color
-                // is RGBA8); the Color[] staging was another 16.7 MB per 2048² planet.
-                surf.SetData(rgba);
+                var surf = NativeStationTexture.Upload(_gd, mdlTex.Width, mdlTex.Height, rgba);
                 _textures[planetName] = surf;
                 AssetLoadLog.Note("planet poster", planetName,
                     System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,

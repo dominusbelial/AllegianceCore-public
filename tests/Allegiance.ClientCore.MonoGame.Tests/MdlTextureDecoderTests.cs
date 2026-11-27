@@ -71,6 +71,34 @@ public class MdlTextureDecoderTests
     }
 
     [Fact]
+    public void Packed_flight_surface_matches_all_65536_original_channel_conversions()
+    {
+        var blob = BuildFixture();
+        Array.Resize(ref blob, 76 + 256 * 256 * 2);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(blob.AsSpan(40), 256);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(blob.AsSpan(44), 256);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(blob.AsSpan(48), 512);
+        byte[] expected = new byte[256 * 256 * 4];
+        for (int v = 0; v <= ushort.MaxValue; v++)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(blob.AsSpan(76 + v * 2), (ushort)v);
+            expected[v * 4] = (byte)MathF.Round((v >> 11) / 31f * 255f);
+            expected[v * 4 + 1] = (byte)MathF.Round(((v >> 5) & 63) / 63f * 255f);
+            expected[v * 4 + 2] = (byte)MathF.Round((v & 31) / 31f * 255f);
+            expected[v * 4 + 3] = 255;
+        }
+        Assert.True(expected.AsSpan().SequenceEqual(MdlTextureDecoder.Decode(blob, false).Rgba));
+    }
+
+    [Fact]
+    public void Preparation_checks_decoded_bytes_before_allocating_pixels()
+    {
+        var blob = BuildFixture();
+        Assert.Throws<InvalidDataException>(() => MdlTextureDecoder.Decode(blob, false, 15));
+        Assert.Equal(16, MdlTextureDecoder.Decode(blob, false, 16).ByteCount);
+    }
+
+    [Fact]
     public void Decode_rejects_bad_magic()
     {
         var blob = BuildFixture();
