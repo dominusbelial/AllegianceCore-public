@@ -865,8 +865,9 @@ public sealed partial class Game1
                 Console.WriteLine("[monogame] P547: soft particles UNAVAILABLE (shader/target missing) — near-fade only");
             if (_bloomEnabled && _post.BloomReady)
                 Console.WriteLine("[monogame] P547: bloom ACTIVE (thresholded, off in native)");
-            _vfxAssets = new Rendering.VfxAssets(GraphicsDevice);
-            _enhancedSmoke = new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets, _post?.Soft);
+            _vfxAssets = LoadVfxAssets(GraphicsDevice);
+            _enhancedSmoke = _vfxAssets.Smoke.Length > 0
+                ? new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets, _post?.Soft) : null;
         }
         else if (_visuals.HdrPipeline)
         {
@@ -917,12 +918,10 @@ public sealed partial class Game1
         // blast with native size/duration/fade.
         _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, _assets);
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
-        if (_enhancedVfx)
-        {
-            _enhancedExplosionRenderer = new Rendering.EnhancedExplosionRenderer(
-                GraphicsDevice, _vfxAssets!, _explosionAssets, _enhancedSmoke!);
+        _enhancedExplosionRenderer = _enhancedSmoke is null ? null
+            : new Rendering.EnhancedExplosionRenderer(GraphicsDevice, _vfxAssets!, _explosionAssets, _enhancedSmoke);
+        if (_enhancedExplosionRenderer is not null)
             Console.WriteLine("[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)");
-        }
 
         // P573 — resolve the Volumetric tier now that the shader cache exists.
         // The shader load can fail (missing/corrupt .mgfxo); the effective tier

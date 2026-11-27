@@ -60,19 +60,21 @@ public sealed class VfxAssets : IDisposable
     /// <summary>Number of 8×8-grid billowy-smoke frames.</summary>
     public const int SmokeGridFrames = 64;
 
-    public VfxAssets(GraphicsDevice gd)
+    public VfxAssets(GraphicsDevice gd) : this(gd, TitleContainer.OpenStream, (frame, pixels) => frame.SetData(pixels)) { }
+
+    internal VfxAssets(GraphicsDevice gd, Func<string, Stream> open, Action<Texture2D, Color[]> upload)
     {
-        FireGlow = LoadAtlas(gd, AtlasContentDir, "Explosion01-light", 5, 5);
-        FireBall = LoadAtlas(gd, AtlasContentDir, "Explosion01", 5, 5);
+        FireGlow = LoadAtlas(gd, AtlasContentDir, "Explosion01-light", 5, 5, open, upload);
+        FireBall = LoadAtlas(gd, AtlasContentDir, "Explosion01", 5, 5, open, upload);
         // The three SMOKE atlases are radially feathered (P561): the CC0 smoke
         // frames were filled to the cell edge (measured: Cloud01 rim alpha
         // ~0.78 mean, 38% of pixels >0.9) — that hard rim is what read as a
         // "flat card / discrete oval". Feathering scales RGB and alpha by a
         // radial smoothstep so the rim disappears and puffs merge into a soft
         // plume. Fire-ball atlases stay sharp (additive, drawn over the blast).
-        Smoke = LoadAtlas(gd, AtlasContentDir, "Cloud01", 8, 8, feather: true);
-        WispySmoke = LoadAtlas(gd, AtlasContentDir, "WispySmoke01", 8, 8, feather: true);
-        DiscSmoke = LoadAtlas(gd, AtlasContentDir, "DiscSmoke01", 16, 4, feather: true);
+        Smoke = LoadAtlas(gd, AtlasContentDir, "Cloud01", 8, 8, open, upload, feather: true);
+        WispySmoke = LoadAtlas(gd, AtlasContentDir, "WispySmoke01", 8, 8, open, upload, feather: true);
+        DiscSmoke = LoadAtlas(gd, AtlasContentDir, "DiscSmoke01", 16, 4, open, upload, feather: true);
         SoftDisc = MakeSoftDisc(gd, 64);
     }
 
@@ -85,16 +87,20 @@ public sealed class VfxAssets : IDisposable
     /// together, so premultiplied blending stays correct) to kill the hard
     /// smoke-card rim.</summary>
     private static Texture2D[] LoadAtlas(GraphicsDevice gd, string contentDir, string stem, int cols, int rows,
-        bool feather = false)
+        Func<string, Stream> open, Action<Texture2D, Color[]> upload, bool feather = false)
     {
         string rel = contentDir + "/" + stem + ".png";
+        Texture2D[] frames = [];
         try
         {
-            using var stream = TitleContainer.OpenStream(rel);
+            using var stream = open(rel);
             using var img = Texture2D.FromStream(gd, stream);
             int fw = img.Width / cols, fh = img.Height / rows;
+            if (fw == 0 || fh == 0 || img.Width % cols != 0 || img.Height % rows != 0
+                || (feather && Math.Min(fw, fh) < 2))
+                throw new InvalidDataException($"Image {img.Width}x{img.Height} cannot be sliced into a {cols}x{rows} grid of usable frames");
             int n = cols * rows;
-            var frames = new Texture2D[n];
+            frames = new Texture2D[n];
             var sub = new Color[fw * fh];
             for (int r = 0; r < rows; r++)
             {
@@ -105,7 +111,7 @@ public sealed class VfxAssets : IDisposable
                         RadialFeather(sub, fw, fh);
                     int i = r * cols + c;
                     frames[i] = new Texture2D(gd, fw, fh);
-                    frames[i].SetData(sub);
+                    upload(frames[i], sub);
                 }
             }
             Console.WriteLine($"[monogame] vfx atlas {stem}: {n} frames {fw}x{fh}" + (feather ? " (feathered)" : ""));
@@ -113,7 +119,9 @@ public sealed class VfxAssets : IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[monogame] vfx atlas '{stem}' unavailable ({rel}): {ex.Message} — skipped");
+            foreach (var frame in frames) frame?.Dispose();
+            string fallback = stem == "Cloud01" ? "using native smoke" : "skipped";
+            Console.WriteLine($"[monogame] vfx atlas '{stem}' unavailable ({rel}): {ex.Message} — {fallback}");
             return Array.Empty<Texture2D>();
         }
     }

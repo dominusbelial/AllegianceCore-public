@@ -356,6 +356,7 @@ public sealed partial class Game1 : Game
     // P263/P545 path above and never constructs these, so no ~10 MiB of CC0
     // atlases are loaded).
     private bool _enhancedVfx;
+    internal Func<GraphicsDevice, Rendering.VfxAssets> LoadVfxAssets { private get; init; } = gd => new(gd);
     private Rendering.VfxAssets? _vfxAssets;
     private Rendering.EnhancedSmokeField? _enhancedSmoke;
     private Rendering.EnhancedExplosionRenderer? _enhancedExplosionRenderer;

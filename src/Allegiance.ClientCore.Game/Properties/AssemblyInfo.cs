@@ -7,3 +7,4 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Allegiance.ClientCore.MonoGame.Tests")]
 [assembly: InternalsVisibleTo("P256Verify")]
+[assembly: InternalsVisibleTo("p1090-smoke-proof")]

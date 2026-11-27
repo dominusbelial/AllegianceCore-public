@@ -1403,6 +1403,11 @@ list in **reverse**.
 
 ## 4. Client & HUD (`src/Allegiance.ClientCore`, `ClientCore.Game/Rendering`)
 
+- **Desktop smoke atlas fallback (P1090)** — `src/Allegiance.ClientCore.Game/Rendering/VfxAssets.cs`
+  owns uploaded frames until the full grid succeeds. If Cloud01 fails, `src/Allegiance.ClientCore.Game/Game1.Lifecycle.cs`
+  selects the existing native smoke path for engine trails, missile trails and damage vents.
+  Two-sector flight and healthy pixel comparisons are recorded in `docs/reports/MISSING_SMOKE_FALLBACK_P1090.md`.
+
 - **Headless session** — the world-state tracker driving prediction/replay.
   `src/Allegiance.ClientCore/Session/`, `Replay/`, `State/`.
 - **UI skins (P981)** — canonical skin ids (`classic`, `modern`) replace the

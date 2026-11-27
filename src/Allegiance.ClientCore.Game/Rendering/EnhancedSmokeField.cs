@@ -89,7 +89,7 @@ public sealed class EnhancedSmokeField : IDisposable
         ChaseOccluder occ,
         SoftParticleContext? soft = null)
     {
-        if (puffs.Count == 0) return;
+        if (puffs.Count == 0 || _frames.Length == 0) return;
 
         var camRight = new XnaVec(view.M11, view.M12, view.M13);
         var camUp = new XnaVec(view.M21, view.M22, view.M23);
@@ -131,8 +131,7 @@ public sealed class EnhancedSmokeField : IDisposable
             float spin = ((s >> 8) % 617u) / 613f * 2f - 1f;   // [-1, 1]
             float angle = p.Angle + spin * SpinMaxRadians * (1f - rem);
 
-            var tex = _frames.Length > 0 ? _frames[frame] : null;
-            if (tex is null) continue;
+            var tex = _frames[frame];
             // Premultiplied colour: rgb already scaled by alpha.
             var premul = new Color(col.X * alpha, col.Y * alpha, col.Z * alpha, alpha);
             if (!byTex.TryGetValue(tex, out var list)) byTex[tex] = list = [];
