@@ -47,6 +47,7 @@ public sealed class EnhancedSmokeField : IDisposable
     public const float SpinMaxRadians = 1.4f;
 
     private readonly ParticleBillboardBatcher _batcher;
+    private readonly ParticleTextureBins<Texture2D> _bins = new();
     private readonly Texture2D[] _frames;
     private readonly ParticleDensityBudget _budget;
     private readonly SoftParticleRenderer? _soft;
@@ -91,11 +92,32 @@ public sealed class EnhancedSmokeField : IDisposable
     {
         if (puffs.Count == 0 || _frames.Length == 0) return;
 
-        var camRight = new XnaVec(view.M11, view.M12, view.M13);
-        var camUp = new XnaVec(view.M21, view.M22, view.M23);
-        var byTex = new Dictionary<Texture2D, List<ParticleBillboard>>();
+        try
+        {
+            Gather(puffs, eye, projection, sectorLight, near, far, occ, _frames, _budget, _bins);
+            if (soft is { } sc && _soft is { } sr && sr.IsUsable)
+            {
+                foreach (var (tex, list) in _bins.Active)
+                    sr.TryDraw(list, tex, view, projection, sc);
+            }
+            else
+            {
+                foreach (var (tex, list) in _bins.Active)
+                    _batcher.Draw(list, tex, view, projection, _batcher.Premultiplied);
+            }
+        }
+        finally
+        {
+            _bins.Clear();
+        }
+    }
 
-        _budget.Reset();
+    internal static void Gather<TTexture>(IReadOnlyCollection<Puff> puffs, XnaVec eye, Matrix projection,
+        SectorLighting? sectorLight, ParticleNearFade near, ParticleFarFade far, ChaseOccluder occ,
+        TTexture[] frames, ParticleDensityBudget budget, ParticleTextureBins<TTexture> bins) where TTexture : class
+    {
+        budget.Reset();
+        if (frames.Length == 0) return;
         foreach (var p in puffs)
         {
             float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);
@@ -122,31 +144,20 @@ public sealed class EnhancedSmokeField : IDisposable
 
             // Density budget: admit by age (younger = more visible); oldest are
             // thinned first when the screen-wide cap is reached.
-            if (!_budget.TryAdmit(local)) continue;
+            if (!budget.TryAdmit(local)) continue;
 
             var col = EnhancedVfx.LitSmokeTint(sectorLight);
             // Random start frame offset (per-puff), advancing as the puff ages.
-            int frame = (int)((s % (uint)_frames.Length) + local * FrameSlidePerAge) % _frames.Length;
+            int frame = (int)((s % (uint)frames.Length) + local * FrameSlidePerAge) % frames.Length;
             // Initial rotation + a slow spin over life (derived from the seed).
             float spin = ((s >> 8) % 617u) / 613f * 2f - 1f;   // [-1, 1]
             float angle = p.Angle + spin * SpinMaxRadians * (1f - rem);
 
-            var tex = _frames[frame];
+            var tex = frames.Length > 0 ? frames[frame] : null;
+            if (tex is null) continue;
             // Premultiplied colour: rgb already scaled by alpha.
             var premul = new Color(col.X * alpha, col.Y * alpha, col.Z * alpha, alpha);
-            if (!byTex.TryGetValue(tex, out var list)) byTex[tex] = list = [];
-            list.Add(new ParticleBillboard(centre, half, premul, angle));
-        }
-
-        if (soft is { } sc && _soft is { } sr && sr.IsUsable)
-        {
-            foreach (var (tex, list) in byTex)
-                _soft!.TryDraw(list, tex, view, projection, sc);
-        }
-        else
-        {
-            foreach (var (tex, list) in byTex)
-                _batcher.Draw(list, tex, view, projection, _batcher.Premultiplied);
+            bins.Add(tex, new ParticleBillboard(centre, half, premul, angle));
         }
     }
 

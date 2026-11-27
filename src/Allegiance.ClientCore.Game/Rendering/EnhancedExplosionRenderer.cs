@@ -39,6 +39,12 @@ public sealed class EnhancedExplosionRenderer : IDisposable
     private readonly VfxAssets _vfx;
     private readonly Texture2D? _shockwave;
     private readonly ParticleBillboardBatcher _batcher;
+    private readonly ParticleTextureBins<Texture2D> _glowBins = new();
+    private readonly List<ParticleBillboard> _glow = [];
+    private readonly List<ParticleBillboard> _flash = [];
+    private readonly List<ParticleBillboard> _sparks = [];
+    private readonly List<ParticleBillboard> _wave = [];
+    private readonly List<EnhancedSmokeField.Puff> _smokePuffs = [];
     private readonly EnhancedSmokeField _smoke;
 
     /// <summary>Smoke lingers <see cref="LingerExtraSeconds"/> past the fire
@@ -102,11 +108,11 @@ public sealed class EnhancedExplosionRenderer : IDisposable
         var camRight = new XnaVec(view.M11, view.M12, view.M13);
         var camUp = new XnaVec(view.M21, view.M22, view.M23);
 
-        var glow = new List<ParticleBillboard>();
-        var flash = new List<ParticleBillboard>();
-        var sparks = new List<ParticleBillboard>();
-        var wave = new List<ParticleBillboard>();
-        var smoke = new List<EnhancedSmokeField.Puff>();
+        var glow = ParticleStaging.Begin(_glow, explosions.Count, MaxFireDecals);
+        var flash = ParticleStaging.Begin(_flash, explosions.Count);
+        var sparks = ParticleStaging.Begin(_sparks, explosions.Count, 10);
+        var wave = ParticleStaging.Begin(_wave, explosions.Count);
+        var smoke = ParticleStaging.Begin(_smokePuffs, explosions.Count, MaxSmokePerExplosion);
 
         foreach (var e in explosions)
         {
@@ -252,19 +258,18 @@ public sealed class EnhancedExplosionRenderer : IDisposable
     private void DrawBatched(List<ParticleBillboard> items, Texture2D[] frames, Matrix view, Matrix projection)
     {
         if (items.Count == 0 || frames.Length == 0) return;
-        var byFrame = new Dictionary<Texture2D, List<ParticleBillboard>>();
-        // Assign billboards round-robin across frames (visual variety without
-        // tracking which frame each decal picked in the gather loop above).
-        int fi = 0;
-        foreach (var b in items)
+        // The glow cycles through the atlas in gather order.
+        try
         {
-            var tex = frames[fi % frames.Length];
-            if (!byFrame.TryGetValue(tex, out var list)) byFrame[tex] = list = [];
-            list.Add(b);
-            fi++;
+            for (int i = 0; i < items.Count; i++)
+                _glowBins.Add(frames[i % frames.Length], items[i]);
+            foreach (var (tex, list) in _glowBins.Active)
+                _batcher.Draw(list, tex, view, projection);
         }
-        foreach (var (tex, list) in byFrame)
-            _batcher.Draw(list, tex, view, projection);
+        finally
+        {
+            _glowBins.Clear();
+        }
     }
 
     public void Dispose() => _batcher.Dispose();

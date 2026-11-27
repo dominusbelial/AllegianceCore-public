@@ -1408,6 +1408,10 @@ list in **reverse**.
   selects the existing native smoke path for engine trails, missile trails and damage vents.
   Two-sector flight and healthy pixel comparisons are recorded in `docs/reports/MISSING_SMOKE_FALLBACK_P1090.md`.
 
+- **Particle staging and quad buffers (P1092)** — trails, damage smoke and explosions reuse
+  render-thread scratch from `src/Allegiance.ClientCore.Game/Rendering/ParticleBuffers.cs`.
+  Atlas batches follow first texture use on each draw. Replay fixture and measurements:
+  `tools/p1092-particle-slice.fsx`, `docs/reports/PARTICLE_BUFFER_REUSE_P1092.md`.
 - **Headless session** — the world-state tracker driving prediction/replay.
   `src/Allegiance.ClientCore/Session/`, `Replay/`, `State/`.
 - **UI skins (P981)** — canonical skin ids (`classic`, `modern`) replace the

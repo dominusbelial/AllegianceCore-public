@@ -55,6 +55,12 @@ if (args is ["--overlaps", var width, var style, var scaleCase, ..])
     return overlap.Errors;
 }
 
+if (args is ["--particle-pixels", var skin])
+{
+    ParticlePixelProof.Run(Enum.Parse<HudStyle>(skin));
+    return 0;
+}
+
 var options = Options.Parse(args);
 using var proof = new Proof(options);
 try { proof.Run(); }

@@ -153,11 +153,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
     /// batches are split into several calls.</summary>
     public const int MaxQuadsPerDraw = 8191;
 
-    // P781 — grow-only reused geometry buffers for Draw (one batcher per
-    // renderer, render thread only): the old per-frame `new` of both arrays was
-    // ~110 B per live particle per frame of GC churn.
-    private VertexPositionColorTexture[] _verts = Array.Empty<VertexPositionColorTexture>();
-    private short[] _indices = Array.Empty<short>();
+    private readonly ParticleQuadBuffers _geometry = new();
 
     /// <summary>
     /// Draw every billboard in one batched call under <paramref name="tex"/>
@@ -172,12 +168,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
     {
         if (items.Count == 0) return;
 
-        int batch = Math.Min(items.Count, MaxQuadsPerDraw);
-        if (_verts.Length < batch * 4)
-        {
-            _verts = new VertexPositionColorTexture[batch * 4];
-            _indices = new short[batch * 6];
-        }
+        _geometry.Get(Math.Min(items.Count, MaxQuadsPerDraw), out var verts, out var indices);
 
         _effect.Texture = tex;
         _effect.World = Matrix.Identity;
@@ -192,9 +183,9 @@ public sealed class ParticleBillboardBatcher : IDisposable
         for (int start = 0; start < items.Count; start += MaxQuadsPerDraw)
         {
             int n = Math.Min(MaxQuadsPerDraw, items.Count - start);
-            FillBillboardArrays(items, start, n, view, _verts, _indices);
+            FillBillboardArrays(items, start, n, view, verts, indices);
             gd.DrawUserIndexedPrimitives(
-                PrimitiveType.TriangleList, _verts, 0, n * 4, _indices, 0, n * 2);
+                PrimitiveType.TriangleList, verts, 0, n * 4, indices, 0, n * 2);
         }
 
         // Restore all three states we touched (P339 B2 — ExplosionRenderer pattern).
@@ -215,12 +206,12 @@ public sealed class ParticleBillboardBatcher : IDisposable
     {
         if (items.Count == 0) return;
 
-        var verts = new VertexPositionColorTexture[items.Count * 4];
-        var indices = new short[items.Count * 6];
+        _geometry.Get(items.Count, out var verts, out var indices);
 
         int v = 0, idxBase = 0;
-        foreach (var p in items)
+        for (int i = 0; i < items.Count; i++)
         {
+            var p = items[i];
             var n = Vector3.Normalize(p.Normal);
             // A tangent basis perpendicular to the surface normal (native orients
             // the flare geo along the hit direction; here the quad lies in the
@@ -268,7 +259,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;
         gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, items.Count * 2);
+            PrimitiveType.TriangleList, verts, 0, items.Count * 4, indices, 0, items.Count * 2);
 
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
@@ -294,12 +285,12 @@ public sealed class ParticleBillboardBatcher : IDisposable
     {
         if (items.Count == 0) return;
 
-        var verts = new VertexPositionColorTexture[items.Count * 4];
-        var indices = new short[items.Count * 6];
+        _geometry.Get(items.Count, out var verts, out var indices);
 
         int v = 0, idxBase = 0;
-        foreach (var q in items)
+        for (int i = 0; i < items.Count; i++)
         {
+            var q = items[i];
             var tl = q.CentreEye - q.AxisA - q.AxisB;   // uv (0,0)
             var tr = q.CentreEye + q.AxisA - q.AxisB;   // uv (1,0)
             var br = q.CentreEye + q.AxisA + q.AxisB;   // uv (1,1)
@@ -333,7 +324,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;
         gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, items.Count * 2);
+            PrimitiveType.TriangleList, verts, 0, items.Count * 4, indices, 0, items.Count * 2);
 
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;

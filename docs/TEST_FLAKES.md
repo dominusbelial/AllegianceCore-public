@@ -11369,3 +11369,10 @@ failed once in the full Fast sweep. The drop was visible to its owner's side, bu
 test captured zero owner creation frames at the line 252 single-frame assertion.
 The method passed in three fresh isolated hosts (778, 761 and 759 ms).
 The server and its tests were unchanged in P1091. [Sweep results](reports/MODERN_HUD_OVERLAPS_P1091.md)
+
+### 2026-11-27 · P1090–P1093 merge review
+
+`P900FleetRecoveryLiveTests.Skirmish_shaped_exit_disables_recovery_and_reaps_workers` failed once in three
+targeted `Allegiance.ClientCore.Tests` runs on the merged tree, then pass / fail / pass alone: Expected 5,
+Actual 6 at `Proxy.Attempts`. Same signature and rate as the open entries above (seen since the P909 base),
+cause still not established. P1093 changed skirmish stop ownership but not the recovery proxy's attempt count.

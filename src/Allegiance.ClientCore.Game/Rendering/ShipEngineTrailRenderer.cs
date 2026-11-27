@@ -29,6 +29,9 @@ public sealed class ShipEngineTrailRenderer : IDisposable
 {
     private readonly NativeEffectTextures _native;
     private readonly ParticleBillboardBatcher _batcher;
+    private readonly List<ParticleBillboard> _fire = [];
+    private readonly List<ParticleBillboard> _smoke = [];
+    private readonly List<EnhancedSmokeField.Puff> _smokePuffs = [];
     private readonly EnhancedSmokeField? _enhancedSmoke;
 
     public ShipEngineTrailRenderer(GraphicsDevice gd, NativeEffectTextures native,
@@ -50,12 +53,13 @@ public sealed class ShipEngineTrailRenderer : IDisposable
     {
         if (particles.Count == 0) return;
 
-        var fire = new List<ParticleBillboard>();
-        var smoke = new List<ParticleBillboard>();
-        var smokePuffs = _enhancedSmoke is null ? null : new List<EnhancedSmokeField.Puff>();
+        var fire = ParticleStaging.Begin(_fire, particles.Count);
+        var smoke = ParticleStaging.Begin(_smoke, particles.Count);
+        var smokePuffs = _enhancedSmoke is null ? null : ParticleStaging.Begin(_smokePuffs, particles.Count, EnhancedSmokeSizing.TrailSubPuffs);
 
-        foreach (var p in particles)
+        for (int i = 0; i < particles.Count; i++)
         {
+            var p = particles[i];
             float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);
             var centre = new XnaVec(p.Position.X, p.Position.Y, p.Position.Z) - cameraEye;
             float angle = ParticleBillboardBatcher.RotationSeed(centre);
@@ -65,7 +69,7 @@ public sealed class ShipEngineTrailRenderer : IDisposable
                 fire.Add(new ParticleBillboard(centre, p.Size * 0.5f * f.SizeScale,
                     new Color(f.R, f.G, f.B, f.A), angle));
             }
-            else if (_enhancedSmoke is { } enh)
+            else if (_enhancedSmoke is not null)
             {
                 // Enhanced: P561 native-derived size (≤1.5× native) split into
                 // overlapping sub-puffs for a continuous plume.

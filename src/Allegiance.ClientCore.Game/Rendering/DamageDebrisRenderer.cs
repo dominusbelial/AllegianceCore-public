@@ -31,6 +31,8 @@ public sealed class DamageDebrisRenderer : IDisposable
 {
     private readonly NativeEffectTextures _native;
     private readonly ParticleBillboardBatcher _batcher;
+    private readonly List<EnhancedSmokeField.Puff> _smokePuffs = [];
+    private readonly List<ParticleBillboard> _items = [];
     private readonly EnhancedSmokeField? _enhancedSmoke;
 
     public DamageDebrisRenderer(GraphicsDevice gd, NativeEffectTextures native,
@@ -54,7 +56,7 @@ public sealed class DamageDebrisRenderer : IDisposable
 
         if (_enhancedSmoke is { } enh)
         {
-            var smokePuffs = new List<EnhancedSmokeField.Puff>();
+            var smokePuffs = ParticleStaging.Begin(_smokePuffs, puffs.Count, EnhancedSmokeSizing.TrailSubPuffs);
             foreach (var p in puffs)
             {
                 float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);
@@ -72,7 +74,7 @@ public sealed class DamageDebrisRenderer : IDisposable
             return;
         }
 
-        var items = new List<ParticleBillboard>(puffs.Count);
+        var items = ParticleStaging.Begin(_items, puffs.Count);
         foreach (var p in puffs)
         {
             float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);

@@ -36,6 +36,7 @@ public readonly record struct SoftParticleContext(Texture2D Depth, float Near, f
 public sealed class SoftParticleRenderer : IDisposable
 {
     private readonly Effect _effect;
+    private readonly ParticleQuadBuffers _geometry = new();
     private readonly RasterizerState _cullNone;
     private readonly BlendState _premul;
 
@@ -111,7 +112,8 @@ public sealed class SoftParticleRenderer : IDisposable
         _pTexture.SetValue(tex);
         _pDepthTexture.SetValue(ctx.Depth);
 
-        ParticleBillboardBatcher.BuildBillboardArrays(items, view, out var verts, out var indices);
+        _geometry.Get(items.Count, out var verts, out var indices);
+        ParticleBillboardBatcher.FillBillboardArrays(items, 0, items.Count, view, verts, indices);
 
         var technique = _effect.Techniques["SoftParticle"];
         if (technique is null) return false;
@@ -122,7 +124,7 @@ public sealed class SoftParticleRenderer : IDisposable
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;
         gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, items.Count * 2);
+            PrimitiveType.TriangleList, verts, 0, items.Count * 4, indices, 0, items.Count * 2);
 
         // Restore the three states we touched (P339 B2 discipline).
         gd.BlendState = BlendState.Opaque;
