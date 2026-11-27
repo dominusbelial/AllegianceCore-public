@@ -8,7 +8,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>Second skin of HUD-1. Common readouts and visibility come from the
 /// classic renderer; this skin replaces artwork, reticles and typography and
 /// composes the remaining model groups into the same measured layout.</summary>
-public sealed class ModernHudRenderer : HudRenderer, IDisposable
+public partial class ModernHudRenderer : HudRenderer, IDisposable
 {
     private readonly HudSettings _settings;
     private readonly HudSdfFont _smallSdf, _bigSdf;
@@ -97,14 +97,12 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         if (model.FlightVisible && (model.Context.InventoryVisible || model.Context.InventorySlide > 0f)
             && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
             Layout.Reserve(InventoryPaneLayout.ReserveRect(pane.Rows.Count, viewport.Width, viewport.Height));
-        float spread = ModernHudScale.Cluster(scale);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
-            float x = viewport.Width / 2f + gauge.NativeOffset.X * spread;
-            float y = viewport.Height / 2f + gauge.NativeOffset.Y * spread;
+            var (x, y) = GaugeCenter(gauge, viewport);
             Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
         }
-        ReserveTargetPane(model, viewport, modernScale: scale);
+        PrepareTarget(model, viewport);
         ReserveCommandSummary(model, viewport);
         ReserveConsoleAnchors(model, viewport);
     }
@@ -138,12 +136,17 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     protected override void ElementDrawn(params string[] ids) => Mark(ids);
     private void Mark(params string[] ids) { foreach (var id in ids) _drawn.Add(id); }
 
-    protected override void DrawGauges(HudModel model, Viewport viewport)
+    private Vector2 GaugeCenter(HudGauge gauge, Viewport viewport)
     {
         float spread = ModernHudScale.Cluster(_scale);
+        return new(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
+    }
+
+    protected override void DrawGauges(HudModel model, Viewport viewport)
+    {
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
-            var center = new Vector2(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
+            var center = GaugeCenter(gauge, viewport);
             float radius = 32 * _scale;
             float current = _animated.GetValueOrDefault(gauge.Kind, gauge.Fraction);
             // Display the exact value as a number; only geometry eases. Critical
@@ -174,35 +177,41 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     /// at the same native centre-HUD anchors the classic skin's icons use.</summary>
     protected override void DrawOwnStatus(HudModel model, Viewport viewport)
     {
+        VisitStatus(model, viewport, reserve: false);
+    }
+
+    private void VisitStatus(HudModel model, Viewport viewport, bool reserve)
+    {
         var status = model.Status;
         if (!status.Visible) return;
 
-        DrawStatusText("Detection eye", status.DetectionEyeVisible, "EYE", Muted, viewport);
-        DrawStatusText("Cloak active", status.CloakActive, "CLOAK", CloakViolet, viewport);
-        DrawStatusText("Autopilot status", status.AutopilotEngaged, "AUTOPILOT", Accent, viewport);
-        DrawStatusText("Vector lock status", status.VectorLockEngaged, "VECTOR LOCK", Accent, viewport);
-        DrawStatusText("Carried flag", status.CarriedFlag, "FLAG", CarryGold, viewport);
-        DrawStatusText("Carried artifact", status.CarriedArtifact, "ARTIFACT", CarryGold, viewport);
+        DrawStatusText("Detection eye", status.DetectionEyeVisible, "EYE", Muted, viewport, reserve);
+        DrawStatusText("Cloak active", status.CloakActive, "CLOAK", CloakViolet, viewport, reserve);
+        DrawStatusText("Autopilot status", status.AutopilotEngaged, "AUTOPILOT", Accent, viewport, reserve);
+        DrawStatusText("Vector lock status", status.VectorLockEngaged, "VECTOR LOCK", Accent, viewport, reserve);
+        DrawStatusText("Carried flag", status.CarriedFlag, "FLAG", CarryGold, viewport, reserve);
+        DrawStatusText("Carried artifact", status.CarriedArtifact, "ARTIFACT", CarryGold, viewport, reserve);
 
         if (status.KillBonusPercent is { } kb)
-            DrawStatusText("Kill bonus", true, HudStringCache.KillBonusBadge(kb), CarryGold, viewport);
+            DrawStatusText("Kill bonus", true, HudStringCache.KillBonusBadge(kb), CarryGold, viewport, reserve);
         if (status.SignaturePercent is { } sig)
-            DrawStatusText("Signature percentage", true, HudStringCache.Signature(sig), Accent, viewport);
+            DrawStatusText("Signature percentage", true, HudStringCache.Signature(sig), Accent, viewport, reserve);
         // HUD-12b — unknown strength (before the first 220) falls back to the
         // legacy CLOAK DRAINED label instead of dropping the row.
         if (status.CloakActive
             && HudStringCache.CloakStatusText(status.CloakDrained, status.CloakStrengthPercent) is { } cloakText)
             DrawStatusText("Cloak strength and drained state", true, cloakText,
-                status.CloakDrained ? Alert : CloakViolet, viewport);
+                status.CloakDrained ? Alert : CloakViolet, viewport, reserve);
     }
 
-    private void DrawStatusText(string id, bool shown, string text, Color color, Viewport viewport)
+    private void DrawStatusText(string id, bool shown, string text, Color color, Viewport viewport, bool reserve)
     {
         if (!shown) return;
         // HUD-6b — the native TranslateImage anchor is the image CORNER
         // (engine/image.cpp:834-845); draw from that point instead of centring
         // the text on it.
         var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height, modernScale: _scale);
+        if (reserve) { ReserveOwnText(text, pos); return; }
         DrawMeasuredText(_small, text, pos, color, instrument: true);
         Mark(id);
     }
@@ -302,104 +311,6 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var color = targetLock.State == Allegiance.ClientCore.State.MissileLockFeedback.LockState.Partial ? new Color(255, 190, 84) : Alert;
         for (int i = 0; i < 4; i++) Arc(targetLock.Center, radius, i * MathF.PI / 2 + .12f, .85f, color, 2 * _scale);
     }
-    protected override void DrawTargetPane(HudModel model, Viewport viewport)
-    {
-        if (!model.TargetPaneVisible || model.Context.TargetPane is not { Present: true } tp) return;
-        float w = viewport.Width, h = viewport.Height;
-        float s = TargetPaneLayout.Scale(w, h, modernScale: _scale);
-        float x0 = TargetPaneLayout.OriginX(w, h, modernScale: _scale);
-        // P805 (row 471) — the native target-pane slide, same rule as classic.
-        float y0 = TargetPaneLayout.OriginY(w, h, modernScale: _scale) + TargetPaneLayout.SlideOffset(model.Context.TargetPaneSlide, s);
-        var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
-        if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
-
-        // HUD-21b — the 3-D model preview is painted AFTER the arcs below so the
-        // modern skin's geometric gauges never cover the model (a modern-skin
-        // choice; the classic skin follows native's paint order, where the
-        // gauges are on top — see HudRenderer.DrawTargetPaneDecor).
-
-        // Name + type (same native anchor as classic, dialog.mdl:4043-4050).
-        string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
-        var nameSize = PaneTextSize(_small, nameLine);
-        DrawRawText(_small, nameLine,
-            new(x0 + TargetPaneLayout.LocalCenterX * s - nameSize.X / 2f,
-                y0 - TargetPaneLayout.LocalNameBottom * s - nameSize.Y), side);
-
-        if (tp.Distance is { } distance)
-        {
-            string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
-            DrawRawText(_small, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, range).Y), Muted);
-        }
-        else if (tp.SectorName is { } sectorName)
-        {
-            // HUD-18 — native TargetRangeString's LOCATION: fallback
-            // (dialog.mdl:4053-4060), same native anchor as RANGE.
-            string location = HudStringCache.Location(sectorName);
-            DrawRawText(_small, location, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, location).Y), Muted);
-        }
-        if (tp.Speed is { } speed)
-        {
-            string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));
-            var size = PaneTextSize(_small, text);
-            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 33f * s - size.Y), Muted);
-        }
-
-        // Geometric hull/shield arcs at the native gauge anchors. The arc
-        // radius follows the pane scale s (not the Modern UI scale) so the
-        // gauge geometry stays glued to the native pane extents.
-        float hullX = x0 + (235f + 83f / 2f) * s;
-        float shieldX = x0 + (367f + 84f / 2f) * s;
-        float gaugeY = y0 - (33f + 101f / 2f) * s;
-        float arcRadius = 16f * s;
-        DrawModernTargetGauge(new(hullX, gaugeY), tp.HullFraction ?? 0f, side, s);
-        DrawModernTargetGauge(new(shieldX, gaugeY), tp.ShieldFraction ?? 0f, side, s);
-
-        // HUD-21/21b — the target's 3-D model preview (after the arcs; empty
-        // fallback when the input is null).
-        DrawTargetModelPreview(x0, y0, s);
-
-        // ARMOR/SHIELD flank their arcs (native puts them beside the gauges,
-        // dialog.mdl:4220-4222) so the labels never sit on the arc stroke.
-        var armorSize = PaneTextSize(_small, "ARMOR");
-        var shieldSize = PaneTextSize(_small, "SHIELD");
-        DrawRawText(_small, "ARMOR", new(hullX - arcRadius - 8f * s - armorSize.X, gaugeY - armorSize.Y / 2f), Muted);
-        DrawRawText(_small, "SHIELD", new(shieldX + arcRadius + 8f * s, gaugeY - shieldSize.Y / 2f), Muted);
-
-        // HUD-18 — the native GlassHUD-only TTI line (dialog.mdl:1280-1355).
-        // Under the SPEED line, right-aligned to the same x; the string is the
-        // cached TargetTti.Text (this method must not allocate per frame).
-        if (tp.TimeToIntercept is { } tti)
-        {
-            string text = HudStringCache.Tti(tti);
-            var size = PaneTextSize(_small, text);
-            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 10f * s - size.Y), Muted);
-        }
-
-        // Native turret-range flag (dialog.mdl:4073-4081), modern diamond.
-        if (tp.InRange)
-        {
-            var c = new Vector2(x0 + 200f * s, y0 - 90f * s);
-            foreach (var (x, y) in DiamondCorners)
-                DrawLine(c, c + new Vector2(x * 7, y * 7) * _scale, _scale, side);
-        }
-
-        // HUD-20 — the same native TargetExperienceImage anchor (pane-local
-        // 280,110 = the text top, engine/image.cpp:336-388), as a Modern text readout; the native switch hides it for
-        // non-ships (dialog.mdl:4208-4214,4232).
-        if (tp.IsShip && tp.KillBonusPercent is { } killBonus)
-        {
-            string number = HudStringCache.KillBonusBadge(killBonus);
-            var (numberLeft, numberTop) = TargetPaneLayout.ExperienceNumberTopLeft(x0, y0, s,
-                PaneTextSize(_small, number).X);   // StringImage origin = text top
-            DrawRawText(_small, number, new(numberLeft, numberTop), CarryGold);
-            Mark("Target kill bonus");
-        }
-
-        ElementDrawn("Target name", "Target type description", "Target side identity",
-            "Target hull", "Target shield", "Target range or sector", "Target speed",
-            "Target in weapon range", "Target time to intercept");
-    }
-
     private void DrawModernTargetGauge(Vector2 center, float fraction, Color color, float scale)
     {
         float radius = 16f * scale;
@@ -665,7 +576,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             DrawMeasuredText(_small, toast, new(w / 2f - ts.X / 2f, h * 0.30f), Accent * alpha, fixedAnchor: true);
         }
     }
-    private void Arc(Vector2 center, float radius, float start, float sweep, Color color, float thickness)
+    protected virtual void Arc(Vector2 center, float radius, float start, float sweep, Color color, float thickness)
     {
         int segments = Math.Max(1, (int)MathF.Ceiling(MathF.Abs(sweep) * radius / 4));
         for (int i = 0; i < segments; i++)

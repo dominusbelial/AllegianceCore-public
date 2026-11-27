@@ -627,6 +627,7 @@ public class HudRenderer
             var p = new Vector2(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
             Layout.Reserve(new Rectangle((int)p.X - 55, (int)p.Y - 50, 110, 150));
         }
+        _classicTargetShift = ClassicTargetShift(model, viewport);
         ReserveTargetPane(model, viewport);
         ReserveCommandSummary(model, viewport);
         ReserveConsoleAnchors(model, viewport);
@@ -653,6 +654,56 @@ public class HudRenderer
             Math.Max(1, (int)(right - 20f)), Math.Max(1, (int)(bottom - top + 24f))));
     }
 
+    private int _classicTargetShift;
+
+    // When the native bottom pane reaches the centred gauge labels, keep its
+    // art, medal and strings together in the free space to the left. Determine
+    // the lane before the slide starts so every frame uses the same anchor.
+    private int ClassicTargetShift(HudModel model, Viewport v)
+    {
+        if (!model.CentreHudVisible || !model.TargetPaneVisible
+            || model.Context.TargetPane is not { } tp) return 0;
+        float s = TargetPaneLayout.Scale(v.Width, v.Height);
+        var (font, fs) = HudFont(NativeFont.MedVerdana, s);
+        var name = PaneTextSize(font, TargetCaption(tp), fs);
+        var centre = new Vector2(v.Width / 2f, v.Height / 2f);
+        float nameLeft = centre.X - name.X / 2, nameRight = nameLeft + name.X;
+        float nameBottom = TargetPaneLayout.OriginY(v.Width, v.Height) - TargetPaneLayout.LocalNameBottom * s;
+        var labelFont = NativeFontAt(NativeFont.SmVerdana);
+        float shift = 0;
+        if (model.Status.SignaturePercent is { } sig && tp.IsShip && tp.KillBonusPercent is { } bonus)
+        {
+            float spread = OwnStatusLayout.Spread(v.Height);
+            var (sigFont, sigScale) = HudFont(NativeFont.MedVerdana, spread);
+            var sigSize = PaneTextSize(sigFont, HudStringCache.Signature(sig), sigScale);
+            var sigPos = OwnStatusLayout.ScreenPos("Signature percentage", v.Width, v.Height);
+            sigPos.X += (OwnStatusLayout.NativeTextWidth * spread - sigSize.X) / 2;
+            var (bonusFont, bonusScale) = HudFont(NativeFont.MedBoldVerdana, s);
+            var bonusSize = PaneTextSize(bonusFont, HudStringCache.KillBonusNumber(bonus), bonusScale);
+            var (left, top) = TargetPaneLayout.ExperienceNumberTopLeft(TargetPaneLayout.OriginX(v.Width, v.Height),
+                TargetPaneLayout.OriginY(v.Width, v.Height), s, bonusSize.X);
+            if (left < sigPos.X + sigSize.X && left + bonusSize.X > sigPos.X &&
+                top < sigPos.Y + sigSize.Y && top + bonusSize.Y > sigPos.Y)
+                shift = sigPos.X - 4 - (left + bonusSize.X);
+        }
+        if (_gauges?.AllLoaded == true)
+        foreach (var gauge in model.Gauges)
+        {
+            if (!gauge.Visible) continue;
+            var spec = ClassicGaugeTable.Spec(gauge.Kind);
+            var anchor = ClassicGaugeLayout.Anchor(centre, spec, PaneScale);
+            var size = labelFont.MeasureString(gauge.Label) * TextScale;
+            float y = ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, PaneScale);
+            float x = GaugeLabelLeft(spec, anchor, PaneScale, size.X);
+            if (nameBottom > y && nameBottom - name.Y < y + size.Y && nameRight > x && nameLeft < x + size.X)
+                shift = Math.Min(shift, x - 4 - nameRight);
+        }
+        return (int)MathF.Floor(Math.Clamp(shift, Math.Min(0, 4 - nameLeft), 0));
+    }
+
+    protected static string TargetCaption(HudTargetPane pane) => (pane.Name ?? "unknown")
+        + (pane.TypeDescription is { } type ? ": " + type : "");
+
     /// <summary>Reserve the native bottom target pane so measured text (radar
     /// labels, notices, projected readouts) is placed around it.
     /// <paramref name="modernScale"/> is the P833 Modern-HUD density scale,
@@ -660,7 +711,11 @@ public class HudRenderer
     protected void ReserveTargetPane(HudModel model, Viewport viewport, float? modernScale = null)
     {
         if (model.TargetPaneVisible && model.Context.TargetPane is { Present: true })
-            Layout.Reserve(TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height, modernScale));
+        {
+            var bounds = TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height, modernScale);
+            bounds.Offset(_classicTargetShift, 0);
+            Layout.Reserve(bounds);
+        }
     }
 
     /// <summary>HUD-9b — reserve the fixed native console anchors before the
@@ -1329,7 +1384,7 @@ public class HudRenderer
 
     /// <summary>A single labelled bar: dark recessed track, accent-coloured fill
     /// proportional to the fraction (tinted by status), 1px accent border.</summary>
-    private void DrawBar(float fraction, float x, float y, float w, float h)
+    protected virtual void DrawBar(float fraction, float x, float y, float w, float h)
     {
         float frac = HudFormat.Clamp01(fraction);
         var fill = From(HudFormat.StatusColor(frac));
@@ -1538,11 +1593,13 @@ public class HudRenderer
         float posY = ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, scale);
         // Native StringImage box is 100 wide (dialog.mdl); JustifyRight means
         // the text's right edge meets the box's right edge at Point.X+100.
-        float x = spec.LabelRightAlign
-            ? ClassicGaugeLayout.LayerLeftX(anchor, spec.LabelPoint, scale) + 100f * scale - size.X * TextScale
-            : ClassicGaugeLayout.LayerLeftX(anchor, spec.LabelPoint, scale);
+        float x = GaugeLabelLeft(spec, anchor, scale, size.X * TextScale);
         RenderText(gaugeFont, label, new Vector2(x, posY), HUDLabelTint, TextScale);
     }
+
+    private static float GaugeLabelLeft(ClassicGaugeSpec spec, Vector2 anchor, float scale, float textWidth)
+        => ClassicGaugeLayout.LayerLeftX(anchor, spec.LabelPoint, scale)
+            + (spec.LabelRightAlign ? 100f * scale - textWidth : 0f);
 
     /// <summary>
     /// The label the renderer draws for a gauge. Native draws the spec's fixed
@@ -2130,22 +2187,72 @@ public class HudRenderer
         float panelW = Math.Min(viewport.Width * .34f, 380 * Math.Max(1, scale));
         float x = viewport.Width - panelW - 18;
         float y = Math.Max(150, line * 4);
-        FillRect(x, y, panelW, line * (1 + rows.Count * 3), PanelBg);
-        DrawMeasuredText(wsFont, "SYSTEMS", new(x + 8, y), TextDim, centerAtScale: false);
-        y += line;
+        // Measure before placement. A multiline name can be taller than the
+        // standard pitch. All child offsets travel with their mounted system.
+        _weaponRows.Clear();
+        float height = line;
+        bool heading = true;
         foreach (var r in rows)
         {
-            DrawMeasuredText(wsFont, r.Name, new(x + 8, y), TextMain, centerAtScale: false);
-            y += line;
-            var (tag, col) = StatusTag(r.Status);
+            var (tag, color) = StatusTag(r.Status);
             string ammo = r.ConsumesAmmo ? $"{r.Ammo}/{r.CapacityAmmo}" : "--";
-            // One measured string keeps NOT READY and the magazine distinct.
-            DrawMeasuredText(wsFont, $"{ammo}  |  {tag}", new(x + 8, y), col, centerAtScale: false);
-            y += line;
-            DrawBar(r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0, x + 8, y, panelW - 16, 3);
-            y += line;
+            string status = FitText(wsFont, $"{ammo}  |  {tag}", panelW - 16, scale);
+            string name = FitText(wsFont, HudFormat.Printable(r.Name), panelW - 16, scale);
+            var nameSize = wsFont.MeasureString(name) * scale;
+            var statusSize = wsFont.MeasureString(status) * scale;
+            float statusY = Math.Max(line, nameSize.Y + 4);
+            float barY = statusY + Math.Max(line, statusSize.Y + 4);
+            if (_weaponRows.Count > 0 && height + barY + line > viewport.Height - 8)
+            {
+                DrawWeaponColumn(wsFont, x, y, panelW, height, heading);
+                heading = false;
+                height = 0;
+                _weaponRows.Clear();
+            }
+            _weaponRows.Add(new(name, nameSize, status, statusSize, color, r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0,
+                height, statusY, barY));
+            height += barY + line;
+        }
+        DrawWeaponColumn(wsFont, x, y, panelW, height, heading);
+    }
+
+    private void DrawWeaponColumn(SpriteFont wsFont, float x, float y, float panelW, float height, bool heading)
+    {
+        var desired = new Rectangle((int)MathF.Round(x), (int)MathF.Round(y),
+            (int)MathF.Round(panelW), (int)MathF.Round(height));
+        _weaponParts.Clear();
+        if (heading) AddText(wsFont.MeasureString("SYSTEMS") * TextScale, y);
+        foreach (var row in _weaponRows)
+        {
+            AddText(row.NameSize, y + row.Top);
+            AddText(row.StatusSize, y + row.Top + row.StatusY);
+            _weaponParts.Add(new(8, (int)MathF.Round(y + row.Top + row.BarY) - desired.Y,
+                (int)MathF.Round(panelW - 16), 3));
+        }
+        void AddText(Vector2 size, float top)
+        {
+            _weaponParts.Add(new(8, (int)MathF.Round(top) - desired.Y,
+                (int)MathF.Ceiling(size.X), (int)MathF.Ceiling(size.Y)));
+        }
+        var placed = Layout.PlacePanel(desired, _weaponParts);
+        x += placed.X - desired.X;
+        y += placed.Y - desired.Y;
+        FillRect(x, y, panelW, height, PanelBg);
+        if (heading) DrawMeasuredText(wsFont, "SYSTEMS", new(x + 8, y), TextDim, centerAtScale: false, fixedAnchor: true);
+        foreach (var row in _weaponRows)
+        {
+            float top = y + row.Top;
+            DrawMeasuredText(wsFont, row.Name, new(x + 8, top), TextMain, centerAtScale: false, fixedAnchor: true);
+            DrawMeasuredText(wsFont, row.Status, new(x + 8, top + row.StatusY), row.Color, centerAtScale: false, fixedAnchor: true);
+            DrawBar(row.Fraction, x + 8, top + row.BarY, panelW - 16, 3);
+            Layout.ReserveInstrument(new((int)MathF.Round(x + 8), (int)MathF.Round(top + row.BarY), (int)MathF.Round(panelW - 16), 3));
         }
     }
+
+    private readonly record struct WeaponRow(string Name, Vector2 NameSize, string Status, Vector2 StatusSize, Color Color, float Fraction,
+        float Top, float StatusY, float BarY);
+    private readonly List<Rectangle> _weaponParts = new();
+    private readonly List<WeaponRow> _weaponRows = new();
 
     /// <summary>The per-system status tag text + colour (P362).</summary>
     private static (string tag, Color color) StatusTag(WeaponStatus s) => s switch
@@ -2525,7 +2632,7 @@ public class HudRenderer
         var tp = model.Context.TargetPane!.Value;
         float w = viewport.Width, h = viewport.Height;
         float s = TargetPaneLayout.Scale(w, h);
-        float x0 = TargetPaneLayout.OriginX(w, h);
+        float x0 = TargetPaneLayout.OriginX(w, h) + _classicTargetShift;
         // P805 (row 471) — native slides TargetDisplayImage up from below the
         // screen (SideBottom(-320,-183) → (-320,25), .5 s, dialog.mdl:5404), so
         // while the slide is in flight the pane sits lower by the remaining
@@ -2548,7 +2655,7 @@ public class HudRenderer
         var (nameFont, nameFs) = HudFont(NativeFont.MedVerdana, s);
         var (rangeFont, rangeFs) = HudFont(NativeFont.SmVerdana, s);
         var (armorFont, armorFs) = HudFont(NativeFont.MedVerdana, s);
-        string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
+        string nameLine = TargetCaption(tp);
         var nameSize = PaneTextSize(nameFont, nameLine, nameFs);
         DrawRawText(nameFont, nameLine,
             new(x0 + TargetPaneLayout.LocalCenterX * s - nameSize.X / 2f,

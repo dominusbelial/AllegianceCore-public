@@ -48,6 +48,13 @@ using HudProof;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+if (args is ["--overlaps", var width, var style, var scaleCase, ..])
+{
+    using var overlap = new OverlapProof(int.Parse(width), style, scaleCase, args.ElementAtOrDefault(4));
+    overlap.Run();
+    return overlap.Errors;
+}
+
 var options = Options.Parse(args);
 using var proof = new Proof(options);
 try { proof.Run(); }

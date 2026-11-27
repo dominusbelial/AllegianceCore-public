@@ -10,12 +10,16 @@ public readonly record struct HudTextBox(string Text, Rectangle Bounds, bool Fix
 public sealed class HudTextLayout
 {
     private readonly List<Rectangle> _reserved = new();
+    private readonly List<Rectangle> _instruments = new();
     private readonly List<HudTextBox> _text = new();
     private int _width, _height;
     public IReadOnlyList<HudTextBox> TextBoxes => _text;
     public void Reset(int width, int height)
-    { _width = width; _height = height; _reserved.Clear(); _text.Clear(); }
+    { _width = width; _height = height; _reserved.Clear(); _instruments.Clear(); _text.Clear(); }
     public void Reserve(Rectangle zone) => _reserved.Add(zone);
+    // Actual target glyphs and geometry also exclude the own-ship text, which
+    // normally ignores its own approximate gauge reservation.
+    internal void ReserveInstrument(Rectangle zone) { _instruments.Add(zone); Reserve(zone); }
     public Rectangle Place(string text, Vector2 measured, Vector2 desired, bool instrument = false, bool fixedAnchor = false)
     {
         int width = Math.Min(_width - 8, Math.Max(1, (int)MathF.Ceiling(measured.X)));
@@ -40,7 +44,7 @@ public sealed class HudTextLayout
                 if (cy < 4 || cy + height > _height - 4) continue;
                 candidate = new(cx, cy, width, height);
                 if (_text.Any(t => Padded(t.Bounds).Intersects(candidate))) continue;
-                if (!instrument && _reserved.Any(r => r.Intersects(candidate))) continue;
+                if ((instrument ? _instruments : _reserved).Any(r => r.Intersects(candidate))) continue;
                 _text.Add(new(text, candidate));
                 return candidate;
             }
@@ -78,6 +82,62 @@ public sealed class HudTextLayout
             }
         }
         return Overflow(text, x, y, width, height);   // see Place
+    }
+
+    // Keep a stack of related instruments together. Search the preferred column
+    // first, jumping to the bottom of each obstacle instead of skipping a whole
+    // panel height (which can miss the only usable strip on a small window).
+    internal Rectangle PlacePanel(Rectangle desired, List<Rectangle> parts)
+    {
+        int right = Math.Max(4, _width - 4 - desired.Width);
+        int bottom = Math.Max(4, _height - 4 - desired.Height);
+        int x = Math.Clamp(desired.X, 4, right);
+        int y = Math.Clamp(desired.Y, 4, bottom);
+        var panel = new Rectangle(x, y, desired.Width, desired.Height);
+        // The old glass can extend behind an unrelated label even when all
+        // three row elements are clear. Keep that layout pixel-for-pixel.
+        if (NextPanelY(panel, parts, _reserved) == y) return panel;
+        // Once a move is necessary, clear the backing plate as well, so it
+        // cannot dim a gauge or let another label appear inside SYSTEMS.
+        parts.Clear();
+        parts.Add(new(0, 0, desired.Width, desired.Height));
+        // If every column is crowded, give already placed text precedence over
+        // the approximate zone reservations before falling back to the anchor.
+        for (int pass = 0; pass < 2; pass++)
+        for (int cx = x; cx >= 4; cx = Math.Max(4, cx - 16))
+        {
+            panel.X = cx;
+            for (int sweep = 0; sweep < 2; sweep++)
+            {
+                int end = sweep == 0 ? bottom : y - 1;
+                for (panel.Y = sweep == 0 ? y : 4; panel.Y <= end;)
+                {
+                    int next = NextPanelY(panel, parts, pass == 0 ? _reserved : _instruments);
+                    if (next == panel.Y) return panel;
+                    panel.Y = next;
+                }
+            }
+            if (cx == 4) break;
+        }
+        return new(x, y, desired.Width, desired.Height);
+    }
+
+    private int NextPanelY(Rectangle panel, List<Rectangle> parts, List<Rectangle> zones)
+    {
+        int next = panel.Y;
+        foreach (var part in parts)
+        {
+            var bounds = part;
+            bounds.Offset(panel.Location);
+            foreach (var box in _text)
+            {
+                var obstacle = Padded(box.Bounds);
+                if (obstacle.Intersects(bounds)) next = Math.Max(next, obstacle.Bottom - part.Y);
+            }
+            foreach (var obstacle in zones)
+                if (obstacle.Intersects(bounds)) next = Math.Max(next, obstacle.Bottom - part.Y);
+        }
+        return next;
     }
 
     /// <summary>The no-free-zone fallback: the clamped desired box, recorded

@@ -2061,6 +2061,10 @@ list in **reverse**.
   `screens` parity row → scenarios). Report `docs/reports/SKINS_1A_BASELINE_P980.md`.
 - **HUD renderer** — `Rendering/HudRenderer.cs` (shared model +
   Classic), `Rendering/ModernHudRenderer.cs` (Modern override). P786 report.
+- **Weapon row and target placement (P1091)** — Classic and Modern place the mounted systems list as measured rows in
+  `src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs`. Modern measures the target caption and own gauges before selecting
+  the bottom layout in `src/Allegiance.ClientCore.Game/Rendering/ModernHudRenderer.TargetPane.cs`. Raster proof and captures
+  are in `docs/reports/MODERN_HUD_OVERLAPS_P1091.md`.
 - **Fresh-profile keys hint (P949)** — `Rendering/ControlHint.cs` (pure text +
   lifetime: 60 s or any key, once per profile), drawn by the shared
   `HudRenderer` under the native chat pane so Classic and Modern both show it;

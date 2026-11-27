@@ -11361,3 +11361,11 @@ failed/failed/passed on P1089. Every failing base and changed method-only run
 recorded dropped snapshot streams by tick 100 with zero encoding failures.
 All three ordinary Debug class runs passed both cases. This qualifies the
 earlier configuration-override entries for this method. [P1089 evidence](reports/TEAMMATE_SCRATCH_REUSE_P1089.md)
+
+## P1091 Fast sweep, 2026-11-27
+
+`P1031TreasureVisibilityTests.Dropped_part_treasure_reaches_only_sides_that_can_see_it`
+failed once in the full Fast sweep. The drop was visible to its owner's side, but the
+test captured zero owner creation frames at the line 252 single-frame assertion.
+The method passed in three fresh isolated hosts (778, 761 and 759 ms).
+The server and its tests were unchanged in P1091. [Sweep results](reports/MODERN_HUD_OVERLAPS_P1091.md)
