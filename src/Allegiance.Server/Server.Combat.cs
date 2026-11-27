@@ -244,15 +244,30 @@ public sealed partial class Server
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
-        var audience = new HashSet<ConnectionId>();
-        AddCollisionPartyAudience(party1, audience);
-        if (party2 is { } p2) AddCollisionPartyAudience(p2, audience);
-
-        int n = 0;
-        foreach (var conn in audience)
+        var roster = _collisionRoster;
+        if (roster is null || !roster.Matches(_peerShips))
         {
-            SendPeer(conn, packet);
-            n++;
+            roster = new CollisionRoster(_peerShips);
+            if (_buildingBroadcastSnapshot is not null) _collisionRoster = roster;
+        }
+
+        // A direct send/capture can re-enter the site. Keep this union private
+        // to the call until its last send, even when the nested roster matches.
+        var audience = roster.SpareAudience ?? new();
+        roster.SpareAudience = null;
+        int n;
+        try
+        {
+            AddCollisionPartyAudience(party1, roster, audience);
+            if (party2 is { } second && audience.Count < _peerShips.Count)
+                AddCollisionPartyAudience(second, roster, audience);
+            n = audience.Count;
+            foreach (var conn in audience) SendPeer(conn, packet);
+        }
+        finally
+        {
+            audience.Clear();
+            roster.SpareAudience = audience;
         }
         Console.WriteLine($"[collision] ship {party1.Id}" +
                           (party2 is { } p ? $" x ship {p.Id}" : $" x {ClassifyStaticBody(clusterId, impact)}") +
@@ -302,7 +317,7 @@ public sealed partial class Server
     /// <c>ExportShip(26)</c> (<see cref="_teammateExportSent"/>) and the P369
     /// cross-side viewers in the party's sector. The exact P364/P375 audience
     /// rules, gathered into <paramref name="audience"/> (union-safe).</summary>
-    private void AddCollisionPartyAudience(Ship party, HashSet<ConnectionId> audience)
+    private void AddCollisionPartyAudience(Ship party, CollisionRoster roster, HashSet<ConnectionId> audience)
     {
         foreach (var kv in _peerShips)
         {
@@ -313,8 +328,7 @@ public sealed partial class Server
                 audience.Add(kv.Key);
         }
         if (party.SideId is { } ps && party.Sector is { } sec)
-            foreach (var (conn, _) in CrossSideViewers(party, sec))
-                audience.Add(conn);
+            roster.AddCrossSide(party, ps, sec, audience);
     }
 
     /// <summary>Relay a missile launch to the sector, with a reliable source pose first.

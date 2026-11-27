@@ -11376,3 +11376,12 @@ The server and its tests were unchanged in P1091. [Sweep results](reports/MODERN
 targeted `Allegiance.ClientCore.Tests` runs on the merged tree, then pass / fail / pass alone: Expected 5,
 Actual 6 at `Proxy.Attempts`. Same signature and rate as the open entries above (seen since the P909 base),
 cause still not established. P1093 changed skirmish stop ownership but not the recovery proxy's attempt count.
+
+## P1094 side-selection receipt, November 2026
+
+`LivePositionRequestTests.Empty_side_request_auto_accepts` failed in Fast at
+line 248 with only the old-side leader receipt. Two of three isolated Debug
+retries instead reached line 251 with a `DelPositionReq` for side −1, reason
+`SideGone`. The third passed. The unmodified base server at `28debb3c`
+passed the first 13 isolated attempts and reproduced that same line-251
+receipt on attempt 14. [P1094 sweep and isolation](reports/LATE_MATCH_UPDATE_SPIKES_P1094.md#fast-sweep-and-isolation)

@@ -2448,7 +2448,7 @@ public sealed partial class Server
     /// enemy ship, EVERY seated peer of that side receives the status regardless
     /// of which sector that peer sits in — a probe or scout anywhere makes the
     /// whole side aware, the "eyes for the team" behaviour the task names. This
-    /// deliberately does NOT reuse the P375 <c>CrossSideViewers</c> seated-peer-
+    /// deliberately does NOT reuse the P375 collision audience’s seated-peer-
     /// in-subject-sector gate (that gate exists for live per-tick telemetry; a
     /// coarse last-known sector status is exactly the cross-sector info a fleet
     /// member is owed). The ship's OWN side is skipped (the same-side
@@ -2580,36 +2580,6 @@ public sealed partial class Server
             if (ReferenceEquals(kv.Value.Ship, ship))
                 return _peerNames.TryGetValue(kv.Key, out var n) ? n : null;
         return null;
-    }
-
-    /// <summary>Legacy cross-side audience for collision/side notifications:
-    /// a side with a seated peer in this sector, excluding cloak-hidden enemies.
-    /// Fire and deployment use BroadcastShipEmission instead, which also checks
-    /// each recipient's sector and orders the source pose before its effect.</summary>
-    private IEnumerable<(ConnectionId Conn, short SeeingSide)> CrossSideViewers(Ship subject, Sector subjectSector)
-    {
-        short? subjectSide = subject.SideId;
-        if (subjectSide is null) yield break;
-
-        // Group the seated peers by side with each side's seated sectors — the
-        // exact per-side audience SweepCrossSideExports builds once per tick.
-        var bySide = new Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)>();
-        foreach (var kv in _peerShips)
-        {
-            if (!ReferenceEquals(kv.Value.Ship.Mission, subject.Mission) || kv.Value.Ship.SideId is not { } s) continue;      // unseated (team-lobby) peers see nothing cross-side
-            if (s == subjectSide.Value) continue;                  // the subject's own side — handled by the same-side caller path
-            if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
-            e.Conns.Add(kv.Key);
-            e.Sectors.Add(kv.Value.Sector);
-        }
-
-        foreach (var (sideId, e) in bySide)
-        {
-            if (!e.Sectors.Contains(subjectSector)) continue;                    // no seated peer of this side in the shooter's sector -> no telemetry -> no visibility
-            if (subject.IsCloaked && !subject.SeenBySide(sideId)) continue;       // cloak-hidden enemy -> no telemetry (P270) -> none here
-            foreach (var conn in e.Conns)
-                yield return (conn, sideId);
-        }
     }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real

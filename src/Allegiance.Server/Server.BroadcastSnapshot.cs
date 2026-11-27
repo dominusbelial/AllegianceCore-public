@@ -168,6 +168,7 @@ public sealed partial class Server
 
     internal void CompleteBroadcastSnapshot()
     {
+        _collisionRoster = null;
         CompleteGunfireTick();
         if (_buildingBroadcastSnapshot is not { } snapshot) return;
         using (TickProfiler.Enter("broadcast.snapshotPublish"))

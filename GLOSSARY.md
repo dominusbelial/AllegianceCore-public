@@ -884,6 +884,8 @@ list in **reverse**.
 
 ## 3. Server (`src/Allegiance.Server`)
 
+- **Collision event audience (P1094)** — `src/Allegiance.Server/Server.CollisionRoster.cs` groups seated peers in wire order for the open snapshot. `src/Allegiance.Server/Server.Combat.cs` checks live ownership, exports and visibility at each contact. Attribution and the 400-seat reproduction are in `docs/reports/LATE_MATCH_UPDATE_SPIKES_P1094.md`.
+
 - **Teammate broadcast scratch (P1089)** — the parallel builder in
   `src/Allegiance.Server/Server.Broadcast.cs` owns one reusable result per
   snapshot index. `src/Allegiance.Server/Server.TeammateScratch.cs` clears
