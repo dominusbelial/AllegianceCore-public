@@ -1291,10 +1291,14 @@ public sealed partial class Server
         KeyValuePair<ConnectionId, LiveShip>[] peers;
         Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> sameSide;
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide;
-        Dictionary<short, BroadcastMessage> positionEncode;
+        Dictionary<short, BroadcastMessage>? positionEncode = null;
         using (TickProfiler.Enter("bss.snapshot"))
         {
         peers = SnapshotBroadcastPeers();
+        // Native broadcast order can split a stable roster into two phases of
+        // different sizes. Size scratch by the full roster, build only this phase.
+        if (_teammateResults.Length != _peerShips.Count)
+            Array.Resize(ref _teammateResults, _peerShips.Count);
         if (peers.Length == 0) return;
 
         // Per-side same-side grouping, in `peers` order (mirror of serial :502-510).
@@ -1350,11 +1354,10 @@ public sealed partial class Server
         // in serial :812-823 — byte-identical for every same-side recipient).
         // P604 — native ship-update model: the teammate posBatch SingleShipUpdate
         // stream is suppressed, so this O(P) per-tick encode cache is pure waste
-        // and is skipped (an empty dict is passed; the parallel build never
-        // indexes it because its posBatch block is gated on !_nativeShipUpdates).
-        positionEncode = new Dictionary<short, BroadcastMessage>(peers.Length);
+        // and is skipped. Only the port position batch consumes this table.
         if (!_nativeShipUpdates && !_broadcastInterestTiersEnabled)
         {
+            positionEncode = new(peers.Length);
             foreach (var kv in peers)
             {
                 var ship = kv.Value.Ship;
@@ -1370,81 +1373,44 @@ public sealed partial class Server
         }
 
         // ── (b) PARALLEL BUILD PHASE ─────────────────────────────────────────
-        BroadcastPeerBuild[] results;
-        using (TickProfiler.Enter("bss.build"))
+        var results = _teammateResults;
+        try
         {
-            results = new BroadcastPeerBuild[peers.Length];
-            var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
-            // P619 — when slow-tick capture is armed, time each worker and feed
-            // the max into the capture; otherwise (the common case) `slow` is
-            // false and the body is exactly the pre-P619 build with zero extra
-            // per-worker cost beyond a null-vs-stopwatch branch.
-            bool slow = TickProfiler.SlowTickCaptureActive;
-            Parallel.For(0, peers.Length, po, i =>
+            using (TickProfiler.Enter("bss.build"))
             {
-                var sw = slow ? Stopwatch.StartNew() : null;
-                results[i] = BuildPeerShipStates(peers, sameSide, sameSideNpcBySide, positionEncode, tickIndex, i);
-                if (slow) TickProfiler.RegisterWorker(sw!.Elapsed.TotalMilliseconds);
-            });
-        }
-
-        // ── (c) SERIAL APPLY PHASE (enqueue + effects + logs, in peer order) ──
-        using (TickProfiler.Enter("bss.apply"))
-        for (int i = 0; i < results.Length; i++)
-        {
-            var conn = peers[i].Key;
-            var r = results[i];
-            // P606/P608 — per packet: ordinary ordered traffic via SendPeer,
-            // latest-wins stream frames via SendPeerCoalescing (guaranteed flag
-            // honoured), in the exact build order so wire order matches the
-            // serial builder.
-            foreach (var (pkt, key, guaranteed) in r.Packets)
-            {
-                if (key == 0) SendPeer(conn, pkt);
-                else SendPeerCoalescing(conn, pkt, key, guaranteed);
+                var po = new ParallelOptions { MaxDegreeOfParallelism = _broadcastMaxParallelism };
+                bool slow = TickProfiler.SlowTickCaptureActive;
+                Parallel.For(0, peers.Length, po, i =>
+                {
+                    var sw = slow ? Stopwatch.StartNew() : null;
+                    var result = results[i] ??= new();
+                    BuildPeerShipStates(peers, sameSide, sameSideNpcBySide, positionEncode, tickIndex, i, result);
+                    if (slow) TickProfiler.RegisterWorker(sw!.Elapsed.TotalMilliseconds);
+                });
             }
-            foreach (var line in r.Logs) Console.WriteLine(line);
-            foreach (var line in r.VerboseLogs) ConsoleLog.Write(line);   // P619b — verbose-gated, non-blocking
-            ApplyBroadcastPeerEffects(conn, r);
-        }
-    }
 
-    /// <summary>
-    /// P603 — per-peer result of the parallel build: the ordered packet list for
-    /// this peer, its buffered (unconditional) log lines, and the effect deltas
-    /// to apply serially (the latches / <c>_peerShips</c> write the serial builder
-    /// performs inline). Each peer is built by exactly one worker, so these are
-    /// per-peer-disjoint and safe to apply in <c>_peerShips</c> order afterwards.
-    /// </summary>
-    private sealed class BroadcastPeerBuild
-    {
-        // P606/P608 — ordered packets, each tagged with its coalesce key (0 =
-        // ordinary ordered traffic; non-zero = latest-wins stream frame) and
-        // whether it is guaranteed. Keeps the exact per-peer build order so the
-        // parallel path stays byte-identical to serial even while routing the
-        // position stream through coalescing; the owner's own-ship frame is
-        // marked guaranteed so it is never shed under capacity.
-        public List<(BroadcastPacket Packet, int Key, bool Guaranteed)> Packets = new();
-        public List<string> Logs = new();             // unconditional log lines, ordered
-        // P619b — the high-frequency per-pair diagnostics ([shipstatus],
-        // [teamshipstatus], [samestidenpcstatus]) the serial builder routes through
-        // the verbose-gated, non-blocking ConsoleLog.Write (P318). Kept apart from
-        // Logs so the parallel apply phase never writes them synchronously to stdout
-        // (~4,000 lines/s at 390 players stalled bss.apply 3.5 s per window on 221).
-        public List<string> VerboseLogs = new();
-        public LiveShip? NewLiveShip;                 // own-ship update, or null
-        public bool SetStatus; public short StatusSector; public long StatusTick;
-        public bool SetClusterInfo; public long ClusterInfoTick;
-        public readonly HashSet<short> ExportSent = new();       // -> _teammateExportSent
-        public readonly HashSet<short> PositionSent = new();     // -> _teammatePositionSent
-        public readonly HashSet<short> NpcExportSent = new();    // -> _sameSideNpcExportSent
-        public readonly Dictionary<short, long> TeammateStatusTick = new(); // -> _lastTeammateStatusTick
-        public readonly Dictionary<short, long> LoadoutVersionSet = new(); // -> _teammateLoadoutVersionSent
-        public readonly Dictionary<short, long> NpcStatusTick = new();     // -> _lastSameSideNpcStatusTick
-        // P604b — per-recipient advance of `_nextTeammateRefreshTick` when this
-        // peer's periodic teammate-status refresh fired this tick (null = no
-        // change). Applied serially with the other per-peer effects.
-        public long? NextTeammateRefreshTick;
+            using (TickProfiler.Enter("bss.apply"))
+            for (int i = 0; i < peers.Length; i++)
+            {
+                var conn = peers[i].Key;
+                var r = results[i]!;
+                if (r.Packets is { } packets)
+                    foreach (var (pkt, key, guaranteed) in packets)
+                    {
+                        if (key == 0) SendPeer(conn, pkt);
+                        else SendPeerCoalescing(conn, pkt, key, guaranteed);
+                    }
+                if (r.VerboseLogs is { } logs)
+                    foreach (var line in logs) ConsoleLog.Write(line);
+                ApplyBroadcastPeerEffects(conn, r);
+            }
+        }
+        finally
+        {
+            // Parallel.For joins its workers even on failure. Include partially
+            // built slots and the unapplied suffix if sending a packet throws.
+            for (int i = 0; i < peers.Length; i++) results[i]?.Reset();
+        }
     }
 
     /// <summary>
@@ -1458,12 +1424,18 @@ public sealed partial class Server
         if (r.NewLiveShip is { } nl) _peerShips[conn] = nl;
         if (r.SetStatus) { _lastStatusSector[conn] = r.StatusSector; _lastStatusTick[conn] = r.StatusTick; }
         if (r.SetClusterInfo) _lastClusterInfoTick[conn] = r.ClusterInfoTick;
-        foreach (var mate in r.ExportSent) _teammateExportSent.Add((conn, mate));
-        foreach (var mate in r.PositionSent) _teammatePositionSent.Add((conn, mate));
-        foreach (var npc in r.NpcExportSent) _sameSideNpcExportSent.Add((conn, npc));
-        foreach (var (mate, t) in r.TeammateStatusTick) _lastTeammateStatusTick[(conn, mate)] = t;
-        foreach (var (mate, v) in r.LoadoutVersionSet) _teammateLoadoutVersionSent[(conn, mate)] = v;
-        foreach (var (npc, t) in r.NpcStatusTick) _lastSameSideNpcStatusTick[(conn, npc)] = t;
+        if (r.ExportSent is { } exportSent)
+            foreach (var mate in exportSent) _teammateExportSent.Add((conn, mate));
+        if (r.PositionSent is { } positionSent)
+            foreach (var mate in positionSent) _teammatePositionSent.Add((conn, mate));
+        if (r.NpcExportSent is { } npcExportSent)
+            foreach (var npc in npcExportSent) _sameSideNpcExportSent.Add((conn, npc));
+        if (r.TeammateStatusTick is { } teammateStatusTick)
+            foreach (var (mate, t) in teammateStatusTick) _lastTeammateStatusTick[(conn, mate)] = t;
+        if (r.LoadoutVersionSet is { } loadoutVersionSet)
+            foreach (var (mate, v) in loadoutVersionSet) _teammateLoadoutVersionSent[(conn, mate)] = v;
+        if (r.NpcStatusTick is { } npcStatusTick)
+            foreach (var (npc, t) in npcStatusTick) _lastSameSideNpcStatusTick[(conn, npc)] = t;
         if (r.NextTeammateRefreshTick is { } nrt) _nextTeammateRefreshTick[conn] = nrt;
     }
 
@@ -1475,24 +1447,17 @@ public sealed partial class Server
     /// HashSets make a peer's own Add-then-Contains latch decisions visible to
     /// itself exactly as serial's inline writes are.
     /// </summary>
-    private BroadcastPeerBuild BuildPeerShipStates(
+    private void BuildPeerShipStates(
         KeyValuePair<ConnectionId, LiveShip>[] peers,
         Dictionary<(uint Cookie, short Side), List<KeyValuePair<ConnectionId, LiveShip>>> sameSide,
         Dictionary<(Mission, short), List<Ship>>? sameSideNpcBySide,
-        Dictionary<short, BroadcastMessage> positionEncode,
-        uint tickIndex, int idx)
+        Dictionary<short, BroadcastMessage>? positionEncode,
+        uint tickIndex, int idx, BroadcastPeerBuild r)
     {
         var kv = peers[idx];
         var conn = kv.Key;
         var live = kv.Value;
         var ship = live.Ship;
-        var r = new BroadcastPeerBuild();
-
-        // Local overlays: a peer's own adds, consulted alongside the shared sets
-        // so this peer sees its writes the way serial's inline latches do.
-        var localExportSent = new HashSet<short>();
-        var localPositionSent = new HashSet<short>();
-
         var fwd = ship.Orientation.GetForward();
         var up = ship.Orientation.GetUp();
         bool miningNow = ship.MiningAsteroid is not null;
@@ -1510,7 +1475,7 @@ public sealed partial class Server
                 Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
                 BIsRipcording = ship.IsRipcordActive,   // P788 — native bIsRipcording = fRipcordActive() (FedSrv/fsship.cpp:542,807)
             };
-            r.Packets.Add((PackBroadcast(Message(msg)), CoalesceOwnShip, true));
+            (r.Packets ??= new()).Add((PackBroadcast(Message(msg)), CoalesceOwnShip, true));
             r.NewLiveShip = live with
             {
                 LastBroadcastPos = ship.Position,
@@ -1534,8 +1499,8 @@ public sealed partial class Server
             : sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id);
         if (statusDue)
         {
-            r.Packets.Add((PackStatus(ship.Id, live), 0, false));
-            if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
+            (r.Packets ??= new()).Add((PackStatus(ship.Id, live), 0, false));
+            if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[shipstatus] peer {conn} " +
                 (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
             r.SetStatus = true; r.StatusSector = live.Sector.Id; r.StatusTick = tickIndex;
         }
@@ -1545,7 +1510,7 @@ public sealed partial class Server
         {
             if (ClusterInfoBytes(live.Ship.Mission) is { } bytes)
             {
-                r.Packets.Add((PackBroadcast(bytes), 0, false));
+                (r.Packets ??= new()).Add((PackBroadcast(bytes), 0, false));
                 r.SetClusterInfo = true; r.ClusterInfoTick = tickIndex;
             }
         }
@@ -1565,16 +1530,15 @@ public sealed partial class Server
                 if (recipientRefreshDue) r.NextTeammateRefreshTick = (long)tickIndex + TeammateStatusRefreshTicks;
             }
 
-            List<BroadcastMessage>? posBatch = null;
             foreach (var tv in mates)
             {
                 if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
                 short teammateId = tv.Value.Ship.Id;
 
                 // P62 teamexport (one-shot per (recipient, mate))
-                if (!_teammateExportSent.Contains((conn, teammateId))
-                    && !localExportSent.Contains(teammateId)
-                    && _peerNames.TryGetValue(tv.Key, out var peerName))
+                bool exported = _teammateExportSent.Contains((conn, teammateId))
+                    || r.ExportSent?.Contains(teammateId) == true;
+                if (!exported && _peerNames.TryGetValue(tv.Key, out var peerName))
                 {
                     var initialParts = ReadLoadoutSnapshotOrCompute(tv.Value.Ship);
                     var teamExport = new ExportShip
@@ -1587,14 +1551,14 @@ public sealed partial class Server
                         PilotType = ExportShip.PilotTypePlayer,
                         Parts = initialParts,
                     };
-                    r.Packets.Add((PackBroadcast(Message(teamExport)), 0, false));
-                    if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: gated
-                    localExportSent.Add(teammateId);
-                    r.ExportSent.Add(teammateId);
-                    r.LoadoutVersionSet[teammateId] = tv.Value.Ship.LoadoutVersion;
+                    (r.Packets ??= new()).Add((PackBroadcast(Message(teamExport)), 0, false));
+                    if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[teamexport] peer {conn} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: gated
+                    exported = true;
+                    (r.ExportSent ??= new()).Add(teammateId);
+                    (r.LoadoutVersionSet ??= new())[teammateId] = tv.Value.Ship.LoadoutVersion;
                 }
 
-                if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
+                if (exported)
                 {
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
                     bool teammateStatusDue = lastTeammateTick < 0 || (_broadcastShipStatusChangeGate
@@ -1602,28 +1566,27 @@ public sealed partial class Server
                         : recipientRefreshDue || _shipDetectedChanged.Contains(teammateId));
                     if (teammateStatusDue)
                     {
-                        r.Packets.Add((PackStatus(teammateId, tv.Value), 0, false));
-                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                        (r.Packets ??= new()).Add((PackStatus(teammateId, tv.Value), 0, false));
+                        if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                             (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
-                        r.TeammateStatusTick[teammateId] = tickIndex;
+                        (r.TeammateStatusTick ??= new())[teammateId] = tickIndex;
                     }
 
                     // P604 — native ship-update model: no per-tick teammate
                     // posBatch SingleShipUpdate(78) stream; remote positions flow
                     // only through the native HEAVY/LIGHT budget. "port" mode
                     // keeps this block unchanged.
-                    if (!_nativeShipUpdates && !_broadcastInterestTiersEnabled)
+                    if (positionEncode is not null)
                     {
-                        bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && !localPositionSent.Contains(teammateId);
+                        bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && r.PositionSent?.Contains(teammateId) != true;
                         if (firstPos
                             || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
                             || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
                             || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
                         {
                             // Prebuilt shared position encode (byte-identical per subject).
-                            (posBatch ??= new()).Add(positionEncode[teammateId]);
-                            localPositionSent.Add(teammateId);
-                            r.PositionSent.Add(teammateId);
+                            (r.Positions ??= new()).Add(positionEncode[teammateId]);
+                            (r.PositionSent ??= new()).Add(teammateId);
                         }
                     }
 
@@ -1635,7 +1598,7 @@ public sealed partial class Server
                     // NOT re-exported as a "loadout changed" (currentVersion != -1).
                     long sentVersion = _teammateLoadoutVersionSent.TryGetValue((conn, teammateId), out var sv)
                         ? sv
-                        : (r.LoadoutVersionSet.TryGetValue(teammateId, out var pv) ? pv : -1);
+                        : (r.LoadoutVersionSet?.TryGetValue(teammateId, out var pv) == true ? pv : -1);
                     if (currentVersion != sentVersion &&
                         _peerNames.TryGetValue(tv.Key, out var currentPeerName))
                     {
@@ -1650,19 +1613,19 @@ public sealed partial class Server
                             PilotType = ExportShip.PilotTypePlayer,
                             Parts = currentParts,
                         };
-                        r.Packets.Add((PackBroadcast(Message(loadoutExport)), 0, false));
-                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: gated, aggregate per change
-                        r.LoadoutVersionSet[teammateId] = currentVersion;
+                        (r.Packets ??= new()).Add((PackBroadcast(Message(loadoutExport)), 0, false));
+                        if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[teamloadout] peer {conn} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");   // P619c: gated, aggregate per change
+                        (r.LoadoutVersionSet ??= new())[teammateId] = currentVersion;
                     }
                 }
             }
-            if (posBatch is { Count: > 0 })
+            if (r.Positions is { Count: > 0 } posBatch)
             {
                 if (posBatch.Count <= FedPacket.MaxMessagesPerPacket)
-                    r.Packets.Add((PackBroadcast(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates, false));
+                    (r.Packets ??= new()).Add((PackBroadcast(CollectionsMarshal.AsSpan(posBatch)), CoalesceShipStates, false));
                 else
                     foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
-                        r.Packets.Add((PackBroadcast(chunk), CoalesceShipStates, false));
+                        (r.Packets ??= new()).Add((PackBroadcast(chunk), CoalesceShipStates, false));
             }
 
             // P366 same-side NPC identity + status
@@ -1673,10 +1636,9 @@ public sealed partial class Server
                 // (which dedups within a peer's own walk via its bool return): in
                 // parallel the shared set can't be written mid-walk, so this peer's
                 // own adds must be visible to itself, exactly as in serial.
-                var localNpcExportSent = new HashSet<short>();
                 foreach (var npc in npcs)
                 {
-                    if (!_sameSideNpcExportSent.Contains((conn, npc.Id)) && !localNpcExportSent.Contains(npc.Id))
+                    if (!_sameSideNpcExportSent.Contains((conn, npc.Id)) && r.NpcExportSent?.Contains(npc.Id) != true)
                     {
                         var npcExport = new ExportShip
                         {
@@ -1688,10 +1650,9 @@ public sealed partial class Server
                             PilotType = ExportShip.PilotTypePlayer,
                             Parts = ReadLoadoutSnapshotOrCompute(npc),
                         };
-                        r.Packets.Add((PackBroadcast(Message(npcExport)), 0, false));
-                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");   // P619c: gated
-                        localNpcExportSent.Add(npc.Id);
-                        r.NpcExportSent.Add(npc.Id);
+                        (r.Packets ??= new()).Add((PackBroadcast(Message(npcExport)), 0, false));
+                        if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");   // P619c: gated
+                        (r.NpcExportSent ??= new()).Add(npc.Id);
                     }
 
                     long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
@@ -1701,15 +1662,14 @@ public sealed partial class Server
                         : recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id));
                     if (npcStatusDue)
                     {
-                        r.Packets.Add((PackBroadcast(Message(MakeNpcShipStatus(npc))), 0, false));
-                        if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
+                        (r.Packets ??= new()).Add((PackBroadcast(Message(MakeNpcShipStatus(npc))), 0, false));
+                        if (ConsoleLog.Verbose) (r.VerboseLogs ??= new()).Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
                             (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
-                        r.NpcStatusTick[npc.Id] = tickIndex;
+                        (r.NpcStatusTick ??= new())[npc.Id] = tickIndex;
                     }
                 }
             }
         }
-        return r;
     }
 
     /// <summary>

@@ -733,6 +733,7 @@ public sealed partial class Server
         // gets a normal fresh logon into the rotated mission).
         DropParkedShipsForMission(mission);
         RetireBroadcastProjectionCaches();
+        _teammateResults = [];
         // Clients discard the old warning state on Over. An unchanged station
         // layout must be announced again in the new world (trekigc.cpp:327-383
         // computes warnings from each fresh cluster's assets).

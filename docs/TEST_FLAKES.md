@@ -11348,3 +11348,16 @@ Quarantine: `AddPartTests.Part_pickup_decline_recreates_treasure_at_current_posi
 | `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_to_teammate_and_destroy_to_whole_mission` | terminal travel 1155.35 m versus 1848.56 m | pass / pass / pass | Existing earlier-destruction signature. |
 | `DroneSpawnLoadoutTests.Spawned_wingman_defends_a_charge_and_damages_a_threat_without_manual_arming` | no damage after 20,000 ticks, 36.025 s | pass / pass / pass | Existing P1044 wingman failure and timing signature. |
 | `P999CivStrategyTests.Every_profile_is_reachable_in_catalog_and_actual_side_buy_gates(civ: 5)` | passed in 16.373 s, above Fast limit | all 10 theory rows pass in each run; civ 5 took 2 / 2 / 3 s | Existing load-sensitive timing signature. |
+
+## P1089 stationary teammate position receipt, November 2026
+
+`TeammatePositionBroadcastTests.Stationary_teammate_is_still_broadcast_to_observer_once`
+also intermittently fails with the explicitly configured port model active.
+The observer receives the teammate export but has no position observation at
+line 201. With Release, server GC and tiered compilation disabled, the full
+changed class passed/failed/failed across three isolated invocations. Three
+further method-only runs failed/failed/failed on base `83703eac` and
+failed/failed/passed on P1089. Every failing base and changed method-only run
+recorded dropped snapshot streams by tick 100 with zero encoding failures.
+All three ordinary Debug class runs passed both cases. This qualifies the
+earlier configuration-override entries for this method. [P1089 evidence](reports/TEAMMATE_SCRATCH_REUSE_P1089.md)

@@ -884,6 +884,12 @@ list in **reverse**.
 
 ## 3. Server (`src/Allegiance.Server`)
 
+- **Teammate broadcast scratch (P1089)** — the parallel builder in
+  `src/Allegiance.Server/Server.Broadcast.cs` owns one reusable result per
+  snapshot index. `src/Allegiance.Server/Server.TeammateScratch.cs` clears
+  its packets and pending effects after ordered application or failure.
+  Measurement and retention bounds are in `docs/reports/TEAMMATE_SCRATCH_REUSE_P1089.md`.
+
 - **Perpetual public battle and play log (P1071)** — default-off bounded asynchronous
   monthly JSONL logging in `src/Allegiance.Server/PlayLog.cs`, wired to accepted joins,
   native score deltas, disconnects and match boundaries by
