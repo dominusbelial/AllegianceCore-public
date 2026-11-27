@@ -11395,3 +11395,27 @@ The two P1091 1920×1080 default-scale HUD pixel checks failed in the software G
 | Modern | `28FB84F3BD41A1886F25D682CA62FB590F10FEDF101AEB5C9D82FB98117D62E2` | `1093B39B5B9BA1616BF0C8AD8D27D83BA6DC81FF5B1DF46EBEC58618246F6364` |
 
 This is a repeatable baseline mismatch on this machine. Its rendering cause is unverified. [P1095 gate report](reports/BOT_DECISION_HEALTH_P1095.md)
+## P1096 software-rendered P1091 pixel controls
+
+The 1920×1080 default Classic and Modern cases in
+`P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct`
+passed their ink and overlap checks on llvmpipe (LLVM 19.1.7) and failed their
+full-frame SHA-256 assertions. The whole method ran three times in isolation.
+Each run passed the other 19 cases and failed the same two hashes.
+
+Three renders per skin with the unchanged game assembly rebuilt from
+`28debb3c` produced the same RGBA hashes as the indexed build, beginning
+`C100F69A` (Classic) and `1093B39B` (Modern). The local Modern framebuffer
+differed from the checked-in P1091 image at 8,006 of 2,073,600 pixels, with a
+maximum channel difference of 2. Switching the base process to Mesa softpipe
+gave a third pair of hashes. This is a reproducible graphics-environment
+dependency of these controls. [P1096 measurements and gates](reports/LABEL_LAYOUT_TILES_P1096.md)
+
+## P1096 Fast sweep construction receipt
+
+`PlayerBuildCommandLiveTests.Legal_build_starts_construction_and_creates_dockable_station`
+found an empty `sector.BuildingEffects` collection at line 240 after sending the
+build order and pumping the server. The case passed in the first full sweep,
+failed in the second and passed in three fresh method-only hosts (1.430,
+1.463 and 1.483 s). The server and its construction fixture used the base source.
+The cause remains unresolved. [P1096 Fast sweeps](reports/LABEL_LAYOUT_TILES_P1096.md#fast-sweeps)

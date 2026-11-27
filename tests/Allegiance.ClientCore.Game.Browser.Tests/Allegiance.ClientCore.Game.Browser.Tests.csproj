@@ -6,6 +6,8 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <Using Include="Xunit" />
     <Compile Include="../../tools/p1083-kni-shaders/LegacyVolumetric.cs" Link="LegacyVolumetric.cs" />
+    <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/LinearHudTextLayout.cs" Link="LinearHudTextLayout.cs" />
+    <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/P1096HudTextLayoutTests.cs" Link="P1096HudTextLayoutTests.cs" />
     <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/P1078AfkRosterTests.cs" Link="P1078AfkRosterTests.cs" />
     <Compile Include="../Allegiance.ClientCore.Tests/P1078PlayerActivityTests.cs" Link="P1078PlayerActivityTests.cs" />
     <Compile Include="../Allegiance.ClientCore.MonoGame.Tests/P1075PresentationTests.cs" Link="P1075PresentationTests.cs" />

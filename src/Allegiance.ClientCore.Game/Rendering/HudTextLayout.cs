@@ -9,63 +9,43 @@ public readonly record struct HudTextBox(string Text, Rectangle Bounds, bool Fix
 /// subsequent notices yield to labels. No string-length estimates.</summary>
 public sealed class HudTextLayout
 {
-    private readonly List<Rectangle> _reserved = new();
-    private readonly List<Rectangle> _instruments = new();
+    private readonly HudObstacleTiles _obstacles = new();
     private readonly List<HudTextBox> _text = new();
     private int _width, _height;
     public IReadOnlyList<HudTextBox> TextBoxes => _text;
+
     public void Reset(int width, int height)
-    { _width = width; _height = height; _reserved.Clear(); _instruments.Clear(); _text.Clear(); }
-    public void Reserve(Rectangle zone) => _reserved.Add(zone);
-    // Actual target glyphs and geometry also exclude the own-ship text, which
-    // normally ignores its own approximate gauge reservation.
-    internal void ReserveInstrument(Rectangle zone) { _instruments.Add(zone); Reserve(zone); }
-    public Rectangle Place(string text, Vector2 measured, Vector2 desired, bool instrument = false, bool fixedAnchor = false)
     {
-        int width = Math.Min(_width - 8, Math.Max(1, (int)MathF.Ceiling(measured.X)));
-        int height = Math.Min(_height - 8, Math.Max(1, (int)MathF.Ceiling(measured.Y)));
-        int x = Math.Clamp((int)MathF.Round(desired.X), 4, Math.Max(4, _width - width - 4));
-        int y = Math.Clamp((int)MathF.Round(desired.Y), 4, Math.Max(4, _height - height - 4));
-        if (fixedAnchor)
-        {
-            var fixedBox = new Rectangle(x, y, width, height);
-            _text.Add(new(text, fixedBox, FixedAnchor: true));
-            return fixedBox;
-        }
-        var candidate = new Rectangle(x, y, width, height);
-        // Keep the native X anchor wherever possible; alternate downward/upward
-        // rows before looking in an adjacent column. Every accepted box is tested.
-        for (int column = 0; column < 7; column++)
-        {
-            int cx = Math.Clamp(x + ((column + 1) / 2) * (column % 2 == 0 ? -1 : 1) * (width + 8), 4, Math.Max(4, _width - width - 4));
-            for (int row = 0; row < _height / Math.Max(1, height + 4) * 2 + 2; row++)
-            {
-                int cy = y + ((row + 1) / 2) * (row % 2 == 0 ? -1 : 1) * (height + 4);
-                if (cy < 4 || cy + height > _height - 4) continue;
-                candidate = new(cx, cy, width, height);
-                if (_text.Any(t => Padded(t.Bounds).Intersects(candidate))) continue;
-                if ((instrument ? _instruments : _reserved).Any(r => r.Intersects(candidate))) continue;
-                _text.Add(new(text, candidate));
-                return candidate;
-            }
-        }
-        // Overflow (a crowded battle fills every free zone) falls back to the
-        // desired anchor, overlapping like native, which never de-overlaps HUD
-        // text (radarimage.cpp:1284-1311). Throwing here crashed the client.
-        return Overflow(text, x, y, width, height);
+        _width = width;
+        _height = height;
+        _text.Clear();
+        _obstacles.Reset(width, height);
     }
 
-    /// <summary>Place a pre-measured multi-line block (radar labels, which stack
-    /// name/range text and health bars). Unlike <see cref="Place"/> the block is
-    /// also reserved so later notices/text yield to it, and it is recorded so the
-    /// overlap check still sees it.</summary>
+    public void Reserve(Rectangle zone) => _obstacles.Add(zone, blocksInstruments: false);
+    // Actual target glyphs and geometry also exclude the own-ship text, which
+    // normally ignores its own approximate gauge reservation.
+    internal void ReserveInstrument(Rectangle zone) => _obstacles.Add(zone, blocksInstruments: true);
+
+    public Rectangle Place(string text, Vector2 measured, Vector2 desired, bool instrument = false, bool fixedAnchor = false)
+        => PlaceMeasured(text, new((int)MathF.Round(desired.X), (int)MathF.Round(desired.Y),
+            (int)MathF.Ceiling(measured.X), (int)MathF.Ceiling(measured.Y)), instrument, fixedAnchor, block: false);
+
+    /// <summary>Place and reserve a pre-measured multi-line radar label.</summary>
     public Rectangle PlaceBlock(string text, Rectangle desired)
+        => PlaceMeasured(text, desired, instrument: false, fixedAnchor: false, block: true);
+
+    private Rectangle PlaceMeasured(string text, Rectangle desired, bool instrument, bool fixedAnchor, bool block)
     {
         int width = Math.Min(_width - 8, Math.Max(1, desired.Width));
         int height = Math.Min(_height - 8, Math.Max(1, desired.Height));
         int x = Math.Clamp(desired.X, 4, Math.Max(4, _width - width - 4));
         int y = Math.Clamp(desired.Y, 4, Math.Max(4, _height - height - 4));
-        var candidate = new Rectangle(x, y, width, height);
+        var anchor = new Rectangle(x, y, width, height);
+        if (fixedAnchor) return Record(text, anchor, fixedAnchor: true);
+
+        // Keep the native X anchor wherever possible; alternate downward/upward
+        // rows before looking in an adjacent column.
         for (int column = 0; column < 7; column++)
         {
             int cx = Math.Clamp(x + ((column + 1) / 2) * (column % 2 == 0 ? -1 : 1) * (width + 8), 4, Math.Max(4, _width - width - 4));
@@ -73,15 +53,23 @@ public sealed class HudTextLayout
             {
                 int cy = y + ((row + 1) / 2) * (row % 2 == 0 ? -1 : 1) * (height + 4);
                 if (cy < 4 || cy + height > _height - 4) continue;
-                candidate = new(cx, cy, width, height);
-                if (_text.Any(t => Padded(t.Bounds).Intersects(candidate))) continue;
-                if (_reserved.Any(r => r.Intersects(candidate))) continue;
-                _text.Add(new(text, candidate));
-                _reserved.Add(candidate);
-                return candidate;
+                var candidate = new Rectangle(cx, cy, width, height);
+                if (_obstacles.BlockingBottom(candidate, instrument).HasValue) continue;
+                if (block) Reserve(candidate);
+                return Record(text, candidate);
             }
         }
-        return Overflow(text, x, y, width, height);   // see Place
+        // Overflow overlaps at the clamped native anchor (radarimage.cpp:1284-1311).
+        return Record(text, anchor);
+    }
+
+    private Rectangle Record(string text, Rectangle box, bool fixedAnchor = false)
+    {
+        _text.Add(new(text, box, fixedAnchor));
+        var padded = box;
+        padded.Inflate(2, 2);
+        _obstacles.Add(padded, blocksInstruments: true);
+        return box;
     }
 
     // Keep a stack of related instruments together. Search the preferred column
@@ -96,7 +84,7 @@ public sealed class HudTextLayout
         var panel = new Rectangle(x, y, desired.Width, desired.Height);
         // The old glass can extend behind an unrelated label even when all
         // three row elements are clear. Keep that layout pixel-for-pixel.
-        if (NextPanelY(panel, parts, _reserved) == y) return panel;
+        if (NextPanelY(panel, parts, instrument: false) == y) return panel;
         // Once a move is necessary, clear the backing plate as well, so it
         // cannot dim a gauge or let another label appear inside SYSTEMS.
         parts.Clear();
@@ -112,7 +100,7 @@ public sealed class HudTextLayout
                 int end = sweep == 0 ? bottom : y - 1;
                 for (panel.Y = sweep == 0 ? y : 4; panel.Y <= end;)
                 {
-                    int next = NextPanelY(panel, parts, pass == 0 ? _reserved : _instruments);
+                    int next = NextPanelY(panel, parts, instrument: pass != 0);
                     if (next == panel.Y) return panel;
                     panel.Y = next;
                 }
@@ -122,31 +110,16 @@ public sealed class HudTextLayout
         return new(x, y, desired.Width, desired.Height);
     }
 
-    private int NextPanelY(Rectangle panel, List<Rectangle> parts, List<Rectangle> zones)
+    private int NextPanelY(Rectangle panel, List<Rectangle> parts, bool instrument)
     {
         int next = panel.Y;
         foreach (var part in parts)
         {
             var bounds = part;
             bounds.Offset(panel.Location);
-            foreach (var box in _text)
-            {
-                var obstacle = Padded(box.Bounds);
-                if (obstacle.Intersects(bounds)) next = Math.Max(next, obstacle.Bottom - part.Y);
-            }
-            foreach (var obstacle in zones)
-                if (obstacle.Intersects(bounds)) next = Math.Max(next, obstacle.Bottom - part.Y);
+            if (_obstacles.BlockingBottom(bounds, instrument, part.Y) is int y)
+                next = Math.Max(next, y);
         }
         return next;
     }
-
-    /// <summary>The no-free-zone fallback: the clamped desired box, recorded
-    /// (so <see cref="TextBoxes"/> stays complete) but not reserved.</summary>
-    private Rectangle Overflow(string text, int x, int y, int width, int height)
-    {
-        var box = new Rectangle(x, y, width, height);
-        _text.Add(new(text, box));
-        return box;
-    }
-    private static Rectangle Padded(Rectangle r) { r.Inflate(2, 2); return r; }
 }

@@ -2039,7 +2039,10 @@ list in **reverse**.
   them, notices yield to labels, and a fully crowded screen falls back to the
   native anchor instead of throwing. The centred ripcord countdown reserve is the
   union of the native 150-px StringImage box (`Artwork/dialog.mdl:5145-5151`,
-  `:5429`) and the wider port glyph run (P859). Proof: `tools/hud2-proof`.
+  `:5429`) and the wider port glyph run (P859). Text and panel searches reuse
+  screen tiles in `src/Allegiance.ClientCore.Game/Rendering/HudObstacleTiles.cs`
+  to find nearby obstacles. `docs/reports/LABEL_LAYOUT_TILES_P1096.md` records the
+  differential tests, timings and both-style captures from `tools/hud2-proof`.
 - **Controls reference pages (P1064)** — `src/Allegiance.ClientCore.Game/Rendering/HelpManualModel.cs`
   keeps `hlpControls` (Flight) and adjacent `hlpControls2` (Other), partitioning complete
   live binding groups exactly once. The measured/cached table in
