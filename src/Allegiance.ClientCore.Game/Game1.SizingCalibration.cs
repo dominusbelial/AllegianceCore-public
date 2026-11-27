@@ -102,11 +102,10 @@ public sealed partial class Game1
             StartCountdownSeconds = 5,
             Sizing = _calibCurrent.Sizing,
         };
-        _skirmishCancel?.Dispose();
-        _skirmishCancel = new();
+
         _skirmishError = "";
         _observerAutoStarted = true;      // keep UpdateSkirmish's env auto-start out of the way
-        _skirmishStart = SkirmishHost.StartAsync(options, cancellationToken: _skirmishCancel.Token);
+        BeginSkirmish(options);
         Console.WriteLine($"[calibrate] candidate {_calibIndex + 1}/{_calibCandidates.Count} {_calibCurrent.Name}: "
             + _calibCurrent.Reason);
     }
@@ -198,17 +197,9 @@ public sealed partial class Game1
 
     private void TeardownCalibrationCandidate()
     {
-        _skirmishCancel?.Cancel();
-        _session.Dispose();
-        _skirmish?.Dispose();
-        _skirmish = null;
-        _skirmishStart = null;
+        RetireSkirmish();
         _localSpectating = false;
         _observation = null;
-        _seatChange = null;
-        _requestedSeat = null;
-        _skirmishCancel?.Dispose();
-        _skirmishCancel = null;
         _state = ClientState.Intro;
     }
 

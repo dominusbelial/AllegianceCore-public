@@ -248,10 +248,10 @@ public sealed partial class Game1
         {
             _benchRecording = _benchRuns.Count == 0 && _benchSuggestion is null && _benchmark.RecordFile is { } file ? new WireRecording(file) : null;
             _session.Recording = _benchRecording;
-            _skirmishCancel?.Dispose(); _skirmishCancel = new();
+
             var options = _benchmark.Options;
             if (_benchSuggestion is { } s) options = options with { Size = s.BattleSize, Difficulty = s.Difficulty, ResearchSpeed = s.ResearchSpeed, Speed = s.Speed, SpectatorDefault = s.SpectatorDefault };
-            _skirmishStart = SkirmishHost.StartAsync(options, cancellationToken: _skirmishCancel.Token);
+            BeginSkirmish(options);
         }
     }
     private void StartBenchmarkMeasurement()
@@ -302,7 +302,12 @@ public sealed partial class Game1
             }
             if (_benchmark is null) return false;
             if (esc && !_benchEsc) { FinishBenchmarkFailure("Benchmark cancelled", false); return true; }
-            if (_benchPending) StartBenchmarkRun();
+            if (_benchPending)
+            {
+                if (!_skirmishStop.IsCompleted) return true;
+                _skirmishStop.GetAwaiter().GetResult(); // Includes the preceding run's recording footer.
+                StartBenchmarkRun();
+            }
             if (_benchReplay is { } replay)
             {
                 replay.Advance(_session);
@@ -404,8 +409,8 @@ public sealed partial class Game1
         // P789 — latch the recorder BEFORE the session/host are disposed; the
         // summary is pure computation and the save is handed off off-thread.
         CaptureSessionPerformance();
-        _session.Recording = null; _session.Dispose(); _benchRecording?.Dispose(); _benchRecording = null;
-        _skirmish?.Dispose(); _skirmish = null; _benchReplay = null;
+        RetireSkirmish();
+        _benchReplay = null;
         if (_benchSuggestion is null)
         {
             _benchRuns.Add(run);
@@ -459,10 +464,8 @@ public sealed partial class Game1
     private void FinishBenchmarkFailure(string reason, bool failed)
     {
         BenchmarkFailed = failed; _benchMeasuring = false; _benchPending = false;
-        _skirmishCancel?.Cancel();
-        _session.Recording = null; _session.Dispose();
-        _benchRecording?.Dispose(); _benchRecording = null;
-        _skirmish?.Dispose(); _skirmish = null; _benchReplay = null;
+        RetireSkirmish();
+        _benchReplay = null;
         if (_benchOriginal is { } original) ApplyBenchmarkSettings(original);
         _benchmarkApplied = _benchWasApplied; _upscaling.DynamicResolution = _benchOriginalDynamic;
         _ownShipPrediction = _benchOwnPrediction; _remoteShipDeadReckoning = _benchRemotePrediction;
@@ -483,8 +486,6 @@ public sealed partial class Game1
     private void DisposeBenchmark()
     {
         _benchmarkSharing?.Dispose();
-        _session.Recording = null;
-        _benchRecording?.Dispose(); _benchRecording = null;
     }
     internal static Matrix WithBenchmarkViewDistance(Matrix projection, float distance)
     {

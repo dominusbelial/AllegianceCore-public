@@ -2484,6 +2484,9 @@ list in **reverse**.
   `tests/_shared/P936NatShim.cs`. Report: `NAT_TRAVERSAL_P936.md`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
   (`SkirmishHost.cs`, `SkirmishOptions.cs`), hosted from `Game1.Skirmish.cs`.
+  All local start paths await the previous stop owner. Run-file retention and
+  redirected stderr draining live in `src/Allegiance.SinglePlayer/SkirmishRunFiles.cs`.
+  Timing and retention evidence are in `docs/reports/SKIRMISH_STOP_CLEANUP_P1093.md`.
 - **Station attack alerts (P1007)** — `src/Allegiance.Core/Sim/Station.cs`
   raises damage notifications after friendly immunity, experience scaling and
   shield eligibility; `src/Allegiance.Server/Server.Combat.cs` sends the native

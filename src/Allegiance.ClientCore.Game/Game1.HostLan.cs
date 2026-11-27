@@ -200,11 +200,8 @@ public sealed partial class Game1
                     {
                         var choices = _hostLanScreen.CreateOptions();
                         _skirmishError = "";
-                        _skirmishCancel?.Dispose();
-                        _skirmishCancel = new();
-                        var token = _skirmishCancel.Token;
                         string pilot = _pilotBuf.Length > 0 ? _pilotBuf.ToString() : _playerName;
-                        _skirmishStart = Task.Run(() => SkirmishHost.StartAsync(choices, cancellationToken: token, commanderPilotName: pilot));
+                        BeginSkirmish(choices, pilot);
                     }
                     catch (ArgumentException ex) { _skirmishError = ex.Message; }
                 }

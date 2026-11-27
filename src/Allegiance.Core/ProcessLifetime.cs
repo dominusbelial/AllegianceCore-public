@@ -51,11 +51,89 @@ public sealed class ProcessLifetime : IDisposable
         });
     }
 
+    /// <summary>After the supervisor exits, join even children it started before its ready
+    /// message. Unix workers share the supervisor's session and watch their parent.</summary>
+    public void WaitForChildren(int supervisorPid)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            if (!TerminateJobObject(_job, 1)) throw new System.ComponentModel.Win32Exception();
+            for (;;)
+            {
+                if (!QueryInformationJobObject(_job, 1, out var accounting, Marshal.SizeOf<JobAccounting>(), IntPtr.Zero))
+                    throw new System.ComponentModel.Win32Exception();
+                if (accounting.ActiveProcesses == 0) return;
+                Thread.Sleep(20);
+            }
+        }
+
+        // Signal zero only tests existence. A custom driver may have no private group.
+        while (kill(-supervisorPid, 0) == 0)
+        {
+            // A container init may keep dead adopted processes as zombies indefinitely.
+            if (OperatingSystem.IsLinux() && !Directory.EnumerateDirectories("/proc").Any(entry =>
+                int.TryParse(Path.GetFileName(entry), out int pid) && getpgid(pid) == supervisorPid && LinuxStart(pid) is not null))
+                break;
+            Thread.Sleep(25);
+        }
+    }
+
+    // Capture identity when the supervisor reports its workers. An ungrouped custom
+    // driver can close every pipe and exit before its last worker.
+    public static Action CaptureWorkerExit(int pid)
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            string? start = LinuxStart(pid);
+            return () =>
+            {
+                while (start is not null && LinuxStart(pid) == start) Thread.Sleep(25);
+            };
+        }
+        var exit = ObserveExitAsync(pid);
+        return exit.GetAwaiter().GetResult;
+    }
+
+    private static string? LinuxStart(int pid)
+    {
+        try
+        {
+            string stat = File.ReadAllText($"/proc/{pid}/stat");
+            // Field 2 is a parenthesized name which can itself contain ')'.
+            // Fields 3 and 22 are state and the process birth time in clock ticks.
+            string[] fields = stat[(stat.LastIndexOf(')') + 2)..].Split(' ');
+            return fields[0] is "Z" or "X" ? null : fields[19];
+        }
+        catch (IOException) { return null; } // Exited during the snapshot.
+    }
+
+    private static async Task ObserveExitAsync(int pid)
+    {
+        try
+        {
+            using var worker = Process.GetProcessById(pid);
+            await worker.WaitForExitAsync().ConfigureAwait(false);
+        }
+        catch (ArgumentException) { } // Already gone when ready was read.
+    }
+
     public void Dispose()
     {
         var job = Interlocked.Exchange(ref _job, IntPtr.Zero);
         if (job != IntPtr.Zero) CloseHandle(job);
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct JobAccounting
+    {
+        public long UserTime, KernelTime, PeriodUserTime, PeriodKernelTime;
+        public uint PageFaults, TotalProcesses, ActiveProcesses, TerminatedProcesses;
+    }
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool TerminateJobObject(IntPtr job, uint exitCode);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool QueryInformationJobObject(IntPtr job, int infoClass, out JobAccounting info, int length, IntPtr returned);
+    [DllImport("libc")] private static extern int getpgid(int pid);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct BasicLimits

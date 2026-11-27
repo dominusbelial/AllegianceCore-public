@@ -13,6 +13,7 @@ public sealed partial class Game1
     private Task<SkirmishHost>? _skirmishStart;
     private CancellationTokenSource? _skirmishCancel;
     private Task? _skirmishPause;
+    private Task _skirmishStop = Task.CompletedTask;
     private bool _skLeft, _skRight, _skPauseKey, _skExitKey;
     private string _skirmishError = "";
     private bool _skirmishSideRequested;
@@ -20,6 +21,21 @@ public sealed partial class Game1
     private bool _observerProofWaitExit;
     private (long Generation, short Ship) _humanCommanderSeat = (-1, -1);
     private double _humanCommanderRetryAt;
+
+    private void BeginSkirmish(SkirmishOptions options, string pilot = "skirmish-test-pilot")
+    {
+        if (_skirmish is not null || _skirmishStart is not null) return;
+        _skirmishCancel?.Dispose();
+        _skirmishCancel = new();
+        var token = _skirmishCancel.Token;
+        var previousStop = _skirmishStop;
+        _skirmishStart = Task.Run(async () =>
+        {
+            await previousStop.ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
+            return await SkirmishHost.StartAsync(options, cancellationToken: token, commanderPilotName: pilot).ConfigureAwait(false);
+        });
+    }
 
     private void UpdateSkirmishMenu(KeyboardState keys, bool up, bool down, bool enter, bool esc)
     {
@@ -43,12 +59,9 @@ public sealed partial class Game1
                 if (_skirmishScreen.Selected == SkirmishScreenModel.StartRow)
                 {
                     _skirmishError = "";
-                    _skirmishCancel?.Dispose();
-                    _skirmishCancel = new();
                     var choices = _skirmishScreen.Options;
-                    var token = _skirmishCancel.Token;
                     string pilot = _pilotBuf.Length > 0 ? _pilotBuf.ToString() : _playerName;
-                    _skirmishStart = Task.Run(() => SkirmishHost.StartAsync(choices, cancellationToken: token, commanderPilotName: pilot));
+                    BeginSkirmish(choices, pilot);
                 }
                 else if (_skirmishScreen.Selected == SkirmishScreenModel.BackRow) _introView = IntroView.Main;
                 else _skirmishScreen.Change(1);
@@ -72,7 +85,6 @@ public sealed partial class Game1
                 || Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_AUTO") is { Length: > 0 }))
         {
             _observerAutoStarted = true;
-            _skirmishCancel = new();
             // SP-6 — ALLEGIANCE_SKIRMISH_SPEED lets a live proof show a chosen speed's status bar.
             var observerOptions = new SkirmishOptions { StartAsSpectator = true };
             if (Enum.TryParse<SkirmishSpeed>(Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SPEED"), ignoreCase: true, out var speed))
@@ -81,7 +93,7 @@ public sealed partial class Game1
             // proof (e.g. Epic for the recorder on/off A-B measurement).
             if (Enum.TryParse<SkirmishSize>(Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SIZE"), ignoreCase: true, out var proofSize))
                 observerOptions = observerOptions with { Size = proofSize };
-            _skirmishStart = SkirmishHost.StartAsync(observerOptions, cancellationToken: _skirmishCancel.Token);
+            BeginSkirmish(observerOptions);
         }
         if (_skirmishStart is { IsCompleted: true } start)
         {
@@ -122,6 +134,15 @@ public sealed partial class Game1
             try { pause.GetAwaiter().GetResult(); }
             catch (Exception ex) { _skirmishError = "Pause failed: " + ex.Message; }
         }
+        bool ctrl = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl);
+        bool exitKey = ctrl && keys.IsKeyDown(Keys.F10);
+        if (_skirmish is not null && _benchmark is null && exitKey && !_skExitKey)
+        {
+            _skExitKey = true;
+            StopSkirmish();
+            return;
+        }
+        _skExitKey = exitKey;
         // Keep the human's own payday when taking command (native opt-out,
         // FedSrv/FedSrv.CPP:5535-5544). Workers vote/donate via ordinary AUTODONATE.
         if (_skirmish?.Options.Commander == SkirmishCommander.You)
@@ -139,15 +160,9 @@ public sealed partial class Game1
                     _skirmish.SetFocusSector(ship.SectorId);
         UpdateSeatChange();
         if (_skirmish?.Options.HostLan != true) HandleSkirmishSeatKeys(keys);
-        bool ctrl = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl);
         bool pauseKey = keys.IsKeyDown(Keys.Pause) || (ctrl && keys.IsKeyDown(Keys.P));
-        bool exitKey = ctrl && keys.IsKeyDown(Keys.F10);
-        if (_skirmish is not null && _benchmark is null)
-        {
-            if (pauseKey && !_skPauseKey) ToggleSkirmishPause();
-            if (exitKey && !_skExitKey) StopSkirmish();
-        }
-        _skPauseKey = pauseKey; _skExitKey = exitKey;
+        if (_skirmish is not null && _benchmark is null && pauseKey && !_skPauseKey) ToggleSkirmishPause();
+        _skPauseKey = pauseKey;
     }
 
     private void ToggleSkirmishPause()
@@ -160,33 +175,72 @@ public sealed partial class Game1
     {
         // P789 — leaving a Showcase (or any match) early still latches the
         // recorder's summary once, off the frame path.
+        if (_skirmish is null && _skirmishStart is null) return;
         bool wasLanHost = _skirmish?.Options.HostLan == true;
         CaptureSessionPerformance();
-        _skirmishCancel?.Cancel();
-        _session.Dispose();
-        _skirmish?.Dispose();
-        _skirmish = null;
+        RetireSkirmish();
         _localSpectating = false;
-        _seatChange = null;
-        _requestedSeat = null;
-        _skirmishCancel?.Dispose();
-        _skirmishCancel = null;
+        _observation = null;
         _mainMenuVisible = false;
         _state = ClientState.Intro;
         _introView = wasLanHost ? IntroView.HostLan : IntroView.SinglePlayer;
         _skirmishError = "";
     }
 
+    // The UI drops every reference that could act on the retiring match.
+    // All start paths await this exact completion, including LAN port reuse.
+    private void RetireSkirmish(bool replaceSession = true)
+    {
+        var previousStop = _skirmishStop;
+        var session = _session;
+        var recording = _benchRecording;
+        _benchRecording = null;
+        session.Recording = null;
+        var host = _skirmish;
+        var start = _skirmishStart;
+        var cancel = _skirmishCancel;
+        var pause = _skirmishPause;
+        var seat = _seatChange;
+        _skirmish = null;
+        _skirmishStart = null;
+        _skirmishCancel = null;
+        _skirmishPause = null;
+        _seatChange = null;
+        _requestedSeat = null;
+        if (replaceSession)
+        {
+            _session = new();
+            WireSession(_session);
+        }
+        _skirmishStop = Task.Run(async () =>
+        {
+            using (cancel)
+            {
+                cancel?.Cancel();
+                if (start is not null)
+                {
+                    try { host = await start.ConfigureAwait(false); }
+                    catch (Exception) when (start.IsCanceled || start.IsFaulted)
+                    { /* StartAsync finishes partial-host cleanup before reporting its failure. */ }
+                }
+                var stop = host?.StopAsync() ?? Task.CompletedTask;
+                try
+                {
+                    try { session.Dispose(); }
+                    finally { recording?.Dispose(); }
+                    try { await Task.WhenAll(pause ?? Task.CompletedTask, seat ?? Task.CompletedTask).ConfigureAwait(false); }
+                    catch (Exception) { /* Observe commands whose match has ended. */ }
+                }
+                finally { await Task.WhenAll(previousStop, stop).ConfigureAwait(false); }
+            }
+        });
+    }
+
     private void DisposeSkirmish()
     {
-        _skirmishCancel?.Cancel();
-        if (_skirmishStart is { } start)
-        {
-            try { start.GetAwaiter().GetResult().Dispose(); }
-            catch (Exception) { /* Startup already disposes its partially constructed host. */ }
-        }
-        _skirmish?.Dispose();
-        _skirmishCancel?.Dispose();
+        if (_skirmish is not null || _skirmishStart is not null || _skirmishCancel is not null || _benchRecording is not null)
+            RetireSkirmish(replaceSession: false);
+        _skirmishStop.GetAwaiter().GetResult();
     }
 
     private void DrawSkirmishStatus()

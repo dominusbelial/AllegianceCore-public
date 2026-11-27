@@ -23,6 +23,9 @@ public sealed partial class SkirmishHost : IDisposable
     private InternetHostPublisher? _internet;
     private long _request, _heartbeat;
     private int _disposed;
+    private readonly object _stopGate = new();
+    private Task? _stopping;
+    private Action[] _workerExits = [];
     private string? _failure;
     private int[] _workerIds = [];
     private int _focusSector = -1;
@@ -48,7 +51,7 @@ public sealed partial class SkirmishHost : IDisposable
     internal Srv Server => _server;
     internal T OnSimulation<T>(Func<Srv, T> action) { lock (_simGate) return action(_server); }
 
-    private SkirmishHost(SkirmishOptions options)
+    private SkirmishHost(SkirmishOptions options, string directory)
     {
         Options = options;
         _server = new() { AllowSinglePlayerPause = !options.HostLan, RequireLanListeners = options.HostLan, RequireUdpIntroductions = options.HostInternet };
@@ -56,16 +59,23 @@ public sealed partial class SkirmishHost : IDisposable
         // P889 — size the bot driver from the same shared-machine budget the
         // server resolver uses (client + bot reserve), not a flat "cores - 2".
         Budget = SkirmishBudget.ForOptions(options, Environment.ProcessorCount);
-        DirectoryPath = Path.Combine(Path.GetTempPath(), "allegiance-skirmish-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(DirectoryPath);
+        DirectoryPath = directory;
     }
 
-    public static async Task<SkirmishHost> StartAsync(SkirmishOptions options, string? driverPath = null,
+    public static Task<SkirmishHost> StartAsync(SkirmishOptions options, string? driverPath = null,
         string? artwork = null, CancellationToken cancellationToken = default, string commanderPilotName = "skirmish-test-pilot")
+        => StartInDirectoryAsync(options, Path.Combine(Path.GetTempPath(), SkirmishRunFiles.Prefix + Guid.NewGuid().ToString("N")),
+            driverPath, artwork, cancellationToken, commanderPilotName);
+
+    internal static async Task<SkirmishHost> StartInDirectoryAsync(SkirmishOptions options, string directory,
+        string? driverPath = null, string? artwork = null, CancellationToken cancellationToken = default,
+        string commanderPilotName = "skirmish-test-pilot")
     {
-        var host = new SkirmishHost(options);
+        var host = new SkirmishHost(options, directory);
         try
         {
+            if (OperatingSystem.IsWindows()) Directory.CreateDirectory(directory);
+            else Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             var config = options.CreateConfig(artwork);
             // A LAN game's password never reaches the temp folder; Boot takes the config below.
             if (!options.HostLan)
@@ -118,7 +128,8 @@ public sealed partial class SkirmishHost : IDisposable
             start.Environment["ALLEGIANCE_GUNNERS"] = options.BotGunners ? "on" : "off";
             host._driver = Process.Start(start) ?? throw new IOException("Bot driver failed to start");
             host._ownership.Attach(host._driver);
-            host._stderr = host.CopyLogAsync(host._driver.StandardError);
+            host._stderr = SkirmishRunFiles.DrainLogAsync(host._driver.StandardError.BaseStream,
+                () => File.Create(Path.Combine(host.DirectoryPath, "driver.log")));
             host._reader = host.ReadAsync();
             // No worker may start before Windows job assignment has completed.
             await host._driver.StandardInput.WriteLineAsync("start");
@@ -130,7 +141,12 @@ public sealed partial class SkirmishHost : IDisposable
             cancellationToken.ThrowIfCancellationRequested();
             return host;
         }
-        catch { host.Dispose(); throw; }
+        catch (Exception ex)
+        {
+            if (ex is not OperationCanceledException) Interlocked.CompareExchange(ref host._failure, ex.Message, null);
+            await host.StopAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     // LOGON_REQUEST trims trailing spaces and encodes Latin-1; roster names
@@ -174,20 +190,13 @@ public sealed partial class SkirmishHost : IDisposable
         catch (Exception ex) { Fail("Embedded server stopped: " + ex.Message); }
     }
 
-    private async Task CopyLogAsync(StreamReader source)
-    {
-        await using var log = File.CreateText(Path.Combine(DirectoryPath, "driver.log"));
-        while (await source.ReadLineAsync() is { } line)
-        {
-            await log.WriteLineAsync(line);
-            await log.FlushAsync();
-        }
-    }
-
     private void Fail(string message)
     {
-        if (Volatile.Read(ref _disposed) != 0) return;
-        Interlocked.CompareExchange(ref _failure, message, null);
+        lock (_stopGate)
+        {
+            if (_disposed != 0) return;
+            Interlocked.CompareExchange(ref _failure, message, null);
+        }
         _ready.TrySetException(new IOException(message));
         foreach (var (_, pending) in _pending) pending.TrySetResult(message);
     }
@@ -198,12 +207,14 @@ public sealed partial class SkirmishHost : IDisposable
         {
             while (await _driver!.StandardOutput.ReadLineAsync() is { } line)
             {
+                if (_stop.IsCancellationRequested) continue;
                 using var document = JsonDocument.Parse(line);
                 var root = document.RootElement;
                 switch (root.GetProperty("type").GetString())
                 {
-                    case "ready":
+                    case "ready" when !_ready.Task.IsCompleted:
                         _workerIds = root.GetProperty("pids").Deserialize<int[]>()!;
+                        _workerExits = _workerIds.Select(ProcessLifetime.CaptureWorkerExit).ToArray();
                         Interlocked.Exchange(ref _heartbeat, Environment.TickCount64);
                         _ready.TrySetResult();
                         break;
@@ -216,7 +227,7 @@ public sealed partial class SkirmishHost : IDisposable
                         {
                             int focus = Volatile.Read(ref _focusSector);
                             var command = new SkirmishFocusCommand(Interlocked.Increment(ref _request), "focus", focus < 0 ? null : (short)focus);
-                            await _driver!.StandardInput.WriteLineAsync(JsonSerializer.Serialize(command, SkirmishProtocolContext.Default.SkirmishFocusCommand));
+                            await _driver!.StandardInput.WriteLineAsync(JsonSerializer.Serialize(command, SkirmishProtocolContext.Default.SkirmishFocusCommand).AsMemory(), _stop.Token);
                             await _driver.StandardInput.FlushAsync(_stop.Token);
                         }
                         finally { _writes.Release(); }
@@ -229,13 +240,21 @@ public sealed partial class SkirmishHost : IDisposable
             }
             Fail("Bot driver exited. Exit and start a new skirmish. Log: " + DirectoryPath);
         }
-        catch (Exception ex) { Fail("Bot driver connection lost: " + ex.Message); }
+        catch (Exception ex)
+        {
+            Fail("Bot driver connection lost: " + ex.Message);
+            // A broken protocol or a cancelled focus write does not close the pipe.
+            try { await _driver!.StandardOutput.BaseStream.CopyToAsync(Stream.Null).ConfigureAwait(false); }
+            catch (IOException) { } // The read end itself has failed.
+        }
     }
 
     public async Task SetPausedAsync(bool paused, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed != 0, this);
         if (Options.HostLan) throw new InvalidOperationException("LAN games cannot be paused.");
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(ct, _stop.Token);
+        ct = lifetime.Token;
         long id = Interlocked.Increment(ref _request);
         var reply = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = reply;
@@ -250,14 +269,30 @@ public sealed partial class SkirmishHost : IDisposable
             finally { _writes.Release(); }
             var error = await reply.Task.WaitAsync(TimeSpan.FromSeconds(15), ct);
             if (error is not null) throw new IOException(error);
-            lock (_simGate) _server.SetSinglePlayerPaused(paused);
+            lock (_simGate)
+            {
+                ct.ThrowIfCancellationRequested();
+                _server.SetSinglePlayerPaused(paused);
+            }
         }
         finally { _pending.TryRemove(id, out _); }
     }
 
-    public void Dispose()
+    public void Dispose() => StopAsync().GetAwaiter().GetResult();
+
+    public Task StopAsync()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        lock (_stopGate)
+        {
+            if (_stopping is not null) return _stopping;
+            Interlocked.Exchange(ref _disposed, 1);
+            string? failure = Failure;
+            return _stopping = Task.Run(() => Stop(failure));
+        }
+    }
+
+    private void Stop(string? failure)
+    {
         _stop.Cancel();
         _internet?.Dispose();
         if (Options.HostLan)
@@ -270,19 +305,36 @@ public sealed partial class SkirmishHost : IDisposable
         foreach (var (_, pending) in _pending) pending.TrySetResult("Skirmish stopped");
         if (_driver is { } driver)
         {
-            try
+            // Closing a redirected writer can itself block on a full pipe. Keep
+            // the grace period independent of it and of any in-flight write.
+            var closeInput = Task.Run(() =>
             {
-                driver.StandardInput.Close();
-                if (!driver.WaitForExit(5000)) { driver.Kill(entireProcessTree: true); driver.WaitForExit(5000); }
-                Task.WaitAll(new[] { _reader ?? Task.CompletedTask, _stderr ?? Task.CompletedTask }, 5000);
+                _writes.Wait();
+                try { driver.StandardInput.Close(); }
+                catch (IOException) { } // Already closed by the child.
+                finally { _writes.Release(); }
+            });
+            if (!driver.WaitForExit(5000))
+            {
+                try { driver.Kill(entireProcessTree: true); }
+                catch (InvalidOperationException) when (driver.HasExited) { }
+                catch (System.ComponentModel.Win32Exception ex)
+                { Console.Error.WriteLine("[skirmish] waiting for driver after tree kill failed: " + ex.Message); }
+                driver.WaitForExit();
             }
-            catch (InvalidOperationException) { }
-            catch (AggregateException) { }
+            _ownership.WaitForChildren(driver.Id);
+            _ownership.Dispose();
+            try { Task.WhenAll(closeInput, _reader ?? Task.CompletedTask, _stderr ?? Task.CompletedTask).GetAwaiter().GetResult(); }
+            catch (IOException ex) { Console.Error.WriteLine("[skirmish] driver pipe closed: " + ex.Message); }
+            foreach (var waitForExit in _workerExits) waitForExit();
             driver.Dispose();
         }
-        _ownership.Dispose();
+        else _ownership.Dispose();
         _ticker?.Join();
-        _server.Dispose();
+        _seatChanges.Wait();
+        try { lock (_simGate) _server.Dispose(); }
+        finally { _seatChanges.Release(); }
         _stop.Dispose();
+        SkirmishRunFiles.Finish(DirectoryPath, failure);
     }
 }

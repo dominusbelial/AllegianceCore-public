@@ -5,5 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
+    <InternalsVisibleTo Include="Allegiance.ClientCore.MonoGame.Tests" />
   </ItemGroup>
 </Project>
