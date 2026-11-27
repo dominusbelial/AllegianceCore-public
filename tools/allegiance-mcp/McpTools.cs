@@ -1256,6 +1256,11 @@ internal static partial class McpTools
             routes = mgr.RouteArrivals()
                 .Select(r => new { side = r.Side, routeIndex = r.RouteIndex, route = r.RouteName, assigned = r.Assigned, arrived = r.Arrived })
                 .ToList(),
+            decisionFailures = new
+            {
+                consecutiveWorkerPasses = ps.ConsecutiveWorkerPasses,
+                bots = ps.FailedBots.Select(b => new { name = b.Name, consecutiveBotPasses = b.Passes }),
+            },
         }));
     }
 

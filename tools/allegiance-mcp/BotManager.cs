@@ -110,6 +110,8 @@ internal sealed partial class BotManager : IDisposable
     private double _lastDecodeWall;
     private double _decodeMbPerSec;
     private double _lastPassMs;
+    private volatile int _consecutiveDecisionFailures;
+    private long _nextDecisionFailureLogMs = long.MinValue;
     // P636b — the real decision cadence: wall-clock ms between consecutive pass
     // STARTS (includes the fixed-cadence sleep). This is what DecisionRateHz must
     // reflect — the P636 metric fed it the pass WORK time (1000/workMs), which
@@ -1776,11 +1778,46 @@ internal sealed partial class BotManager : IDisposable
             lastPassStartMs = passStartMs;
             var passSw = Stopwatch.StartNew();
             _stallTelemetry.Metrics.BeginPass();
+            try { RunDecisionPass(); }
+            finally
+            {
+                // Keep the stall pass open through resource sampling too: a
+                // wait in that work must be visible as an unfinished/long pass.
+                try { RecordPass(passSw.Elapsed.TotalMilliseconds); } catch { }
+                passSw.Stop();
+                _stallTelemetry.Metrics.EndPass(passSw.Elapsed.TotalMilliseconds);
+            }
+
+            // P633 — FIXED decision cadence (item 2): sleep `target − elapsed`,
+            // never `50 ms + pass time`, so a busy fight keeps bots deciding on
+            // time (a slow pass no longer drags the decision interval out).
+            // P636b — via the deadline scheduler, which NEVER busy-spins: even a
+            // pass that overshoots its tick yields a minimum sleep so the loop
+            // can't starve the receive threads (the P636 runaway at 200v200).
+            double sleepMs;
+            lock (_pauseGate)
+            {
+                if (_paused)
+                {
+                    // The gameplay clock is stopped. Do not accumulate future deadlines
+                    // while paused or delay the bot's first resumed decision.
+                    _cadence.Begin(Now() * 1000.0);
+                    sleepMs = 50;
+                }
+                else sleepMs = _cadence.SleepForRemainder(Now() * 1000.0);
+            }
+            if (sleepMs > 0) Thread.Sleep((int)sleepMs);
+        }
+    }
+
+    internal void RunDecisionPass()
+    {
+        lock (_pauseGate)
+        {
+            if (_paused) return;
+            bool failed = false;
             try
             {
-                lock (_pauseGate)
-                if (!_paused)
-                {
                 double now = Now();
                 long coordinationEpoch = CoordinationEpoch;
                 ActiveBot[] snap;
@@ -2007,8 +2044,14 @@ bool isThreat =
                         // intent to the new ship so a bot-driven showcase auto-
                         // starts the next wave.
                         ReReadyBot(bot);
+                        bot.ConsecutiveDecisionFailures = 0;
                     }
-                    catch { /* one bot's tick failure never kills the loop */ }
+                    catch (Exception ex)
+                    {
+                        if (bot.ConsecutiveDecisionFailures < int.MaxValue) ++bot.ConsecutiveDecisionFailures;
+                        if (!failed) RecordDecisionFailure(ex, bot);
+                        failed = true;
+                    }
                 }
 
                 // P622 — end of pass: publish the completed engager distribution
@@ -2027,38 +2070,26 @@ bool isThreat =
                 try { ReReadyProbe(); } catch { }
                 SampleIdleTargets(snap, now);
                 if (Partition is not null) PublishCoordination(snap, now, coordinationEpoch);
-                }
+                if (!failed) _consecutiveDecisionFailures = 0;
             }
-            catch { }
-            finally
+            catch (Exception ex)
             {
-                // Keep the stall pass open through resource sampling too: a
-                // wait in that work must be visible as an unfinished/long pass.
-                try { RecordPass(passSw.Elapsed.TotalMilliseconds); } catch { }
-                passSw.Stop();
-                _stallTelemetry.Metrics.EndPass(passSw.Elapsed.TotalMilliseconds);
+                if (!failed) RecordDecisionFailure(ex, null);
             }
-
-            // P633 — FIXED decision cadence (item 2): sleep `target − elapsed`,
-            // never `50 ms + pass time`, so a busy fight keeps bots deciding on
-            // time (a slow pass no longer drags the decision interval out).
-            // P636b — via the deadline scheduler, which NEVER busy-spins: even a
-            // pass that overshoots its tick yields a minimum sleep so the loop
-            // can't starve the receive threads (the P636 runaway at 200v200).
-            double sleepMs;
-            lock (_pauseGate)
-            {
-                if (_paused)
-                {
-                    // The gameplay clock is stopped. Do not accumulate future deadlines
-                    // while paused or delay the bot's first resumed decision.
-                    _cadence.Begin(Now() * 1000.0);
-                    sleepMs = 50;
-                }
-                else sleepMs = _cadence.SleepForRemainder(Now() * 1000.0);
-            }
-            if (sleepMs > 0) Thread.Sleep((int)sleepMs);
         }
+    }
+
+    // Only the decision thread advances streaks. A partial pass counts once
+    // even if several bots throw or the remaining worker-wide work fails.
+    private void RecordDecisionFailure(Exception error, ActiveBot? bot)
+    {
+        if (_consecutiveDecisionFailures < int.MaxValue) ++_consecutiveDecisionFailures;
+        long now = Environment.TickCount64;
+        if (now < _nextDecisionFailureLogMs) return;
+        _nextDecisionFailureLogMs = now + 30_000;
+        string detail = error.Message.ReplaceLineEndings(" ");
+        string source = bot is null ? "" : $" bot={bot.Name} consecutiveBotPasses={bot.ConsecutiveDecisionFailures}";
+        Console.Error.WriteLine($"[bot-decision] worker={(Partition?.Index ?? 0) + 1} consecutiveWorkerPasses={_consecutiveDecisionFailures}{source} {error.GetType().Name}: {detail}");
     }
 
     // P598 — the probe ship id the MCP last readied for (-1 = not readied yet).
@@ -5795,10 +5826,13 @@ bool isThreat =
     public BotPerfReport GetPerfStats(string? botFilter)
     {
         var cadence = new List<BotCadence>();
+        var failedBots = new List<(string Name, int Passes)>();
         lock (_gate)
         {
             foreach (var bot in _bots)
             {
+                int failures = bot.ConsecutiveDecisionFailures;
+                if (failures > 0) failedBots.Add((bot.Name, failures));
                 if (botFilter is { Length: > 0 } && !bot.Name.Contains(botFilter, StringComparison.OrdinalIgnoreCase))
                     continue;
                 CadenceSample[] arr;
@@ -5846,7 +5880,11 @@ bool isThreat =
             snapAge,
             (snapPubPerSec, snapPubMsPerSec, dlMean, dlP95, dlMax),
             _stallTelemetry.Snapshot(),
-            _idleTargetMetrics.Snapshot(Now(), botFilter));
+            _idleTargetMetrics.Snapshot(Now(), botFilter))
+        {
+            ConsecutiveWorkerPasses = _consecutiveDecisionFailures,
+            FailedBots = failedBots,
+        };
     }
 
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
@@ -6204,6 +6242,7 @@ bool isThreat =
         public BotClass? Bot;
         public ConnectionSession? Cs;
 
+        public volatile int ConsecutiveDecisionFailures;
         public long AiDecisions;
         public double LastAiDecision = double.NegativeInfinity;
         public long DecisionCpuNanoseconds;
@@ -6614,7 +6653,11 @@ public readonly record struct BotPerfReport(
     (double MeanMs, double P95Ms, double MaxMs) SnapAgeMs,
     (double PublishPerSec, double PublishMsPerSec, double DecodeLagMean, double DecodeLagP95, double DecodeLagMax) SnapshotStats,
     StallReport Stall,
-    IdleTargetReport IdleWithTarget);
+    IdleTargetReport IdleWithTarget)
+{
+    public int ConsecutiveWorkerPasses { get; init; }
+    public IReadOnlyList<(string Name, int Passes)> FailedBots { get; init; } = [];
+}
 
 /// <summary>P431 — one bot tick's accept-and-translate decision (see
 /// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a

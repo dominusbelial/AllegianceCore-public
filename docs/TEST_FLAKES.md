@@ -11385,3 +11385,13 @@ retries instead reached line 251 with a `DelPositionReq` for side −1, reason
 `SideGone`. The third passed. The unmodified base server at `28debb3c`
 passed the first 13 isolated attempts and reproduced that same line-251
 receipt on attempt 14. [P1094 sweep and isolation](reports/LATE_MATCH_UPDATE_SPIKES_P1094.md#fast-sweep-and-isolation)
+## P1095 Fast sweep, 2026-11-27
+
+The two P1091 1920×1080 default-scale HUD pixel checks failed in the software GL sweep. Each case failed in three fresh isolated test hosts under Xvfb. All six runs reached the full-image hash assertion. Rebuilding the dispatch SinglePlayer assembly and running the unchanged HUD proof produced the same two hashes, with zero layout errors in either style.
+
+| P1091 default HUD | Expected SHA-256 | Observed here and on dispatch |
+|---|---|---|
+| Classic | `DEAF3D5912741439BF1F8487539FECD77D9B457AB629427824F5C18F0A310333` | `C100F69A43C7A4E8DE520F90D3DD9675EE813BA149F6A7BF83715465E78C73C1` |
+| Modern | `28FB84F3BD41A1886F25D682CA62FB590F10FEDF101AEB5C9D82FB98117D62E2` | `1093B39B5B9BA1616BF0C8AD8D27D83BA6DC81FF5B1DF46EBEC58618246F6364` |
+
+This is a repeatable baseline mismatch on this machine. Its rendering cause is unverified. [P1095 gate report](reports/BOT_DECISION_HEALTH_P1095.md)

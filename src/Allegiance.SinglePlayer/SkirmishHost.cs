@@ -31,6 +31,7 @@ public sealed partial class SkirmishHost : IDisposable
     private int _focusSector = -1;
     public void SetFocusSector(short? sector) => Volatile.Write(ref _focusSector, sector ?? -1);
     private JsonElement _stats;
+    private bool _decisionWarning;
     private readonly object _statsGate = new();
     private readonly List<double> _benchmarkTicks = [];
     private bool _measureTicks;
@@ -201,6 +202,32 @@ public sealed partial class SkirmishHost : IDisposable
         foreach (var (_, pending) in _pending) pending.TrySetResult(message);
     }
 
+    // The heartbeat's healthy bit tracks the driver process and RPC. A decision
+    // streak is recoverable and must not fault a pending command or the match.
+    internal void ReadHealth(JsonElement root)
+    {
+        Interlocked.Exchange(ref _heartbeat, Environment.TickCount64);
+        var stats = root.GetProperty("stats").Clone();
+        lock (_statsGate) _stats = stats;
+        if (!root.GetProperty("healthy").GetBoolean())
+        {
+            Fail("A bot worker stopped. Exit and start a new skirmish.");
+            return;
+        }
+
+        int worst = 0;
+        if (stats.ValueKind == JsonValueKind.Object && stats.TryGetProperty("decisionFailures", out var failures))
+        {
+            worst = failures.GetProperty("consecutiveWorkerPasses").GetInt32();
+            foreach (var bot in failures.GetProperty("bots").EnumerateArray())
+                worst = Math.Max(worst, bot.GetProperty("consecutiveBotPasses").GetInt32());
+        }
+        bool degraded = worst >= 3;
+        if (degraded && !_decisionWarning)
+            Console.Error.WriteLine($"[skirmish] Bot decisions degraded ({worst} consecutive failed passes). See worker logs.");
+        _decisionWarning = degraded;
+    }
+
     private async Task ReadAsync()
     {
         try
@@ -219,9 +246,7 @@ public sealed partial class SkirmishHost : IDisposable
                         _ready.TrySetResult();
                         break;
                     case "health":
-                        Interlocked.Exchange(ref _heartbeat, Environment.TickCount64);
-                        lock (_statsGate) _stats = root.GetProperty("stats").Clone();
-                        if (!root.GetProperty("healthy").GetBoolean()) Fail("A bot worker stopped. Exit and start a new skirmish.");
+                        ReadHealth(root);
                         await _writes.WaitAsync(_stop.Token);
                         try
                         {

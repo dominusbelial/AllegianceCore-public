@@ -2493,6 +2493,10 @@ list in **reverse**.
   All local start paths await the previous stop owner. Run-file retention and
   redirected stderr draining live in `src/Allegiance.SinglePlayer/SkirmishRunFiles.cs`.
   Timing and retention evidence are in `docs/reports/SKIRMISH_STOP_CLEANUP_P1093.md`.
+  Decision health in `tools/allegiance-mcp/BotManager.cs` counts consecutive failed
+  worker passes and individual bot decisions. The skirmish heartbeat reports the
+  worst worker streak and the affected bots. A recoverable host warning appears at
+  three failures. Proof in `docs/reports/BOT_DECISION_HEALTH_P1095.md`.
 - **Station attack alerts (P1007)** — `src/Allegiance.Core/Sim/Station.cs`
   raises damage notifications after friendly immunity, experience scaling and
   shield eligibility; `src/Allegiance.Server/Server.Combat.cs` sends the native
