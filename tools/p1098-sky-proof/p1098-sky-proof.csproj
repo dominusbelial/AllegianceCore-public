@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <None Update="frames.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="../p1090-smoke-proof/DesktopProofContent.cs" Link="DesktopProofContent.cs" />
+    <None Include="../../src/Allegiance.ClientCore.MonoGame/Content/Shaders/*.mgfxo" Link="Content/Shaders/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <ProjectReference Include="../mdl-to-glb/mdl-to-glb.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+</Project>

@@ -42,6 +42,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
 
     private SimStarLayer? _simStars;
     private DataClusterIGC _spaceCluster;
+    private readonly SkyEffect _effect;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
@@ -51,7 +52,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     private SpaceStarRenderer? _nativeTails;
     private VertexStar[] _tailStars = [];
     private readonly LensFlareRenderer _simSun;
-    private NativeStar[] _stars = [];
+    private VertexPositionColor[] _stars = [];
     private uint _starSeed;
     private short _nStars = -1;
 #if BROWSER
@@ -75,6 +76,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     public NativeSkyRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _effect = new(gd);
         _simSun = new LensFlareRenderer(gd, assets);
         _assets = assets;
         _missing = new(assets);
@@ -117,9 +119,17 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         _simSun.SetLightDirection(SimGlare.TowardLight(cluster));
         if (cluster.StarSeed != _starSeed || cluster.Stars != _nStars)
         {
-            _stars = NativeSkyMath.GenerateStars(cluster.StarSeed, cluster.Stars);
-            _tailStars = _stars.Select(s => new VertexStar(new Vector3(s.DirX, s.DirY, s.DirZ),
-                new Color((byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f), (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f), (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f)))).ToArray();
+            var stars = NativeSkyMath.GenerateStars(cluster.StarSeed, cluster.Stars);
+            _stars = new VertexPositionColor[stars.Length];
+            _tailStars = new VertexStar[stars.Length];
+            for (int i = 0; i < stars.Length; i++)
+            {
+                var star = stars[i];
+                byte b = (byte)(Math.Clamp(star.Brightness, 0f, 1f) * 255f);
+                var color = new Color(b, b, b);
+                _stars[i] = new(NativeSkyPlacement.StarShellPosition(star, StarRadius, Vector3.Zero), color);
+                _tailStars[i] = new(new Vector3(star.DirX, star.DirY, star.DirZ), color);
+            }
             _starSeed = cluster.StarSeed;
             _nStars = cluster.Stars;
         }
@@ -196,7 +206,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             }
             else if (_stars.Length > 0)
             {
-                DrawStars(view, skyProj, cameraEye);
+                DrawStars(view, skyProj);
                 if (frame.Streaks || _nativeTails is not null)
                     (_nativeTails ??= new SpaceStarRenderer(gd)).Draw(_tailStars, view, skyProj, frame, drawPoints: false);
             }
@@ -230,44 +240,20 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         _planet.InvalidateMissingArt();
     }
 
-    private void DrawStars(Matrix view, Matrix projection, Vector3 cameraEye)
+    private void DrawStars(Matrix view, Matrix projection)
     {
         var gd = _gd;
         gd.BlendState = BlendState.Additive;
 
-        var scratch = new VertexPositionColor[_stars.Length];
-        for (int i = 0; i < _stars.Length; i++)
-        {
-            var s = _stars[i];
-            // P576b — camera-relative: the flight view is CreateLookAt(Zero, …),
-            // i.e. the camera sits at the origin, so stars go on a shell around
-            // the origin, never offset by cameraEye (ChaseCamera.cs:205).
-            var pos = NativeSkyPlacement.StarShellPosition(s, StarRadius, cameraEye);
-            byte b = (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f);
-            scratch[i] = new VertexPositionColor(pos, new Color(b, b, b));
-        }
-
-        using var effect = new BasicEffect(gd)
-        {
-            VertexColorEnabled = true,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-            LightingEnabled = false,
-        };
-#if BROWSER
+        var effect = _effect.Prepare(null, Vector3.One, view, projection, Matrix.Identity);
         for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
         {
             var pass = effect.CurrentTechnique.Passes[passIndex];
-#else
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-#endif
             pass.Apply();
 #if BROWSER
-            gd.DrawUserPrimitives(PrimitiveType.LineList, BrowserStarDots.Expand(scratch, ref _starDots), 0, scratch.Length);
+            gd.DrawUserPrimitives(PrimitiveType.LineList, BrowserStarDots.Expand(_stars, ref _starDots), 0, _stars.Length);
 #else
-            gd.DrawUserPrimitives(PrimitiveType.PointList, scratch, 0, scratch.Length);
+            gd.DrawUserPrimitives(PrimitiveType.PointList, _stars, 0, _stars.Length);
 #endif
         }
     }
@@ -278,22 +264,10 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         var gd = _gd;
         gd.BlendState = BlendState.AlphaBlend;   // premultiplied colorkeyed texture
 
-        using var effect = new BasicEffect(gd)
+        var effect = _effect.Prepare(_activeEnvTexture, Vector3.One, view, projection, NativeSkyPlacement.DomeWorld(cameraEye));
+        for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
         {
-            TextureEnabled = true,
-            Texture = _activeEnvTexture,
-            VertexColorEnabled = true,           // white vertices (colorkeyed premultiplied tex)
-            LightingEnabled = false,             // ShadeModeCopy: unlit
-            View = view,
-            Projection = projection,
-            // P576b — camera-relative view: the dome is centred ON the camera
-            // (origin). Identity world — never CreateTranslation(cameraEye),
-            // which would push it thousands of units away in view space.
-            World = NativeSkyPlacement.DomeWorld(cameraEye),
-        };
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
+            effect.CurrentTechnique.Passes[i].Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, dome.Vertices, 0, dome.VertexCount, dome.Indices, 0, dome.PrimitiveCount);
         }
     }
@@ -419,6 +393,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
 
     public void Dispose()
     {
+        _effect.Dispose();
         _simStars?.Dispose(); _nativeTails?.Dispose(); _simSun.Dispose();
         _planet.Dispose();
         foreach (var t in _textures.Values) t.Dispose();

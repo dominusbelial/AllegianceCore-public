@@ -41,6 +41,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../tools/p1090-smoke-proof/p1090-smoke-proof.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../tools/p1098-sky-proof/p1098-sky-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/skirmish-proof/skirmish-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p997-construction-proof/p997-construction-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/p921-lod-proof/p921-lod-proof.csproj" ReferenceOutputAssembly="false" />

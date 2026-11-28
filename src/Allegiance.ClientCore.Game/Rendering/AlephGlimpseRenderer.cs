@@ -183,6 +183,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
         _gd = gd;
         _sky = skySource;
         _flareTexture = CreateFlareTexture(gd);
+        gd.DeviceReset += OnDeviceReset;
     }
 
     /// <summary>
@@ -683,10 +684,18 @@ public sealed class AlephGlimpseRenderer : IDisposable
         if (_cache.Remove(destination, out var e)) e.Target.Dispose();
     }
 
+    private void OnDeviceReset(object? sender, EventArgs e) => ClearTargets();
+
+    private void ClearTargets()
+    {
+        foreach (var entry in _cache.Values) entry.Target.Dispose();
+        _cache.Clear();
+    }
+
     public void Dispose()
     {
-        foreach (var e in _cache.Values) e.Target.Dispose();
-        _cache.Clear();
+        _gd.DeviceReset -= OnDeviceReset;
+        ClearTargets();
         _flareTexture.Dispose();
         _quadEffect?.Dispose();
         _flareEffect?.Dispose();

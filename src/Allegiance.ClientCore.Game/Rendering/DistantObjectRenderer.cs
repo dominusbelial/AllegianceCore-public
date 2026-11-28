@@ -28,6 +28,7 @@ public sealed class DistantObjectRenderer : IDisposable
 {
     private const string Dir = "p589obj";
 
+    private readonly SkyBillboard _billboard;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
@@ -41,6 +42,7 @@ public sealed class DistantObjectRenderer : IDisposable
     public DistantObjectRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _billboard = new(gd);
         _assets = assets;
         _missing = new(assets); _revision = new(assets);
     }
@@ -68,7 +70,7 @@ public sealed class DistantObjectRenderer : IDisposable
         {
             float half = SpaceObjectMath.HalfSizeFromHalfDegrees(halfDeg, shellDist);
             byte b = (byte)Math.Clamp(bright * 255f, 0f, 255f);
-            SkyBillboard.Draw(_gd, view, projection, cameraEye, dir, shellDist, half, tex, new Color(b, b, b));
+            _billboard.Draw(view, projection, cameraEye, dir, shellDist, half, tex, new Color(b, b, b));
         }
     }
 
@@ -131,6 +133,7 @@ public sealed class DistantObjectRenderer : IDisposable
 
     public void Dispose()
     {
+        _billboard.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
     }

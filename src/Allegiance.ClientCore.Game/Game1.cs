@@ -2188,6 +2188,14 @@ public sealed partial class Game1 : Game
         ReleaseTraining();
         DisposeBenchmark();
         DisposeSkirmish();
+        _alephGlimpseRenderer?.Dispose(); // borrows the active tier for destination skies
+        _blackSky?.Dispose();
+        _nativeSky?.Dispose();
+        _hdSky?.Dispose();
+        _starFar?.Dispose();
+        _starMid?.Dispose();
+        _starNear?.Dispose();
+        _skySectorBlack = _skySectorNative = _skySectorHd = -1;
         _sound?.Dispose();
         _music?.Dispose();   // P304 — release the two music beds
         if (_asteroidRenderers != null)
@@ -2240,7 +2248,6 @@ public sealed partial class Game1 : Game
         _nozzleGlowRenderer?.Dispose();
         _navStrobeRenderer?.Dispose();
         _motionTrailRenderer?.Dispose();
-        _alephGlimpseRenderer?.Dispose();
         _explosionAssets?.Dispose();
         // P546 — dispose the enhanced renderers/smoke before their VfxAssets.
         _enhancedExplosionRenderer?.Dispose();

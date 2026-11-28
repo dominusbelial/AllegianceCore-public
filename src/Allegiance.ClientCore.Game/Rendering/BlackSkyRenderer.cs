@@ -173,6 +173,7 @@ public sealed class BlackSkyRenderer : ISkyRenderer, IDisposable
             }
             else
             {
+                gd.BlendState = BlendState.Opaque;
                 _starFar.Draw(view, skyProj, cameraEye, frame);
                 _starMid.Draw(view, skyProj, cameraEye, frame);
                 _starNear.Draw(view, skyProj, cameraEye, frame);

@@ -51,10 +51,12 @@ public sealed class LensFlareRenderer : IDisposable
     /// the frame.</summary>
     private const float BaseHalfSizePx = 34f;
 
+    private readonly SkyEffect _effect;
     private readonly GraphicsDevice _gd;
     private readonly MdlTexture2D _mdl;
     private readonly Texture2D?[] _surfaces = new Texture2D?[LensFlareElements.SurfaceArt.Length];
 
+    private readonly VertexPositionColorTexture[] _vertices = new VertexPositionColorTexture[4];
     private Vector3? _lightDir;
     private bool _loaded;
     private readonly AssetContentRevision _revision;
@@ -63,6 +65,7 @@ public sealed class LensFlareRenderer : IDisposable
     public LensFlareRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _effect = new(gd);
         _revision = new(assets);
         _mdl = new MdlTexture2D(gd, assets, keyBelow: 10);
     }
@@ -109,7 +112,6 @@ public sealed class LensFlareRenderer : IDisposable
 
         float cx = w / 2f, cy = h / 2f;
         var pointLight = new Vector2(sx - cx, sy - cy);
-        float scale = w / ReferenceWidth;
 
         // Pin the states this 2-D backdrop element needs (mirroring the sky
         // convention: the flare must never depth-test against the opaque scene
@@ -124,20 +126,7 @@ public sealed class LensFlareRenderer : IDisposable
         gd.BlendState = BlendState.Additive;
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 
-#if BROWSER
-        var effect = BrowserSkyBuffers.For(gd).Prepare(null, Vector3.One, Matrix.Identity, Matrix.CreateOrthographicOffCenter(0, w, h, 0, 0, 1));
-#else
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            VertexColorEnabled = true,
-            LightingEnabled = false,
-            View = Matrix.Identity,
-            Projection = Matrix.CreateOrthographicOffCenter(0, w, h, 0, 0, 1),
-            World = Matrix.Identity,
-        };
-#endif
-
+        var ortho = Matrix.CreateOrthographicOffCenter(0, w, h, 0, 0, 1);
         foreach (var elem in LensFlareElements.Table)
         {
             if (elem.Index < 0 || elem.Index >= _surfaces.Length) continue;
@@ -159,7 +148,7 @@ public sealed class LensFlareRenderer : IDisposable
 
             // Native rotates only the STAR_AURA (surface index 1).
             float angle = elem.Index == 1 ? (sx + sy) / 200f : 0f;
-            DrawQuad(effect, gd, center, half, tex, color, angle);
+            DrawQuad(ortho, gd, center, half, tex, color, angle);
         }
 
         gd.DepthStencilState = prevDepth;
@@ -168,7 +157,7 @@ public sealed class LensFlareRenderer : IDisposable
         gd.SamplerStates[0] = prevSampler;
     }
 
-    private void DrawQuad(BasicEffect effect, GraphicsDevice gd, Vector2 center, float half, Texture2D tex, Color color, float angle)
+    private void DrawQuad(Matrix ortho, GraphicsDevice gd, Vector2 center, float half, Texture2D tex, Color color, float angle)
     {
         float c = MathF.Cos(angle), s = MathF.Sin(angle);
         static Vector2 Rot(Vector2 d, float c, float s) => new(d.X * c - d.Y * s, d.X * s + d.Y * c);
@@ -178,36 +167,16 @@ public sealed class LensFlareRenderer : IDisposable
         var bl = Rot(new Vector2(-half, +half), c, s);
         var br = Rot(new Vector2(+half, +half), c, s);
 
-#if BROWSER
-        var scratch = BrowserSkyBuffers.For(gd);
-        var verts = scratch.Quad;
-        verts[0] = new VertexPositionColorTexture(new Vector3(center + tl, 0), color, new Vector2(0, 0));
-        verts[1] = new VertexPositionColorTexture(new Vector3(center + tr, 0), color, new Vector2(1, 0));
-        verts[2] = new VertexPositionColorTexture(new Vector3(center + bl, 0), color, new Vector2(0, 1));
-        verts[3] = new VertexPositionColorTexture(new Vector3(center + br, 0), color, new Vector2(1, 1));
-        var indices = scratch.Indices;
-#else
-        var verts = new[]
-        {
-            new VertexPositionColorTexture(new Vector3(center + tl, 0), color, new Vector2(0, 0)),
-            new VertexPositionColorTexture(new Vector3(center + tr, 0), color, new Vector2(1, 0)),
-            new VertexPositionColorTexture(new Vector3(center + bl, 0), color, new Vector2(0, 1)),
-            new VertexPositionColorTexture(new Vector3(center + br, 0), color, new Vector2(1, 1)),
-        };
-        var indices = new short[] { 0, 1, 2, 2, 1, 3 };
-#endif
-
-        effect.Texture = tex;
-#if BROWSER
+        _vertices[0] = new VertexPositionColorTexture(new Vector3(center + tl, 0), color, new Vector2(0, 0));
+        _vertices[1] = new VertexPositionColorTexture(new Vector3(center + tr, 0), color, new Vector2(1, 0));
+        _vertices[2] = new VertexPositionColorTexture(new Vector3(center + bl, 0), color, new Vector2(0, 1));
+        _vertices[3] = new VertexPositionColorTexture(new Vector3(center + br, 0), color, new Vector2(1, 1));
+        var effect = _effect.Prepare(tex, Vector3.One, Matrix.Identity, ortho, Matrix.Identity);
         for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
         {
             var pass = effect.CurrentTechnique.Passes[passIndex];
-#else
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-#endif
             pass.Apply();
-            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, 2);
+            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, _vertices, 0, _vertices.Length, SkyBillboard.Indices, 0, 2);
         }
     }
 
@@ -236,6 +205,7 @@ public sealed class LensFlareRenderer : IDisposable
 
     public void Dispose()
     {
+        _effect.Dispose();
         _simDisc?.Dispose();
         _mdl.Dispose();
         for (int i = 0; i < _surfaces.Length; i++) _surfaces[i] = null;

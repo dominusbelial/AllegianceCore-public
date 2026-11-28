@@ -58,6 +58,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     private readonly LensFlareRenderer _simSun;
     private SimStarLayer? _simStars;
     private DataClusterIGC _spaceCluster;
+    private readonly SkyEffect _effect;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly bool _lowRes;
@@ -89,6 +90,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     public HdSkyRenderer(GraphicsDevice gd, IAssetSource assets, bool lowRes = false)
     {
         _gd = gd;
+        _effect = new(gd);
         _simSun = new LensFlareRenderer(gd, assets);
         _assets = assets;
         _lowRes = lowRes;
@@ -192,7 +194,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
 
             // 2) HD environment dome (native globe geometry + HD equirect).
             if (_activeDome is not null && _activeEnvTexture is not null)
-                DrawDome(view, skyProj, cameraEye);
+                DrawDome(_activeDome, _activeEnvTexture, Tint.ToVector3(), view, skyProj, cameraEye);
 
             // 3) Native planet billboard (shared PlanetPoster, P588) tinted by
             //    the HD global intensity.
@@ -229,30 +231,9 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         if (_starTexture is null) return;
         if (_starDome is null && !TryBuildStarDome()) return;
 
-        var dome = _starDome!;
-        var gd = _gd;
-        gd.BlendState = BlendState.AlphaBlend;
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            Texture = _starTexture,
-            VertexColorEnabled = true,
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = NativeSkyPlacement.DomeWorld(cameraEye),
-        };
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
-            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, dome.Vertices, 0, dome.VertexCount, dome.Indices, 0, dome.PrimitiveCount);
-        }
+        DrawDome(_starDome!, _starTexture, Vector3.One, view, projection, cameraEye);
     }
 
-    /// <summary>Build the star dome by scaling the native <c>globe1</c> full
-    /// sphere (radius 7500) down to <see cref="StarDomeRadius"/> so the stars
-    /// sit inside the alpha-keyed nebula dome. Reuses the proven dome-draw path
-    /// — no cube seams.</summary>
     private bool TryBuildStarDome()
     {
         const string stem = "globe1";
@@ -287,25 +268,14 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         catch (Exception ex) { Missing(stem, ex.Message); return false; }
     }
 
-    private void DrawDome(Matrix view, Matrix projection, Vector3 cameraEye)
+    private void DrawDome(SkyDome dome, Texture2D texture, Vector3 tint, Matrix view, Matrix projection, Vector3 cameraEye)
     {
-        var dome = _activeDome!;
         var gd = _gd;
         gd.BlendState = BlendState.AlphaBlend;   // premultiplied alpha-keyed HD nebula
-        using var effect = new BasicEffect(gd)
+        var effect = _effect.Prepare(texture, tint, view, projection, NativeSkyPlacement.DomeWorld(cameraEye));
+        for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
         {
-            TextureEnabled = true,
-            Texture = _activeEnvTexture,
-            VertexColorEnabled = true,
-            DiffuseColor = Tint.ToVector3(),
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = NativeSkyPlacement.DomeWorld(cameraEye),
-        };
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
+            effect.CurrentTechnique.Passes[i].Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, dome.Vertices, 0, dome.VertexCount, dome.Indices, 0, dome.PrimitiveCount);
         }
     }
@@ -413,11 +383,12 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
 
     public void Dispose()
     {
+        _effect.Dispose();
         _planet.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
         _simStars?.Dispose(); _hdTails?.Dispose(); _simSun.Dispose();
-        _starTexture?.Dispose();
+        _starTexture = null; // borrowed from _textures
         _starDome = null;
         _domes.Clear();
     }

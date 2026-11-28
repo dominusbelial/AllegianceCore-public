@@ -28,9 +28,9 @@ public sealed class PlanetPoster : IDisposable
     internal SectorTexture? ColdTexture(string stem) =>
         _textures.ContainsKey(stem) || _missing.Contains(stem) ? null : new(stem, true, _textures);
 #endif
+    private readonly SkyBillboard _billboard;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
-    private static readonly Color XnaWhite = Color.White;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly AssetMissCache _missing;
 
@@ -45,6 +45,7 @@ public sealed class PlanetPoster : IDisposable
     public PlanetPoster(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _billboard = new(gd);
         _assets = assets;
         _contentRevision = new(assets);
         _missing = new(assets);
@@ -102,61 +103,7 @@ public sealed class PlanetPoster : IDisposable
     public void Draw(Matrix view, Matrix projection, Vector3 cameraEye, float dist, Color? tint = null)
     {
         if (!_has || _texture is null) return;
-        var center = NativeSkyPlacement.PlanetShellCenter(_dir, dist, cameraEye);
-        float half = PlanetAngularScale(_radius) * dist;
-
-        var right = NativeSkyPlacement.BillboardRight(_dir);
-        var up = NativeSkyPlacement.BillboardUp(_dir, right);
-
-#if BROWSER
-        var scratch = BrowserSkyBuffers.For(_gd);
-        var corners = scratch.Quad;
-        corners[0] = new VertexPositionColorTexture(center - right * half - up * half, XnaWhite, new Vector2(0, 1));
-        corners[1] = new VertexPositionColorTexture(center + right * half - up * half, XnaWhite, new Vector2(1, 1));
-        corners[2] = new VertexPositionColorTexture(center - right * half + up * half, XnaWhite, new Vector2(0, 0));
-        corners[3] = new VertexPositionColorTexture(center + right * half + up * half, XnaWhite, new Vector2(1, 0));
-        var indices = scratch.Indices;
-#else
-        var corners = new[]
-        {
-            new VertexPositionColorTexture(center - right * half - up * half, XnaWhite, new Vector2(0, 1)),
-            new VertexPositionColorTexture(center + right * half - up * half, XnaWhite, new Vector2(1, 1)),
-            new VertexPositionColorTexture(center - right * half + up * half, XnaWhite, new Vector2(0, 0)),
-            new VertexPositionColorTexture(center + right * half + up * half, XnaWhite, new Vector2(1, 0)),
-        };
-        var indices = new short[] { 0, 1, 2, 2, 1, 3 };
-#endif
-
-        var gd = _gd;
-        gd.BlendState = BlendState.AlphaBlend;
-
-#if BROWSER
-        var effect = BrowserSkyBuffers.For(gd).Prepare(_texture, tint?.ToVector3() ?? Vector3.One, view, projection);
-#else
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            Texture = _texture,
-            VertexColorEnabled = true,   // match native's drawing path (dome/stars all set it)
-            DiffuseColor = tint?.ToVector3() ?? Vector3.One,
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-        };
-#endif
-#if BROWSER
-        for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
-        {
-            var pass = effect.CurrentTechnique.Passes[passIndex];
-#else
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-#endif
-            pass.Apply();
-            gd.DrawUserIndexedPrimitives(
-                PrimitiveType.TriangleList, corners, 0, corners.Length, indices, 0, 2);
-        }
+        _billboard.Draw(view, projection, cameraEye, _dir, dist, PlanetAngularScale(_radius) * dist, _texture, tint);
     }
 
     /// <summary>
@@ -228,6 +175,7 @@ public sealed class PlanetPoster : IDisposable
 
     public void Dispose()
     {
+        _billboard.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
     }

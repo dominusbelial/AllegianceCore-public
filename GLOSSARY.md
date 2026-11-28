@@ -1887,6 +1887,12 @@ list in **reverse**.
   destination glimpse no longer prepares a sky it would draw fully transparent.
   Report `docs/reports/P862_REPORT.md`. *Native intent:* the cluster-entry model
   load (`WinTrek`/`Igc` cluster change) — the port does the same work earlier.
+- **Sky draw state and lifetime (P1098)** — each painter owns its device-local
+  effect in `src/Allegiance.ClientCore.Game/Rendering/SkyEffect.cs`; planets,
+  moons and distant objects reuse the quad in `src/Allegiance.ClientCore.Game/Rendering/SkyBillboard.cs`.
+  The destination postcard cache releases its targets on device reset. Game1 unloads
+  the cache, sky tiers and fallback starfields before shared graphics dependencies.
+  Measurements and pixel controls are in `docs/reports/SKY_LIFETIME_REUSE_P1098.md`.
 - **Aleph destination glimpse (P576-B/P585/P862b)** — the opt-in (default ON since
   P607) view of an aleph's DESTINATION sector sky composited inside its funnel
   (`Rendering/AlephGlimpseRenderer.cs` + the `WarpPulseController` transit pulse

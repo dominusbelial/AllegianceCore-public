@@ -34,6 +34,7 @@ public sealed class MoonRenderer : IDisposable
     /// <see cref="SpaceObjectMath.MoonPlacement.TextureIndex"/>.</summary>
     private static readonly string[] MoonArt = ["moonbmp", "moon7bmp", "moonnebbmp"];
 
+    private readonly SkyBillboard _billboard;
     private readonly GraphicsDevice _gd;
     private readonly MdlTexture2D _mdl;
     private readonly List<Texture2D?> _textures = [];
@@ -46,6 +47,7 @@ public sealed class MoonRenderer : IDisposable
     public MoonRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _billboard = new(gd);
         _revision = new(assets);
         _mdl = new MdlTexture2D(gd, assets, keyBelow: 10);
     }
@@ -83,7 +85,7 @@ public sealed class MoonRenderer : IDisposable
         foreach (var (dir, halfDeg, disc) in _moons)
         {
             float half = SpaceObjectMath.HalfSizeFromHalfDegrees(halfDeg, shellDist);
-            SkyBillboard.Draw(_gd, view, projection, cameraEye, dir, shellDist, half, disc);
+            _billboard.Draw(view, projection, cameraEye, dir, shellDist, half, disc);
         }
     }
 
@@ -195,6 +197,7 @@ public sealed class MoonRenderer : IDisposable
 
     public void Dispose()
     {
+        _billboard.Dispose();
         ClearDiscs();
         _mdl.Dispose();
     }

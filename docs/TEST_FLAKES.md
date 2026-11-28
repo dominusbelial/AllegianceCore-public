@@ -11446,3 +11446,6 @@ of the 11 `P900FleetRecoveryLiveTests` cases fail in about 2 s with `driver outp
 'Microsoft.Extensions.Logging.Abstractions, Version=10.0.0.0'`: the test output folder carries `allegiance-mcp.deps.json`
 but not the `Microsoft.Extensions.*` assemblies it lists. A clean checkout of `28debb3c` fails identically, so this predates
 P1094–P1097. The suite is Live tier (outside the light gate); earlier gates only ran its single skirmish case. Not fixed here.
+## P1098 Fast qualification, 2026-11-27
+
+`P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct` failed its two 1920×1080 default-scale RGBA goldens on llvmpipe LLVM 19.1.7, Mesa 25.0.7. Both cases failed in three isolated class runs, with the remaining 19 passing each time. The baseline Game assembly from `28debb3c` produced the same Classic hash prefix `C100F69A43C7A4E8` and Modern prefix `1093B39B5B9BA161`, with zero overlap errors in both. The expected prefixes are `DEAF3D5912741439` and `28FB84F3BD41A188`. This signature reproduced consistently on this software-rendered host. [P1098 qualification](reports/SKY_LIFETIME_REUSE_P1098.md)

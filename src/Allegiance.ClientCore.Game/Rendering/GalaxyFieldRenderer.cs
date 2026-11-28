@@ -35,6 +35,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
     /// at the very back of the sky.</summary>
     private const float ShellDistance = 9400f;
 
+    private readonly SkyEffect _effect;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
 
@@ -58,6 +59,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
     public GalaxyFieldRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _effect = new(gd);
         _assets = assets;
         _revision = new(assets);
     }
@@ -101,28 +103,10 @@ public sealed class GalaxyFieldRenderer : IDisposable
         if (_atlas is null || _verts.Length == 0) return;
         var gd = _gd;
         gd.BlendState = BlendState.AlphaBlend;
-#if BROWSER
-        var effect = BrowserSkyBuffers.For(gd).Prepare(_atlas, Vector3.One, view, projection);
-#else
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            Texture = _atlas,
-            VertexColorEnabled = true,
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-        };
-#endif
-#if BROWSER
+        var effect = _effect.Prepare(_atlas, Vector3.One, view, projection, Matrix.Identity);
         for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
         {
             var pass = effect.CurrentTechnique.Passes[passIndex];
-#else
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-#endif
             pass.Apply();
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, _verts, 0, _verts.Length, _indices, 0, _indices.Length / 3);
         }
@@ -361,6 +345,7 @@ public sealed class GalaxyFieldRenderer : IDisposable
 
     public void Dispose()
     {
+        _effect.Dispose();
         _atlas?.Dispose();
         _atlas = null;
     }

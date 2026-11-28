@@ -37,6 +37,7 @@ public sealed class GiantObjectRenderer : IDisposable
     /// vertices, 3200 triangles — plenty smooth for a 90° cap at 1440p.</summary>
     private const int Segments = 40;
 
+    private readonly SkyEffect _effect;
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
@@ -58,6 +59,7 @@ public sealed class GiantObjectRenderer : IDisposable
     public GiantObjectRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
+        _effect = new(gd);
         _assets = assets;
         _missing = new(assets); _revision = new(assets);
     }
@@ -69,6 +71,7 @@ public sealed class GiantObjectRenderer : IDisposable
     {
         _config = EnsureConfig();
         _activeTex = null;
+        _vb?.Dispose();
         _vb = null;
 
         if (!_config.ByCluster.TryGetValue(cluster.ClusterId, out var spec))
@@ -106,29 +109,10 @@ public sealed class GiantObjectRenderer : IDisposable
         _gd.SamplerStates[0] = SamplerState.LinearClamp; // no wrap at the patch edge
 
         byte b = (byte)Math.Clamp(_activeBrightness * 255f, 0f, 255f);
-#if BROWSER
-        var effect = BrowserSkyBuffers.For(_gd).Prepare(_activeTex, new Vector3(b / 255f), view, projection);
-#else
-        using var effect = new BasicEffect(_gd)
-        {
-            TextureEnabled = true,
-            Texture = _activeTex,
-            VertexColorEnabled = true,
-            DiffuseColor = new Vector3(b / 255f),
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-        };
-#endif
-#if BROWSER
+        var effect = _effect.Prepare(_activeTex, new Vector3(b / 255f), view, projection, Matrix.Identity);
         for (int passIndex = 0; passIndex < effect.CurrentTechnique.Passes.Count; passIndex++)
         {
             var pass = effect.CurrentTechnique.Passes[passIndex];
-#else
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-#endif
             pass.Apply();
             _gd.SetVertexBuffer(_vb);
             _gd.DrawPrimitives(PrimitiveType.TriangleList, 0, _vertCount / 3);
@@ -180,7 +164,6 @@ public sealed class GiantObjectRenderer : IDisposable
         for (int t = 0; t < idx.Length; t++) triList[t] = verts[idx[t]];
 
         _vertCount = triList.Length;
-        _vb?.Dispose();
         _vb = new VertexBuffer(_gd, VertexPositionColorTexture.VertexDeclaration, _vertCount, BufferUsage.WriteOnly);
         _vb.SetData(triList);
     }
@@ -249,6 +232,7 @@ public sealed class GiantObjectRenderer : IDisposable
 
     public void Dispose()
     {
+        _effect.Dispose();
         _vb?.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
         _textures.Clear();
