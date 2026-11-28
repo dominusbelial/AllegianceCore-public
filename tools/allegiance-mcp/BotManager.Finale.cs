@@ -93,6 +93,8 @@ internal sealed partial class BotManager
         internal int AssignedLoneWolves;
         internal double? StagingSince;
         internal double? GoTime;
+        internal StrikeWeaponEnvelope.ReadinessWait Readiness;
+        internal bool LegacyEnvelopeRelease;
         internal readonly HashSet<short> GoMembers = new();
         internal bool MassLogged, OutcomeLogged;
         internal double LastSampleAt = double.NegativeInfinity;
@@ -114,6 +116,8 @@ internal sealed partial class BotManager
         internal double? PrearmAt;
         internal bool EarlyWave;
         internal int WaveCommitted, WaveReleased, WaveExpectedRounds, WaveKilledBeforeRelease;
+        // Owner creation echoes in the release channel, reported separately from permission and damage.
+        internal long WaveAcceptedRounds = -1;
         internal double WaveRounds;
         internal float WaveShieldBefore = -1, WaveShieldAfter = -1;
         internal float WaveHullBefore = -1, WaveHullAfter = -1;
@@ -449,6 +453,7 @@ internal sealed partial class BotManager
         // landing share survives (it is a property of this side's loadouts).
         plan.AssemblyPeak = 0;
         plan.LastAssemblyGrowthAt = null;
+        plan.Readiness = default;
         plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
         plan.GoTime = null;
         plan.GoMembers.Clear();
@@ -1247,6 +1252,8 @@ internal sealed partial class BotManager
             bot.FinaleReleaseAt = null;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = bot.FinaleKeepsPayday = false;
             bot.FinaleMissileLaunchBase = 0;
+            bot.EnvelopeStation = bot.ObservedStrikeStation = -1;
+            bot.AcceptedAtRelease = null;
             bot.FinalePreparationRefitUsed = false;
             bot.FinaleProtectedSince = null;
             bot.FinaleGrantVerified = false;

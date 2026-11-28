@@ -1,0 +1,1420 @@
+{
+ "preliminary": {
+  "seconds": 1118.1,
+  "limit": 14.364,
+  "projects": {
+   "Allegiance.ClientCore.Browser.Tests": {
+    "count": 52,
+    "outcomes": {
+     "Passed": 52
+    }
+   },
+   "Allegiance.ClientCore.Game.Browser.Tests": {
+    "count": 331,
+    "outcomes": {
+     "Passed": 331
+    }
+   },
+   "Allegiance.Lobby.Tests": {
+    "count": 327,
+    "outcomes": {
+     "Passed": 327
+    }
+   },
+   "Allegiance.Update.Tests": {
+    "count": 55,
+    "outcomes": {
+     "Passed": 55
+    }
+   },
+   "Allegiance.ClientCore.MonoGame.Tests": {
+    "count": 6105,
+    "outcomes": {
+     "Passed": 6097,
+     "NotExecuted": 3,
+     "Failed": 5
+    }
+   },
+   "Allegiance.ClientCore.Tests": {
+    "count": 2593,
+    "outcomes": {
+     "Passed": 2592,
+     "Failed": 1
+    }
+   },
+   "Allegiance.Core.Tests": {
+    "count": 6846,
+    "outcomes": {
+     "Passed": 6834,
+     "Failed": 9,
+     "NotExecuted": 3
+    }
+   }
+  },
+  "infrastructure": {
+   "tier": "Fast",
+   "count": 9,
+   "seconds": 0.051399066811427474,
+   "exitCode": 0,
+   "timingGuardPassed": true
+  },
+  "quarantine_flakes": [],
+  "triage": [
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane",
+    "sweep": "Passed",
+    "seconds": 15.891,
+    "repeats": [
+     [
+      "Passed",
+      5.684
+     ],
+     [
+      "Passed",
+      5.018
+     ],
+     [
+      "Passed",
+      5.964
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct(width: 1920, skin: \"Modern\", scale: \"default\")",
+    "sweep": "Failed",
+    "seconds": 0.77,
+    "repeats": [
+     [
+      "Failed",
+      0.646
+     ],
+     [
+      "Failed",
+      0.577
+     ],
+     [
+      "Failed",
+      0.54
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct(width: 1920, skin: \"Classic\", scale: \"default\")",
+    "sweep": "Failed",
+    "seconds": 0.51,
+    "repeats": [
+     [
+      "Failed",
+      0.458
+     ],
+     [
+      "Failed",
+      0.377
+     ],
+     [
+      "Failed",
+      0.405
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.ShopLauncherMountNumberingLiveTests.ShopBuyOrder_LauncherGrantedAtMount0_LocksAndFires_Live",
+    "sweep": "Failed",
+    "seconds": 3.506,
+    "repeats": [
+     [
+      "Passed",
+      2.387
+     ],
+     [
+      "Passed",
+      2.1
+     ],
+     [
+      "Passed",
+      2.722
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P1017BuyFlowLiveTests.Money_change_while_docked_flips_need_and_buy_Live",
+    "sweep": "Failed",
+    "seconds": 3.973,
+    "repeats": [
+     [
+      "Passed",
+      3.595
+     ],
+     [
+      "Passed",
+      3.954
+     ],
+     [
+      "Passed",
+      4.199
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.DiscoveryTests.Broadcast_discovery_collects_a_loopback_responder",
+    "sweep": "Failed",
+    "seconds": 3.057,
+    "repeats": [
+     [
+      "Failed",
+      3.048
+     ],
+     [
+      "Failed",
+      3.062
+     ],
+     [
+      "Failed",
+      3.066
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.P889PoolSizingTests.Default_boot_of_a_small_dedicated_config_does_not_start_a_rig_pool",
+    "sweep": "Failed",
+    "seconds": 0.036,
+    "repeats": [
+     [
+      "Failed",
+      0.517
+     ],
+     [
+      "Failed",
+      0.4
+     ],
+     [
+      "Failed",
+      0.407
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 25)",
+    "sweep": "Passed",
+    "seconds": 19.578,
+    "repeats": [
+     [
+      "Passed",
+      12.525
+     ],
+     [
+      "Passed",
+      10.456
+     ],
+     [
+      "Passed",
+      10.911
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+    "sweep": "Passed",
+    "seconds": 21.282,
+    "repeats": [
+     [
+      "Passed",
+      9.661
+     ],
+     [
+      "Passed",
+      9.5
+     ],
+     [
+      "Passed",
+      9.271
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.P796VariedLoadoutTests.Varied_equips_every_legal_hull_and_part_of_the_role_over_many_purchases(civ: 3)",
+    "sweep": "Passed",
+    "seconds": 19.044,
+    "repeats": [
+     [
+      "Passed",
+      12.315
+     ],
+     [
+      "Passed",
+      14.388
+     ],
+     [
+      "Passed",
+      17.836
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+    "sweep": "Passed",
+    "seconds": 17.739,
+    "repeats": [
+     [
+      "Passed",
+      8.691
+     ],
+     [
+      "Passed",
+      8.056
+     ],
+     [
+      "Passed",
+      8.109
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "sweep": "Failed",
+    "seconds": 0.001,
+    "repeats": [
+     [
+      "Failed",
+      0.007
+     ],
+     [
+      "Failed",
+      0.009
+     ],
+     [
+      "Failed",
+      0.007
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+    "sweep": "Failed",
+    "seconds": 0.003,
+    "repeats": [
+     [
+      "Failed",
+      0.014
+     ],
+     [
+      "Failed",
+      0.011
+     ],
+     [
+      "Failed",
+      0.009
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.LivePositionRequestTests.Empty_side_request_auto_accepts",
+    "sweep": "Failed",
+    "seconds": 0.105,
+    "repeats": [
+     [
+      "Passed",
+      0.741
+     ],
+     [
+      "Passed",
+      0.778
+     ],
+     [
+      "Failed",
+      0.72
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+    "sweep": "Failed",
+    "seconds": 0.0,
+    "repeats": [
+     [
+      "Failed",
+      0.008
+     ],
+     [
+      "Failed",
+      0.01
+     ],
+     [
+      "Failed",
+      0.008
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.ChaffTests.Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts",
+    "sweep": "Failed",
+    "seconds": 0.101,
+    "repeats": [
+     [
+      "Passed",
+      0.838
+     ],
+     [
+      "Passed",
+      0.794
+     ],
+     [
+      "Passed",
+      0.871
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.NpcWingmanLeadLiveTests.Wingman_fire_gate_leads_a_laterally_moving_enemy",
+    "sweep": "Failed",
+    "seconds": 0.142,
+    "repeats": [
+     [
+      "Passed",
+      0.929
+     ],
+     [
+      "Passed",
+      0.916
+     ],
+     [
+      "Passed",
+      0.799
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.P777WarpExitWobbleTests.Npc_exit_touch_rate_is_measured",
+    "sweep": "Passed",
+    "seconds": 17.595,
+    "repeats": [
+     [
+      "Passed",
+      13.989
+     ],
+     [
+      "Passed",
+      14.673
+     ],
+     [
+      "Passed",
+      22.161
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+    "sweep": "Failed",
+    "seconds": 0.001,
+    "repeats": [
+     [
+      "Failed",
+      0.016
+     ],
+     [
+      "Failed",
+      0.008
+     ],
+     [
+      "Failed",
+      0.03
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.Transport.TcpClientGreetOrderTests.Send_racing_join_never_precedes_the_greeting_or_finds_no_sender",
+    "sweep": "Passed",
+    "seconds": 21.596,
+    "repeats": [
+     [
+      "Passed",
+      5.176
+     ],
+     [
+      "Passed",
+      4.715
+     ],
+     [
+      "Passed",
+      3.569
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "sweep": "Failed",
+    "seconds": 0.003,
+    "repeats": [
+     [
+      "Failed",
+      0.008
+     ],
+     [
+      "Failed",
+      0.009
+     ],
+     [
+      "Failed",
+      0.009
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.P813cReconnectGraceTests.Seated_connection_cannot_take_or_retire_a_parked_seat",
+    "sweep": "Failed",
+    "seconds": 2.518,
+    "repeats": [
+     [
+      "Passed",
+      2.724
+     ],
+     [
+      "Passed",
+      2.312
+     ],
+     [
+      "Passed",
+      2.515
+     ]
+    ]
+   }
+  ]
+ },
+ "final": {
+  "seconds": 895.8,
+  "limit": 15.059,
+  "projects": {
+   "Allegiance.ClientCore.Browser.Tests": {
+    "count": 52,
+    "outcomes": {
+     "Passed": 52
+    }
+   },
+   "Allegiance.ClientCore.Game.Browser.Tests": {
+    "count": 331,
+    "outcomes": {
+     "Passed": 331
+    }
+   },
+   "Allegiance.Lobby.Tests": {
+    "count": 327,
+    "outcomes": {
+     "Passed": 327
+    }
+   },
+   "Allegiance.Update.Tests": {
+    "count": 55,
+    "outcomes": {
+     "Passed": 55
+    }
+   },
+   "Allegiance.ClientCore.MonoGame.Tests": {
+    "count": 6105,
+    "outcomes": {
+     "Passed": 6100,
+     "Failed": 2,
+     "NotExecuted": 3
+    }
+   },
+   "Allegiance.ClientCore.Tests": {
+    "count": 2594,
+    "outcomes": {
+     "Passed": 2594
+    }
+   },
+   "Allegiance.Core.Tests": {
+    "count": 6846,
+    "outcomes": {
+     "Passed": 6843,
+     "NotExecuted": 3
+    }
+   }
+  },
+  "infrastructure": {
+   "tier": "Fast",
+   "count": 9,
+   "seconds": 0.05735084693878889,
+   "exitCode": 0,
+   "timingGuardPassed": true
+  },
+  "quarantine_flakes": [],
+  "triage": [
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct(width: 1920, skin: \"Classic\", scale: \"default\")",
+    "sweep": "Failed",
+    "seconds": 0.595,
+    "repeats": [
+     [
+      "Failed",
+      0.268
+     ],
+     [
+      "Failed",
+      0.274
+     ],
+     [
+      "Failed",
+      0.271
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.MonoGame.Tests.P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct(width: 1920, skin: \"Modern\", scale: \"default\")",
+    "sweep": "Failed",
+    "seconds": 0.876,
+    "repeats": [
+     [
+      "Failed",
+      0.422
+     ],
+     [
+      "Failed",
+      0.407
+     ],
+     [
+      "Failed",
+      0.401
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+    "sweep": "Passed",
+    "seconds": 18.591,
+    "repeats": [
+     [
+      "Passed",
+      3.879
+     ],
+     [
+      "Passed",
+      3.788
+     ],
+     [
+      "Passed",
+      3.755
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.P814GunnerTests.P814b_TurretCarrier_pref_keeps_or_beats_the_Best_hulls_turret_seats",
+    "sweep": "Passed",
+    "seconds": 20.883,
+    "repeats": [
+     [
+      "Passed",
+      3.936
+     ],
+     [
+      "Passed",
+      3.906
+     ],
+     [
+      "Passed",
+      3.766
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+    "sweep": "Passed",
+    "seconds": 16.37,
+    "repeats": [
+     [
+      "Passed",
+      5.511
+     ],
+     [
+      "Passed",
+      5.514
+     ],
+     [
+      "Passed",
+      5.524
+     ]
+    ]
+   },
+   {
+    "case": "Allegiance.Core.Tests.TechTreeDevelopmentLiveTests.Side_attribute_change_broadcasts_whole_mission_but_not_across_missions",
+    "sweep": "Passed",
+    "seconds": 15.431,
+    "repeats": [
+     [
+      "Passed",
+      7.964
+     ],
+     [
+      "Passed",
+      7.426
+     ],
+     [
+      "Passed",
+      7.587
+     ]
+    ]
+   }
+  ]
+ },
+ "affected_fast": {
+  "BotFixRegressionTests.P1105_Gun_only_station_order_requires_the_owner_clear_and_acquire_edges": [
+   0.461,
+   0.428,
+   0.392
+  ],
+  "BotFixRegressionTests.P1105_Hold_checks_the_owner_again_at_go_and_waits_for_the_launch_echo(enabled: False)": [
+   0.416,
+   0.414,
+   0.383
+  ],
+  "BotFixRegressionTests.P1105_Hold_checks_the_owner_again_at_go_and_waits_for_the_launch_echo(enabled: True)": [
+   0.419,
+   0.471,
+   0.43
+  ],
+  "BotFixRegressionTests.P1105b_All_committed_pilots_missing_go_reform_as_a_new_wave": [
+   0.65,
+   0.527,
+   0.536
+  ],
+  "BotFixRegressionTests.P1105b_Off_transcript_matches_base(json: \"{\\\"finale_weapon_envelope\\\":false}\")": [
+   0.463,
+   0.511,
+   0.418
+  ],
+  "BotFixRegressionTests.P1105b_Off_transcript_matches_base(json: \"{}\")": [
+   0.473,
+   0.482,
+   0.401
+  ],
+  "BotFixRegressionTests.P1105b_Order_retry_keeps_bearing_and_stops_after_typed_acknowledgement": [
+   0.415,
+   0.399,
+   0.364
+  ],
+  "BotFixRegressionTests.P1105b_Ready_mixed_wing_can_commit_before_the_rest_acquire": [
+   0.58,
+   0.569,
+   0.599
+  ],
+  "BotFixRegressionTests.P1105b_Settled_visible_pilot_strafes_at_the_hold": [
+   0.404,
+   0.395,
+   0.367
+  ],
+  "BotFixRegressionTests.P1105b_Unready_arrivals_commit_and_release_on_deadline_or_timeout(deadline: False)": [
+   0.56,
+   0.582,
+   0.691
+  ],
+  "BotFixRegressionTests.P1105b_Unready_arrivals_commit_and_release_on_deadline_or_timeout(deadline: True)": [
+   0.603,
+   0.509,
+   0.563
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"accepted shot\")": [
+   0.387,
+   0.334,
+   0.361
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"dead\")": [
+   0.426,
+   0.401,
+   0.409
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"docked\")": [
+   0.397,
+   0.402,
+   0.41
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"empty magazine\")": [
+   0.548,
+   0.66,
+   0.525
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"friendly station\")": [
+   0.421,
+   0.418,
+   0.395
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"missing pose\")": [
+   0.428,
+   0.413,
+   0.365
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"missing ship\")": [
+   0.47,
+   0.502,
+   0.527
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"no grant\")": [
+   0.414,
+   0.463,
+   0.382
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"post-wave released\")": [
+   0.37,
+   0.339,
+   0.353
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"post-wave spent\")": [
+   0.581,
+   0.461,
+   0.53
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"station position\")": [
+   0.426,
+   0.434,
+   0.409
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"station sector\")": [
+   0.435,
+   0.452,
+   0.422
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"unknown hull\")": [
+   0.421,
+   0.445,
+   0.426
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"unknown station type\")": [
+   0.42,
+   0.381,
+   0.382
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"unobserved station\")": [
+   0.398,
+   0.383,
+   0.364
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"wrong grant\")": [
+   0.401,
+   0.381,
+   0.359
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"wrong owner\")": [
+   0.441,
+   0.502,
+   0.475
+  ],
+  "BotFixRegressionTests.P1105b_Unusable_or_finished_approach_returns_tick_without_idle_control(cause: \"wrong sector\")": [
+   0.399,
+   0.403,
+   0.426
+  ],
+  "BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: \"research\", verified: False, attacks: False)": [
+   0.121,
+   0.131,
+   0.123
+  ],
+  "BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: \"research\", verified: True, attacks: True)": [
+   0.122,
+   0.13,
+   0.121
+  ],
+  "BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: \"unlocked\", verified: True, attacks: False)": [
+   0.13,
+   0.135,
+   0.115
+  ],
+  "BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"research\", recalls: True)": [
+   0.548,
+   0.522,
+   0.545
+  ],
+  "BotFixRegressionTests.P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches(mode: \"unlocked\", recalls: False)": [
+   0.454,
+   0.442,
+   0.431
+  ],
+  "BotFixRegressionTests.P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit": [
+   0.038,
+   0.041,
+   0.038
+  ],
+  "BotFixRegressionTests.P745_P961_Accepted_legal_strike_fallback_keeps_flying_without_an_upgrade_trip": [
+   0.508,
+   0.562,
+   0.5
+  ],
+  "BotFixRegressionTests.P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment": [
+   0.503,
+   0.452,
+   0.461
+  ],
+  "BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: False)": [
+   0.454,
+   0.366,
+   0.415
+  ],
+  "BotFixRegressionTests.P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle(verified: True)": [
+   0.429,
+   0.445,
+   0.43
+  ],
+  "BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: False, refits: False)": [
+   0.203,
+   0.207,
+   0.207
+  ],
+  "BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"research\", tech: True, refits: True)": [
+   0.487,
+   0.443,
+   0.441
+  ],
+  "BotFixRegressionTests.P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists(mode: \"unlocked\", tech: True, refits: False)": [
+   0.409,
+   0.335,
+   0.386
+  ],
+  "BotFixRegressionTests.P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase": [
+   0.479,
+   0.453,
+   0.431
+  ],
+  "BotFixRegressionTests.P745_Research_strike_visible_bombers_share_the_shortest_enemy_home_entry": [
+   0.491,
+   0.465,
+   0.476
+  ],
+  "BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"research\", advances: True)": [
+   0.37,
+   0.463,
+   0.447
+  ],
+  "BotFixRegressionTests.P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector(mode: \"unlocked\", advances: False)": [
+   0.386,
+   0.47,
+   0.408
+  ],
+  "BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: False, ghostDodged: True)": [
+   0.103,
+   0.103,
+   0.104
+  ],
+  "BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"research\", active: True, ghostDodged: False)": [
+   0.105,
+   0.104,
+   0.109
+  ],
+  "BotFixRegressionTests.P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster(mode: \"unlocked\", active: True, ghostDodged: True)": [
+   0.113,
+   0.114,
+   0.103
+  ],
+  "BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: False, dodges: True)": [
+   0.1,
+   0.107,
+   0.105
+  ],
+  "BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"research\", active: True, dodges: False)": [
+   0.11,
+   0.11,
+   0.098
+  ],
+  "BotFixRegressionTests.P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target(mode: \"unlocked\", active: True, dodges: True)": [
+   0.116,
+   0.107,
+   0.09
+  ],
+  "BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: False, interrupts: True)": [
+   0.198,
+   0.147,
+   0.149
+  ],
+  "BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"research\", active: True, interrupts: False)": [
+   0.197,
+   0.155,
+   0.165
+  ],
+  "BotFixRegressionTests.P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it(mode: \"unlocked\", active: True, interrupts: True)": [
+   0.167,
+   0.146,
+   0.156
+  ],
+  "BotFixRegressionTests.P819_Flying_strike_replaces_its_old_aleph_rally_order(side: 0, civ: 25)": [
+   0.512,
+   0.533,
+   0.49
+  ],
+  "BotFixRegressionTests.P819_Flying_strike_replaces_its_old_aleph_rally_order(side: 0, civ: 3)": [
+   0.479,
+   0.494,
+   0.47
+  ],
+  "BotFixRegressionTests.P819_Flying_strike_replaces_its_old_aleph_rally_order(side: 1, civ: 25)": [
+   0.487,
+   0.529,
+   0.595
+  ],
+  "BotFixRegressionTests.P819_Flying_strike_replaces_its_old_aleph_rally_order(side: 1, civ: 3)": [
+   0.493,
+   0.538,
+   0.512
+  ],
+  "BotFixRegressionTests.P819_Showcase_defaults_to_equal_finale_duties_and_keeps_explicit_selection": [
+   0.033,
+   0.03,
+   0.03
+  ],
+  "BotFixRegressionTests.P896_A_kill_needs_observed_then_lost_or_a_destroyed_broadcast": [
+   0.385,
+   0.382,
+   0.392
+  ],
+  "BotFixRegressionTests.P896_A_late_sighting_arms_a_loadout_and_a_lagging_teammate_is_no_kill": [
+   0.374,
+   0.401,
+   0.456
+  ],
+  "BotFixRegressionTests.P896_A_side_is_never_armed_with_a_station_it_has_not_observed": [
+   0.393,
+   0.356,
+   0.39
+  ],
+  "BotFixRegressionTests.P896_A_wave_with_no_station_damaging_loadout_is_not_committed": [
+   0.44,
+   0.412,
+   0.421
+  ],
+  "BotFixRegressionTests.P896_Fog_absence_never_reports_the_target_as_killed": [
+   0.339,
+   0.341,
+   0.37
+  ],
+  "BotFixRegressionTests.P896_Rearm_never_arms_a_blind_side_with_an_unobserved_station": [
+   0.431,
+   0.42,
+   0.423
+  ],
+  "BotFixRegressionTests.P896_Station_absence_is_not_death_and_destruction_is_remembered": [
+   0.067,
+   0.113,
+   0.092
+  ],
+  "BotFixRegressionTests.P961_Active_planner_and_delivery_feedback_use_the_reachable_subset": [
+   0.455,
+   0.364,
+   0.393
+  ],
+  "BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: False)": [
+   0.375,
+   0.401,
+   0.391
+  ],
+  "BotFixRegressionTests.P961_Committed_bomber_and_escort_keep_the_plan_destination(escort: True)": [
+   0.468,
+   0.404,
+   0.437
+  ],
+  "BotFixRegressionTests.P961_Prearm_preserves_the_legal_magazine_without_another_purchase": [
+   0.418,
+   0.397,
+   0.423
+  ],
+  "BotFixRegressionTests.P961_Preparation_latch_survives_death_and_clears_for_the_next_mission": [
+   0.347,
+   0.385,
+   0.341
+  ],
+  "BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: False)": [
+   0.374,
+   0.364,
+   0.388
+  ],
+  "BotFixRegressionTests.P961_Unreachable_garrison_retargets_an_observed_killable_outpost_without_rearming_deadline(currentArmed: True)": [
+   0.405,
+   0.395,
+   0.388
+  ],
+  "BotFixRegressionTests.P961_Wave_inventory_uses_granted_rounds_minus_confirmed_launches": [
+   0.104,
+   0.092,
+   0.091
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0, expected: None)": [
+   0.006,
+   0.006,
+   0.005
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.00499999989, expected: Partial)": [
+   0.005,
+   0.008,
+   0.006
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.5, expected: Partial)": [
+   0.006,
+   0.005,
+   0.006
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.999000013, expected: Partial)": [
+   0.006,
+   0.006,
+   0.006
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 1, expected: Full)": [
+   0.006,
+   0.007,
+   0.006
+  ],
+  "MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 1.39999998, expected: Full)": [
+   0.005,
+   0.009,
+   0.015
+  ],
+  "MissileLockFeedbackTests.ClientWorld_Posts_Tips_On_The_Frames_It_Applies": [
+   0.029,
+   0.038,
+   0.038
+  ],
+  "MissileLockFeedbackTests.Dropping_To_None_On_Target_Change_Suppresses_Lost": [
+   0.003,
+   0.003,
+   0.003
+  ],
+  "MissileLockFeedbackTests.Dropping_To_None_Same_Target_Posts_Lost_Tip": [
+   0.021,
+   0.004,
+   0.004
+  ],
+  "MissileLockFeedbackTests.Entering_Full_Posts_Acquired_Tip_With_MissileName": [
+   0.007,
+   0.005,
+   0.004
+  ],
+  "MissileLockFeedbackTests.Entering_Partial_From_None_Posts_Partial_Tip": [
+   0.003,
+   0.004,
+   0.012
+  ],
+  "MissileLockFeedbackTests.Holding_A_State_Posts_Nothing": [
+   0.004,
+   0.003,
+   0.003
+  ],
+  "MissileLockFeedbackTests.None_Straight_To_Full_Posts_Only_Acquired": [
+   0.007,
+   0.004,
+   0.02
+  ],
+  "MissileLockFeedbackTests.Partial_Into_Full_Does_Not_Repost_Partial": [
+   0.008,
+   0.004,
+   0.003
+  ],
+  "MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire": [
+   3.31,
+   5.509,
+   2.485
+  ],
+  "P1105StrikeEnvelopeTests.Cloak_lane_applies_lateral_thrust_to_final_controls": [
+   0.01,
+   0.015,
+   0.009
+  ],
+  "P1105StrikeEnvelopeTests.Dumbfire_uses_granted_rounds_range_bow_and_load_readiness": [
+   0.044,
+   0.051,
+   0.061
+  ],
+  "P1105StrikeEnvelopeTests.Guided_grant_uses_accelerated_missile_range_and_station_lock": [
+   0.079,
+   0.055,
+   0.102
+  ],
+  "P1105StrikeEnvelopeTests.Gun_uses_fixed_granted_mount_with_side_ballistics_and_available_pools": [
+   0.063,
+   0.061,
+   0.047
+  ],
+  "P1105StrikeEnvelopeTests.Only_an_accepted_owner_launch_after_permission_spends_the_member": [
+   0.005,
+   0.003,
+   0.003
+  ],
+  "P1105StrikeEnvelopeTests.P1105b_Delivery_at_the_required_round_boundary_releases_only_the_ready_subset": [
+   0.015,
+   0.015,
+   0.018
+  ],
+  "P1105StrikeEnvelopeTests.Ship_with_same_numeric_id_and_different_station_both_block_release": [
+   0.004,
+   0.005,
+   0.004
+  ],
+  "P745StationDamageTests.Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen(attacker: 25, defender: 3)": [
+   0.229,
+   0.211,
+   0.22
+  ],
+  "P745StationDamageTests.Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen(attacker: 3, defender: 25)": [
+   0.222,
+   0.212,
+   0.228
+  ],
+  "P801StrikeLoopbackLiveTests.Massed_finale_release_kills_a_real_garrison_and_the_same_trickle_does_not": [
+   0.307,
+   0.303,
+   0.343
+  ],
+  "P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_only_the_deadline_forces_a_short_wave": [
+   0.004,
+   0.004,
+   0.004
+  ],
+  "P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers": [
+   0.003,
+   0.003,
+   0.004
+  ],
+  "P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in": [
+   0.083,
+   0.092,
+   0.091
+  ],
+  "P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave": [
+   0.073,
+   0.063,
+   0.063
+  ],
+  "P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives": [
+   0.006,
+   0.006,
+   0.006
+  ],
+  "P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed": [
+   0.003,
+   0.003,
+   0.003
+  ],
+  "P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time": [
+   0.109,
+   0.099,
+   0.096
+  ],
+  "P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases": [
+   0.094,
+   0.089,
+   0.097
+  ],
+  "P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic": [
+   0.054,
+   0.055,
+   0.055
+  ],
+  "P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race": [
+   0.07,
+   0.085,
+   0.059
+  ],
+  "P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do": [
+   0.085,
+   0.057,
+   0.056
+  ],
+  "P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible": [
+   0.094,
+   0.098,
+   0.085
+  ],
+  "P896SurvivalMarginTests.P896_Margin_never_exceeds_the_reserved_wing_or_the_planning_cap": [
+   0.056,
+   0.057,
+   0.058
+  ],
+  "P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.25, losses: 0, defenders: 1, expectedSurvival: 1)": [
+   0.057,
+   0.051,
+   0.055
+  ],
+  "P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 0, defenders: 3, expectedSurvival: 2)": [
+   0.057,
+   0.057,
+   0.059
+  ],
+  "P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 0.5, losses: 4, defenders: 0, expectedSurvival: 2)": [
+   0.067,
+   0.067,
+   0.062
+  ],
+  "P896SurvivalMarginTests.P896_Margin_sizes_the_wave_from_observed_losses_or_defenders(margin: 1, losses: 2, defenders: 5, expectedSurvival: 5)": [
+   0.064,
+   0.062,
+   0.059
+  ],
+  "P896SurvivalMarginTests.P896_Margin_zero_is_exactly_the_todays_wave_arithmetic": [
+   0.059,
+   0.062,
+   0.066
+  ],
+  "P896SurvivalMarginTests.P896_Survival_margin_settings_validate_their_range_and_default_to_one": [
+   0.085,
+   0.073,
+   0.071
+  ],
+  "P959FinaleStrikeMassTests.A_mixed_wing_is_sized_for_its_weakest_usable_loadout": [
+   0.059,
+   0.06,
+   0.057
+  ],
+  "P959FinaleStrikeMassTests.A_wave_commits_when_the_corrected_requirement_is_met_or_the_deadline_forces_it": [
+   0.004,
+   0.004,
+   0.005
+  ],
+  "P959FinaleStrikeMassTests.A_wing_member_with_real_strike_hardware_flies_it_and_a_fighter_refits_first": [
+   0.046,
+   0.057,
+   0.047
+  ],
+  "P959FinaleStrikeMassTests.Early_pressure_is_off_by_default_and_when_off_the_timeline_is_unchanged": [
+   0.008,
+   0.008,
+   0.007
+  ],
+  "P959FinaleStrikeMassTests.Landing_share_is_floored_and_never_raises_the_ideal_requirement": [
+   0.055,
+   0.056,
+   0.054
+  ],
+  "P959FinaleStrikeMassTests.Margin_zero_and_a_full_landing_share_reproduce_todays_wave_arithmetic": [
+   0.051,
+   0.053,
+   0.051
+  ],
+  "P959FinaleStrikeMassTests.Measured_rounds_come_from_the_real_pool_drops": [
+   0.005,
+   0.005,
+   0.005
+  ],
+  "P959FinaleStrikeMassTests.Prearm_opens_only_inside_its_lead_and_never_for_zero": [
+   0.003,
+   0.003,
+   0.003
+  ],
+  "P959FinaleStrikeMassTests.Real_garrison_requirement_accounts_for_measured_landing_and_defenders": [
+   0.057,
+   0.056,
+   0.058
+  ],
+  "P959FinaleStrikeMassTests.Real_outpost_needs_fewer_hulls_under_the_same_corrected_law": [
+   0.058,
+   0.056,
+   0.057
+  ],
+  "P959FinaleStrikeMassTests.Settings_validate_the_new_knobs": [
+   0.004,
+   0.005,
+   0.005
+  ],
+  "P959FinaleStrikeMassTests.Shield_regeneration_outlasts_the_volley_window_so_only_a_massed_wave_accumulates": [
+   0.054,
+   0.058,
+   0.059
+  ],
+  "P959FinaleStrikeMassTests.The_selection_predicate_arms_the_sides_the_finale_will_use": [
+   0.004,
+   0.003,
+   0.004
+  ],
+  "P959FinaleStrikeMassTests.The_wing_grows_to_the_corrected_requirement_and_never_past_its_cap": [
+   0.006,
+   0.006,
+   0.007
+  ],
+  "P961ReachableStrikeTests.Arrival_requires_a_live_armed_reserved_hull_and_time_for_its_volley": [
+   0.007,
+   0.004,
+   0.006
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 0, now: 960, deadline: 1000, expected: null)": [
+   0.005,
+   0.007,
+   0.004
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 500, deadline: 1000, expected: null)": [
+   0.004,
+   0.005,
+   0.005
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 3, now: 965, deadline: 1000, expected: null)": [
+   0.004,
+   0.004,
+   0.01
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 145, deadline: 1000, expected: null)": [
+   0.004,
+   0.003,
+   0.005
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 4, now: 960, deadline: 1000, expected: \"deadline-forced\")": [
+   0.005,
+   0.005,
+   0.005
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 144, deadline: 1000, expected: null)": [
+   0.004,
+   0.004,
+   0.004
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 5, now: 145, deadline: 1000, expected: \"plateau\")": [
+   0.004,
+   0.005,
+   0.004
+  ],
+  "P961ReachableStrikeTests.Commit_table_never_sends_a_provably_useless_volley(assembled: 6, now: 110, deadline: 1000, expected: \"massed\")": [
+   0.006,
+   0.007,
+   0.008
+  ],
+  "P961ReachableStrikeTests.Crowded_idle_garrison_and_outpost_use_only_threats_to_the_path": [
+   0.068,
+   0.078,
+   0.105
+  ],
+  "P961ReachableStrikeTests.New_strategy_is_opt_in_and_settings_are_bounded": [
+   0.019,
+   0.017,
+   0.014
+  ],
+  "P961ReachableStrikeTests.Preparation_has_one_trip_and_legal_fallbacks_never_upgrade_via_an_extra_trip": [
+   0.004,
+   0.01,
+   0.008
+  ],
+  "P961ReachableStrikeTests.Reachable_cap_never_mislabels_two_hulls_as_a_garrison_kill": [
+   0.061,
+   0.087,
+   0.053
+  ]
+ },
+ "affected_live": {
+  "P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station": [
+   675.14,
+   748.811,
+   699.102
+  ],
+  "P801StrikeMassLiveTests.Fogged_showcase_masses_strikes_and_at_least_one_station_dies": [
+   247.219,
+   258.815,
+   317.144
+  ]
+ },
+ "mutations": {
+  "idle": 14,
+  "nonmember": 2,
+  "missing_world": 2,
+  "all_ready_required": 1,
+  "discount": 1,
+  "lethal": 1,
+  "timeout": 1,
+  "deadline": 1,
+  "legacy_driver": 2,
+  "reform": 1,
+  "retry": 1,
+  "bearing": 1,
+  "strafe": 1,
+  "targets": 1,
+  "off_lead": 2
+ },
+ "off_transcript_base": "62591b1bf6b79a5a163354a808225dbeac5fcce8"
+}

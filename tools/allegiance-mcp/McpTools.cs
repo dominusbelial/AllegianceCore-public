@@ -106,6 +106,7 @@ internal static partial class McpTools
                         finale_escort_radius = new { type = "number", @default = 1500, exclusiveMinimum = 0 },
                         finale_escort_leash = new { type = "number", @default = 2500, exclusiveMinimum = 0 },
                         finale_survival_margin = new { type = "number", @default = 1, minimum = 0, maximum = 2, description = "P896/P959 — survival margin for the massed wave: 0 keeps the P801 bare kill + one spare; the default 1 carries ceil(margin × max(last-wave bomber losses, defenders visible in the target sector)) extra bombers, bounded by finale_max_wing. Showcase/skirmish only." },
+                        finale_weapon_envelope = new { type = "boolean", @default = false, description = "Stage finale bombers within their granted weapon range. Once the mass qualifies and the first pilot is ready, wait up to eight seconds for the others. Release only pilots ready on the station." },
                         finale_reachable_strike = new { type = "boolean", @default = false, description = "P961 experimental showcase policy: count threats near the wing's path, cap at reachable armed reserved hulls, retarget impossible kills, and commit useful assembly plateaus. Rig A/B decides the default." },
                         finale_plateau_seconds = new { type = "number", @default = 45, minimum = 0, maximum = 600, description = "P961 — time without a new assembly high-water mark before a planner-useful short mass commits; 0 disables plateaus. Requires finale_reachable_strike." },
                         finale_engagement_range = new { type = "number", @default = 2500, exclusiveMinimum = 0, maximum = 10000, description = "P961 — threat envelope around each wing member's staging/release path, in game units. Recent actual wing attackers also count. Requires finale_reachable_strike." },
@@ -1521,7 +1522,8 @@ internal static partial class McpTools
             Number("finale_prearm_minutes", 0), Number("finale_early_pressure_minutes", 0),
             Integer("finale_max_wing", 18), Number("finale_deadline_seconds", 900),
             args.TryGetValue("finale_reachable_strike", out var reachable) && reachable.ValueKind == JsonValueKind.True,
-            Number("finale_plateau_seconds", 45), (float)Number("finale_engagement_range", 2500));
+            Number("finale_plateau_seconds", 45), (float)Number("finale_engagement_range", 2500),
+            args.TryGetValue("finale_weapon_envelope", out var envelope) && envelope.ValueKind == JsonValueKind.True);
         result.Validate();
         return result;
     }

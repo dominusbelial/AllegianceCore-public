@@ -24,6 +24,7 @@ using Srv = Allegiance.Server.Server;
 //        [--game-seconds 2400] [--finale-seconds 3600] [--finale-minutes 1]
 //        [--early-minutes 0] [--bombers 12] [--survival-margin -1]
 //        [--tick-ms 20] (50 = paced native clock; 20 = P959 accelerated fixture)
+//        [--delivery-proof] [--weapon-envelope] [--delivery-catalog]
 //        [--prearm-minutes 2] [--loadout varied] [--map m2xspiderw.igc]
 var directory = Path.GetFullPath(Option("--output", ".scratch/p959/proof"));
 Directory.CreateDirectory(directory);
@@ -37,6 +38,7 @@ double finaleMinutes = double.Parse(Option("--finale-minutes", "1"), CultureInfo
 double earlyMinutes = double.Parse(Option("--early-minutes", "0"), CultureInfo.InvariantCulture);
 int bombers = int.Parse(Option("--bombers", "12"), CultureInfo.InvariantCulture);
 double survivalMargin = double.Parse(Option("--survival-margin", "-1"), CultureInfo.InvariantCulture);
+bool deliveryProof = args.Contains("--delivery-proof");
 bool reachable = args.Contains("--reachable-strike");
 double prearmMinutes = double.Parse(Option("--prearm-minutes", "2"), CultureInfo.InvariantCulture);
 string loadout = Option("--loadout", "varied");
@@ -51,6 +53,24 @@ string label = Option("--label", $"t{teams}-m{marginTag()}");
 string marginTag() => survivalMargin < 0 ? "default" : survivalMargin.ToString(CultureInfo.InvariantCulture);
 string[] civs = teams == 3 ? ["18", "4", "5"] : ["25", "3"];
 
+if (args.Contains("--delivery-catalog"))
+{
+    var core = Catalog.RepresentativeCore();
+    var missiles = from l in core.Launchers.Values
+                  where core.MissileTypes.ContainsKey(l.ExpendabletypeId)
+                  let m = core.MissileTypes[l.ExpendabletypeId]
+                  select new { l.PartId, Name = m.LauncherName, Kind = m.MaxLock == 0 ? "dumbfire" : "guided",
+                      Range = m.Lifespan * (m.InitialSpeed + .5f * m.Acceleration * m.Lifespan),
+                      FlightRange = m.InitialSpeed * m.Lifespan + .5f * m.Acceleration * MathF.Pow(Math.Max(0, m.Lifespan - m.ReadyTime), 2),
+                      Type = m.ExpendableTypeId, m.DamageType, m.Power, m.InitialSpeed, m.ReadyTime, m.Lifespan, m.Acceleration };
+    var guns = from p in core.PartTypes.Values where p.Type is Allegiance.Core.DataPartTypeIGC.Weapon
+               let w = (Allegiance.Core.DataPartTypeIGC.Weapon)p.Type
+               let r = core.ProjectileTypes[w.ProjectileTypeId]
+               select new { p.PartId, p.Name, Kind = "gun", Range = r.Speed * r.Lifespan, Type = r.ProjectileTypeId, r.DamageType, r.Power };
+    Console.WriteLine(JsonSerializer.Serialize(new { missiles, guns }));
+    return;
+}
+
 if (args.Contains("--catalog"))
 {
     var core = Catalog.RepresentativeCore();
@@ -62,13 +82,12 @@ if (args.Contains("--catalog"))
 }
 
 var progress = Console.Out;
-var tee = new Tee(Path.Combine(directory, label + ".log"));
 using var server = new Srv();
+var tee = new Tee(Path.Combine(directory, label + ".log"), deliveryProof ? () => server.SimNow : null);
 var game = new Allegiance.Server.GameConfig
 {
     Name = "P959 strike", Map = map, Teams = teams,
-    CivSeed = matched ? mapSeed : null,
-    CivIds = civs.Select(int.Parse).ToArray(),
+    CivIds = civs.Select(int.Parse).ToArray(), CivSeed = matched || deliveryProof ? mapSeed : null,
     SideNames = teams == 3 ? ["Alpha", "Bravo", "Charlie"] : ["Alpha", "Bravo"],
     GameLengthSeconds = gameSeconds, MaxTeamImbalance = 32767, MaxPlayersPerTeam = 40,
     ResearchPlanDirectory = Path.GetFullPath("data/showcase-plans"),
@@ -80,7 +99,8 @@ server.Boot(new()
     BenchmarkSeed = matched ? mapSeed : null, Bots = new() { CivStrategy = args.Contains("--civ-strategy") },
     BindAddress = System.Net.IPAddress.Loopback.ToString(), Port = 0, SideSelectAutoSeatSeconds = 30, ConsoleVerbose = true,
     Showcase = new() { TechMode = "research", IncomeMultiplier = 5000, ResearchTimeScale = researchScale,
-        StationKillsDecideDeadline = matched, MatchCapSeconds = matched ? gameSeconds : 3600, FinaleTimeoutSeconds = finaleSeconds },
+        StationKillsDecideDeadline = matched || deliveryProof, MatchCapSeconds = matched || deliveryProof ? gameSeconds : 3600,
+        FinaleTimeoutSeconds = finaleSeconds },
     LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { Enabled = false } },
     Games = [game],
 });
@@ -100,6 +120,24 @@ Action<Station, Model?, byte, float> observeDamage = (station, launcher, type, a
     pendingHits.Enqueue(new(station, ship, type, station.ShieldFraction, station.ArmorFraction));
 };
 damageHook.SetValue(site, Delegate.Combine((Delegate?)damageHook.GetValue(site), observeDamage));
+if (deliveryProof)
+{
+    // Observe accepted creations on the simulation thread, including misses.
+    void Hook(string name, Delegate observer)
+    {
+        var field = site.GetType().GetField(name) ?? throw new MissingFieldException(name);
+        field.SetValue(site, Delegate.Combine((Delegate?)field.GetValue(site), observer));
+    }
+    void Shot(Model? launcher, Model? target, string kind, short type)
+    {
+        if (launcher is Ship ship)
+            Console.WriteLine($"[strike-shot] t={server.SimNow:F2} ship={ship.Id} side={ship.SideId} "
+                + $"target={EquipmentTarget.TypeOf(target)}/{target?.Id ?? -1} kind={kind} type={type}");
+    }
+    Hook("MissileCreated", (Action<Missile>)(m => Shot(m.Launcher, m.Target, "missile", m.MissileType.ExpendableTypeId)));
+    Hook("ProjectileCreated", (Action<Projectile>)(p => Shot(p.Launcher, (p.Launcher as Ship)?.CommandTarget,
+        "gun", p.ProjectileType.ProjectileTypeId)));
+}
 using var stop = new CancellationTokenSource();
 Exception? tickFailure = null;
 var ticker = new Thread(() =>
@@ -108,9 +146,33 @@ var ticker = new Thread(() =>
     {
         var tickWatch = Stopwatch.StartNew();
         long nextTick = 0;
+        var idleSince = new Dictionary<short, double>();
         while (!stop.IsCancellationRequested)
         {
             server.TickSim();
+            if (deliveryProof)
+            {
+                // Independent observer on the simulation thread. Count continuous
+                // reset controls near a hostile station, including after ejection
+                // or retarget only when the same ship actually stays in range.
+                var idle = new HashSet<short>();
+                foreach (var sector in server.Missions[0].Sectors)
+                    foreach (var ship in sector.Models.OfType<Ship>())
+                    {
+                        if (ship.IsNpc || ship.Dead || ship.StationId is not null || ship.StateM != 0
+                            || ship.Controls != ControlData.Neutral || !sector.StationRuntimes.Any(st =>
+                                !st.Dead && st.SideId != ship.SideId && (st.Center - ship.Position).LengthSquared() <= 1500 * 1500))
+                            continue;
+                        idle.Add(ship.Id);
+                        idleSince.TryAdd(ship.Id, server.SimNow);
+                        if (server.SimNow - idleSince[ship.Id] >= 1)
+                        {
+                            Console.WriteLine($"[strike-idle] ship={ship.Id} t={server.SimNow:F2}");
+                            idleSince[ship.Id] = double.PositiveInfinity;
+                        }
+                    }
+                foreach (var id in idleSince.Keys.Where(id => !idle.Contains(id)).ToArray()) idleSince.Remove(id);
+            }
             while (pendingHits.TryDequeue(out var hit))
             {
                 var st = hit.Station;
@@ -131,6 +193,7 @@ var watch = Stopwatch.StartNew();
 try
 {
     using var manager = new BotManager("127.0.0.1", server.BoundPort);
+    manager.ObserveStrikeRelease = deliveryProof;
     Console.SetOut(tee);
     var scenario = new Dictionary<string, JsonElement>
     {
@@ -159,7 +222,8 @@ try
         scenario["count_b"] = JsonSerializer.SerializeToElement(count);
     }
     if (args.Contains("--sustainable-raid")) scenario["sustainable_raid"] = JsonSerializer.SerializeToElement(true);
-    if (matched) scenario["finale_deadline_seconds"] = JsonSerializer.SerializeToElement(finaleSeconds);
+    if (matched || deliveryProof) scenario["finale_deadline_seconds"] = JsonSerializer.SerializeToElement(finaleSeconds);
+    if (args.Contains("--weapon-envelope")) scenario["finale_weapon_envelope"] = JsonSerializer.SerializeToElement(true);
     if (reachable) scenario["finale_reachable_strike"] = JsonSerializer.SerializeToElement(true);
     if (survivalMargin >= 0) scenario["finale_survival_margin"] = JsonSerializer.SerializeToElement(survivalMargin);
     if (earlyMinutes > 0) scenario["finale_early_pressure_minutes"] = JsonSerializer.SerializeToElement(earlyMinutes);
@@ -510,7 +574,12 @@ internal sealed class Tee : TextWriter
     private readonly StringBuilder _all = new();
     private readonly List<string> _commits = new();
     private bool _disposed;
-    internal Tee(string path) => _file = new StreamWriter(path) { AutoFlush = true };
+    private readonly Func<double>? _clock;
+    internal Tee(string path, Func<double>? clock)
+    {
+        _file = new StreamWriter(path) { AutoFlush = true };
+        _clock = clock;
+    }
     public override Encoding Encoding => Encoding.UTF8;
     internal string[] Commits() { lock (_all) return _commits.ToArray(); }
     public override void Write(char value)
@@ -526,6 +595,9 @@ internal sealed class Tee : TextWriter
         lock (_all)
         {
             if (_disposed) return;
+            if (_clock is not null && value is not null && (value.Contains(" finale commit ")
+                || value.StartsWith("[strike-arrival]") || value.StartsWith("[strike-life]") || value.StartsWith("[strike-owner]") || value.StartsWith("[eject]")))
+                value += FormattableString.Invariant($" sim={_clock():F2}");
             _file.WriteLine(value); _all.Append(value).Append('\n');
             if (value is not null && value.Contains(" finale commit ")) _commits.Add(value);
         }

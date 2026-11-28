@@ -32,15 +32,11 @@ internal sealed partial class BotManager
     //     full-health garrison.
     // See docs/reports/FINALE_STRIKE_MASS_P959.md.
 
-    /// <summary>P801 — just outside a station's defences: 3.5 km from the hull,
-    /// which is inside a bomber's missile reach but far enough that the group is
-    /// not already trading fire while it forms up.</summary>
+    /// <summary>P801 legacy visible hold radius, measured from the station centre.</summary>
     internal const float FinaleStrikeStandoff = 3500f;
 
-    /// <summary>P801 — lone wolves hold further out and laterally offset, so
-    /// their approach lane is visibly different from the visible element's.</summary>
+    /// <summary>P801 legacy hold radius for the cloaked element.</summary>
     internal const float FinaleLoneWolfStandoff = 5000f;
-    internal const float FinaleLoneWolfLateral = 2500f;
 
     /// <summary>P959 — how long a mass may keep forming before the coordinator logs
     /// a stall. It never commits on its own any more: P801's flat cap released
@@ -222,7 +218,8 @@ internal sealed partial class BotManager
             return new(ResearchTactics.StrikeGroupSize, ResearchTactics.StrikeGroupSize, 0,
                 StrikeVolley.VolleyWindowSeconds, 0, 0, 0, 0, 0, 1);
         var profile = StrikeVolley.StationProfile.From(core, stationType);
-        var loadouts = armed.Select(b => StrikeVolley.FromParts(core, ActualHullId(b), b.Parts)).ToArray();
+        var loadouts = armed.Select(b => run.Settings.WeaponEnvelope ? FinaleGrantedStrikeLoadout(b)
+            : StrikeVolley.FromParts(core, ActualHullId(b), b.Parts)).ToArray();
         int combatants = run.Bots.Count(b => b.Side == side && !IsSupport(b) && IsParticipating(b));
         int cap = Math.Clamp(Math.Min(run.Settings.MaxWing, Math.Max(combatants, run.Settings.Bombers)),
             1, StrikeVolley.MaxPlannedBombers);
@@ -288,9 +285,8 @@ internal sealed partial class BotManager
                 EndFinaleEarlyPressure(run, plan, side, now);
                 continue;   // this side is back on ordinary duty; no new mass this tick
             }
-            // A bomber that already released this life is SPENT (its magazine is
-            // empty): it must not be re-counted into another mass until it
-            // relaunches (ResetNewLife clears FinaleStrikeSpent). P973 — the wave also
+            // A spent bomber waits for relaunch. Legacy release spends the member
+            // immediately. P1105 spends it on the first accepted shot. P973 also
             // counts only hulls that really carry station-damaging hardware: finale
             // DUTY (FinaleBomberActive, P733's fallback) is not the same question as
             // "can this hull hurt the station", and a fallback fighter must never be
@@ -299,6 +295,13 @@ internal sealed partial class BotManager
             var armed = run.Bots.Where(b => b.Side == side && b.FinaleBomberActive && b.FinaleGrantVerified
                 && !b.IsPod && !b.FinaleStrikeSpent && IsParticipating(b)
                 && FinaleCarriesStrikeHardware(b, plan)).ToArray();
+            if (ObserveStrikeRelease)
+                foreach (var pilot in armed)
+                    if (pilot.ObservedStrikeStation != plan.TargetId)
+                    {
+                        pilot.ObservedStrikeStation = plan.TargetId;
+                        Console.WriteLine($"[strike-life] side={side} ship={pilot.ShipId} station={plan.TargetId} hull={pilot.Granted.HullId}");
+                    }
             if (plan.KilledAt is not null)
             {
                 if (!plan.OutcomeLogged)
@@ -397,9 +400,11 @@ internal sealed partial class BotManager
                     continue;
             }
 
-            // `assembled` = armed and in the target sector (they are holding at the
-            // standoff point). Reading each own world keeps per-side knowledge.
+            // Count arrivals for the existing planner. With the envelope enabled,
+            // sample release readiness independently in each owner's world.
             var assembled = new List<short>();
+            var ready = run.Settings.WeaponEnvelope ? new List<short>() : null;
+            var readyLoadouts = run.Settings.WeaponEnvelope ? new List<StrikeVolley.Loadout>() : null;
             foreach (var bot in armed)
             {
                 if (bot.Cs is not { } cs) continue;
@@ -414,8 +419,21 @@ internal sealed partial class BotManager
                         && (own.Latest.Position - new Vector3(sp[0], sp[1], sp[2])).Length()
                             <= (bot.FinaleLoneWolf ? FinaleLoneWolfStandoff : FinaleStrikeStandoff)
                                 + ResearchTactics.RallyGatherRadius)
+                    {
                         assembled.Add(bot.ShipId);
+                        if (ready is not null && plan.GoTime is null
+                            && ReadStrikeApproach(bot, cs.World, plan, now) is { Ready: true } a
+                            && ReadyLoadout(bot, cs.World, a) is { } loadout)
+                        {
+                            ready.Add(bot.ShipId);
+                            readyLoadouts!.Add(loadout);
+                        }
+                    }
             }
+
+            if (run.Settings.WeaponEnvelope && plan.GoTime is { } oldGo && now > oldGo + FinaleWaveWindowSeconds)
+                foreach (var bot in armed)
+                    if (!bot.FinaleReleaseLogged) plan.GoMembers.Remove(bot.ShipId);
 
             if (plan.GoTime is null)
             {
@@ -429,6 +447,8 @@ internal sealed partial class BotManager
                     plan.LastStagingLogAt = now;
                     LogFinaleStaging(run, plan, side, armed, assembled.Count, plan.RequiredBombers, now);
                 }
+                if (ObserveStrikeRelease && assembled.Count > 0 && plan.StagingSince is null)
+                    Console.WriteLine($"[strike-arrival] side={side} station={plan.TargetId} ship={assembled[0]}");
                 plan.StagingSince = assembled.Count == 0 ? null : plan.StagingSince ?? now;
                 if (assembled.Count > plan.AssemblyPeak)
                 {
@@ -439,7 +459,16 @@ internal sealed partial class BotManager
                     ? FinaleAssembly.CommitReason(assembled.Count, plan.Demand, plan.StagingSince,
                         plan.LastAssemblyGrowthAt, now, ReachableFinaleDeadline(run, plan), run.Settings.PlateauSeconds)
                     : FinaleCommitReason(assembled.Count, plan.RequiredBombers, plan.StagingSince, now, plan.DeadlineAt);
-                if (commit is { } reason) CommitFinaleWave(run, plan, side, assembled, now, reason, armed);
+                var members = assembled;
+                if (ready is not null)
+                {
+                    bool sufficient = commit is not null && commit != "deadline-forced" &&
+                        StrikeVolley.Profile(Catalog.RepresentativeCore(), plan.TargetTypeId) is { } profile &&
+                        StrikeWeaponEnvelope.Sufficient(profile, readyLoadouts!, plan.LandingShare, plan.ShotsNeeded);
+                    members = plan.Readiness.Members(assembled, ready, sufficient, now, ref commit);
+                }
+                if (members is not null && commit is not null)
+                    CommitFinaleWave(run, plan, side, members, now, commit, armed);
             }
             else if (plan.WaveEndLogged && now >= plan.GoTime + FinaleWaveWindowSeconds + FinaleWaveTailSeconds)
             {
@@ -525,6 +554,8 @@ internal sealed partial class BotManager
         plan.WaveEndLogged = true;
         int committed = plan.WaveCommitted;
         int released = plan.WaveReleased;
+        long accepted = Interlocked.Read(ref plan.WaveAcceptedRounds);
+        string acceptedField = accepted >= 0 ? $"acceptedRounds={accepted} " : "";
         // P959 — delivery = rounds the wave really landed against the rounds the kill
         // needs (not against every magazine round it could have fired: a wave that has
         // already killed the station stopped firing, and white-space rounds nobody
@@ -537,7 +568,7 @@ internal sealed partial class BotManager
         plan.WavesMeasured++;
         plan.ReleaseLosses = plan.WaveKilledBeforeRelease;
         Console.WriteLine($"[strike] side={side} finale wave end target=station#{plan.TargetId} sector={plan.Sector} "
-            + $"required={plan.RequiredBombers} committed={committed} released={released} "
+            + $"required={plan.RequiredBombers} committed={committed} released={released} {acceptedField}"
             + $"killedBeforeRelease={Math.Max(0, committed - released)} hits={plan.HitsInWindow} "
             + $"rounds={plan.WaveRounds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}"
             + $"/{plan.WaveExpectedRounds} "
@@ -575,6 +606,8 @@ internal sealed partial class BotManager
             bot.FinaleLoneWolf = false;
             bot.FinaleReleaseLogged = false;
             bot.FinaleStrikeSpent = false;
+            bot.AcceptedAtRelease = null;
+            bot.EnvelopeStation = -1;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
             bot.FinalePreparationRefitUsed = false;
             bot.TargetSector = null;
@@ -668,7 +701,10 @@ internal sealed partial class BotManager
     private void CommitFinaleWave(FinaleRun run, FinalePlan plan, short side, List<short> members,
         double now, string reason, ActiveBot[] armed)
     {
-        plan.GoTime = now + ResearchTactics.StrikeGoLeadSeconds;
+        plan.LegacyEnvelopeRelease = run.Settings.WeaponEnvelope && reason != "weapon-ready";
+        double lead = run.Settings.WeaponEnvelope && !plan.LegacyEnvelopeRelease ? 0 : ResearchTactics.StrikeGoLeadSeconds;
+        plan.GoTime = now + lead;
+        plan.Readiness = default;
         plan.GoMembers.Clear();
         foreach (short id in members) plan.GoMembers.Add(id);
         plan.HullAtGo = plan.ShieldAtGo = -1;
@@ -678,6 +714,7 @@ internal sealed partial class BotManager
         plan.WaveCommitted = members.Count;
         plan.WaveKilledBeforeRelease = 0;
         plan.WaveReleased = 0;
+        Interlocked.Exchange(ref plan.WaveAcceptedRounds, run.Settings.WeaponEnvelope ? 0 : -1);
         plan.WaveRounds = 0;
         plan.WaveExpectedRounds = 0;
         plan.WaveEndLogged = false;
@@ -685,7 +722,7 @@ internal sealed partial class BotManager
         var profile = StrikeVolley.Profile(core, plan.TargetTypeId);
         foreach (var bot in armed)
             if (plan.GoMembers.Contains(bot.ShipId) && profile is { } stationProfile
-                && (run.Settings.ReachableStrike ? FinaleGrantedStrikeLoadout(bot)
+                && ((run.Settings.ReachableStrike || run.Settings.WeaponEnvelope) ? FinaleGrantedStrikeLoadout(bot)
                     : StrikeVolley.FromParts(core, ActualHullId(bot), bot.Parts)) is { } loadout)
                 plan.WaveExpectedRounds += StrikeVolley.RoundsInWindow(loadout, stationProfile);
         foreach (var bot in armed)
@@ -706,7 +743,7 @@ internal sealed partial class BotManager
             Console.WriteLine($"[strike] side={side} finale commit required={plan.RequiredBombers} "
                 + $"assembled={members.Count} visible={members.Count - wolves} "
                 + $"loneWolves={wolves} target=station#{plan.TargetId} sector={plan.Sector} "
-                + $"goIn={ResearchTactics.StrikeGoLeadSeconds:F0}s wait={now - (plan.StagingSince ?? now):F1}s "
+                + $"goIn={lead:F0}s wait={now - (plan.StagingSince ?? now):F1}s "
                 + $"stationHull={Fraction(hull)} stationShield={Fraction(shield)} reason={reason} "
                 + $"plannerKill={plan.PlannerKill} shotsNeeded={plan.ShotsNeeded} "
                 + $"wing={plan.WingCap} landing={plan.LandingShare.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} "
@@ -743,12 +780,32 @@ internal sealed partial class BotManager
         ? "-1"
         : value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
 
+    // The local strike fixture samples the owner's view at the release decision.
+    internal bool ObserveStrikeRelease { get; set; }
+
+    private static void LogStrikeRelease(ActiveBot bot, ConnectionSession cs, FinalePlan plan)
+    {
+        lock (cs.Gate)
+        {
+            var feedback = cs.World.MissileLock;
+            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own) || own.Latest is not { } pose
+                || cs.World.Stations.GetValueOrDefault(plan.TargetId).Position is not { Length: 3 } p) return;
+            string parts = string.Join(',', bot.Granted.Parts?.Where(part => part.MountId < 128)
+                .Select(part => $"{part.PartId}/{part.MountId}/{part.Amount}") ?? []);
+            Console.WriteLine($"[strike-owner] ship={bot.ShipId} station={plan.TargetId} hull={bot.Granted.HullId} "
+                + $"range={(pose.Position - new Vector3(p[0], p[1], p[2])).Length():F1} parts={parts} "
+                + $"target={feedback.TargetType}/{feedback.TargetId} lock={feedback.LockFraction:F3} ready={feedback.IsReady} "
+                + $"weapon={ReadStrikeApproach(bot, cs.World, plan, 0)?.Weapon.Part} "
+                + $"current={cs.World.MyCurrentCommand?.TargetType}/{cs.World.MyCurrentCommand?.TargetId}");
+        }
+    }
+
     /// <summary>P801 — hold a finale bomber at the staging point until its wave's
     /// shared go time, then release it. Returns true when the tick is owned by
     /// the hold (no attack/transit decision this tick). Only in the target
     /// sector: elsewhere the ordinary finale transit flies it there. A released
-    /// bomber falls through to the normal station attack, so P778a push and
-    /// support repair keep working on the group.</summary>
+    /// legacy bomber falls through to the normal station attack. P1105 keeps
+    /// its station order and flies the weapon lane through the shot.</summary>
     private bool HoldFinaleStrike(ActiveBot bot, double now)
     {
         if (!bot.FinaleBomberActive || bot.IsPod || bot.Finale is not { Rotated: false } run) return false;
@@ -762,15 +819,35 @@ internal sealed partial class BotManager
         bool member;
         lock (run.Sync) { go = plan.GoTime; member = plan.GoMembers.Contains(bot.ShipId); }
 
+        bool envelopeRelease = run.Settings.WeaponEnvelope && !plan.LegacyEnvelopeRelease;
         if (go is { } release && member)
         {
             if (StrikeVolley.ShouldRelease(now, go, member, bot.FinaleReleaseLogged))
             {
                 if (!bot.FinaleReleaseLogged)
                 {
+                    if (envelopeRelease)
+                    {
+                        bool ready;
+                        lock (cs.Gate)
+                        {
+                            var approach = ReadStrikeApproach(bot, cs.World, plan, now);
+                            ready = now <= release + FinaleWaveWindowSeconds && approach is { Ready: true };
+                            if (ready)
+                            {
+                                bot.ReleasedGun = approach!.Value.Weapon.Kind == StrikeWeaponEnvelope.Kind.Gun;
+                                bot.AcceptedAtRelease = bot.ReleasedGun ? cs.World.Diag.ReceivedOwn : cs.World.OwnMissilesFired;
+                            }
+                        }
+                        if (!ready)
+                        {
+                            return FlyStrikeEnvelope(bot, cs, run, plan, now, permission: false);
+                        }
+                    }
+                    if (ObserveStrikeRelease) LogStrikeRelease(bot, cs, plan);
                     bot.FinaleReleaseLogged = true;
                     bot.FinaleReleaseAt = now;
-                    bot.FinaleStrikeSpent = true;   // magazine spent: wait for a relaunch before the next wave
+                    bot.FinaleStrikeSpent = !envelopeRelease;
                     lock (run.Sync) run.Plans[bot.Side].WaveReleased++;
                     bool cloaked = bot.CloakHeld;
                     float nearest = NearestVisibleEnemy(cs, bot.ShipId, bot.Side, out _);
@@ -781,26 +858,29 @@ internal sealed partial class BotManager
                         + $"nearestEnemy={(float.IsPositiveInfinity(nearest) ? "-1" : nearest.ToString("F0"))} "
                         + $"undetected={undetected.ToString().ToLowerInvariant()}");
                 }
+                if (envelopeRelease)
+                {
+                    return FlyStrikeEnvelope(bot, cs, run, plan, now, permission: true);
+                }
                 return false;   // released: the normal station attack runs this tick
             }
-            HoldAtFinaleStandoff(bot, cs, plan, now);
-            return true;
         }
 
         // Not in the committed wave (a relaunch, or still gathering): hold.
+        if (run.Settings.WeaponEnvelope)
+        {
+            if (bot.FinaleStrikeSpent || bot.FinaleReleaseLogged) return false;
+            if (!member || !plan.LegacyEnvelopeRelease)
+                return FlyStrikeEnvelope(bot, cs, run, plan, now, permission: false);
+        }
         HoldAtFinaleStandoff(bot, cs, plan, now);
         return true;
     }
 
-    /// <summary>P801/P959 — hold position on the radial standoff line, nose ON the
-    /// station. The orientation matters: native missile lock only builds while the
-    /// target is inside the missile's <c>LockAngle</c> of the nose
-    /// (<c>magazineigc.cpp:148-167</c>), and the bot's fire rule needs a full lock
-    /// before it spends a round (P558). P801 flew toward the radial hold point —
-    /// i.e. nose pointing AWAY from the station — so the measured lock never left
-    /// 0.000 (21,058 <c>[missilelock] target 2081 lock 0.000</c> lines in the P896
-    /// r-f-m0 log) and no bomber could fire the instant it was released. Facing the
-    /// station during the hold makes every wave member locked and ready at go.</summary>
+    /// <summary>P959 legacy hold points the nose at the station and regulates
+    /// radius with throttle. Native guided lock also needs the current target
+    /// and magazine range (Igc/magazineigc.cpp:127-167). P1105 checks those
+    /// separately on the opt-in path.</summary>
     private void HoldAtFinaleStandoff(ActiveBot bot, ConnectionSession cs, FinalePlan plan, double now)
     {
         Vector3 station;
@@ -811,19 +891,7 @@ internal sealed partial class BotManager
             station = new Vector3(p[0], p[1], p[2]);
         }
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return;
-        var outward = pos - station;
-        if (outward.LengthSquared() < 1f) outward = new Vector3(1, 0, 0);
-        outward = outward.Normalize();
         float standoff = bot.FinaleLoneWolf ? FinaleLoneWolfStandoff : FinaleStrikeStandoff;
-        Vector3 hold = station + outward * standoff;
-        if (bot.FinaleLoneWolf)
-        {
-            // A lateral lane offset keeps the wolf's approach visibly distinct
-            // from the visible element's line to the station.
-            var lateral = Vector3.CrossProduct(outward, new Vector3(0, 1, 0));
-            if (lateral.LengthSquared() < 1e-3f) lateral = Vector3.CrossProduct(outward, new Vector3(1, 0, 0));
-            hold += lateral.Normalize() * FinaleLoneWolfLateral;
-        }
         bot.TargetId = null;
         bot.OrderedTargetId = null;
         // A real imminent collision still owns the tick (native dodge pre-empts

@@ -3343,8 +3343,18 @@ public sealed partial class ClientWorld
     /// references (<c>CompactTime</c>/<c>CompactPosition</c> deltas).</summary>
     /// <summary>Opt-in benchmark/spectator stream sector. Ordinary play derives it from the own ship.</summary>
     public short? TelemetrySectorOverride { get; set; }
+    // Per-recipient target pools (FedSrv/FedSrv.CPP:4079-4124). Gun-only pilots
+    // can observe the clear -> acquired edge even without missile feedback.
+    public long TargetPoolUpdates { get; private set; }
+    public bool HasTargetPools { get; private set; }
+    public bool TargetPoolsEmpty { get; private set; }
+    public long MissileLockUpdates { get; private set; }
+
     private void Apply(HeavyShipsUpdate heavy)
     {
+        TargetPoolUpdates++;
+        TargetPoolsEmpty = heavy.BpTargetHull == byte.MaxValue && heavy.BpTargetShield == byte.MaxValue;
+        HasTargetPools = heavy.BpTargetHull != byte.MaxValue && heavy.BpTargetShield != byte.MaxValue;
         MarkSnapshotDirty();
         // P375 — HEAVY_SHIPS_UPDATE(176) is sent by the server for exactly the
         // ships in the RECIPIENT's OWN cluster (BroadcastShipsUpdate gathers
@@ -6081,6 +6091,7 @@ public sealed partial class ClientWorld
     /// each crossing; holding a state posts nothing (never spammed per frame).</summary>
     private void Apply(MissileLockUpdate m)
     {
+        MissileLockUpdates++;
         _missileLock = new MissileLockState(
             m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName, m.TargetType, m.IsReady);
 

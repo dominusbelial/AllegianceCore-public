@@ -90,6 +90,8 @@ internal sealed partial class BotManager
         bot.FinaleReleaseLogged = false;
         bot.FinaleReleaseAt = null;
         bot.FinaleStrikeSpent = false;
+        bot.EnvelopeStation = bot.ObservedStrikeStation = -1;
+        bot.AcceptedAtRelease = null;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodProbeId = -1;
         bot.PodTargetAuto = false;

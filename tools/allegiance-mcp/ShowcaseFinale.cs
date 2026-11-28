@@ -18,7 +18,8 @@ internal static class ShowcaseFinale
         double PrearmMinutes = 0, double EarlyPressureMinutes = 0, int MaxWing = 18,
         double DeadlineSeconds = 900,
         // P961 experimental requirement/plateau/retarget policy; rig A/B decides defaults.
-        bool ReachableStrike = false, double PlateauSeconds = 45, float EngagementRange = 2500)
+        bool ReachableStrike = false, double PlateauSeconds = 45, float EngagementRange = 2500,
+        bool WeaponEnvelope = false)
     {
         public bool Enabled => AfterMinutes > 0;
         internal void Validate()

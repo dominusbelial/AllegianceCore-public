@@ -138,6 +138,8 @@ internal sealed partial class BotManager
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleGrantVerified = false;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
             bot.FinaleLoneWolf = bot.FinaleReleaseLogged = bot.FinaleStrikeSpent = false;
+            bot.EnvelopeStation = bot.ObservedStrikeStation = -1;
+            bot.AcceptedAtRelease = null;
             bot.FinaleReleaseAt = null;
             return;
         }

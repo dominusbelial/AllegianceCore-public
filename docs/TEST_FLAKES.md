@@ -11539,3 +11539,8 @@ The owning test for the background exception remains unidentified.
 ## P1104b Fast sweep, 2026-11-28
 
 `LiveRelaunchTests.Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied` failed once in the full Fast sweep. Both clients had received the relaunch. At `LiveRelaunchTests.cs:201`, the message cookie was 2 and the lander's current pose cookie was 1. Three method-only runs passed in fresh processes (625, 461 and 480 ms). The cause of the timing difference remains open. [P1104b qualification](reports/FIRST_SUSTAINABLE_ATTACK_P1104.md#p1104b-review-fixes)
+### P1105b local Fast timing
+
+| Case | Sweep | Three exact-case isolated repeats |
+|---|---|---|
+| `TcpClientGreetOrderTests.Send_racing_join_never_precedes_the_greeting_or_finds_no_sender` | Passed in 21.596 s, over the preliminary sweep's 14.364 s limit | Passed in 5.176, 4.715 and 3.569 s with the same settings |

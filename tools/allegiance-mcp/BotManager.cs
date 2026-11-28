@@ -6443,6 +6443,16 @@ bool isThreat =
         public bool FinaleRefitting, FinaleRefitLaunchPending, FinaleKeepsPayday;
         public double FinaleRefitCheckAt = double.NegativeInfinity;
         public long FinaleMissileLaunchBase;
+        public short EnvelopeStation = -1;
+        public Vector3 EnvelopeBearing;
+        public double EnvelopeRetryAt;
+        public long TargetFeedbackBase, ClearTargetBase;
+        public bool WaitingForClear;
+        public long? AcceptedAtRelease;
+        public bool ReleasedGun;
+        public long GunQuietCount;
+        public double GunQuietSince;
+        public short ObservedStrikeStation = -1;
         // P961: persists through death/relaunch; prearm and arm share one preparation.
         public bool FinalePreparationRefitUsed;
         public double? FinaleProtectedSince;

@@ -1,0 +1,1283 @@
+[
+  {
+    "label": "Brawl-959-control",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 959,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      0
+    ],
+    "sectors": 1,
+    "tick_ms": 50,
+    "deadline_at": 665.7,
+    "credited": {
+      "Alpha": 1,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 1,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 8,
+    "winner": 0,
+    "pre_deadline": true,
+    "waves": [
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 334.8,
+        "reason": "massed",
+        "members": [
+          8104,
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8104,
+            "sim": 334.8,
+            "distance": 4582.6,
+            "target": "Ship/8115",
+            "current": "Ship/8115",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 381.4,
+            "role": "visible"
+          },
+          {
+            "ship": 8106,
+            "sim": 334.8,
+            "distance": 3135.7,
+            "target": "Ship/8117",
+            "current": "Ship/8117",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          },
+          {
+            "ship": 8108,
+            "sim": 334.8,
+            "distance": 4254.3,
+            "target": "Ship/8115",
+            "current": "Ship/8115",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          },
+          {
+            "ship": 8110,
+            "sim": 334.8,
+            "distance": 3736.4,
+            "target": "Ship/8113",
+            "current": "Ship/8113",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          },
+          {
+            "ship": 8112,
+            "sim": 334.8,
+            "distance": 3940.4,
+            "target": "Ship/8115",
+            "current": "Ship/8115",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8114,
+            "sim": 334.8,
+            "distance": 4676.3,
+            "target": "Ship/8119",
+            "current": "Ship/8119",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          },
+          {
+            "ship": 8116,
+            "sim": 334.8,
+            "distance": 4518.6,
+            "target": "Ship/8105",
+            "current": "Ship/8105",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8118,
+            "sim": 334.8,
+            "distance": 3422.8,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 334.8,
+            "distance": 4626.8,
+            "target": "Ship/8105",
+            "current": "Ship/8105",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 334.8,
+            "role": "visible"
+          }
+        ],
+        "accepted": 17,
+        "on_target": 17,
+        "shooters": [
+          8104,
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "hits": 8,
+        "hit_ships": [
+          8104,
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8118,
+          8120
+        ],
+        "first": 33.5,
+        "kills": 1,
+        "target_death_at": 385.0
+      }
+    ],
+    "armed_lives": 9,
+    "armed_losses": 0,
+    "losses_before_any": 0,
+    "losses_before_anti_base": 0
+  },
+  {
+    "label": "Brawl-959-treatment",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 959,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      0
+    ],
+    "sectors": 1,
+    "tick_ms": 50,
+    "deadline_at": 665.8,
+    "credited": {
+      "Alpha": 1,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 1,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 7,
+    "winner": 0,
+    "pre_deadline": true,
+    "waves": [
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 512.25,
+        "reason": "ready-after-wait",
+        "members": [
+          8108,
+          8110,
+          8112,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8108,
+            "sim": 512.25,
+            "distance": 810.2,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 512.25,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8110,
+            "sim": 512.25,
+            "distance": 804.3,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 512.25,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8112,
+            "sim": 512.25,
+            "distance": 808.5,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 512.25,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 512.25,
+            "distance": 797.4,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 512.25,
+            "role": "visible"
+          }
+        ],
+        "accepted": 7,
+        "on_target": 7,
+        "shooters": [
+          8108,
+          8110,
+          8112,
+          8120
+        ],
+        "hits": 7,
+        "hit_ships": [
+          8108,
+          8110,
+          8112,
+          8120
+        ],
+        "first": 2.8,
+        "kills": 1,
+        "target_death_at": 519.5
+      }
+    ],
+    "armed_lives": 20,
+    "armed_losses": 12,
+    "losses_before_any": 11,
+    "losses_before_anti_base": 11
+  },
+  {
+    "label": "Brawl-960-control",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 960,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      0
+    ],
+    "sectors": 1,
+    "tick_ms": 50,
+    "deadline_at": 665.4,
+    "credited": {
+      "Alpha": 5,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 5,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 26,
+    "winner": 0,
+    "pre_deadline": true,
+    "waves": [
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 327.6,
+        "reason": "massed",
+        "members": [
+          8104,
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8104,
+            "sim": 327.65,
+            "distance": 4569.4,
+            "target": "Ship/8117",
+            "current": "Ship/8117",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 327.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8108,
+            "sim": 327.65,
+            "distance": 4628.1,
+            "target": "Ship/8117",
+            "current": "Ship/8117",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 327.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8110,
+            "sim": 327.65,
+            "distance": 5355.3,
+            "target": "Ship/8113",
+            "current": "Ship/8113",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 386.5,
+            "role": "visible"
+          },
+          {
+            "ship": 8112,
+            "sim": 327.65,
+            "distance": 4849.0,
+            "target": "Ship/8115",
+            "current": "Ship/8115",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 378.1,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8114,
+            "sim": 327.65,
+            "distance": 4491.7,
+            "target": "Ship/8109",
+            "current": "Ship/8109",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 327.65,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8116,
+            "sim": 327.65,
+            "distance": 5229.5,
+            "target": "Ship/8107",
+            "current": "Ship/8107",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 382.3,
+            "role": "visible"
+          },
+          {
+            "ship": 8118,
+            "sim": 327.65,
+            "distance": 4516.6,
+            "target": "Ship/8109",
+            "current": "Ship/8109",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 327.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 327.65,
+            "distance": 5139.2,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 380.4,
+            "role": "visible"
+          },
+          {
+            "ship": 8106,
+            "sim": 340.2,
+            "distance": 4836.6,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 0,
+            "on_target": 0,
+            "first_shot": null,
+            "role": "visible"
+          }
+        ],
+        "accepted": 13,
+        "on_target": 13,
+        "shooters": [
+          8104,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "hits": 7,
+        "hit_ships": [
+          8104,
+          8112,
+          8116,
+          8118,
+          8120
+        ],
+        "first": 48.55,
+        "kills": 1,
+        "target_death_at": 386.95
+      }
+    ],
+    "armed_lives": 16,
+    "armed_losses": 8,
+    "losses_before_any": 3,
+    "losses_before_anti_base": 3
+  },
+  {
+    "label": "Brawl-960-treatment",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 960,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      0
+    ],
+    "sectors": 1,
+    "tick_ms": 50,
+    "deadline_at": 665.4,
+    "credited": {
+      "Alpha": 2,
+      "Bravo": 2
+    },
+    "pilot_base_kills": {
+      "0": 2,
+      "1": 2
+    },
+    "uncredited": 0,
+    "match_hits": 38,
+    "winner": 1,
+    "pre_deadline": false,
+    "waves": [
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 350.4,
+        "reason": "ready-after-wait",
+        "members": [
+          8104,
+          8108,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8104,
+            "sim": 350.4,
+            "distance": 799.3,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 350.4,
+            "role": "visible"
+          },
+          {
+            "ship": 8108,
+            "sim": 350.4,
+            "distance": 784.0,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 350.4,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 350.4,
+            "distance": 779.9,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 350.45,
+            "role": "visible"
+          }
+        ],
+        "accepted": 6,
+        "on_target": 6,
+        "shooters": [
+          8104,
+          8108,
+          8120
+        ],
+        "hits": 6,
+        "hit_ships": [
+          8104,
+          8108,
+          8120
+        ],
+        "first": 2.95,
+        "kills": 0,
+        "target_death_at": null
+      },
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 533.65,
+        "reason": "ready-after-wait",
+        "members": [
+          8104,
+          8106,
+          8110,
+          8112,
+          8116,
+          8118,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8104,
+            "sim": 533.65,
+            "distance": 798.1,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8106,
+            "sim": 533.65,
+            "distance": 802.6,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8110,
+            "sim": 533.65,
+            "distance": 789.7,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8112,
+            "sim": 533.65,
+            "distance": 797.3,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8116,
+            "sim": 533.65,
+            "distance": 795.7,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8118,
+            "sim": 533.65,
+            "distance": 773.9,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 533.65,
+            "distance": 802.9,
+            "target": "Station/1",
+            "current": "Station/1",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 533.65,
+            "role": "lone-wolf"
+          }
+        ],
+        "accepted": 7,
+        "on_target": 7,
+        "shooters": [
+          8104,
+          8106,
+          8110,
+          8112,
+          8116,
+          8118,
+          8120
+        ],
+        "hits": 4,
+        "hit_ships": [
+          8104,
+          8106,
+          8110,
+          8112
+        ],
+        "first": 3.05,
+        "kills": 1,
+        "target_death_at": 536.85
+      },
+      {
+        "side": 1,
+        "target": 0,
+        "required": 9,
+        "go": 539.9,
+        "reason": "ready-after-wait",
+        "members": [
+          8107,
+          8109,
+          8115,
+          8119
+        ],
+        "owners": [
+          {
+            "ship": 8107,
+            "sim": 539.9,
+            "distance": 790.3,
+            "target": "Station/0",
+            "current": "Station/0",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 540.0,
+            "role": "visible"
+          },
+          {
+            "ship": 8109,
+            "sim": 539.9,
+            "distance": 770.0,
+            "target": "Station/0",
+            "current": "Station/0",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 539.9,
+            "role": "visible"
+          },
+          {
+            "ship": 8115,
+            "sim": 539.9,
+            "distance": 898.5,
+            "target": "Station/0",
+            "current": "Station/0",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 539.9,
+            "role": "visible"
+          },
+          {
+            "ship": 8119,
+            "sim": 539.9,
+            "distance": 776.2,
+            "target": "Station/0",
+            "current": "Station/0",
+            "lock": 1.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 539.9,
+            "role": "visible"
+          }
+        ],
+        "accepted": 8,
+        "on_target": 8,
+        "shooters": [
+          8107,
+          8109,
+          8115,
+          8119
+        ],
+        "hits": 8,
+        "hit_ships": [
+          8107,
+          8109,
+          8115,
+          8119
+        ],
+        "first": 2.8,
+        "kills": 1,
+        "target_death_at": 547.0
+      }
+    ],
+    "armed_lives": 29,
+    "armed_losses": 11,
+    "losses_before_any": 9,
+    "losses_before_anti_base": 9
+  },
+  {
+    "label": "SingleRing-959-control",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 959,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.35,
+    "credited": {
+      "Alpha": 1,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 1,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 8,
+    "winner": 0,
+    "pre_deadline": false,
+    "waves": [
+      {
+        "side": 0,
+        "target": 1,
+        "required": 9,
+        "go": 907.55,
+        "reason": "massed",
+        "members": [
+          8104,
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "owners": [
+          {
+            "ship": 8104,
+            "sim": 907.6,
+            "distance": 2587.9,
+            "target": "Ship/8105",
+            "current": "Ship/8105",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 0,
+            "on_target": 0,
+            "first_shot": null,
+            "role": "visible"
+          },
+          {
+            "ship": 8106,
+            "sim": 907.6,
+            "distance": 411.0,
+            "target": "Ship/8107",
+            "current": "Ship/8107",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 911.7,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8108,
+            "sim": 907.6,
+            "distance": 410.9,
+            "target": "Ship/8111",
+            "current": "Ship/8111",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 910.9,
+            "role": "lone-wolf"
+          },
+          {
+            "ship": 8110,
+            "sim": 907.6,
+            "distance": 411.0,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 907.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8112,
+            "sim": 907.6,
+            "distance": 411.4,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 907.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8114,
+            "sim": 907.6,
+            "distance": 1124.8,
+            "target": "Ship/8119",
+            "current": "Ship/8119",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 1,
+            "on_target": 1,
+            "first_shot": 910.85,
+            "role": "visible"
+          },
+          {
+            "ship": 8116,
+            "sim": 907.6,
+            "distance": 411.7,
+            "target": "Ship/8107",
+            "current": "Ship/8107",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 907.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8118,
+            "sim": 907.6,
+            "distance": 411.3,
+            "target": "Ship/8103",
+            "current": "Ship/8103",
+            "lock": 0.0,
+            "ready": true,
+            "part": 158,
+            "quantity": 2,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 907.65,
+            "role": "visible"
+          },
+          {
+            "ship": 8120,
+            "sim": 907.6,
+            "distance": 414.8,
+            "target": "Ship/8105",
+            "current": "Ship/8105",
+            "lock": 0.0,
+            "ready": true,
+            "part": 157,
+            "quantity": 4,
+            "accepted": 2,
+            "on_target": 2,
+            "first_shot": 907.65,
+            "role": "visible"
+          }
+        ],
+        "accepted": 13,
+        "on_target": 13,
+        "shooters": [
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "hits": 8,
+        "hit_ships": [
+          8106,
+          8108,
+          8110,
+          8112,
+          8114,
+          8116,
+          8118,
+          8120
+        ],
+        "first": 5.9,
+        "kills": 1,
+        "target_death_at": 914.35
+      }
+    ],
+    "armed_lives": 16,
+    "armed_losses": 2,
+    "losses_before_any": 2,
+    "losses_before_anti_base": 2
+  },
+  {
+    "label": "SingleRing-959-treatment",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 959,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.55,
+    "credited": {
+      "Alpha": 0,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 0,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 0,
+    "winner": 1,
+    "pre_deadline": false,
+    "waves": [],
+    "armed_lives": 17,
+    "armed_losses": 2,
+    "losses_before_any": 2,
+    "losses_before_anti_base": 2
+  },
+  {
+    "label": "SingleRing-960-control",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 960,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.25,
+    "credited": {
+      "Alpha": 0,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 0,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 0,
+    "winner": 1,
+    "pre_deadline": false,
+    "waves": [],
+    "armed_lives": 17,
+    "armed_losses": 6,
+    "losses_before_any": 6,
+    "losses_before_anti_base": 6
+  },
+  {
+    "label": "SingleRing-960-treatment",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 960,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.3,
+    "credited": {
+      "Alpha": 0,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 0,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 0,
+    "winner": 0,
+    "pre_deadline": false,
+    "waves": [],
+    "armed_lives": 21,
+    "armed_losses": 4,
+    "losses_before_any": 4,
+    "losses_before_anti_base": 4
+  },
+  {
+    "label": "SingleRing-961-control",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 961,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.3,
+    "credited": {
+      "Alpha": 0,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 0,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 0,
+    "winner": 0,
+    "pre_deadline": false,
+    "waves": [],
+    "armed_lives": 19,
+    "armed_losses": 2,
+    "losses_before_any": 2,
+    "losses_before_anti_base": 2
+  },
+  {
+    "label": "SingleRing-961-treatment",
+    "assembly": "D0B648616694C5105553409804704213607B8D396E04C39DAF002979C3C5DED1",
+    "seed": 961,
+    "civs": [
+      25,
+      3
+    ],
+    "homes": [
+      0,
+      2
+    ],
+    "sectors": 4,
+    "tick_ms": 50,
+    "deadline_at": 915.3,
+    "credited": {
+      "Alpha": 0,
+      "Bravo": 0
+    },
+    "pilot_base_kills": {
+      "0": 0,
+      "1": 0
+    },
+    "uncredited": 0,
+    "match_hits": 0,
+    "winner": 0,
+    "pre_deadline": false,
+    "waves": [],
+    "armed_lives": 15,
+    "armed_losses": 1,
+    "losses_before_any": 1,
+    "losses_before_anti_base": 1
+  }
+]

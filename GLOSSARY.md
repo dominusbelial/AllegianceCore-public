@@ -2926,8 +2926,8 @@ list in **reverse**.
 - **Strike wave sizing (P801, P896, P959)** — `tools/allegiance-mcp/StrikeVolley.cs`
   computes the massed wave from the real station type and granted loadouts against
   the native damage/regen law; `tools/allegiance-mcp/BotManager.StrikeMass.cs`
-  holds the wing at a standoff (nose on the station, so the native missile lock
-  builds before the go time), sizes it from observed losses/defenders behind
+  holds the wing at a standoff with the nose on the station, sizes it from
+  observed losses/defenders behind
   `finale_survival_margin` (P959 default 1 = one hull per seen defender/loss;
   0 = the bare P801 kill + one spare), divides the ideal hull count by the
   measured landing share, and refuses to commit a wave whose loadout cannot damage
@@ -2947,6 +2947,16 @@ list in **reverse**.
   trips, and one preparation refit is allowed per prearm/arm cycle. Report:
   `docs/reports/FINALE_REACHABLE_STRIKE_P961.md`.
   Local measurement harnesses: `tools/p896-strike-proof/`, `tools/p959-strike-proof/`.
+- **Strike weapon envelope (P1105)** — `finale_weapon_envelope` defaults off. A
+  qualified mass can release pilots whose granted weapon can fire on the observed
+  station. A guided magazine needs the owner's station lock, a dumbfire round
+  needs range and aim, and a fixed gun needs target feedback, range, aim and
+  resources. P1105b checks the mixed ready volley against measured delivery.
+  The eight-second wait starts when the arrived mass qualifies. Timeout and
+  deadline release the arrived wing through ordinary flight.
+  `tools/allegiance-mcp/StrikeWeaponEnvelope.cs` computes the range and lane.
+  `tools/allegiance-mcp/BotManager.StrikeEnvelope.cs` flies it and reads accepted
+  owner fire. See `docs/reports/STRIKE_WEAPON_ENVELOPE_P1105.md`.
 - **Finale duty vs strike hardware (P733, P959, P973)** — `FinaleBomberActive` is
   the finale DUTY flag: a reserved pilot whose side has no bomber tech and no
   station-damaging weapon still relaunches with the best legal combat loadout, its
