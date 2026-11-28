@@ -11439,3 +11439,10 @@ failed once (770 ms) and then passed three isolated reruns. `SC2SupportPhaseLive
 gate re-run with the light-gate selection. Neither test touches the merged changes. Separately, the two P1091
 1920×1080 HUD SHA-256 checks fail on a software-GL (llvmpipe) host at base and pass on a hardware GPU; see the P1095
 entry above.
+
+**P900 Live fleet-recovery suite, pre-existing setup failure (2026-11-27).** Run on its own on this workstation, 10 or 11
+of the 11 `P900FleetRecoveryLiveTests` cases fail in about 2 s with `driver output closed`. The driver it starts
+(`allegiance-mcp.dll` from the `Allegiance.ClientCore.Tests` output) exits with `Could not load file or assembly
+'Microsoft.Extensions.Logging.Abstractions, Version=10.0.0.0'`: the test output folder carries `allegiance-mcp.deps.json`
+but not the `Microsoft.Extensions.*` assemblies it lists. A clean checkout of `28debb3c` fails identically, so this predates
+P1094–P1097. The suite is Live tier (outside the light gate); earlier gates only ran its single skirmish case. Not fixed here.
