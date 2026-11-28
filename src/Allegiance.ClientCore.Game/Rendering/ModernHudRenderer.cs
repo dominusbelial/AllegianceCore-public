@@ -13,6 +13,10 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
     private readonly HudSettings _settings;
     private readonly HudSdfFont _smallSdf, _bigSdf;
     private readonly RadarBracketRenderer _radar;
+    // P1107 — the resolved `visuals.*` flags (the SAME live object the Visuals
+    // options page mutates), read at draw time so `visuals.compactHud` applies
+    // on the next frame. Null = every visual flag at its table default (off).
+    private readonly VisualOptions? _visuals;
     private readonly Dictionary<GaugeKind, float> _animated = new();
     private long _previous;
     private float _dt, _scale = 1;
@@ -41,11 +45,12 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
 
     public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings,
         SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null,
-        RadarIconTextures? radarIcons = null, float displayScale = 1f)
+        RadarIconTextures? radarIcons = null, float displayScale = 1f, VisualOptions? visuals = null)
         : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56),
             nativeHudTextures: nativeHudTextures)
     {
         _settings = settings;
+        _visuals = visuals;
         _displayScale = displayScale > 0f ? displayScale : 1f;
         _smallSdf = new(white.GraphicsDevice, _small, outlineSource is null ? 1 : .25f);
         _bigSdf = new(white.GraphicsDevice, _big, outlineSource is null ? 1 : 30f / 56);
@@ -67,6 +72,17 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
     protected override bool DeferWarpFlash => true;
     protected override bool UsesModernGauges => true;
     protected override float TextScale => _scale;
+    /// <summary>P1107 — <c>visuals.compactHud</c>: the compact proportions (smaller
+    /// secondary text, 75 % rings, 85 % cluster spread, slim target bars). Modern
+    /// only — the classic renderer has no access to a <see cref="VisualOptions"/>.</summary>
+    private bool CompactHud => CompactHudLayout.Enabled(_visuals);
+    /// <summary>P1107 review fix — keep "mps" attached under the placed speed numeral.</summary>
+    protected override bool AttachSpeedUnit => CompactHud;
+    /// <summary>P1107 — the draw scale of secondary (label/status/detail) text.</summary>
+    private float SecondaryScale => CompactHudLayout.SecondaryScale(_scale, _small.LineSpacing, CompactHud);
+    /// <summary>The HUD-level spread the gauges and the own-status grid share.
+    /// P1107 narrows it when the compact HUD is on; off is exactly today's value.</summary>
+    private float Spread => CompactHudLayout.Spread(_scale, CompactHud);
     /// <summary>P828 — Modern runs the radar label declutter by default
     /// (<see cref="HudSettings.RadarDeclutterOn"/>: on for Modern, off for
     /// Classic), resolved live from the shared settings instance so the options
@@ -100,7 +116,37 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
             var (x, y) = GaugeCenter(gauge, viewport);
-            Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
+            if (CompactHud)
+            {
+                // P1107 — reserve the ring plus the tight label under it instead of
+                // the fixed 112x112 block, so measured text can use the space the
+                // smaller cluster frees (and never lands on the ring).
+                float extent = CompactHudLayout.RingExtent(_scale, true);
+                float half = MathF.Max(extent, 40 * _scale);
+                float height = 2 * extent + CompactHudLayout.LabelGap(_scale, true) + _small.LineSpacing * SecondaryScale;
+                Layout.Reserve(new((int)(x - half), (int)(y - extent), (int)(2 * half), (int)height));
+            }
+            else
+                Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
+        }
+        if (CompactHud)
+        {
+            // P1107 review fix — the compact cluster leaves room right around the
+            // screen centre, so measured text (the speed block at 1280x720 in review)
+            // could land on the crosshair. Keep a small box around it clear.
+            float half = CompactHudLayout.CrosshairClearHalf(_scale);
+            Layout.Reserve(new((int)(viewport.Width / 2f - half), (int)(viewport.Height / 2f - half),
+                (int)(2 * half), (int)(2 * half)));
+            // The speed readout is the primary instrument: claim its row just under
+            // the crosshair before the status text (DOCK PILOT, SIG, KB) is placed.
+            if (model.CentreHudVisible && model.InstrumentsVisible && model.Telemetry is { } f)
+            {
+                string txt = HudStringCache.SpeedNumber(f.Speed);
+                var size = SpeedBlockSize(txt, model.SpeedUnit);
+                var desired = new Rectangle((int)(viewport.Width / 2f - size.X / 2f), (int)(viewport.Height / 2f + half + 4f),
+                    (int)MathF.Ceiling(size.X), (int)MathF.Ceiling(size.Y));
+                _speedBlock = Layout.PlaceBlock(HudStringCache.SpeedBlock(f.Speed, model.SpeedUnit), desired);
+            }
         }
         PrepareTarget(model, viewport);
         ReserveCommandSummary(model, viewport);
@@ -138,16 +184,17 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
 
     private Vector2 GaugeCenter(HudGauge gauge, Viewport viewport)
     {
-        float spread = ModernHudScale.Cluster(_scale);
+        float spread = Spread;
         return new(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
     }
 
     protected override void DrawGauges(HudModel model, Viewport viewport)
     {
+        bool compact = CompactHud;
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
             var center = GaugeCenter(gauge, viewport);
-            float radius = 32 * _scale;
+            float radius = CompactHudLayout.RingRadius(_scale, compact);
             float current = _animated.GetValueOrDefault(gauge.Kind, gauge.Fraction);
             // Display the exact value as a number; only geometry eases. Critical
             // colour and the native flash timer never wait for interpolation.
@@ -155,19 +202,46 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
             _animated[gauge.Kind] = current;
             Color color = gauge.DamageFlash ? Alert : new(gauge.Color.R, gauge.Color.G, gauge.Color.B);
             if (_settings.ColorBlindSafe && gauge.Kind != GaugeKind.Thrust && gauge.Fraction <= .5f) color = new(255, 179, 71);
-            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f, Muted * .22f, 2 * _scale);
-            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color * .13f, 6 * _scale);
-            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color, 2 * _scale);
+            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f, Muted * .22f, CompactHudLayout.TrackWidth(_scale, compact));
+            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color * .13f, CompactHudLayout.GlowWidth(_scale, compact));
+            Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color, CompactHudLayout.StrokeWidth(_scale, compact));
             string percent = HudStringCache.Percent(gauge.Fraction);
-            var size = _small.MeasureString(percent);
-            DrawMeasuredText(_small, percent, center - size / 2, color, true);
-            size = _small.MeasureString(gauge.Label);
-            DrawMeasuredText(_small, gauge.Label, new(center.X - size.X / 2, center.Y + radius + 8 * _scale), Muted, true);
+            if (compact)
+            {
+                // P1107 — the PRIMARY reading keeps today's size and is centred on
+                // the ring centre (both axes), so it reads inside the smaller ring.
+                // Only a run too wide for the ring's clear width (i.e. "100 %") is
+                // reduced by exactly the amount needed to stay inside the stroke.
+                // P1107 review fix — fit the glyph INK (not the line box) on the
+                // diagonal against the ring's inner edge, draw it without the dark text
+                // box (which crossed the stroke) and pin it on the ring centre.
+                var ink = _smallSdf.InkBounds(percent, Vector2.Zero, 1f);
+                float percentScale = CompactHudLayout.PercentScale(_scale, ink.Width, ink.Height, radius,
+                    CompactHudLayout.GlowWidth(_scale, true), true);
+                var inkCentre = new Vector2(ink.X + ink.Width / 2f, ink.Y + ink.Height / 2f) * percentScale;
+                DrawMeasuredText(_small, percent, center - inkCentre, color, true,
+                    centerAtScale: false, background: false, fixedAnchor: true, drawScale: percentScale);
+                // The label hugs the ring at the secondary size.
+                string label = gauge.Label;
+                var labelSize = _small.MeasureString(label) * SecondaryScale;
+                DrawMeasuredText(_small, label,
+                    new(center.X - labelSize.X / 2, center.Y + radius + CompactHudLayout.LabelGap(_scale, true)),
+                    Muted, true, centerAtScale: false, drawScale: SecondaryScale);
+            }
+            else
+            {
+                var size = _small.MeasureString(percent);
+                DrawMeasuredText(_small, percent, center - size / 2, color, true);
+                size = _small.MeasureString(gauge.Label);
+                DrawMeasuredText(_small, gauge.Label, new(center.X - size.X / 2, center.Y + radius + 8 * _scale), Muted, true);
+            }
             if (gauge.Kind != GaugeKind.Thrust && gauge.Fraction <= (gauge.Kind == GaugeKind.Energy ? .05f : .15f))
             {
                 // Shape plus colour: danger remains legible without red/green.
                 float pulse = .55f + .45f * MathF.Sin((float)Stopwatch.GetTimestamp() / Stopwatch.Frequency * MathF.Tau * 2);
-                DrawMeasuredText(_small, "!", new(center.X + radius, center.Y - radius), color * pulse, true);
+                var badge = new Vector2(center.X + radius, center.Y - radius);
+                if (compact) DrawMeasuredText(_small, "!", badge, color * pulse, true, drawScale: SecondaryScale);
+                else DrawMeasuredText(_small, "!", badge, color * pulse, true);
             }
             Mark(gauge.Kind switch { GaugeKind.Hull => "Hull integrity", GaugeKind.Shield => "Shield charge", GaugeKind.Energy => "Energy reserve", GaugeKind.Fuel => "Fuel reserve", GaugeKind.Ammo => "Ammunition reserve", _ => "Thrust setting" });
         }
@@ -210,9 +284,15 @@ public partial class ModernHudRenderer : HudRenderer, IDisposable
         // HUD-6b — the native TranslateImage anchor is the image CORNER
         // (engine/image.cpp:834-845); draw from that point instead of centring
         // the text on it.
-        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height, modernScale: _scale);
-        if (reserve) { ReserveOwnText(text, pos); return; }
-        DrawMeasuredText(_small, text, pos, color, instrument: true);
+        // P1107 — the compact HUD draws these secondary readouts (SIG, kill bonus,
+        // AUTOPILOT, CLOAK, ...) one font step down at the tightened grid, so the
+        // six gauge labels and the status column stop competing with the gauges.
+        float drawScale = SecondaryScale;
+        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height,
+            modernScale: _scale, spreadOverride: CompactHud ? Spread : null);
+        if (reserve) { ReserveOwnText(text, pos, drawScale); return; }
+        if (drawScale != _scale) DrawMeasuredText(_small, text, pos, color, instrument: true, drawScale: drawScale);
+        else DrawMeasuredText(_small, text, pos, color, instrument: true);
         Mark(id);
     }
 

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- P1107 — headless before/after proof for `visuals.compactHud` (the compact
+       Modern HUD). Renders the REAL ModernHudRenderer through the REAL production
+       draw path into offscreen render targets, measures every HUD text element's
+       rendered height and every ring's outer diameter/stroke from the recorded
+       draw commands, audits all HUD element boxes for overlap, and writes the
+       report's before/after PNGs.
+
+       Usage (offscreen SDL): SDL_VIDEODRIVER=offscreen ALSOFT_DRIVERS=null
+       dotnet p1107-compact-hud-proof.dll outDir [no-png]
+    -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>p1107-compact-hud-proof</AssemblyName>
+    <RootNamespace>CompactHudProof</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+    <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" ReferenceOutputAssembly="false" />
+    <None Include="../../src/Allegiance.ClientCore.MonoGame/Content/bin/DesktopGL/Content/HUDModern.xnb" Link="Content/HUDModern.xnb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../hud-polish-proof/Content/*" Link="Content/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

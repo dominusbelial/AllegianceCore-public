@@ -37,6 +37,10 @@ internal static class SkyFrames
             0,false,0,false,false,15,0,[],false,0,2500), new HudContext { Camera = CameraMode.Cockpit });
         var classic = Program.Field<HudRenderer>(game, "_hudRenderer");
         var modern = Program.Field<ModernHudRenderer>(game, "_modernHudRenderer");
+        // P1107 made the compact Modern HUD the default (2026-11-28). This proof's recorded
+        // frames (frames.txt) pin the sky + HUD composition, not the HUD layout, so it keeps
+        // the pre-P1107 Modern layout explicitly.
+        Program.Field<VisualOptions>(game, "_visuals").SetToggle(VisualFlags.CompactHudKey, false);
         for (int stage = 0; stage < 4; stage++)
         {
             short id = stage == 0 ? (short)1 : (short)2;

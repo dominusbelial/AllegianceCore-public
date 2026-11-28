@@ -38,6 +38,8 @@ public static class HudStringCache
     [ThreadStatic] private static Dictionary<int, string>? _killBonusNumber;
     [ThreadStatic] private static Dictionary<int, string>? _money;
     [ThreadStatic] private static Dictionary<(int Mps, string Unit), string>? _speed;
+    [ThreadStatic] private static Dictionary<int, string>? _speedNumber;
+    [ThreadStatic] private static Dictionary<(int Mps, string Unit), string>? _speedBlock;
     [ThreadStatic] private static Dictionary<string, string>? _shipSummary;
     [ThreadStatic] private static Dictionary<string, string>? _targetSummary;
     [ThreadStatic] private static Dictionary<int, string>? _targetRange;
@@ -112,6 +114,18 @@ public static class HudStringCache
     /// teampane.cpp:208,226).</summary>
     public static string Money(int credits) =>
         Get(ref _money, credits, static m => $"{m} cr");
+
+    /// <summary>P1107 review fix — the bottom speed numeral, cached. Rounds exactly as
+    /// <see cref="HudFormat.FormatSpeed"/> (MathF.Round, to even) so both paths agree.</summary>
+    public static string SpeedNumber(float unitsPerSecond) =>
+        Get(ref _speedNumber, (int)MathF.Round(MathF.Max(0f, unitsPerSecond)),
+            static k => k.ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>P1107 review fix — the compact HUD's joined numeral + unit layout key,
+    /// cached so the per-frame placement allocates nothing.</summary>
+    public static string SpeedBlock(float unitsPerSecond, string unit) =>
+        Get(ref _speedBlock, (Mps: (int)MathF.Round(MathF.Max(0f, unitsPerSecond)), Unit: unit),
+            static k => k.Mps.ToString(CultureInfo.InvariantCulture) + "\n" + k.Unit);
 
     /// <summary>Command-summary speed row; <paramref name="unit"/> is the port's
     /// "mps" (model.SpeedUnit).</summary>

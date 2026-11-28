@@ -332,9 +332,12 @@ public sealed partial class Game1
         // (ModernHudScale.WindowFactor), so the boot line reports the density rule.
         _displayScale = Rendering.DisplayDensity.DetectDesktopScale();
         Console.WriteLine($"[monogame] HUD display density (desktop scale): {_displayScale:F2} -> Modern density scale {Rendering.ModernHudScale.Core(_displayScale, _hudSettings.Size):F2} (capped per frame by the window height budget)");
+        // P1107 — hand the Modern HUD the live `visuals.*` object so the
+        // `visuals.compactHud` toggle applies on the next frame (the Visuals page
+        // mutates this same instance).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
             Content.Load<SpriteFont>("HUDModern"), nativeArt: _statusTextures, nativeHudTextures: _hudNativeTextures,
-            displayScale: _displayScale);
+            displayScale: _displayScale, visuals: _visuals);
         _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudNativeTextures, nativeFonts);
 
         // P217 — the quick-chat voice-macro data, parsed once at runtime from

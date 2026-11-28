@@ -188,6 +188,7 @@ public class HudRenderer
         _viewportWidth = viewport.Width;
         _viewportHeight = viewport.Height;
         Layout.Reset(viewport.Width, viewport.Height);
+        _speedBlock = null;
         PrepareLayout(model, viewport);
         if (!model.Visible) return;
         var frame = model.InstrumentsVisible ? model.Telemetry : null;
@@ -1927,15 +1928,54 @@ public class HudRenderer
     /// the Speed row stays partial).</summary>
     private void DrawSpeed(float speed, string unit, float w, float cy)
     {
-        string txt = HudFormat.FormatSpeed(speed);
+        // P1107 review fix — the compact path reads the cached numeral (no per-frame
+        // string); the default path keeps today's formatter exactly.
+        string txt = AttachSpeedUnit ? HudStringCache.SpeedNumber(speed) : HudFormat.FormatSpeed(speed);
         var bigFont = NativeFontAt(NativeFont.LgBoldVerdana);
         var sz = bigFont.MeasureString(txt);
         float cx = w / 2f;
-        DrawText(bigFont, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
-
         var unitFont = NativeFontAt(NativeFont.SmVerdana);
         var usz = unitFont.MeasureString(unit);
+        if (AttachSpeedUnit)
+        {
+            // P1107 review fix — the compact Modern HUD places the numeral and its unit
+            // as ONE measured block, so the layout moves them together, and (when the
+            // renderer pre-placed it in PrepareLayout) uses that block so the primary
+            // instrument keeps the row under the crosshair and later text flows round it.
+            float scale = TextScale;
+            var big = HudStringCache.SpeedNumber(speed);   // cached: no per-frame string
+            var bigSize = bigFont.MeasureString(big) * scale;
+            var unitSize = unitFont.MeasureString(unit) * scale;
+            const float gap = 2f;
+            var size = SpeedBlockSize(big, unit);
+            var block = _speedBlock ?? Layout.Place(HudStringCache.SpeedBlock(speed, unit), size, new Vector2(cx - size.X / 2f, cy));
+            var bigPos = new Vector2(block.X + (block.Width - bigSize.X) / 2f, block.Y);
+            var unitPos = new Vector2(block.X + (block.Width - unitSize.X) / 2f, block.Y + bigSize.Y + gap);
+            FillRect(bigPos.X - 3, bigPos.Y - 1, bigSize.X + 6, bigSize.Y + 2, Color.Black * .58f);
+            FillRect(unitPos.X - 3, unitPos.Y - 1, unitSize.X + 6, unitSize.Y + 2, Color.Black * .58f);
+            RenderText(bigFont, big, bigPos, Accent, scale);
+            RenderText(unitFont, unit, unitPos, TextDim, scale);
+            return;
+        }
+        DrawText(bigFont, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
         DrawText(unitFont, unit, new Vector2(cx - usz.X / 2f, cy + sz.Y + 2f), TextDim);
+    }
+
+    /// <summary>P1107 review fix — true when the speed unit should be placed under the
+    /// numeral's placed bounds. False keeps today's placement exactly.</summary>
+    protected virtual bool AttachSpeedUnit => false;
+
+    /// <summary>P1107 review fix — the speed block a renderer pre-placed this frame
+    /// (null: place it when drawn). Reset every frame before PrepareLayout.</summary>
+    protected Rectangle? _speedBlock;
+
+    /// <summary>P1107 review fix — the size of the joined speed numeral + unit block.</summary>
+    protected Vector2 SpeedBlockSize(string speedText, string unit)
+    {
+        float scale = TextScale;
+        var big = NativeFontAt(NativeFont.LgBoldVerdana).MeasureString(HudFormat.Printable(speedText)) * scale;
+        var u = NativeFontAt(NativeFont.SmVerdana).MeasureString(unit) * scale;
+        return new Vector2(MathF.Max(big.X, u.X), big.Y + 2f + u.Y);
     }
 
     /// <summary>Right-side vertical throttle gauge: -1 (idle) at the bottom,

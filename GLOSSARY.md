@@ -1449,6 +1449,20 @@ list in **reverse**.
   `Style` as a renderer adapter, and saves only the canonical id. Report:
   `docs/reports/SKINS_1B_IDS_MIGRATION_P981.md`.
 
+- **Compact Modern HUD (P1107)** — the **`visuals.compactHud`** flag
+  (`src/Allegiance.ClientCore.Game/Rendering/VisualFlags.cs`, label "Compact HUD", default OFF,
+  Modern only) plus its one geometry table
+  `src/Allegiance.ClientCore.Game/Rendering/CompactHudLayout.cs`: 75 % own-status rings (48 px
+  diameter/1.5 px stroke at HUD scale 1), the percentage centred inside, gauge labels one font step
+  down (11/14) with an 11 px minimum rendered height, an 85 % cluster spread that stays
+  proportional to the HUD size, and the bottom target pane's hull/shield ring gauges replaced by two
+  slim side-tinted horizontal bars (`ARMOR ▬` left, `▬ SHIELD` right of the native model-preview
+  column; empty for an aleph / out-of-sector target, i.e. native's 0 %). Only
+  `ModernHudRenderer` (and its `.TargetPane` partial) reads the flag; Classic never sees it.
+  Proof: `tools/p1107-compact-hud-proof` (before/after PNGs + per-element measurement + element
+  overlap audit); tests: `tests/Allegiance.ClientCore.MonoGame.Tests/P1107CompactHudTests.cs`;
+  report: `docs/reports/COMPACT_MODERN_HUD_P1107.md`.
+
 - **Runtime HUD skin switching (P988)** — `src/Allegiance.ClientCore.Game/Rendering/Skins/IHudSkinRenderer.cs`
   and `src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinRenderer.cs` adapt the unchanged Classic/Modern
   drawing code; `src/Allegiance.ClientCore.Game/Rendering/Skins/HudSkinResources.cs` binds the existing frame

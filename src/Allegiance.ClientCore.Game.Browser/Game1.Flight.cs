@@ -420,8 +420,10 @@ public sealed partial class Game1
         _classicFlightHud = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, locks, status, indicators, target, inventory,
             damageWash: _hudSettings.DamageWash, nativeHudTextures: nativeHud, gaugePercentage: _hudSettings.GaugePercentage,
             nativeFonts: nativeFonts, selectionBracket: _hudSettings.SelectionBracketOn, joystickMesh: JoystickMeshTexture.Create(GraphicsDevice));
+        // P1107 — the browser client shares this renderer, so it shares the
+        // `visuals.compactHud` flag (off by default: identical output).
         _modernFlightHud = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
-            Content.Load<SpriteFont>("HUDModern"), nativeArt: status, nativeHudTextures: nativeHud);
+            Content.Load<SpriteFont>("HUDModern"), nativeArt: status, nativeHudTextures: nativeHud, visuals: _visuals);
         _flightLoaded = true;
     }
     private static Vector3 V(SimVec value) => new(value.X, value.Y, value.Z);

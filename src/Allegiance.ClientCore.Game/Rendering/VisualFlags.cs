@@ -129,6 +129,13 @@ public static class VisualFlags
     /// want it to hide any detail"); OFF restores the native/P628 path. Visual only.</summary>
     public const string ShipFullDetailKey = "ships.fullDetail";
 
+    /// <summary>P1107 — the compact Modern HUD: one font step smaller for the
+    /// secondary labels/readouts, smaller and thinner own-status rings with the
+    /// percentage centred inside, a tightened gauge cluster and slim horizontal
+    /// target-pane hull/shield bars instead of ring gauges. Modern only (Classic
+    /// never reads it); default ON since 2026-11-28 (Domingo approved it in flight).</summary>
+    public const string CompactHudKey = "compactHud";
+
     /// <summary>Every flag, in options-page order.</summary>
     public static IReadOnlyList<VisualFlag> Definitions { get; } = new[]
     {
@@ -210,6 +217,17 @@ public static class VisualFlags
             "never swap distant ships for sprites or simpler meshes",
             VisualFlagKind.Toggle,
             DefaultOn: true),
+        // P1107 — a proportion/legibility pass for the Modern HUD. Visual only:
+        // no element is hidden and no readout changes what it reports.
+        new VisualFlag(
+            CompactHudKey,
+            "Compact HUD",
+            "smaller Modern labels, neater gauges, bar-style target hull",
+            VisualFlagKind.Toggle,
+            // Domingo 2026-11-28 flew it on the 20v20 ("looks good", "make it the default
+            // while using the modern hud"): the compact proportions are the Modern look.
+            // OFF restores the pre-P1107 Modern layout; Classic never reads it.
+            DefaultOn: true),
     };
 
     /// <summary>The row for <paramref name="key"/>, or null for an unknown key.</summary>
@@ -267,6 +285,10 @@ public sealed class VisualOptions
     /// <c>Request("jet")</c>. Off while the skin is in development.</summary>
     public bool JetSkin => IsOn(VisualFlags.JetSkinKey);
     public bool ShipFullDetail => IsOn(VisualFlags.ShipFullDetailKey);
+
+    /// <summary>P1107 — the compact Modern HUD (smaller secondary text, neater
+    /// gauge rings, bar-style target hull/shield). Modern only.</summary>
+    public bool CompactHud => IsOn(VisualFlags.CompactHudKey);
 
     /// <summary>A toggle's live value; an unset/unknown key reads OFF.</summary>
     public bool IsOn(string key)

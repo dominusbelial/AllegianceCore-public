@@ -82,7 +82,10 @@ public sealed class HudSdfFont : IDisposable
     public void Draw(SpriteBatch batch, string text, Vector2 position, Color color, float scale)
         => GlyphRun(batch, text, position, color, scale);
 
-    internal Rectangle InkBounds(string text, Vector2 position, float scale)
+    /// <summary>P1107 — the ink box a run of text covers at <paramref name="scale"/>,
+    /// computed without touching the GPU (the same maths the batch path uses). Public
+    /// for the HUD proofs/tests that measure rendered text height.</summary>
+    public Rectangle InkBounds(string text, Vector2 position, float scale)
         => GlyphRun(null, text, position, Color.White, scale);
 
     private Rectangle GlyphRun(SpriteBatch? batch, string text, Vector2 position, Color color, float scale)

@@ -71,10 +71,17 @@ public static class OwnStatusLayout
     /// screen coordinates, using the gauge cluster's spread: a bitmap's
     /// LOWER-left corner, or a StringImage box's UPPER-left corner.
     /// <paramref name="modernScale"/> follows <see cref="Spread"/>.</summary>
-    public static Vector2 ScreenPos(string id, int viewportWidth, int viewportHeight, float? modernScale = null)
+    /// <param name="modernScale">The P833 Modern-HUD density scale, fed through
+    /// <see cref="Spread"/>.</param>
+    /// <param name="spreadOverride">P1107 — an explicit spread for the compact Modern
+    /// HUD, whose cluster stays proportional to its ring at every HUD size (the
+    /// <see cref="Spread(float,float?)"/> 2.1 band would otherwise stop the status grid
+    /// following the rings). Null keeps both skin defaults.</param>
+    public static Vector2 ScreenPos(string id, int viewportWidth, int viewportHeight,
+        float? modernScale = null, float? spreadOverride = null)
     {
         var p = Placement(id);
-        float spread = Spread(viewportHeight, modernScale);
+        float spread = spreadOverride ?? Spread(viewportHeight, modernScale);
         return new(viewportWidth / 2f + p.X * spread,
             viewportHeight / 2f + p.Y * spread);
     }

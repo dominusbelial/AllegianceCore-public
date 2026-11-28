@@ -51,11 +51,10 @@ public sealed class P979VisualsOptionsTests
     {
         var menu = OpenVisualsPage(State());
         var rows = menu.Rows(State());
-        // Six toggle rows + a numeric flag's value row and its two step rows,
-        // then P984's two 3-D look toggles (space.hdrPipeline / space.hdrAces),
-        // P989's sim palette, P997's construction hand-off, P1014's Loadout V2 and
-        // P1035's Jet HUD row.
-        Assert.Equal(16, rows.Count);
+        // One row per toggle plus the numeric flag's value row and its two step
+        // rows: derived from the table so a new visuals flag only has to add its
+        // row (P1107 added `compactHud`).
+        Assert.Equal(VisualFlags.Definitions.Count + 2, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: on - "));
@@ -143,7 +142,8 @@ public sealed class P979VisualsOptionsTests
         var state = State();
         var menu = OpenVisualsPage(state);
         var rows = menu.Rows(state);
-        Assert.Equal(16, rows.Count);   // P1035 Jet HUD row + the full-ship-detail row
+        // One row per toggle + the numeric flag's value/raise/lower rows.
+        Assert.Equal(VisualFlags.Definitions.Count + 2, rows.Count);
         Assert.Contains(rows, r => r.Label.StartsWith("Radial visibility: on - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Remote timeline: off - "));
         Assert.Contains(rows, r => r.Label.StartsWith("Loadout V2: on - "));
