@@ -24,7 +24,7 @@ public partial class Game1
     private readonly Dictionary<short, LoadoutV2Hardpoints> _loadoutV2Hardpoints = new();
     private LoadoutV2HardpointMarker? _loadoutV2Marker;
 
-    private void DrawLoadoutV2(GameTime gameTime, ShopModel shop)
+    private void CaptureLoadoutV2(ShopModel shop)
     {
         var world = _session.World;
         var catalog = _shopCatalog ?? shop.Catalog;
@@ -80,6 +80,11 @@ public partial class Game1
         _loadoutV2Frame = LoadoutV2Presentation.Build(_loadoutV2Model,
             Sheet(shop.CurrentHullId, shop.CurrentParts), Sheet(shop.EffectiveHullId, shop.ChosenParts),
             LoadoutV2InputRouter, LoadoutV2Input.Hint(action => KeyOf(action).Label));
+    }
+
+    private void DrawLoadoutV2(GameTime gameTime, ShopModel shop)
+    {
+        if (_loadoutV2Frame is null || _loadoutV2Model is null) return;
         var viewport = GraphicsDevice.Viewport;
         // P1015: the router's scroll offsets (wheel/focus), clamped by the layout.
         _loadoutV2Layout = _loadoutV2Frame.Layout(viewport.Width, viewport.Height,
@@ -102,7 +107,7 @@ public partial class Game1
         var hover = LoadoutV2InputRouter.HoverIn(_loadoutV2Layout);
         int selectedSlot = LoadoutV2Hardpoints.SelectedSlot(_loadoutV2Frame, hover);
         _loadoutV2Marker = null;
-        var slots = _loadoutV2Model.SlotRows;
+        var slots = _loadoutV2Frame.HardpointSlots;
         if (selectedSlot >= 0 && selectedSlot < slots.Count && _loadoutV2Model.EffectiveHull is { } previewHull)
         {
             if (!_loadoutV2Hardpoints.TryGetValue(previewHull.HullId, out var hardpoints))

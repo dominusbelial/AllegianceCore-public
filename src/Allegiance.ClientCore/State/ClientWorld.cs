@@ -6169,15 +6169,13 @@ public sealed partial class ClientWorld
         return copy;
     }
 
-#if BROWSER
-    /// <summary>Event-loop scene drain into caller-owned storage.</summary>
+    /// <summary>Drain into caller-owned scene storage under the world owner’s gate.</summary>
     public void DrainAlephTransits(List<AlephTransitSignal> destination)
     {
         destination.Clear();
         destination.AddRange(_alephTransits);
         _alephTransits.Clear();
     }
-#endif
 
     /// <summary>
     /// P585 — the client-side transit-attribution radius for a warp: native

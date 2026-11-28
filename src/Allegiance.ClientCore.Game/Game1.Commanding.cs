@@ -176,19 +176,6 @@ public sealed partial class Game1
     // Only a server-confirmed docked sector preview changes the drawn cluster.
     private short RenderSector(short ownSector) => _benchmark is not null && _benchViewSector is { } benchmarkSector ? benchmarkSector : LocalSpectating ? _skirmishCamera.SectorId : _cameraMode == CameraMode.Command && CommandViewerDocked
         ? _session.World.ViewedClusterId ?? ownSector : ownSector;
-    private bool ShipInDrawnSector(short id, short me)
-    {
-        lock (_session.Gate)
-        {
-            var world = _session.World;
-            if (LocalSpectating) return world.Ships.TryGetValue(id, out var viewed) && viewed.CanDrawInSector(_skirmishCamera.SectorId);
-            if (!world.Ships.TryGetValue(me, out var own) || !world.Ships.TryGetValue(id, out var ship)) return false;
-            if (_cameraMode == CameraMode.DroneCockpit && _commandee is { } target
-                && CommandCamera.FollowSubject(world, target.Id, RenderSector(own.SectorId))?.ShipId == id) return false;
-            return ship.ParentId < 0 && ship.SectorId == RenderSector(own.SectorId) && !ship.Unknown;
-        }
-    }
-
     private bool PointerOverStarmap(MouseState mouse)
     {
         if (_minimapExpanded) return true;
@@ -302,20 +289,12 @@ public sealed partial class Game1
     {
         if (!CommandGridRenderer.IsVisible(_commandGridVisible, _cameraMode == CameraMode.Command)) return;
         var objects = new List<Vector3>();
-        lock (_session.Gate)
-        {
-            var world = _session.World;
-            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return;
-            short sector = RenderSector(own.SectorId);
-            foreach (var (id, pose) in _poses)
-                if (ShipInDrawnSector(id, me)) objects.Add(PoseConverter.ToXna(pose.Position));
-            foreach (var station in world.Stations.Values)
-                if (station.ClusterId == sector) objects.Add(new Vector3(station.Position[0], station.Position[1], station.Position[2]));
-            foreach (var asteroid in world.Asteroids.Values)
-                if (asteroid.ClusterId == sector) objects.Add(new Vector3(asteroid.Position[0], asteroid.Position[1], asteroid.Position[2]));
-            foreach (var warp in world.Warps.Values)
-                if (warp.ClusterId == sector) objects.Add(new Vector3(warp.Position[0], warp.Position[1], warp.Position[2]));
-        }
+        if (_frame.Identity.Reference is null) return;
+        foreach (var (id, pose) in _poses)
+            if (_frame.DrawShips.Contains(id)) objects.Add(PoseConverter.ToXna(pose.Position));
+        foreach (var station in _frame.Stations.Values) objects.Add(PoseConverter.ToXna(Vec(station.Position)));
+        foreach (var asteroid in _frame.Asteroids.Values) objects.Add(PoseConverter.ToXna(Vec(asteroid.Position)));
+        foreach (var warp in _frame.Warps) objects.Add(PoseConverter.ToXna(Vec(warp.Position)));
         _commandGridRenderer ??= new CommandGridRenderer(GraphicsDevice);
         _commandGridRenderer.Draw(objects, view, projection, eye);
     }

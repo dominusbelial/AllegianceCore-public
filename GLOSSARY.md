@@ -1405,6 +1405,12 @@ list in **reverse**.
 
 ## 4. Client & HUD (`src/Allegiance.ClientCore`, `ClientCore.Game/Rendering`)
 
+- **Seated render snapshot (P1100)**. The game thread captures the sector, sky, side, visible entities,
+  HUD inputs and match result under the session receive gate. Color, depth, radar and both HUD styles
+  use that frame after the gate is released. See
+  `src/Allegiance.ClientCore.Game/Game1.RenderSnapshot.cs` and
+  `src/Allegiance.ClientCore.Game/Rendering/FlightRenderSnapshot.cs`.
+
 - **Desktop smoke atlas fallback (P1090)** — `src/Allegiance.ClientCore.Game/Rendering/VfxAssets.cs`
   owns uploaded frames until the full grid succeeds. If Cloud01 fails, `src/Allegiance.ClientCore.Game/Game1.Lifecycle.cs`
   selects the existing native smoke path for engine trails, missile trails and damage vents.

@@ -262,14 +262,16 @@ public sealed partial class Game1
 
     private void DrawConsolePanes()
     {
-        if (_state != ClientState.Flying) return;
-        var lines = new List<TeamPaneLayout.Line>();
-        if (_playerPingsVisible)
-        {
+        if (_state == ClientState.Flying && _consoleLines.Count > 0)
             ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
-                PlayerPingPage(), GraphicsDevice.Viewport, _hudSmall, _hudBig));
-            return;
-        }
+                _consoleLines, GraphicsDevice.Viewport, _hudSmall, _hudBig));
+    }
+
+    private IReadOnlyList<TeamPaneLayout.Line> CaptureConsoleLines()
+    {
+        if (_playerPingsVisible) return PlayerPingPage();
+        if (!_consolePanes.GameState) return [];
+        var lines = new List<TeamPaneLayout.Line>();
         if (_consolePanes.GameState)
         {
             lines.Add(new(TeamPaneLayout.LineKind.Title, "GAME STATE"));
@@ -291,8 +293,7 @@ public sealed partial class Game1
         // only the native bottom-right equipment pane (the native mask
         // ofInventory, dialog.mdl:5237). The old list duplicated the pane and
         // covered the gauges, so it is no longer drawn here.
-        if (lines.Count > 0) ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.TeamPaneFrame(
-            lines, GraphicsDevice.Viewport, _hudSmall, _hudBig));
+        return lines;
     }
     private void DrawMainMenu()
     {

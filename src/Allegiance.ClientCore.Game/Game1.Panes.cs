@@ -2161,7 +2161,11 @@ public sealed partial class Game1
 
     /// <summary>Render the READY-CHECK overlay from the live world ready state
     /// (own toggle + same-side roster + per-side TEAM_READY aggregate).</summary>
-    private void DrawReadyCheck()
+    private IReadOnlyList<ReadyCheckLayout.Row> _readyRows = [];
+    private IReadOnlyList<string> _readyChat = [];
+    private string _readyCiv = "";
+
+    private void CaptureReadyCheck()
     {
         var world = _session.World;
         var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _session.Gate, _ownReady);
@@ -2248,10 +2252,17 @@ public sealed partial class Game1
             }
             civIconStem = State.TeamCivPicker.IconStem(world);
         }
+        _readyRows = rows;
+        _readyCiv = civIconStem;
+        _readyChat = BuildChatLines();
+    }
+
+    private void DrawReadyCheck()
+    {
         // P1042c — the ready-check panel (roster, civ picker, team-name edit, chat hint all
         // arrive as rows) goes through the boundary with its native civ icon as content.
         ActiveScreen.DrawPanel(Rendering.Screens.PanelScreenFrames.ReadyCheckFrame(
-            rows, GraphicsDevice.Viewport, _hudSmall, _hudBig, CivIconFor(civIconStem)));
+            _readyRows, GraphicsDevice.Viewport, _hudSmall, _hudBig, CivIconFor(_readyCiv)));
         DrawReadyCheckChat();
     }
 
@@ -2263,7 +2274,7 @@ public sealed partial class Game1
     /// draw is only the panel.</summary>
     private void DrawReadyCheckChat()
     {
-        var lines = BuildChatLines();
+        var lines = _readyChat;
         var vp = GraphicsDevice.Viewport;
         const int MaxLines = 8;
         int first = Math.Max(0, lines.Count - MaxLines);

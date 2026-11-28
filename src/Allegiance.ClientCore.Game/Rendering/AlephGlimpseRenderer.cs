@@ -166,10 +166,17 @@ public sealed class AlephGlimpseRenderer : IDisposable
     {
         public required RenderTarget2D Target;
         public bool Rendered;
+        public DataClusterIGC Cluster;
         public long LastFrame;
     }
 
     private readonly Dictionary<short, Entry> _cache = new();
+
+    // Warm-up sees the wire export. Draw sees its frame-owned light vector.
+    // Both describe the same postcard until one of the actual inputs changes.
+    private static bool SameSky(DataClusterIGC a, DataClusterIGC b)
+        => a with { LightDirection = b.LightDirection } == b
+            && a.LightDirection.AsSpan().SequenceEqual(b.LightDirection);
 
     /// <param name="gd">Graphics device the glimpse targets are created on.</param>
     /// <param name="skySource">Supplies the ACTIVE sky-tier renderer (native / HD /
@@ -259,7 +266,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
     {
         var sky = _sky?.Invoke();
         if (sky is null) return 0;
-        if (IsRendered(destSector)) return 0;
+        if (_cache.TryGetValue(destSector, out var cached) && cached.Rendered && SameSky(cached.Cluster, dest)) return 0;
         try
         {
             return EnsureTarget(sky, destSector, dest, lookDirection) ? 1 : 0;
@@ -359,7 +366,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
                 if (dist <= t.Warp.Radius * radiusFactor) continue;
 
                 if (allowPreparation && sky is not null && EnsureTarget(sky, t.DestSector, t.Dest, dir)) switched = true;
-                if (!_cache.TryGetValue(t.DestSector, out var entry) || !entry.Rendered) continue;
+                if (!_cache.TryGetValue(t.DestSector, out var entry) || !entry.Rendered || !SameSky(entry.Cluster, t.Dest)) continue;
 
                 shown.Add(new Visible(
                     t.Warp.WarpId,
@@ -456,7 +463,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
             foreach (var entry in _cache.Values) entry.Rendered = false;
             _visualSignature = signature;
         }
-        if (_cache.TryGetValue(destSector, out var e) && e.Rendered)
+        if (_cache.TryGetValue(destSector, out var e) && e.Rendered && SameSky(e.Cluster, destCluster))
         {
             e.LastFrame = _frame;
             return false;
@@ -490,6 +497,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
         sky.Draw(view, proj, Vector3.Zero, new SpaceVisualFrame(Visuals, 0, true, AdvanceHistory: false));
         _gd.SetRenderTargets(savedTargets);
 
+        e.Cluster = destCluster;
         e.Rendered = true;
         e.LastFrame = _frame;
         Evict();

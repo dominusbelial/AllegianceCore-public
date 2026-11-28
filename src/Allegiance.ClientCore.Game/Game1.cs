@@ -551,7 +551,7 @@ public sealed partial class Game1 : Game
     // decoded the same planet art three times per warp); the latches keep a tier
     // change re-resolving the current sector. (Replaces the single `_skySector`
     // latch, which existed only for the tell-all-three block.)
-    private short _skySectorBlack = -1, _skySectorNative = -1, _skySectorHd = -1;
+    private DataClusterIGC? _skySectorBlack, _skySectorNative, _skySectorHd;
     // P576 — the sky tier (default black; --sky black|native|hd) and the
     // optional aleph destination-glimpse (default OFF). Client-only launch
     // settings, never on the wire.
@@ -896,11 +896,11 @@ public sealed partial class Game1 : Game
     // (0.5 × HullType.Length), the metric input to ProjectedPixelRadius.
     // _shipSideRgbById: the ship's real side colour (team colour), fetched from
     // the side roster under the Gate; the far-tier sprite's tint.
-    private Dictionary<short, float> _shipRadiusById => _session.World.Caches.RenderRadiusById;
-    private Dictionary<short, (float R, float G, float B)> _shipSideRgbById => _session.World.Caches.RenderSideRgbById;
+    private Dictionary<short, float> _shipRadiusById => _poseCaches.RenderRadiusById;
+    private Dictionary<short, (float R, float G, float B)> _shipSideRgbById => _poseCaches.RenderSideRgbById;
     // Discrete far-tier state with hysteresis (ShipLod.NextFarState); suppresses
     // engine trails / motion ribbons for far ships and stabilises the toggle.
-    private Dictionary<short, bool> _shipLodFar => _session.World.Caches.LodFarById;
+    private Dictionary<short, bool> _shipLodFar => _poseCaches.LodFarById;
     // Debug overlay counters (per-tier counts) for the LOD hud line.
     private int _lodFullCount, _lodFarCount;
     // P628 — ship-pass draw-call counter (full-model draws + far-sprite batches),
@@ -2195,7 +2195,7 @@ public sealed partial class Game1 : Game
         _starFar?.Dispose();
         _starMid?.Dispose();
         _starNear?.Dispose();
-        _skySectorBlack = _skySectorNative = _skySectorHd = -1;
+        _skySectorBlack = _skySectorNative = _skySectorHd = null;
         _sound?.Dispose();
         _music?.Dispose();   // P304 — release the two music beds
         if (_asteroidRenderers != null)

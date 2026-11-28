@@ -60,15 +60,8 @@ public sealed partial class Game1
     /// </summary>
     private void DrawSkyP576(Matrix view, Matrix projection, Vector3 cameraEye)
     {
-        var world = _session.World;
-        DataClusterIGC? sky = null;
-        short skySectorId = -1;
-        if (TrySceneSector(world, RenderShipId(world) ?? -1, out short skySector)
-            && world.Clusters.TryGetValue(skySector, out var dc))
-        {
-            sky = dc;
-            skySectorId = skySector;
-        }
+        var sky = _frame.Sky;
+        short skySectorId = sky?.ClusterId ?? -1;
 
         long spaceIdentity = ((long)skySectorId << 32) ^ ((long)_cameraMode << 16)
             ^ (string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? 1L
@@ -86,15 +79,15 @@ public sealed partial class Game1
             // nothing). The latch keeps a tier change working.
             if (black)
             {
-                if (_skySectorBlack != skySectorId) { _skySectorBlack = skySectorId; _blackSky.SetCluster(sky.Value); }
+                if (_skySectorBlack != sky) { _skySectorBlack = sky; _blackSky.SetCluster(sky.Value); }
             }
             else if (hd)
             {
-                if (_skySectorHd != skySectorId) { _skySectorHd = skySectorId; _hdSky.SetCluster(sky.Value); }
+                if (_skySectorHd != sky) { _skySectorHd = sky; _hdSky.SetCluster(sky.Value); }
             }
             else
             {
-                if (_skySectorNative != skySectorId) { _skySectorNative = skySectorId; _nativeSky.SetCluster(sky.Value); }
+                if (_skySectorNative != sky) { _skySectorNative = sky; _nativeSky.SetCluster(sky.Value); }
             }
         }
 
@@ -137,15 +130,21 @@ public sealed partial class Game1
     /// bounded by the renderer. No-op when the glimpse setting is off.
     /// </summary>
     private void DrawAlephGlimpses(Matrix view, Matrix projection, Vector3 cameraEye,
-        ClientWorld world, DataClusterIGC current)
+        DataClusterIGC current)
     {
         // P862b — resolve each warp's destination SECTOR through its partner warp
         // (native warpIGC.h:129-141, the P540c rule WarpDestinationResolver owns),
         // never by feeding the partner WARP id into the cluster table: the two id
         // spaces do not overlap (this map: clusters 1050-1062, warps 2150-2193), so
         // the old lookup never matched and the glimpse drew nothing at all.
-        var targets = Rendering.AlephGlimpseRenderer.CollectTargets(
-            world.Warps, world.Clusters, current.ClusterId, cameraEye);
+        var targets = _frame.Glimpses;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            var target = targets[i];
+            var p = target.Warp.Position;
+            float dx = p[0] - cameraEye.X, dy = p[1] - cameraEye.Y, dz = p[2] - cameraEye.Z;
+            targets[i] = target with { DistSq = dx * dx + dy * dy + dz * dz };
+        }
         if (targets.Count == 0) return;
         LogGlimpseResolution(targets, current);
         // P585 — pass the per-warp transit-pulse strength (drives the glimpse
@@ -189,7 +188,7 @@ public sealed partial class Game1
             frameSeconds, ref _teleportEmitAccumulator, _trailRandom);
     }
 
-    private void DrawSceneBuildings(ClientWorld world, short me, Vector3 cameraEye, Matrix view, Matrix proj)
+    private void DrawSceneBuildings(Vector3 cameraEye, Matrix view, Matrix proj)
     {
         // P997: native's two rotating build.mdl shells. Native lifetime
         // (default): the effect table itself, so the shell keeps shrinking
@@ -198,22 +197,6 @@ public sealed partial class Game1
         // and leaves on 181, an explosive rock death or reset. The
         // visuals.constructionHandoff flag instead draws ClientWorld's
         // presentation table, which retires the shell at the hand-off.
-        bool instantHandoff = _visuals.IsOn(Rendering.VisualFlags.ConstructionHandoffKey);
-        _drawBuilds.Clear();
-        lock (_session.Gate)
-        {
-            long buildNow = ClientNowMilliseconds;
-            world.PruneExpiredBuildingEffects(buildNow);
-            if (TrySceneSector(world, me, out short myBeSector))
-            {
-                foreach (var (_, be) in instantHandoff ? world.ConstructionVisuals : world.BuildingEffects)
-                {
-                    if (be.ClusterId != myBeSector) continue;
-                    var phase = be.Phase(buildNow);
-                    _drawBuilds.Add(phase);
-                }
-            }
-        }
         foreach (var phase in _drawBuilds)
         {
             if (OutsideRadialView(PoseConverter.ToXna(phase.Position), cameraEye, phase.Radius)) continue;

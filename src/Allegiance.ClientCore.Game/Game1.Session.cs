@@ -1761,63 +1761,45 @@ public sealed partial class Game1
     /// (chatpane.cpp:34,93).</summary>
     private (List<string> Lines, List<Rendering.HudColor?> Colors, List<bool> Leaders) BuildChatLinesAndColors()
     {
-        var world = _session.World;
-        lock (_session.Gate)
+        var rows = new ChatWindow();
+        lock (_session.Gate) CaptureChatWindow(rows);
+        return rows.Project(_chatPane.Offset);
+    }
+
+    private sealed class ChatWindow
+    {
+        internal readonly record struct Row(string Sender, string Text, ChatTarget Target, HudColor? Color, bool Leader);
+        internal readonly List<Row?> Messages = [];
+        internal readonly List<string> DirectoryLines = [];
+        internal bool ShowSystem;
+
+        internal void AddSystem(string text)
         {
-            var chats = world.Events.Chats;
-            var visible = new List<ChatMessage>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
-            foreach (var m in chats)
-                if (ChatLinePassesPaneFilter(world, m))
-                    visible.Add(m);
-            int start = ChatScroll.StartIndex(_chatPane.Offset, visible.Count, ChatRenderer.MaxVisible);
-            var lines = new List<string>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
-            var colors = new List<Rendering.HudColor?>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
-            var leaders = new List<bool>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
-            int end = Math.Min(visible.Count, start + ChatRenderer.MaxVisible);
-            for (int i = start; i < end; i++)
+            Messages.Add(ShowSystem ? new Row("", text, ChatTarget.Everyone, null, false) : null);
+            if (Messages.Count > EventLog.Bound) Messages.RemoveAt(0);
+        }
+
+        internal (List<string> Lines, List<HudColor?> Colors, List<bool> Leaders) Project(int offset)
+        {
+            int visibleCount = 0;
+            foreach (var row in Messages) if (row.HasValue) visibleCount++;
+            int start = ChatScroll.StartIndex(offset, visibleCount, ChatRenderer.MaxVisible);
+            int capacity = Math.Min(visibleCount + DirectoryLines.Count, ChatRenderer.MaxVisible);
+            var lines = new List<string>(capacity);
+            var colors = new List<HudColor?>(capacity);
+            var leaders = new List<bool>(capacity);
+            int index = 0;
+            foreach (var optional in Messages)
             {
-                var m = visible[i];
-                string sender = "";
-                Allegiance.ClientCore.State.ShipEntity? ent = null;
-                if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var found) && !string.IsNullOrEmpty(found.CharacterName))
-                {
-                    sender = found.CharacterName!;
-                    ent = found;
-                }
-                else if (m.SidSender >= 0)
-                    sender = $"sid{m.SidSender}";
-                lines.Add(ChatLogFormat.Format(sender, m.Message, (ChatTarget)m.ChatTarget));
-
-                // P784 — native stamps IsFromLeader from the sender's
-                // PlayerInfo::IsTeamLeader() (trekigc.cpp:4498); the port reads
-                // the same fact from its per-side leader roster. A leaderless
-                // side (no SET_TEAM_LEADER yet) marks nobody, like native's
-                // false default (trekigc.cpp:4484).
-                bool fromLeader = ent is { } leaderEnt
-                    && world.TeamLeaderShipIdFor(leaderEnt.SideId) is { } leaderId
-                    && leaderId == leaderEnt.ShipId;
-                leaders.Add(fromLeader);
-
-                Rendering.HudColor? color = null;
-                if (ent is { } e && world.TryGetSideColor(e.SideId, out float r, out float g, out float b))
-                {
-                    bool own = world.MyShipId is { } me && e.ShipId == me;
-                    float scale = own ? 0.75f : 0.85f;
-                    color = new Rendering.HudColor(r * scale, g * scale, b * scale, 1f);
-                }
-                colors.Add(color);
+                if (optional is not { } row || index++ < start) continue;
+                lines.Add(ChatLogFormat.Format(row.Sender, row.Text, row.Target));
+                colors.Add(row.Color);
+                leaders.Add(row.Leader);
+                if (lines.Count == ChatRenderer.MaxVisible) break;
             }
-            // P871 — the directory-wide lobby channel shares this log, so it
-            // renders identically in Classic and Modern (both draw BuildChatLines).
-            // (A headless test instance has no directory-chat log.)
-            // P871b — a directory line is never cut by MaxVisible: P871 stopped
-            // appending once the GAME lines filled the window (`break`), so a
-            // directory line that arrived after a full chat log was silently
-            // dropped from the pane. The window is now applied to the MERGED list
-            // and trims the OLDEST overflow, so both sources' newest lines show.
-            foreach (var line in _directoryChat?.Lines ?? [])
+            foreach (string line in DirectoryLines)
             {
-                lines.Add(DirectoryChatLog.Format(line));
+                lines.Add(line);
                 colors.Add(null);
                 leaders.Add(false);
             }
@@ -1830,6 +1812,38 @@ public sealed partial class Game1
             }
             return (lines, colors, leaders);
         }
+    }
+
+    // Preserve the unfiltered log positions so appending a local model warning
+    // observes the same bounded history, scroll offset and directory-chat tail.
+    private void CaptureChatWindow(ChatWindow window)
+    {
+        var world = _session.World;
+        window.Messages.Clear();
+        window.DirectoryLines.Clear();
+        window.ShowSystem = !(_chatFilterChatsToAll && world.MyShipId.HasValue)
+            && _chatPane.PassesFilter(false, false, ChatTarget.Everyone);
+        foreach (var msg in world.Events.Chats)
+        {
+            if (!ChatLinePassesPaneFilter(world, msg))
+            {
+                window.Messages.Add(null);
+                continue;
+            }
+            var ship = msg.SidSender >= 0 ? world.Ships.GetValueOrDefault(msg.SidSender) : null;
+            if (string.IsNullOrEmpty(ship?.CharacterName)) ship = null;
+            string sender = ship?.CharacterName ?? (msg.SidSender >= 0 ? $"sid{msg.SidSender}" : "");
+            bool leader = ship is not null && world.TeamLeaderShipIdFor(ship.SideId) == ship.ShipId;
+            HudColor? color = null;
+            if (ship is not null && world.TryGetSideColor(ship.SideId, out var r, out var green, out var b))
+            {
+                float scale = world.MyShipId == ship.ShipId ? 0.75f : 0.85f;
+                color = new HudColor(r * scale, green * scale, b * scale, 1);
+            }
+            window.Messages.Add(new ChatWindow.Row(sender, msg.Message, (ChatTarget)msg.ChatTarget, color, leader));
+        }
+        foreach (var line in _directoryChat?.Lines ?? [])
+            window.DirectoryLines.Add(DirectoryChatLog.Format(line));
     }
 
     /// <summary>P757 — does one world chat line pass the pane's channel filter?

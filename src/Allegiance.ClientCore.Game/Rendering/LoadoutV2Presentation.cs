@@ -25,6 +25,7 @@ public sealed class LoadoutV2Presentation
     public required string Money { get; init; }
     public required IReadOnlyList<LoadoutV2DisplayRow> Hulls { get; init; }
     public required IReadOnlyList<LoadoutV2DisplayRow> Slots { get; init; }
+    internal IReadOnlyList<LoadoutV2SlotRow> HardpointSlots { get; init; } = [];
     /// <summary>Includes the shared shop's empty-slot choice at index zero.</summary>
     public required IReadOnlyList<LoadoutV2DisplayRow> Offers { get; init; }
     public required IReadOnlyList<LoadoutV2DisplayRow> Stats { get; init; }
@@ -123,7 +124,7 @@ public sealed class LoadoutV2Presentation
         {
             Title = "LOADOUT / " + (model.EffectiveHull?.Name ?? "No hull"),
             Money = shop.MyMoney is { } money ? "MONEY " + Dollars(money) : "MONEY --",
-            Hulls = hullRows, Slots = slotRows, Offers = offers, Stats = stats,
+            Hulls = hullRows, Slots = slotRows, HardpointSlots = slots, Offers = offers, Stats = stats,
             OpenSlot = openIndex, HullFocus = hullFocus,
             SlotFocus = slotFocus, OfferFocus = offerFocus,
             ActionFocus = openIndex < 0 ? input?.FocusedAction : null, Hint = hint,

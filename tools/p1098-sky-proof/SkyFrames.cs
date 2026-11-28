@@ -47,6 +47,11 @@ internal static class SkyFrames
                     visuals.SetToggle(key, false);
             }
             if (stage < 2) world.Apply(new SetCluster { Ship = pose, SectorId = id });
+            // P1100: the sky draw reads the frame snapshot, which the game loop captures under the
+            // receive gate each frame. This proof calls the sky draw directly, so publish the sector's sky.
+            var frame = Program.Field<object>(game, "_frame");
+            frame.GetType().GetField("Sky", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)!
+                .SetValue(frame, Program.Sector(id));
             if (stage == 2)
             {
                 var graphics = Program.Field<GraphicsDeviceManager>(game, "_graphics");

@@ -2617,6 +2617,8 @@ public sealed partial class Game1
         // battle spots and alephs (2026-10-15, Domingo in clash48/49).
         _navStrobeEmitters.Clear();
         _cloakedShips.Clear();
+        _shipArt.Clear();
+        _remoteEffectUpdates.Clear();
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
         _shipScaleById.Clear();
@@ -2626,8 +2628,17 @@ public sealed partial class Game1
         {
             short? viewSector = LocalSpectating ? _skirmishCamera.SectorId : world.MyShipId is { } viewId && world.Ships.TryGetValue(viewId, out var viewShip)
                 ? RenderSector(viewShip.SectorId) : null;
-            if (_flightEffects.BeginView(world.SectorGeneration, viewSector))
+            var previous = _poseView;
+            _poseCaches = world.Caches;
+            _shipRadiusById.Clear();
+            _shipSideRgbById.Clear();
+            _poseView = ReadRenderView(world);
+            if (_flightEffects.BeginView(world.SectorGeneration, viewSector, previous.Side != _poseView.Side || previous.Owner != world))
             {
+                ResetEjectBlasts();
+                _shipLodFar.Clear();
+                _lightImpacts.Clear();
+                _viewWarpSector = short.MinValue;
                 _debrisGeo.Clear();
                 _shipThrustPower.Clear();
                 _lastShipSector.Clear();
@@ -2725,15 +2736,7 @@ public sealed partial class Game1
                     // single most-seen ship in the game, made WORSE (not
                     // better) once every other ship got correctly scaled.
                     // Mirrors the teammate loop's own resolution exactly.
-                    _shipModelById[me] = ResolveShipModel(mine.SideId, mine.HullId);
-                    _shipTextureById[me] = ResolveShipTexture(mine.SideId, mine.HullId);   // P337
-                    if (_shipsNative)                                                        // P566
-                        _nativeShipRefById[me] = ResolveNativeShip(mine.HullId);
-                    var myDrawnModel = _shipModelById[me] ?? _fallbackModel;
-                    _shipScaleById[me] = Rendering.ShipRenderScale.ScaleForLength(
-                        HullLength(mine.HullId), myDrawnModel);
-                    // P338 — the local ship's real rendered radius (0.5 × Length),
-                    // fed to the chase camera's radius-adaptive framing below.
+                    _shipArt.Add(me, new(mine.SideId, mine.HullId, CivKeyForShipSide(world, mine.SideId)));
                     float myLen = HullLength(mine.HullId);
                     _myRenderRadius = myLen > 0f ? 0.5f * myLen : 0f;
                     // P297 — the damage-debris smoke stream (native
@@ -2924,37 +2927,8 @@ public sealed partial class Game1
                 _shipRadiusById[id] = radius;
                 if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
                     _shipSideRgbById[id] = (sr, sg, sb);
-                // P448b — every effect attached to the hull (damage debris, engine
-                // trail, nozzle glow, nav strobes, motion trail) is fed the SAME
-                // RENDER pose so nothing detaches from the drawn hull. Wire-driven
-                // inputs (velocity, hull fraction, stateM, throttle) stay wire values.
-                GatherDamageEmitter(id, up.HullFraction, pose.Position, up.Velocity, pose.Orientation, radius);
-                bool remoteAfterburner = ShipEffectRules.HasAfterburner(false, false,
-                    (ShipRoleBits(ship.HullId) & DataHullTypeIGC.HabmLifepod) != 0);
-                UpdateEngineTrail(id, remoteAfterburner, (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
-                    pose.Position, up.Velocity, pose.Orientation, radius, updateDt, visible: true);
-                UpdateNozzleGlow(id, remoteAfterburner, up.StateM, up.Controls.Throttle, pose.Position, pose.Orientation, radius, visible: true);
-                UpdateNavStrobes(id, pose.Position, pose.Orientation, radius, visible: true);
-                UpdateMotionTrail(id, pose.Position, pose.Orientation, radius, ship.SideId, visible: true);
-                // P270 — remember which of these render poses is a cloaked ship
-                // (the CloakActive stateM bit) so Draw alpha-blends it. The
-                // server already excluded any undetectable enemy, so anything
-                // here is a ship this client's side legitimately sees (a
-                // teammate, or an enemy close enough to detect it).
-                if (Flight.CloakVisual.IsCloaked(up.StateM))
-                    _cloakedShips.Add(id);
-                // P288 — resolve this ship's per-faction/class content model
-                // under the same lock (civ from side roster, class from hull).
-                _shipModelById[id] = ResolveShipModel(ship.SideId, ship.HullId);
-                _shipTextureById[id] = ResolveShipTexture(ship.SideId, ship.HullId);   // P337
-                if (_shipsNative)                                                        // P566
-                    _nativeShipRefById[id] = ResolveNativeShip(ship.HullId);
-                // P333 — per-ship PURE VISUAL scale: normalize the model that
-                // will actually be drawn (resolved model or the fallback) to the
-                // real hull size. 1 when the hull/model is unknown → no scaling.
-                var drawnModel = _shipModelById[id] ?? _fallbackModel;
-                _shipScaleById[id] = Rendering.ShipRenderScale.ScaleForLength(
-                    HullLength(ship.HullId), drawnModel);
+                _remoteEffectUpdates.Add((id, up));
+                _shipArt.Add(id, new(ship.SideId, ship.HullId, CivKeyForShipSide(world, ship.SideId)));
             }
 
             // P448b — periodically report the re-seed correction statistics so the
@@ -2988,7 +2962,33 @@ public sealed partial class Game1
                     Console.WriteLine($"[P985] remote timeline: ships={tc} delay(mean/min/max)={tMean:0.000}/{tMin:0.000}/{tMax:0.000}s");
             }
         }
-
+        foreach (var (id, up) in _remoteEffectUpdates)
+        {
+            var pose = _poses[id];
+            var art = _shipArt[id];
+            var radius = _shipRadiusById[id];
+            // P448b — every effect attached to the hull (damage debris, engine
+            // trail, nozzle glow, nav strobes, motion trail) is fed the SAME
+            // RENDER pose so nothing detaches from the drawn hull. Wire-driven
+            // inputs (velocity, hull fraction, stateM, throttle) stay wire values.
+            GatherDamageEmitter(id, up.HullFraction, pose.Position, up.Velocity, pose.Orientation, radius);
+            bool remoteAfterburner = ShipEffectRules.HasAfterburner(false, false,
+                (ShipRoleBits(art.Hull) & DataHullTypeIGC.HabmLifepod) != 0);
+            UpdateEngineTrail(id, remoteAfterburner, (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                pose.Position, up.Velocity, pose.Orientation, radius, updateDt, visible: true);
+            UpdateNozzleGlow(id, remoteAfterburner, up.StateM, up.Controls.Throttle, pose.Position, pose.Orientation, radius, visible: true);
+            UpdateNavStrobes(id, pose.Position, pose.Orientation, radius, visible: true);
+            var rgb = _shipSideRgbById.GetValueOrDefault(id, (0.5f, 0.5f, 0.5f));
+            NativeScene.AppendMotionTrail(_motionTrail, id, pose.Position, pose.Orientation, radius, rgb.Item1, rgb.Item2, rgb.Item3);
+            // P270 — remember which of these render poses is a cloaked ship
+            // (the CloakActive stateM bit) so Draw alpha-blends it. The
+            // server already excluded any undetectable enemy, so anything
+            // here is a ship this client's side legitimately sees (a
+            // teammate, or an enemy close enough to detect it).
+            if (Flight.CloakVisual.IsCloaked(up.StateM))
+                _cloakedShips.Add(id);
+        }
+        ResolvePoseArt();
     }
 
     /// <summary>P781 — gather one drawn ship's lead-up spark emitter into the

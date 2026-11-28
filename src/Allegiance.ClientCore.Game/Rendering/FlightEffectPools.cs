@@ -18,9 +18,9 @@ public sealed class FlightEffectPools
     public long Generation { get; private set; } = -1;
     public short? SectorId { get; private set; }
 
-    public bool BeginView(long generation, short? sectorId)
+    public bool BeginView(long generation, short? sectorId, bool reset = false)
     {
-        if (Generation == generation && SectorId == sectorId) return false;
+        if (!reset && Generation == generation && SectorId == sectorId) return false;
         Generation = generation;
         SectorId = sectorId;
         Missiles.Reset();

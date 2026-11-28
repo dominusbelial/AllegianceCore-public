@@ -26,9 +26,9 @@ public sealed partial class Game1
         ? (_skirmishCamera.ShipId is { } id && world.Ships.ContainsKey(id) ? id : world.Ships.Keys.Select(key => (short?)key).FirstOrDefault()) : world.MyShipId;
 
     // A camera can draw an empty sector. Its reference pose does not create an entity.
-    private bool TrySceneReference(ClientWorld world, out short id, out Flight.PredictedPose pose)
+    private bool TrySceneReference(out short id, out Flight.PredictedPose pose)
     {
-        id = RenderShipId(world) ?? -1;
+        id = _frame.Identity.Reference ?? -1;
         if (_poses.TryGetValue(id, out pose)) return true;
         pose = new Flight.PredictedPose(default, Allegiance.Core.Sim.Orientation.Identity);
         return LocalSpectating && _skirmishCamera.SectorId >= 0;

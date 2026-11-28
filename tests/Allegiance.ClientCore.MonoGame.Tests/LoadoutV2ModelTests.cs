@@ -340,8 +340,9 @@ public class LoadoutV2ModelTests
         const short gunshipId = 290;                       // 1 fixed + 2 turrets
         var shop = new ShopModel(Catalog, gunshipId, Array.Empty<ExpandedPartData>());
         byte firstTurretMount = (byte)Hull(gunshipId).MaxFixedWeapons;
+        string gunner = "Ada";
         var v2 = new LoadoutV2Model(shop, Catalog.Hulls,
-            turretGunner: mount => mount == firstTurretMount ? "Ada" : null);
+            turretGunner: mount => mount == firstTurretMount ? gunner : null);
 
         var turrets = v2.SlotRows.Where(r => r.IsTurret).ToList();
         Assert.Equal(2, turrets.Count);
@@ -349,6 +350,11 @@ public class LoadoutV2ModelTests
         Assert.Equal(firstTurretMount, turrets[0].Mount);
         Assert.Null(turrets[1].GunnerName);                 // open seat
         Assert.All(v2.SlotRows.Where(r => !r.IsTurret), r => Assert.Null(r.GunnerName));
+
+        var frame = LoadoutV2Presentation.Build(v2, null, null);
+        gunner = "Next gunner";
+        Assert.Equal("Ada", frame.HardpointSlots.First(r => r.IsTurret).GunnerName);
+        Assert.Equal("Next gunner", v2.SlotRows.First(r => r.IsTurret).GunnerName);
 
         // No resolver = no gunner knowledge (the P1014 wiring supplies it).
         var bare = new LoadoutV2Model(new ShopModel(Catalog, gunshipId, Array.Empty<ExpandedPartData>()),

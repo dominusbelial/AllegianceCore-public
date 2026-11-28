@@ -11456,3 +11456,11 @@ P1094–P1097. The suite is Live tier (outside the light gate); earlier gates on
 **P1098/P1099 merge gate (2026-11-27).** Round 1: `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` failed once
 (9 s), then passed 3/3 alone. Round 2: `JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing`
 failed once (37 ms), then its class passed 3/3 alone. Both are already ledgered above; neither changed signature.
+## P1100 seated snapshot qualification, 2026-11-27
+
+| Test | Fast sweep and isolated controls |
+| --- | --- |
+| `P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct`, 1920, default scale | The software renderer produced Classic `C100F69A43C7` and Modern `1093B39B5B9B` in all three isolated runs. The unchanged base proof produced the identical hashes and zero geometry errors for each skin. Both differ from the existing goldens. The other 19 class cases passed on each repeat. |
+| `P847MissionRulesCertifyTests.Npc_cash_pickup_pays_the_side_out_immediately` | One full-suite run missed the expected 700 PAYDAY in the server fixture. The method passed in three fresh isolated hosts. |
+
+The separate P1100 replay compares complete backbuffers on the same software renderer. [Qualification report](reports/RENDER_SNAPSHOT_COHERENCE_P1100.md)

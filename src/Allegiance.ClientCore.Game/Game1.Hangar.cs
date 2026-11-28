@@ -294,7 +294,7 @@ public sealed partial class Game1
         if (ActiveScreen.HangarArtAvailable)
         {
             ActiveScreen.DrawHangar(new HangarScreenFrame(vp, _hangarHover, _hangarLaunchAnimation,
-                LoadoutBoardState()?.State, HangarDevelopments, HangarScreenInks));
+                _frameBoard?.State, _frameDevelopments, HangarScreenInks));
             return;
         }
         DrawHangarControlsTextFallback(vp);
@@ -314,7 +314,7 @@ public sealed partial class Game1
     private void DrawHangarControlsTextFallback(Viewport vp)
     {
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-        foreach (var action in HangarControls.Actions(HangarDevelopments))
+        foreach (var action in HangarControls.Actions(_frameDevelopments))
         {
             var rect = HangarControls.Bounds(vp.Width, vp.Height, action);
             _spriteBatch.Draw(_whitePixel, rect, action == _hangarHover ? new Color(30, 100, 105) : new Color(12, 30, 40));

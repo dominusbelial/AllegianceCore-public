@@ -648,10 +648,10 @@ public class Hud21TargetModelPreviewTests
     public void Production_gate_uses_the_real_source_ids_and_the_max_vertex_scale()
     {
         var src = SourceFile("Game1.Rendering.cs");
-        var render = MethodSource(src, "private bool RenderTargetModelPreview(short me, Vector3 cameraEye, in Matrix view, RenderTarget2D? restoreTo)");
+        var render = MethodSource(src, "private bool RenderTargetModelPreview(Vector3 cameraEye, in Matrix view, RenderTarget2D? restoreTo)");
         // Fix 5 — the gate (inside TargetPreviewCache.Step) takes the CLIMBED ids.
         Assert.Contains("_previewCache.Step(key, targetSourceId, ownSourceId,", render);
-        Assert.Contains("SourceShipId(world, ownEnt)", render);
+        Assert.Contains("SourceShipId(world, ownEnt)", MethodSource(src, "private PreviewSubject? CapturePreviewSubject(short me)"));
         // Fix 1 — the preview scale is native's max-vertex radius.
         var resolve = MethodSource(src, "private PreviewArt? ResolvePreviewArt(TargetPreviewKey key)");
         Assert.Contains("TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius)", resolve);
@@ -672,7 +672,7 @@ public class Hud21TargetModelPreviewTests
         int flying = src.IndexOf("else // Flying", System.StringComparison.Ordinal);
         Assert.True(flying >= 0);
         int clear = src.IndexOf("_hudTargetModelPreview = null;", flying, System.StringComparison.Ordinal);
-        int sceneRef = src.IndexOf("if (TrySceneReference(world, out short me, out var myPose)", flying, System.StringComparison.Ordinal);
+        int sceneRef = src.IndexOf("if (renderScene && TrySceneReference(out short me, out var myPose)", flying, System.StringComparison.Ordinal);
         Assert.True(clear > flying && clear < sceneRef,
             "the preview must be cleared before the scene-reference/generation gate can fail");
     }

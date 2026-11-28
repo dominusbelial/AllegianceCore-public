@@ -48,6 +48,12 @@ using HudProof;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+if (args is ["--render-snapshot", var snapshotSkin, var mode, var clientBin])
+{
+    RenderSnapshotProof.Run(snapshotSkin, mode, clientBin);
+    return 0;
+}
+
 if (args is ["--overlaps", var width, var style, var scaleCase, ..])
 {
     using var overlap = new OverlapProof(int.Parse(width), style, scaleCase, args.ElementAtOrDefault(4));
