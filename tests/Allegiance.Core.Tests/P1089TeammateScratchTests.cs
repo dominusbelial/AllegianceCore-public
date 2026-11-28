@@ -36,7 +36,8 @@ public sealed class P1089TeammateScratchTests
     {
         foreach (var slot in Slots(server).OfType<object>())
         {
-            Assert.Null(slot.GetType().GetField("NewLiveShip")!.GetValue(slot));
+            Assert.Null(slot.GetType().GetField("OwnPose")!.GetValue(slot));
+            Assert.Null(slot.GetType().GetField("PendingPose")!.GetValue(slot));
             Assert.Null(slot.GetType().GetField("NextTeammateRefreshTick")!.GetValue(slot));
             foreach (var field in slot.GetType().GetFields())
             {

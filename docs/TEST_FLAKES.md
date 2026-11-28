@@ -11475,3 +11475,12 @@ latches to `null`; the P1098 sky proof now publishes the frame snapshot's sky be
 
 - `P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research` passed all assertions. Its civ 1 case took 14.841 s in the full sweep, above the calibrated 13.498 s limit. Three method-only hosts passed all 21 theory cases. Their slowest individual cases took 1.89, 2.51 and 1.31 s. This adds a timing receipt for the role-selection method alongside the previously recorded dock-local-mask method.
 - `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` failed the skirmish/port **peak** aim threshold at line 149. This is a different assertion in the previously ledgered skirmish/port drift case. Three method-only hosts passed all 12 cases. Another 20 hosts using the dispatch-base Core and Server binaries passed all 80 cases. The cause of this sweep-only peak remains unconfirmed. [P1101 report](reports/TRANSPORT_ALLOCATION_P1101.md)
+
+## P1102 Fast qualification, 2026-11-28
+
+`P974SessionOwnershipTests.Dispose_drains_a_stalled_reconnect_and_closes_its_late_socket`
+observed “Dispose returned before the connector ended” at line 205 in the full Debug
+Fast sweep. The exact method passed three times alone. Its private delayed transport
+has a six-second release timeout and the assertion follows a 1.8-second asynchronous
+delay. The sweep did not record the task wake times. This client-only fixture does
+not run the server broadcast or verbose log paths. [P1102 evidence](reports/BUILDER_LOG_ALLOCATION_P1102.md)

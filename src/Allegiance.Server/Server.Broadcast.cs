@@ -827,11 +827,11 @@ public sealed partial class Server
             // from the ship's own real spawn values, so a ship that never moves
             // would otherwise show a permanent zero diff against every dirty term
             // below and be skipped forever (invisible even to its own client).
-            if (!live.PositionEverBroadcast
-                || (ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
-                || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
-                || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
-                || miningNow != live.LastBroadcastMining
+            if (!live.LastBroadcast.EverBroadcast
+                || (ship.Position - live.LastBroadcast.Position).Length() >= DirtyEpsilon
+                || (fwd - live.LastBroadcast.Forward).Length() >= DirtyEpsilon
+                || (up - live.LastBroadcast.Up).Length() >= DirtyEpsilon
+                || miningNow != live.LastBroadcast.Mining
                 // P391 — shield regeneration (P389) climbs a stationary ship's
                 // ShieldFraction, and that fraction rides this own-ship
                 // SingleShipUpdate (ServerShipUpdate.FromModel byte 41). Without
@@ -841,7 +841,7 @@ public sealed partial class Server
                 // ship didn't move. Float comparison needs an epsilon (see
                 // ShieldFractionEpsilon); an unshielded ship is ShieldFraction≡0
                 // so |0−0| never fires — a strict no-op for them.
-                || MathF.Abs(ship.ShieldFraction - live.LastBroadcastShieldFraction) >= ShieldFractionEpsilon)
+                || MathF.Abs(ship.ShieldFraction - live.LastBroadcast.ShieldFraction) >= ShieldFractionEpsilon)
             {
                 // P606 — the own-ship position stream is latest-wins traffic:
                 // coalesce per peer so a slow client keeps only the newest
@@ -854,7 +854,9 @@ public sealed partial class Server
                 // pose must never be shed under load. Still latest-wins against
                 // itself, so the backlog stays bounded (P606 intact).
                 SendPeerCoalescing(kv.Key, PackOwnPose(ship, tickIndex, miningNow), CoalesceOwnShip, guaranteed: true);
-                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastShieldFraction = ship.ShieldFraction, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
+                // Later serial recipients still consult this tick's frozen mate records.
+                _peerShips[kv.Key] = live with { LastBroadcast = new(ship.Position, fwd, up,
+                    ship.ShieldFraction, miningNow, EverBroadcast: true) };
             }
 
             // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The
@@ -1107,9 +1109,9 @@ public sealed partial class Server
                         {
                             bool firstPos = !_teammatePositionSent.Contains((kv.Key, teammateId));
                             if (firstPos
-                                || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
-                                || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
-                                || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                                || (tv.Value.Ship.Position - tv.Value.LastBroadcast.Position).Length() >= DirtyEpsilon
+                                || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcast.Forward).Length() >= DirtyEpsilon
+                                || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcast.Up).Length() >= DirtyEpsilon)
                             {
                                 // P317 — encode this subject's position ONCE per tick
                                 // and share the byte[] across every same-side recipient
@@ -1225,7 +1227,7 @@ public sealed partial class Server
                         {
                             SendPeer(kv.Key, PackBroadcast(Message(MakeNpcShipStatus(npc))));
                             ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
-                                (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
+                                $"{(npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying")}");
                             _lastSameSideNpcStatusTick[(kv.Key, npc.Id)] = tickIndex;
                         }
                     }
@@ -1394,6 +1396,11 @@ public sealed partial class Server
             {
                 var conn = peers[i].Key;
                 var r = results[i]!;
+                if (r.OwnPose is { } ownPose)
+                {
+                    SendPeerCoalescing(conn, ownPose, CoalesceOwnShip, guaranteed: true);
+                    r.OwnPose = null; // ownership transferred to the snapshot
+                }
                 if (r.Packets is { } packets)
                     foreach (var (pkt, key, guaranteed) in packets)
                     {
@@ -1421,7 +1428,7 @@ public sealed partial class Server
     /// </summary>
     private void ApplyBroadcastPeerEffects(ConnectionId conn, BroadcastPeerBuild r)
     {
-        if (r.NewLiveShip is { } nl) _peerShips[conn] = nl;
+        if (r.PendingPose is { } pose) _peerShips[conn].LastBroadcast = pose;
         if (r.SetStatus) { _lastStatusSector[conn] = r.StatusSector; _lastStatusTick[conn] = r.StatusTick; }
         if (r.SetClusterInfo) _lastClusterInfoTick[conn] = r.ClusterInfoTick;
         if (r.ExportSent is { } exportSent)
@@ -1461,30 +1468,15 @@ public sealed partial class Server
         var fwd = ship.Orientation.GetForward();
         var up = ship.Orientation.GetUp();
         bool miningNow = ship.MiningAsteroid is not null;
-        if (!live.PositionEverBroadcast
-            || (ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
-            || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
-            || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
-            || miningNow != live.LastBroadcastMining
-            || MathF.Abs(ship.ShieldFraction - live.LastBroadcastShieldFraction) >= ShieldFractionEpsilon)
+        if (!live.LastBroadcast.EverBroadcast
+            || (ship.Position - live.LastBroadcast.Position).Length() >= DirtyEpsilon
+            || (fwd - live.LastBroadcast.Forward).Length() >= DirtyEpsilon
+            || (up - live.LastBroadcast.Up).Length() >= DirtyEpsilon
+            || miningNow != live.LastBroadcast.Mining
+            || MathF.Abs(ship.ShieldFraction - live.LastBroadcast.ShieldFraction) >= ShieldFractionEpsilon)
         {
-            var msg = new SingleShipUpdate
-            {
-                OtTarget = 0,
-                OidTarget = ship.Id,
-                Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
-                BIsRipcording = ship.IsRipcordActive,   // P788 — native bIsRipcording = fRipcordActive() (FedSrv/fsship.cpp:542,807)
-            };
-            (r.Packets ??= new()).Add((PackBroadcast(Message(msg)), CoalesceOwnShip, true));
-            r.NewLiveShip = live with
-            {
-                LastBroadcastPos = ship.Position,
-                LastBroadcastForward = fwd,
-                LastBroadcastUp = up,
-                LastBroadcastShieldFraction = ship.ShieldFraction,
-                LastBroadcastMining = miningNow,
-                PositionEverBroadcast = true,
-            };
+            r.OwnPose = PackOwnPose(ship, tickIndex, miningNow);
+            r.PendingPose = new(ship.Position, fwd, up, ship.ShieldFraction, miningNow, EverBroadcast: true);
         }
 
         short sentSector = _lastStatusSector.TryGetValue(conn, out var s0) ? s0 : (short)-2;
@@ -1580,9 +1572,9 @@ public sealed partial class Server
                     {
                         bool firstPos = !_teammatePositionSent.Contains((conn, teammateId)) && r.PositionSent?.Contains(teammateId) != true;
                         if (firstPos
-                            || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
-                            || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
-                            || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
+                            || (tv.Value.Ship.Position - tv.Value.LastBroadcast.Position).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcast.Forward).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcast.Up).Length() >= DirtyEpsilon)
                         {
                             // Prebuilt shared position encode (byte-identical per subject).
                             (r.Positions ??= new()).Add(positionEncode[teammateId]);
@@ -3765,7 +3757,7 @@ public sealed partial class Server
                         foreach (var t in conns) SendPeer(t, packet);
 
                         ConsoleLog.Write($"[clusterWarn] side {sideId} '{sector.Name}' -> {ClusterWarnings.GetWarningText(msg.Warning)}" +
-                                         (secured ? " (SECURED)" : "") + (lost ? " (LOST)" : ""));
+                                         $"{(secured ? " (SECURED)" : "")}{(lost ? " (LOST)" : "")}");
 
                         perSector[sector.Id] = am;
                     }

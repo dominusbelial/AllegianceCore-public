@@ -100,10 +100,7 @@ public sealed partial class Server
         InvalidateSideRosterCache();   // P966 — the seeded roster differs from any cached bytes
         foreach (var (conn, ship, sector) in peers)
         {
-            _peerShips[conn] = new LiveShip(ship, sector, ship.Position,
-                ship.Orientation.GetForward(), ship.Orientation.GetUp(),
-                new PlayerScore(), new PlayerWallet(), ship.ShieldFraction,
-                false, ConnectSimTime: 0);
+            _peerShips[conn] = new LiveShip(ship, sector, new PlayerScore(), new PlayerWallet());
             _peerNames[conn] = "seed-" + conn.Value;
         }
     }
@@ -206,6 +203,7 @@ public sealed partial class Server
 
 public sealed partial class Server
 {
+    internal IReadOnlyList<BroadcastDelivery> TestPendingDeliveries => _buildingBroadcastSnapshot!.Deliveries;
     internal Action<ConnectionId, byte[], int, bool>? TestPublicationCapture;
     internal Action<ConnectionId, int, int, bool>? TestPublicationSizeCapture;
     internal Action<string, long>? TestProjectionAllocationCapture;

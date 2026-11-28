@@ -5106,7 +5106,7 @@ public sealed partial class Ship : Model, IShipIgc
                 {
                     ConsoleLog.Write($"[probe] teleport probe dropped inside asteroid {rock.Data.AsteroidId} " +
                         $"(dist {(Position - rockPosition).Length():0} < radius-5 {rock.Radius - 5:0}) — destroyed " +
-                        "by the object factory (probeigc.cpp:200-212, the S_FALSE branch)");
+                        $"by the object factory (probeigc.cpp:200-212, the S_FALSE branch)");
                     sector.Terminate(probe);   // TerminateModelEvent + DestroyTeleportProbe (probeigc.cpp:222-245)
                     return null;
                 }

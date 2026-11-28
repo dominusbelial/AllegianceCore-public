@@ -4262,7 +4262,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // An explicitly replaced test hook still owns its placement/state.
         if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
             DockInitialLoadout(ship, sector);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), playerScore, new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow) { LastSideId = lastSide };
+        return new LiveShip(ship, sector, playerScore, new PlayerWallet(), ConnectSimTime: _simNow) { LastSideId = lastSide };
     }
 
     /// <summary>P841 — consume the cached old-player score for
@@ -4301,7 +4301,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         var (ship, sector) = SpawnDefaultShip(mission, shipId, requestedSideId);
         DockInitialLoadout(ship, sector);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
+        return new LiveShip(ship, sector, new PlayerScore(), new PlayerWallet(), ConnectSimTime: _simNow);
     }
 
     /// <summary>P390 — move a freshly-spawned <paramref name="ship"/> into the
@@ -4652,7 +4652,12 @@ private void CompleteStartCountdown(Mission mission, double now)
         // P813c — a RESUMED seat (reconnect grace) keeps its ship and its
         // wallet; native re-grants nothing to a player who never left the
         // mission. The per-seat economy grants below are therefore skipped.
-        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.ResumeToken };
+        _peerShips[from] = live with
+        {
+            LastBroadcast = live.LastBroadcast with { Position = live.Ship.Position,
+                Forward = live.Ship.Orientation.GetForward(), Up = live.Ship.Orientation.GetUp() },
+            ResumeToken = req.ResumeToken,
+        };
         // P966 (P963-02) — a seat (re-)registered in _peerShips changes the side
         // roster this mission's still-pending peers would be shown. The normal
         // side-select flow marks the lobby dirty on the side change itself, but

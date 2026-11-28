@@ -143,6 +143,57 @@ public class ParallelBroadcastByteIdentityTests
         AssertPeerStreamsEqual(serial, parallel);
     }
 
+    [SkippableTheory]
+    [Trait("Requires", "Artwork")]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    public void Moving_own_pose_matches_DTO_including_ripcord(bool parallel, bool encodeOnce)
+    {
+        Require.Artwork();
+        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        var config = UpdateCadenceTests.Config();
+        config.Broadcast!.EncodeOnce = encodeOnce;
+        server.Boot(config);
+        var peers = UpdateCadenceTests.Seed(server, 2, 2);
+        var frames = new List<(ConnectionId Peer, byte[] Packet, bool Guaranteed)>();
+        server.TestPublicationCapture = (peer, packet, key, guaranteed) =>
+        {
+            if (key == 12) frames.Add((peer, packet, guaranteed));
+        };
+        for (uint tick = 0; tick < 4; tick++)
+        {
+            foreach (var (_, ship, _) in peers)
+            {
+                if (tick != 3) ship.Position += new Vector3(3, 4, -5);
+                ship.SetRipcordModel(tick == 1 ? new Ship.RipcordTarget(1, 2, 3) : null);
+            }
+            frames.Clear();
+            server.BeginBroadcastSnapshot();
+            server.TestCollectBroadcast(tick, parallel, "shipStates");
+            var ownPackets = server.TestPendingDeliveries.Where(d => d.Key == 12).Select(d => d.Packet).ToArray();
+            server.CompleteBroadcastSnapshot();
+            server.FlushBroadcastSnapshots();
+            Assert.Equal(ownPackets.Length, ownPackets.Distinct().Count());
+            Assert.All(ownPackets, p => Assert.Equal(encodeOnce, p is global::Allegiance.Server.PooledPosePacket));
+            if (tick == 3)
+            {
+                Assert.Empty(frames);
+                continue;
+            }
+            Assert.Equal(peers.Count, frames.Count);
+            foreach (var (conn, ship, _) in peers)
+            {
+                var frame = Assert.Single(frames, f => f.Peer == conn);
+                Assert.True(frame.Guaranteed);
+                var dto = new SingleShipUpdate { OidTarget = ship.Id, BIsRipcording = tick == 1,
+                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tick, carryEndurance: true) };
+                Assert.Equal(FedPacket.Pack(dto.Encode()), frame.Packet);
+            }
+        }
+    }
+
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Both_broadcasts_are_byte_identical_serial_vs_parallel_at_tick0()

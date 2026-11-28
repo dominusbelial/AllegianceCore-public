@@ -11,7 +11,8 @@ public sealed partial class Server
         public List<(BroadcastPacket Packet, int Key, bool Guaranteed)>? Packets;
         public List<BroadcastMessage>? Positions;
         public List<string>? VerboseLogs;
-        public LiveShip? NewLiveShip;
+        public BroadcastPacket? OwnPose;
+        public BroadcastPose? PendingPose;
         public bool SetStatus;
         public short StatusSector;
         public long StatusTick;
@@ -23,7 +24,10 @@ public sealed partial class Server
 
         public void Reset()
         {
-            NewLiveShip = null;
+            // A build/apply failure can leave this lease outside the snapshot.
+            OwnPose?.Release();
+            OwnPose = null;
+            PendingPose = null;
             SetStatus = SetClusterInfo = false;
             NextTeammateRefreshTick = null;
             Reset(ref Packets);

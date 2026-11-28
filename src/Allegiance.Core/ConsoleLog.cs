@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Allegiance.Core;
@@ -153,12 +154,41 @@ public static class ConsoleLog
     /// immediately. Increments <see cref="TotalWrites"/> regardless of the gate so
     /// the pre-fix per-tick volume is observable for measurement.
     /// </summary>
-    public static void Write(string line)
+    public static void Write(string line) => Write(line, Verbose);
+
+    public static void Write(ref VerboseLine line)
+        => Write(line.Enabled ? line.GetText() : string.Empty, line.Enabled);
+
+    // The compiler branches around all Append calls (including hole evaluation)
+    // on the constructor's out parameter. Keep the same decision for enqueue.
+    [InterpolatedStringHandler]
+    public ref struct VerboseLine
+    {
+        private DefaultInterpolatedStringHandler _text;
+        internal bool Enabled { get; }
+
+        public VerboseLine(int literalLength, int formattedCount, out bool shouldAppend)
+        {
+            Enabled = shouldAppend = Verbose;
+            _text = shouldAppend ? new(literalLength, formattedCount) : default;
+        }
+
+        public void AppendLiteral(string value) => _text.AppendLiteral(value);
+        public void AppendFormatted<T>(T value, int alignment = 0, string? format = null)
+            => _text.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(string? value, int alignment = 0, string? format = null)
+            => _text.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment = 0, string? format = null)
+            => _text.AppendFormatted(value, alignment, format);
+        internal string GetText() => _text.ToStringAndClear();
+    }
+
+    private static void Write(string line, bool enabled)
     {
         Interlocked.Increment(ref TotalWrites);
         var probe = Volatile.Read(ref _probeScopes) > 0 ? _threadProbe : null;
         if (probe is not null) probe.Attempts++;
-        if (!Verbose) return;
+        if (!enabled) return;
         if (TryEnqueue(line))
         {
             if (probe is not null) probe.Emitted++;
@@ -279,7 +309,7 @@ public static class ConsoleLog
 
     /// <summary>
     /// P964 test seam — open a counting scope for the CALLING THREAD. Every
-    /// <see cref="Write"/> attempt made by that thread while the scope is open is
+    /// <see cref="Write(string)"/> attempt made by that thread while the scope is open is
     /// tallied in the returned <see cref="Probe"/>, tagged with whether the gate let
     /// it through, so a test can prove the gate on its own lines without reading the
     /// process-global counters (which any leftover background thread moves).
@@ -300,7 +330,7 @@ public static class ConsoleLog
         Interlocked.Decrement(ref _probeScopes);
     }
 
-    /// <summary>P964 test seam — tallies for one thread's <see cref="Write"/> calls:
+    /// <summary>P964 test seam — tallies for one thread's <see cref="Write(string)"/> calls:
     /// attempts (every call), emitted (enqueued past the gate), dropped (gate let it
     /// through but the queue was full).</summary>
     internal sealed class Probe

@@ -1,0 +1,2 @@
+area,native_item,native_cite,port_status,port_cite_or_reason,weight,classification,evidence
+server,Own SINGLE_SHIP_UPDATE bIsRipcording,FedSrv/fsship.cpp:542; FedSrv/fsship.cpp:807,implemented,src/Allegiance.Server/Server.BroadcastSnapshot.cs PackOwnPose sets the current ripcord flag in both encodings,1,behaviour,ParallelBroadcastByteIdentityTests.Moving_own_pose_matches_DTO_including_ripcord

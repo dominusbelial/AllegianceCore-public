@@ -497,13 +497,14 @@ public sealed partial class Server
                                 // Controls are NOT applied either, exactly native.
                                 // P518 — counted, so a cookie-divergence silent drop
                                 // (the P518 root cause) is visible in the summary.
-                                EnsurePeerUpdate(from).DroppedCookie++;
-                                if (scriptedControlsInPacket && !EnsurePeerUpdate(from).NativeClient)
+                                var peerUpdate = EnsurePeerUpdate(from);
+                                peerUpdate.DroppedCookie++;
+                                if (scriptedControlsInPacket && !peerUpdate.NativeClient)
                                 {
                                     live.Ship.Controls = controlsBeforeScriptedEcho;
                                     live.Ship.StateM = stateBeforeScriptedEcho;
                                 }
-                                ConsoleLog.Write($"[ctrlak] {from} ship {live.Ship.Id}: cookie mismatch (expect 0x{EnsurePeerUpdate(from).Cookie:X2}, got 0x{u.Cookie:X2}) — SHIP_UPDATE dropped (FedSrv.CPP:4854)");
+                                ConsoleLog.Write($"[ctrlak] {from} ship {live.Ship.Id}: cookie mismatch (expect 0x{peerUpdate.Cookie:X2}, got 0x{u.Cookie:X2}) — SHIP_UPDATE dropped (FedSrv.CPP:4854)");
                             }
                             else
                             {

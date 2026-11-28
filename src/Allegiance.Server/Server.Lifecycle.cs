@@ -28,6 +28,10 @@ public sealed partial class Server
     // every-10 cadence tick. Populated by the seating path (TryJoinSide).
     private void MarkObjectSyncDirty(short sideId) => _objectSyncDirtySides.Add(sideId);
 
+    // Both orientation axes are needed: a pure roll leaves Forward unchanged.
+    internal readonly record struct BroadcastPose(Vector3 Position, Vector3 Forward, Vector3 Up,
+        float ShieldFraction, bool Mining, bool EverBroadcast);
+
     /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
     /// <see cref="Sector"/> it lives in, its last-broadcast position
     /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast), and
@@ -37,15 +41,12 @@ public sealed partial class Server
     /// with it on disconnect — the record's lifecycle <em>is</em> the
     /// PlayerScore's lifetime, so non-persistence is structural rather than an
     /// extra bookkeeping rule.</summary>
-    /// <summary><c>LastBroadcastForward</c>/<c>LastBroadcastUp</c>: the
-    /// orientation last echoed to this ship's own owning peer (and to same-side
-    /// recipients via the teammate broadcast below), so a pure rotation — no
-    /// position change at all, e.g. roll/pitch/yaw with no thrust — still
-    /// crosses the dirty check and gets broadcast. Forward alone misses roll
-    /// (rotation about the ship's own forward axis leaves forward unchanged),
-    /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0, uint ResumeToken = 0)
+    internal sealed record LiveShip(Ship Ship, Sector Sector, PlayerScore PlayerScore, PlayerWallet Wallet,
+        double ConnectSimTime = 0, uint ResumeToken = 0)
     {
+        internal BroadcastPose LastBroadcast { get; set; } = new(Ship.Position, Ship.Orientation.GetForward(),
+            Ship.Orientation.GetUp(), Ship.ShieldFraction, Mining: false, EverBroadcast: false);
+
         // CFSPlayer::m_lastSide survives Reset(false), fsship.h:434-446.
         public short LastSideId { get; set; } = Ship.SideId is >= 0 ? Ship.SideId.Value : SideTeamLobby;
     }

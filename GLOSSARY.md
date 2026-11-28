@@ -886,6 +886,12 @@ list in **reverse**.
 
 - **Collision event audience (P1094)** — `src/Allegiance.Server/Server.CollisionRoster.cs` groups seated peers in wire order for the open snapshot. `src/Allegiance.Server/Server.Combat.cs` checks live ownership, exports and visibility at each contact. Attribution and the 400-seat reproduction are in `docs/reports/LATE_MATCH_UPDATE_SPIKES_P1094.md`.
 
+- **Own pose and verbose log allocation (P1102)** — `src/Allegiance.Server/Server.BroadcastSnapshot.cs`
+  packs the native ripcord byte into each owner’s update. Parallel builders stage a packet lease and a
+  last-broadcast pose for ordered application. `src/Allegiance.Core/ConsoleLog.cs` gates interpolated
+  diagnostic formatting while counting each attempt. Measurements and audit in
+  `docs/reports/BUILDER_LOG_ALLOCATION_P1102.md`.
+
 - **Teammate broadcast scratch (P1089)** — the parallel builder in
   `src/Allegiance.Server/Server.Broadcast.cs` owns one reusable result per
   snapshot index. `src/Allegiance.Server/Server.TeammateScratch.cs` clears

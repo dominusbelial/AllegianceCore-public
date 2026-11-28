@@ -99,7 +99,7 @@ public sealed partial class Server
     {
         int extra = mining ? ShipControlState.MiningMask : 0;
         if (!_broadcastEncodeOnceEnabled || _buildingBroadcastSnapshot is null)
-            return PackBroadcast(Message(new SingleShipUpdate { OidTarget = ship.Id,
+            return PackBroadcast(Message(new SingleShipUpdate { OidTarget = ship.Id, BIsRipcording = ship.IsRipcordActive,
                 Ship = CaptureShipUpdate(ship.Id, ship, tick, extra, carryEndurance: true) }));
         var packet = PooledPosePacket.Rent(SingleShipUpdate.FixedSize + FedPacket.CrcWidth);
         var bytes = packet.Buffer;
@@ -108,6 +108,8 @@ public sealed partial class Server
         System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(2), SingleShipUpdate.Fmid);
         System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(bytes.Slice(6), ship.Id);
         ServerShipUpdate.WriteModel(bytes.Slice(8), ship.Id, ship, tick, extra, carryEndurance: true);
+        // SINGLE_SHIP_UPDATE.bIsRipcording (FedSrv/fsship.cpp:542,807).
+        bytes[SingleShipUpdate.FixedSize - 1] = ship.IsRipcordActive ? (byte)1 : (byte)0;
         Interlocked.Increment(ref ShipEncodingCounters.SingleRecords);
         packet.Seal(SingleShipUpdate.FixedSize);
         return packet;
@@ -243,7 +245,11 @@ public sealed partial class Server
     private void QueueBroadcast(ConnectionId peer, BroadcastPacket packet, int key, bool guaranteed,
         BroadcastCategory category = BroadcastCategory.Other, int splitBytes = 0)
     {
-        if (_shutdown) return;
+        if (_shutdown)
+        {
+            packet.Release();
+            return;
+        }
         if (_buildingBroadcastSnapshot is { } snapshot)
         {
             lock (_snapshotCaptureGate) snapshot.Deliveries.Add(new(peer, packet, key, guaranteed, category, splitBytes));

@@ -43,6 +43,42 @@ public sealed class ConsoleLogNonBlockingTests
         public override string ToString() { lock (_gate) return base.ToString(); }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Interpolation_obeys_gate_preserving_text_and_attempts(bool verbose)
+    {
+        var original = Console.Out;
+        var sink = new LockedStringWriter();
+        ConsoleLog.ResetForTest();
+        try
+        {
+            Console.SetOut(sink);
+            ConsoleLog.Verbose = verbose;
+            var probe = ConsoleLog.OpenProbeForTest();
+            int calls = 0;
+            decimal Value() { calls++; return 1234.5m; }
+            string expected = $"P1102 value={1234.5m,12:N2} id={255:X4}";
+            long totalBefore = Interlocked.Read(ref ConsoleLog.TotalWrites);
+            ConsoleLog.Write(expected);
+            ConsoleLog.Write($"P1102 value={Value(),12:N2} id={255:X4}");
+            ConsoleLog.Flush();
+            Assert.Equal(verbose ? 1 : 0, calls);
+            // Other threads can log concurrently, so use the probe for exact counts.
+            Assert.True(Interlocked.Read(ref ConsoleLog.TotalWrites) - totalBefore >= 2);
+            Assert.Equal(2, probe.Attempts);
+            Assert.Equal(verbose ? 2 : 0, probe.Emitted);
+            Assert.Equal(0, probe.Dropped);
+            var lines = sink.ToString().Split(Environment.NewLine).Where(s => s.StartsWith("P1102 "));
+            Assert.Equal(verbose ? new[] { expected, expected } : Array.Empty<string>(), lines);
+        }
+        finally
+        {
+            Console.SetOut(original);
+            ConsoleLog.ResetForTest();
+        }
+    }
+
     private sealed class StallingWriter : TextWriter
     {
         private readonly int _perWriteMs;
