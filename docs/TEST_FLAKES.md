@@ -11495,3 +11495,13 @@ precedes both the pickup pass and the discovery Add for that object. The next tw
 class runs passed, as did three method-only runs on each of the dispatch base and
 changed server. P1091 recorded a later owner-frame assertion in the same method.
 [P1103 evidence](reports/TREASURE_PICKUP_BROADPHASE_P1103.md)
+
+### 2026-11-27 — BOT-R1 + P1101–P1103 merge gate (workstation, sequential, `Tier!=Live`)
+
+Targeted P1101/P1102/P1103 + broadcast/transport/treasure/discovery set: 249/249 ×3. One Core `Tier!=Live` suite: 3 failures, all known signatures.
+
+| Test | Suite observation | Three isolated runs |
+|---|---|---|
+| `ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout` | fail 188 ms | Class-level A/B, 10 runs each: base `dd973eb3` 7/10 runs with a failure, P1102 7/10, same two methods — pre-existing, not P1102 |
+| `SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players` | fail 19 s (lethal-hit timeout) | pass / pass / pass, 0.34–0.35 s |
+| `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station` | fail 3 s | pass / pass / pass |
