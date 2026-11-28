@@ -11452,3 +11452,7 @@ P1094–P1097. The suite is Live tier (outside the light gate); earlier gates on
 ## P1099 Fast sweep, 2026-11-27
 
 `P1091HudOverlapTests.Painted_mount_rows_and_entity_readouts_are_distinct` failed the stored RGBA digest at 1920×1080 and default scale for both Classic and Modern. Three isolated invocations repeated both failures. The other 19 viewport/style cases passed each time. The layout proof reported zero errors in both failing cases. The HUD proof built from archived master `28debb3c` produced pixel-identical output to P1099 on local software GL. Classic's observed digest begins `C100F69A` and Modern's begins `1093B39B`. The origin of the difference from the stored goldens remains open. [P1099 evidence](reports/OBSERVER_EXPORT_COST_P1099.md)
+
+**P1098/P1099 merge gate (2026-11-27).** Round 1: `SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip` failed once
+(9 s), then passed 3/3 alone. Round 2: `JetStoresCautionTests.Draw_with_stores_caution_and_an_open_F4_pane_allocates_nothing`
+failed once (37 ms), then its class passed 3/3 alone. Both are already ledgered above; neither changed signature.
