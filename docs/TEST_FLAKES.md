@@ -11484,3 +11484,14 @@ Fast sweep. The exact method passed three times alone. Its private delayed trans
 has a six-second release timeout and the assertion follows a 1.8-second asynchronous
 delay. The sweep did not record the task wake times. This client-only fixture does
 not run the server broadcast or verbose log paths. [P1102 evidence](reports/BUILDER_LOG_ALLOCATION_P1102.md)
+
+## P1103 treasure drop fixture
+
+`P1031TreasureVisibilityTests.Dropped_part_treasure_reaches_only_sides_that_can_see_it`
+once reached line 227 without creating a treasure. The fixture mounted the weapon on
+ship 8096, then the drop request arrived from ship 8097 with an empty weapon mount.
+The fixture assigns roles by spawn order and sends from a fixed bot index. The failure
+precedes both the pickup pass and the discovery Add for that object. The next two
+class runs passed, as did three method-only runs on each of the dispatch base and
+changed server. P1091 recorded a later owner-frame assertion in the same method.
+[P1103 evidence](reports/TREASURE_PICKUP_BROADPHASE_P1103.md)

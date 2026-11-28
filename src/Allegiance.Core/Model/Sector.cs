@@ -319,6 +319,8 @@ public sealed partial class Sector : IClusterIgc
     // (Server.PerformTreasurePickup) — the Core side never sends wire.
     private readonly List<(Ship Ship, Treasure Treasure)> _pendingTreasurePickups = [];
 
+    private TreasurePickupGrid? _pickupGrid;
+
     // P163 — in-progress building effects in this sector (a Builder committed
     // to constructing a station at an asteroid). Advanced by the per-tick
     // ResolveBuildingEffects pass (the same accumulate/resolve shape as the
@@ -1903,123 +1905,81 @@ public sealed partial class Sector : IClusterIgc
         return taken;
     }
 
-    /// <summary>
-    /// P123 — the per-tick treasure-pickup proximity pass, called from
-    /// <see cref="Update"/> alongside the other per-tick passes. The port's
-    /// stand-in for <c>CtreasureIGC::HandleCollision</c>'s ship branch
-    /// (<c>treasureIGC.h:78-99</c>): this port has no ship-vs-object physics
-    /// collision system, and this pass deliberately does not build one — it is
-    /// the same point-in-sphere proximity-sweep convention
-    /// <see cref="ResolveDockCollisions"/> establishes for docking (the
-    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Qualifying-ship gate</b> — reproduces the native
-    /// <c>HandleCollision</c> gate verbatim (<c>treasureIGC.h:83-98</c>):
-    /// <c>GetPilotType() &gt;= c_ptPlayer</c> <em>and</em>
-    /// <c>GetBaseHullType()-&gt;HasCapability(c_habmRescue)</c>. The pilot-type
-    /// leg is real since P160 (P847 fixed the stale claim that it "collapses to
-    /// always-true"): <see cref="Ship.PilotType"/> carries the native
-    /// <c>m_pilotType</c> (a real player pilot is <c>c_ptPlayer</c>=10;
-    /// <c>SpawnNpcShip</c> stores the spawned drone type's own pilot type), so a
-    /// miner/builder/layer drone — which native forbids from picking treasures up
-    /// (<c>treasureIGC.h:86</c>) — is excluded exactly as it is in native. The
-    /// second half of the gate stays
-    /// <c>HullType.HasCapability(DataHullTypeIGC.HabmRescue)</c> (bit 0x02, the
-    /// <em>same</em> bit P114/P115 already decoded and used for
-    /// <c>RescueShipEvent</c> — no new capability decode needed).</para>
-    /// <para><b>Side-agnostic — confirmed.</b> The native gate has <em>no</em>
-    /// side check at all (<c>treasureIGC.h:86-87</c> only tests pilot type and
-    /// the rescue capability); a cash treasure itself carries no side
-    /// (<c>treasureIGC.cpp:128-149</c> sets a side only for <c>c_tcFlag</c>).
-    /// So <em>any</em> rescue-capable player ship on <em>any</em> side picks up
-    /// a cash treasure — there is deliberately no same-side requirement here
-    /// (unlike the dock/rescue passes). The only side involvement is on the
-    /// credit side: the <b>picking ship's own side</b> is credited
-    /// (<c>HitTreasureEvent</c> uses <c>pfsShip-&gt;GetSide()</c>,
-    /// FedSrv.CPP:13589-13615), so the pass still requires the ship to be
-    /// sided (and in a mission) so the host has a side to credit — a defensive
-    /// guard that never trips for a real server ship.</para>
-    /// <para><b>Cash + part this slice (P123 then P145).</b> The pass accumulates
-    /// <c>c_tcCash</c> and <c>c_tcPart</c> treasures: for cash,
-    /// <c>HitTreasureEvent</c> (<c>FedSrv.CPP:13589-13616</c>) credits the side and
-    /// returns true; for parts it buffers an offer + sends <c>ACQUIRE_TREASURE</c>.
-    /// Either way <c>KillTreasureEvent</c> then destroys the treasure
-    /// (DESTROY_TREASURE, FedSrv.CPP:12493-12509) — a part treasure is destroyed
-    /// on touch, before the player ever chooses a mount (see
-    /// <c>Server.PerformTreasurePickup</c>). The other codes (<c>c_tcPowerup</c> /
-    /// <c>c_tcDevelopment</c> / <c>c_tcFlag</c>) are still the separately-scoped
-    /// follow-up: a treasure of one of those overlapped by a qualifying ship is
-    /// <em>left in place</em> this slice (detected but not consumed), the honest
-    /// "build the cheapest real slice" boundary. A loot counter is not needed
-    /// here; a single treasure is consumed at most once because the pickup
-    /// removes it from the sector.</para>
-    /// <para><b>Proximity</b> — point-in-sphere with the treasure's fixed
-    /// <see cref="Treasure.PickupRadius"/> (5.0, treasureIGC.cpp:193) plus the
-    /// ship's <c>0.5 × HullType.Length</c> sphere radius — the same
-    /// <c>objectRadius + shipRadius</c> measure the dock/mining/rescue passes
-    /// use. A dead or docked ship is excluded (a docked ship is not in the
-    /// flight sim), mirroring the rescue pass's latches.</para>
-    /// </remarks>
-    private void ResolveTreasurePickups(double timeUpdate, float dt)
+    /// <summary>Resolve in model order. The native player/rescue gate is
+    /// Igc/treasureIGC.h:86-87. The site owns flag refusal and all other
+    /// pickup decisions (FedSrv/FedSrv.CPP:13558-13650).</summary>
+    internal void ResolveTreasurePickups(double timeUpdate, float dt)
     {
-        if (_models.Count < 2) return;                 // nothing to pair
-        var treasures = new List<Treasure>();
-        foreach (var m in _models)
-            if (m is Treasure t) treasures.Add(t);
-        if (treasures.Count == 0) return;              // no treasure to pick up
+        if (_models.Count < 2) return;
+        // The site is synchronous and may re-enter the sector. Lend this pass
+        // exclusive scratch until every callback has returned.
+        var grid = _pickupGrid ?? new TreasurePickupGrid();
+        _pickupGrid = null;
+        try { ScanTreasurePickups(timeUpdate, dt, grid); }
+        finally
+        {
+            grid.Treasures.Clear();
+            grid.Done.Clear();
+            _pickupGrid = grid;
+        }
+    }
 
-        var done = new HashSet<Treasure>();            // one pickup per treasure per tick
+    private void ScanTreasurePickups(double timeUpdate, float dt, TreasurePickupGrid grid)
+    {
+        foreach (var m in _models)
+            if (m is Treasure { Code: TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag or TreasureCode.Powerup } t)
+                grid.Treasures.Add(t);
+        if (grid.Treasures.Count == 0) return;
+
+        bool rebuild = true;
+        bool indexed = false;
         foreach (var model in _models)
         {
-            if (model is not Ship ship) continue;
-            if (ship.Dead || ship.StationId is not null) continue;   // must be flying
-            if (ship.SideId is null || ship.Mission is null) continue; // need a side to credit
-            // The native gate (treasureIGC.h:86-87): pilot type >= c_ptPlayer
-            // AND the rescue capability. P847 — the pilot-type half is enforced
-            // now that Ship.PilotType carries the real native value: an NPC drone
-            // (miner/builder/layer, pilot type < c_ptPlayer) never picks a
-            // treasure up, exactly as in native. No side check (side-agnostic —
-            // see remarks).
-            if (ship.PilotType < Ship.PilotTypePlayer) continue;
-            if (!ship.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) continue;
+            if (model is not Ship ship || ship.Dead || ship.StationId is not null ||
+                ship.SideId is null || ship.Mission is null || ship.PilotType < Ship.PilotTypePlayer ||
+                !ship.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) continue;
 
-            float shipR = 0.5f * ship.HullType.Length;
-            foreach (var tr in treasures)
+            float threshold = Treasure.PickupRadius + 0.5f * ship.HullType.Length;
+            if (rebuild)
             {
-                if (done.Contains(tr)) continue;
-                // P145 — the shared cash/part gate: a rescue-capable ship
-                // overlaps EITHER a c_tcCash treasure (credit the side) or a
-                // c_tcPart treasure (buffer an offer + ACQUIRE_TREASURE).
-                // P201 adds c_tcFlag, P412 c_tcPowerup. The flag-specific
-                // refusal rules (already carrying a flag; own side's flag) are
-                // NOT decided here: they are the native site rule inside
-                // HitTreasureEvent (FedSrv.CPP:13562-13568), enforced by
-                // ServerHost.HitTreasureEvent below (P754b); a refused pickup
-                // returns false, is not queued, and the treasure stays.
-                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag or TreasureCode.Powerup)) continue;
-
-                float threshold = Treasure.PickupRadius + shipR;
-                // Native uses the average trajectory velocity for the collision sweep
-                // (treasureIGC.cpp:239-259). Test the relative segment, including
-                // a treasure crossing a ship between endpoints.
-                var end = ship.Position - tr.Position;
-                var start = ship.Position - ship.CollisionVelocity * dt - tr.PreviousPosition;
-                var travel = end - start;
-                float length2 = travel.LengthSquared();
-                float fraction = length2 == 0 ? 0 : Math.Clamp(-(start * travel) / length2, 0, 1);
-                if ((start + travel * fraction).LengthSquared() > threshold * threshold) continue;
-
-                // The accept/refuse decision is the SITE's (native
-                // FedSrvSiteBase::HitTreasureEvent, FedSrv.CPP:13558-13650): a
-                // refused pickup returns false, nothing is queued and the treasure
-                // stays (P754b moved the native flag gates into that callback).
-                if (Mission?.Site.HitTreasureEvent(timeUpdate, ship, tr) ?? true)
-                {
-                    _pendingTreasurePickups.Add((ship, tr));
-                    done.Add(tr);
-                }
+                indexed = grid.Build();
+                rebuild = false;
             }
+            int first = 0;
+            if (indexed && grid.Query(ship.Position - ship.CollisionVelocity * dt, ship.Position, threshold))
+            {
+                foreach (int i in grid.Candidates)
+                {
+                    if (!Touch(ship, grid.Treasures[i], threshold)) continue;
+                    // A site may move either party, or another treasure, synchronously.
+                    // Finish this ship with live reads, then reindex for the next ship.
+                    first = i + 1;
+                    break;
+                }
+                if (first == 0) continue;
+            }
+            for (int i = first; i < grid.Treasures.Count; i++)
+                Touch(ship, grid.Treasures[i], threshold);
+        }
+
+        bool Touch(Ship ship, Treasure tr, float threshold)
+        {
+            if (grid.Done.Count != 0 && grid.Done.Contains(tr)) return false;
+            // Relative segment, including crossing trajectories (Igc/treasureIGC.cpp:239-259).
+            var end = ship.Position - tr.Position;
+            var start = ship.Position - ship.CollisionVelocity * dt - tr.PreviousPosition;
+            var travel = end - start;
+            float length2 = travel.LengthSquared();
+            float fraction = length2 == 0 ? 0 : Math.Clamp(-(start * travel) / length2, 0, 1);
+            if ((start + travel * fraction).LengthSquared() > threshold * threshold) return false;
+
+            rebuild = true;
+            if (Mission?.Site.HitTreasureEvent(timeUpdate, ship, tr) ?? true)
+            {
+                _pendingTreasurePickups.Add((ship, tr));
+                grid.Done.Add(tr);
+            }
+            return true;
         }
     }
 

@@ -325,7 +325,7 @@ public sealed partial class Server
     internal void TestInvalidateClashLatches(ConnectionId conn, short shipId)
     {
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == shipId);
-        _crossSideDiscoverySent.RemoveWhere(e => e.Recipient == conn);
+        _crossSideDiscoverySent.RemovePeer(conn);
         foreach (var key in _crossSideShipStatusTick.Keys.Where(k => k.Item1 == conn || k.Item2 == shipId).ToArray())
             _crossSideShipStatusTick.Remove(key);
         _statusSweepRemovalVersion++;
@@ -481,9 +481,9 @@ public sealed partial class Server
     /// per-world latches (a .NET set keeps the widest moment it ever saw after
     /// the entries are pruned; the rotation must release it). Inert in
     /// production.</summary>
-    internal (int DiscoveryCapacity, int DiscoveryCount, int ShipDetectedCapacity,
+    internal (int DiscoveryObjectCapacity, int DiscoveryObjects, int ShipDetectedCapacity,
               int TurretCapacity, int LoadoutCacheCapacity) WorldCacheCapacities()
-        => (_crossSideDiscoverySent.Capacity, _crossSideDiscoverySent.Count,
+        => (_crossSideDiscoverySent.ObjectCapacity, _crossSideDiscoverySent.ObjectCount,
             _shipDetected.EnsureCapacity(0), _lastTurretUpdates.EnsureCapacity(0),
             _teammateLoadoutCache.EnsureCapacity(0));
 

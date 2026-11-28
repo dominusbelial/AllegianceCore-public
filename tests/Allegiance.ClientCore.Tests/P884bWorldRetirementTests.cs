@@ -228,9 +228,9 @@ public sealed class P884bWorldRetirementTests(ITestOutputHelper output)
                 // one match's peak difference every match. The fresh match has only
                 // just started, so its live population is small.
                 var caps = server.WorldCacheCapacities();
-                Assert.True(caps.DiscoveryCapacity <= 4 * caps.DiscoveryCount + 64,
+                Assert.True(caps.DiscoveryObjectCapacity <= 4 * caps.DiscoveryObjects + 64,
                     $"rotation {rot}: the discovery latch kept its finished-match peak capacity " +
-                    $"({caps.DiscoveryCapacity} slots for {caps.DiscoveryCount} live entries)");
+                    $"({caps.DiscoveryObjectCapacity} slots for {caps.DiscoveryObjects} objects)");
                 Assert.True(caps.ShipDetectedCapacity <= 4 * server.WorldCacheCounts().ShipDetected + 64,
                     $"rotation {rot}: _shipDetected kept its finished-match peak capacity");
 

@@ -668,6 +668,12 @@ list in **reverse**.
   `IIgcSite.SpotterCreditEvent` (credited in `Server.Combat.cs OnSpotterCredit`),
   with `Ship.MarkPreviouslySpotted`/`RecentlySpotted`. Report:
   `docs/reports/P851_CERTIFY.md`.
+- **Treasure pickup broad phase and discovery latch (P1103)** — sector pickup
+  candidates in `src/Allegiance.Core/Model/TreasurePickupGrid.cs` retain treasure
+  registration order for the relative segment test and synchronous site callback.
+  `src/Allegiance.Server/DiscoveryLatch.cs` stores the existing discovery
+  membership in per-object bitmaps of reusable peer slots. Measurements and proofs are in
+  `docs/reports/TREASURE_PICKUP_BROADPHASE_P1103.md`.
 - **Treasure visibility export (P797/P1031)** — every treasure is
   `c_mtSeenBySide | c_mtPredictable` (`Igc/treasureIGC.cpp:167-177`), so a side
   learns about it only through its scanner net (`ShowObject`,

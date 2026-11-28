@@ -1282,7 +1282,7 @@ public sealed partial class Server
             case 2: _playerInfoSent.RemoveWhere(e => ByRecipientOrShip(e.Recipient, e.ShipId)); break;
             case 3: _crossSideExportSent.RemoveWhere(e => ByRecipientOrShip(e.Recipient, e.ShipId)); break;
             case 4: _crossSideMineExportSent.RemoveWhere(e => IsRecipient(e.Recipient)); break;
-            case 5: _crossSideDiscoverySent.RemoveWhere(e => IsRecipient(e.Recipient)); break;
+            case 5: _crossSideDiscoverySent.RemovePeers(conns); break;
             case 6: _buildingEffectExportSent.RemoveWhere(e => IsRecipient(e.Recipient)); break;
             case 7: _sameSideNpcExportSent.RemoveWhere(e => ByRecipientOrShip(e.Recipient, e.ShipId)); break;
             case 8: RemoveKeys(_lastSameSideNpcStatusTick, k => ByRecipientOrShip(k.Recipient, k.ShipId)); break;

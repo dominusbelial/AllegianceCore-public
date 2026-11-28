@@ -596,7 +596,7 @@ public sealed partial class Server : IDisposable
     /// joins after its side discovered something is caught up by its own join
     /// export. Sim-thread only, like the siblings.
     /// </summary>
-    private readonly SweepLatchSet<(ConnectionId Recipient, byte Kind, short Id)> _crossSideDiscoverySent = new();
+    private readonly DiscoveryLatch _crossSideDiscoverySent = new();
 
     // P366 — the same-side NPC identity + status latch. Exactly parallel to
     // `_teammateExportSent` but for same-side AI bot ships (IsNpc), which the

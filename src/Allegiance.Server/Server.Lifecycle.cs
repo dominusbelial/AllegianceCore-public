@@ -2394,7 +2394,7 @@ public sealed partial class Server
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == id);
         // P797 — the static-object discovery latches follow the same rule (the
         // object-id dimension is not ship-linked, so only the recipient frees).
-        _crossSideDiscoverySent.RemoveWhere(e => e.Recipient == id);
+        _crossSideDiscoverySent.RemovePeer(id);
         _buildingEffectExportSent.RemoveWhere(e => e.Recipient == id);
         // P366 — the same-side NPC latches get the same treatment as their
         // teammates: free every entry where the departing peer was the recipient
