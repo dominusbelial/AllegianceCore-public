@@ -1476,7 +1476,8 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                     CloseQuiet(s);
                     return null;
                 }
-                if (!_isHost || !IsPeerClosed(from)) _site.OnReceive(from, body);
+                if (!_isHost) _site.OnReceive(from, body);
+                else if (!IsPeerClosed(from)) _site.OnReceiveOwned(from, body);
             }
         }
         catch (EndOfStreamException) { _clientReadFailure = "server closed connection (EOF)"; }
@@ -2756,7 +2757,8 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
         // it (a private nested class would be invisible outside SendWorkerPool).
         internal sealed class Worker
         {
-            private readonly LinkedList<PeerSender> _peers = new();
+            // Published arrays are immutable, including while a worker finishes an older pass.
+            private PeerSender[] _peers = [];
             private readonly object _sync = new();
             private Thread? _thread;
             private volatile bool _running = true;
@@ -2765,12 +2767,24 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
             public void Assign(PeerSender peer)
             {
                 peer.OwnerWorker = this;
-                lock (_sync) { _peers.AddLast(peer); Monitor.PulseAll(_sync); }
+                lock (_sync)
+                {
+                    _peers = [.. _peers, peer];
+                    Monitor.PulseAll(_sync);
+                }
             }
 
             public void Unassign(PeerSender peer)
             {
-                lock (_sync) { _peers.Remove(peer); }
+                lock (_sync)
+                {
+                    int index = Array.IndexOf(_peers, peer);
+                    if (index < 0) return;
+                    var next = new PeerSender[_peers.Length - 1];
+                    Array.Copy(_peers, next, index);
+                    Array.Copy(_peers, index + 1, next, index, next.Length - index);
+                    _peers = next;
+                }
             }
 
             public void Wake()
@@ -2805,13 +2819,13 @@ public sealed class TcpTransport : IServerTransport, ISendPoolDiagnostics
                     PeerSender[] snapshot;
                     lock (_sync)
                     {
-                        if (_peers.Count == 0)
+                        if (_peers.Length == 0)
                         {
                             Diagnostics.State(SendWorkerState.Idle);
                             Monitor.Wait(_sync, 200);
                             continue;
                         }
-                        snapshot = _peers.ToArray();
+                        snapshot = _peers;
                     }
 
                     bool progressed = false;

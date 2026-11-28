@@ -1106,6 +1106,13 @@ list in **reverse**.
   report: `docs/reports/R1B_SQUAD_SIDES_P1033.md`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.
   `Server.Egress.cs`, `Server.Dispatch.cs`.
+- **TCP frame ownership and worker rosters (P1101)** — each send worker in
+  `src/Allegiance.Core/Transport/TcpTransport.cs` publishes its ordered roster
+  on membership changes. Host TCP transfers its completed body through
+  `src/Allegiance.Core/Transport/ITransport.cs` and the optional
+  `src/Allegiance.Core/Transport/ServerTransportMux.cs` to the bounded drain in
+  `src/Allegiance.Server/ServerHost.cs`. Retention bounds and measurements:
+  `docs/reports/TRANSPORT_ALLOCATION_P1101.md`.
 - **Late TCP client send (P1064)** — `src/Allegiance.Core/Transport/TcpTransport.cs`
   distinguishes never successfully joined (throws) from a sender cleared after
   connection (drop, log once). Receive callbacks and keep-alive sends racing

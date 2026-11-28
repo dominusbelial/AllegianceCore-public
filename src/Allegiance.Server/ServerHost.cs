@@ -100,9 +100,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     private readonly Dictionary<uint, Queue<ITransportEvent>> _pendingLanes = new();
     private readonly List<uint> _pendingOrder = new();
 
+    // Tick-thread scratch. A lane with deferred work stays in _pendingLanes.
+    private const int MaxSpareLanes = 512;
+    private const int MaxSpareLaneCapacity = 32;
+    private const int MaxPeerScratchCapacity = 1024;
+    private const int MaxSelectedCapacity = 8192;
+    private readonly Stack<Queue<ITransportEvent>> _spareLanes = new();
+    private readonly Dictionary<uint, int> _handled = new();
+    private List<(uint Key, int Sequence, ITransportEvent Event)>? _selected = [];
+
     // P315 (review finding H3) — bound the inbound receive queue. The tick loop
     // drains _events once per pass (~20 Hz); a peer sending valid-CRC packets
-    // faster than that drain would otherwise grow the queue — and the copied
+    // faster than that drain would otherwise grow the queue — and the owned
     // byte arrays inside each ReceivedEvt — without bound. Account each peer's
     // in-flight buffered bytes and, over the budget, drop that peer's excess
     // (rate-limited log) rather than enqueue it, so the queue stays
@@ -112,7 +121,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     // P1023 (R1 finding F3) — the P315 budget counted PAYLOAD bytes only, but a
     // queued event costs far more than its payload: the ReceivedEvt object, the
-    // copied frame array's header, its queue slot (shared FIFO + per-peer lane)
+    // frame array's header, its queue slot (shared FIFO + per-peer lane)
     // and its per-peer accounting entry. Measured on this runtime at 200k
     // events through the real path: an EMPTY frame retains 58 B/event and a
     // 4-byte CRC-only frame 90 B/event (a 1100-byte frame retains 1174 B, i.e.
@@ -2271,11 +2280,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         else _events.Enqueue(new PeerLeftEvt(id));
     }
     void ITransportSite.OnSessionLost() => _events.Enqueue(new SessionLostEvt());
-    void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
+    void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data) => Receive(from, data, null);
+    void ITransportSite.OnReceiveOwned(ConnectionId from, byte[] body) => Receive(from, body, body);
+
+    private void Receive(ConnectionId from, ReadOnlySpan<byte> data, byte[]? ownedBody)
     {
         if (!ReceiveDecouple)
         {
-            if (EnqueueReceive(from, data, pending: false) is not null)
+            if (EnqueueReceive(from, data, ownedBody, pending: false) is not null)
                 Interlocked.Increment(ref _packetsReceived);
             return;
         }
@@ -2285,7 +2297,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         lock (publication)
         {
             if (publication.Closed) return;
-            received = EnqueueReceive(from, data, pending: true);
+            received = EnqueueReceive(from, data, ownedBody, pending: true);
         }
         if (received is not null)
         {
@@ -2300,11 +2312,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         }
     }
 
-    private ReceivedEvt? EnqueueReceive(ConnectionId from, ReadOnlySpan<byte> data, bool pending)
+    private ReceivedEvt? EnqueueReceive(ConnectionId from, ReadOnlySpan<byte> data, byte[]? ownedBody, bool pending)
     {
         // P315 (H3): bound the shared receive queue per-peer. Only the tick's
         // ~20 Hz drain consumes _events; a flooding peer must not be able to
-        // grow it (and the copied byte arrays) without bound. Reserve this
+        // grow it (and the queued frame bodies) without bound. Reserve this
         // frame's bytes against the peer's budget; when the budget is exceeded,
         // relinquish the reservation and refuse the frame (drop) — keeping the
         // transport read thread moving so framing stays in sync, without the
@@ -2321,9 +2333,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // limit (and, being 0 B, were never refused). A second, size-independent
         // cap (MaxQueuedEventsPerPeer) bounds the number of un-handled events
         // per peer.
-        long len = data.Length;   // hoist: ReadOnlySpan is ref-like, unusable in lambdas
-        long charge = len + PerEventOverheadBytes;
-        long reserved = _bufferedPerPeer.AddOrUpdate(from.Value, charge, (_, old) => old + charge);
+        long charge = data.Length + PerEventOverheadBytes;
+        long reserved = _bufferedPerPeer.AddOrUpdate(from.Value, static (_, add) => add,
+            static (_, old, add) => old + add, charge);
         if (reserved > MaxBufferedBytesPerPeer)
         {
             ReleaseBytes(from.Value, charge);
@@ -2341,7 +2353,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // Publish a placeholder before decoding. Drain never waits: an
         // incomplete head defers its whole peer lane (including leave), while
         // ready peers keep their fair share. Reservation covers all stages.
-        var received = new ReceivedEvt(from, data.ToArray(), pending);
+        var received = new ReceivedEvt(from, ownedBody ?? data.ToArray(), pending);
         _events.Enqueue(received);
         return received;
     }
@@ -2397,7 +2409,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             uint key = PeerKeyOf(evt);
             if (!_pendingLanes.TryGetValue(key, out var q))
             {
-                q = new Queue<ITransportEvent>();
+                q = _spareLanes.TryPop(out var spare) ? spare : new Queue<ITransportEvent>();
                 _pendingLanes[key] = q;
                 _pendingOrder.Add(key);   // new peer joins the end of the rotation
             }
@@ -2408,7 +2420,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // Select fairly first; apply the selected immutable tick batch in
         // (peer id, per-peer arrival sequence) order. Rotate the starting peer
         // so a small global budget cannot starve higher ids.
-        List<(uint Key, int Sequence, ITransportEvent Event)> selected = [];
+        var selected = _selected ?? [];
         _pendingOrder.Sort();
 
         // Phase 2 — select from the rotating round-robin until the per-tick
@@ -2417,7 +2429,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // is empty — never when it merely hits its fair share, so nothing is
         // dropped and a flooding peer's PeerLeftEvt is still carried.
         int processed = 0;
-        var handled = new Dictionary<uint, int>();
+        var handled = _handled;
         int idx = 0;
         if (_pendingOrder.Count > 0)
         {
@@ -2447,6 +2459,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             if (q.Count == 0)
             {
                 _pendingLanes.Remove(key);
+                if (_spareLanes.Count < MaxSpareLanes && q.Capacity <= MaxSpareLaneCapacity)
+                    _spareLanes.Push(q);
                 _pendingOrder.RemoveAt(idx);
                 if (_pendingOrder.Count == 0) break;
                 if (idx == _pendingOrder.Count) idx = 0;
@@ -2460,7 +2474,24 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         selected.Sort(static (a, b) => a.Key != b.Key
             ? a.Key.CompareTo(b.Key) : a.Sequence.CompareTo(b.Sequence));
-        foreach (var item in selected) HandleDrainedEvent(item.Event, handle);
+        handled.Clear();
+        if (handled.Capacity > MaxPeerScratchCapacity) handled.TrimExcess();
+        // A callback may itself drain. Give it a distinct batch while this one is live.
+        _selected = null;
+        try
+        {
+            foreach (var item in selected) HandleDrainedEvent(item.Event, handle);
+        }
+        finally
+        {
+            selected.Clear(); // release event/body references, including on handler failure
+            if (selected.Capacity > MaxSelectedCapacity) selected.Capacity = MaxSelectedCapacity;
+            _selected = selected;
+        }
+        if (_pendingOrder.Capacity > MaxPeerScratchCapacity && _pendingOrder.Count <= MaxSpareLanes)
+            _pendingOrder.TrimExcess();
+        if (_pendingLanes.Capacity > MaxPeerScratchCapacity && _pendingLanes.Count <= MaxSpareLanes)
+            _pendingLanes.TrimExcess();
 
         // Phase 3 — count whatever is left sitting in the lanes as deferred
         // (it keeps its byte reservation and is carried to the next drain).

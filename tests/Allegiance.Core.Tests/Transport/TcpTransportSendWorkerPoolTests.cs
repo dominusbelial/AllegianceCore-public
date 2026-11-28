@@ -210,6 +210,45 @@ public class TcpTransportSendWorkerPoolTests
         }
     }
 
+    [Fact]
+    public void One_worker_changes_membership_during_a_partial_frame_and_wakes_after_idle()
+    {
+        var site = new Site();
+        var host = new TcpTransport(site, TransportMode.Pool, poolWorkers: 1);
+        try
+        {
+            host.Host(0, System.Net.IPAddress.Loopback);
+            var (id, slow) = ConnectRawPeer(host, site, "partial", tinyReceiveWindow: true);
+            using var slowClient = slow;
+            slow.ReceiveTimeout = 5000;
+            var payload = new byte[256 * 1024];
+            new Random(1101).NextBytes(payload);
+            host.Send(id, payload, guaranteed: true);
+            long framed = payload.Length + 5;
+            Assert.True(SpinWait.SpinUntil(() => host.TotalWrittenBytes > 0, 5000));
+            Assert.InRange(host.TotalWrittenBytes, 1, framed - 1);
+
+            var (newId, neighbor) = ConnectRawPeer(host, site, "neighbor");
+            using (neighbor)
+            {
+                neighbor.ReceiveTimeout = 5000;
+                host.Send(newId, Frame(4, 5), guaranteed: true);
+                Assert.Equal(Frame(4, 5), ReadFrame(neighbor.GetStream()));
+            }
+            Assert.True(site.HasLeft(newId, 5000));
+            Assert.InRange(host.TotalWrittenBytes - 7, 1, framed - 1);
+            Assert.Equal(payload, ReadFrame(slow.GetStream()));
+
+            // Let the idle worker park, then queue another ordered frame.
+            Thread.Sleep(100);
+            host.Send(id, Frame(6, 7), guaranteed: true);
+            Assert.Equal(Frame(6, 7), ReadFrame(slow.GetStream()));
+        }
+        finally { host.Shutdown(); }
+        Assert.Equal(0, host.PoolWorkerThreadCount());
+        Assert.Equal(0, host.TrackedThreadCount());
+    }
+
     /// <summary>(2) A stalled, never-reading peer must not delay a HEALTHY peer
     /// that shares its worker. Both are partitioned to the same worker
     /// (connection ids 1 and 4, worker = id % 3); flooding the stalled peer

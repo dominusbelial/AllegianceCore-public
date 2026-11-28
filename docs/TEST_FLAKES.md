@@ -11470,3 +11470,8 @@ failed once in round 1 of three full `Tier!=Live` MonoGame runs (43 ms), then it
 the `JetStoresCautionTests` zero-allocation sighting: a thread allocation counter read while the parallel suite runs.
 Rounds 2 and 3 were clean. The P1100 merge also needed two follow-ups where it meets P1098 (unload resets the sky
 latches to `null`; the P1098 sky proof now publishes the frame snapshot's sky before drawing), both folded into the commit.
+
+## P1101 Fast qualification, 2026-11-27
+
+- `P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research` passed all assertions. Its civ 1 case took 14.841 s in the full sweep, above the calibrated 13.498 s limit. Three method-only hosts passed all 21 theory cases. Their slowest individual cases took 1.89, 2.51 and 1.31 s. This adds a timing receipt for the role-selection method alongside the previously recorded dock-local-mask method.
+- `P890OwnAimLoopbackTests.Turning_and_firing_preserve_client_aim` failed the skirmish/port **peak** aim threshold at line 149. This is a different assertion in the previously ledgered skirmish/port drift case. Three method-only hosts passed all 12 cases. Another 20 hosts using the dispatch-base Core and Server binaries passed all 80 cases. The cause of this sweep-only peak remains unconfirmed. [P1101 report](reports/TRANSPORT_ALLOCATION_P1101.md)

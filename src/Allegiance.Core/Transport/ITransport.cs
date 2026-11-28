@@ -119,4 +119,8 @@ public interface ITransportSite
     /// full framed packet (messages + trailing CRC); validate with
     /// <see cref="Allegiance.Core.Wire.FedPacket.Unpack"/>.</summary>
     void OnReceive(ConnectionId from, ReadOnlySpan<byte> data);
+
+    /// <summary>Transfer an exact-size, unpooled TCP body. The producer must never
+    /// access it again. Sites that only borrow packets receive their usual span.</summary>
+    internal void OnReceiveOwned(ConnectionId from, byte[] body) => OnReceive(from, body);
 }

@@ -146,9 +146,15 @@ public class ServerTransportMux(ITransportSite site) : IServerTransport, ISendPo
         }
         public void OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
         {
-            ConnectionId outer;
-            lock (owner._gate) if (!Listener.Outer.TryGetValue(from, out outer)) return;
-            site.OnReceive(outer, data);
+            if (TryGetOuter(from, out var outer)) site.OnReceive(outer, data);
+        }
+        void ITransportSite.OnReceiveOwned(ConnectionId from, byte[] body)
+        {
+            if (TryGetOuter(from, out var outer)) site.OnReceiveOwned(outer, body);
+        }
+        private bool TryGetOuter(ConnectionId from, out ConnectionId outer)
+        {
+            lock (owner._gate) return Listener.Outer.TryGetValue(from, out outer);
         }
         public void OnSessionLost() => site.OnSessionLost();
     }
