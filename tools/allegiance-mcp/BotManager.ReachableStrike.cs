@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Wire;
 
@@ -113,11 +114,11 @@ internal sealed partial class BotManager
     // Route distance uses only known paired alephs. Unknown paths are not
     // promised. 65% of the hull's ordinary cruise speed budgets turning/dodge;
     // each transition gets another five seconds. This is a bot planning estimate.
-    private static double FinaleTravelSeconds(ActiveBot bot, ClientWorld world, ShipEntity own,
+    private static double FinaleTravelSeconds(StaticCore core, ClientWorld world, ShipEntity own,
         short sector, Vector3 destination)
     {
         if (own.Latest is not { } pose || world.Graph?.FindShortestPath(own.SectorId, sector) is not { Count: > 0 } path
-            || !Catalog.RepresentativeCore().HullTypes.TryGetValue(own.HullId, out var hull) || hull.Speed <= 0)
+            || !core.HullTypes.TryGetValue(own.HullId, out var hull) || hull.Speed <= 0)
             return double.PositiveInfinity;
         var point = pose.Position;
         double distance = 0;
@@ -153,7 +154,7 @@ internal sealed partial class BotManager
                 // reachable count zero until the wing has arrived at the target.
                 if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own) || plan.TargetPosition is not { } position)
                     continue;
-                double travel = FinaleTravelSeconds(bot, cs.World, own, sector: plan.Sector, destination: position);
+                double travel = FinaleTravelSeconds(core, cs.World, own, sector: plan.Sector, destination: position);
                 if (FinaleAssembly.CanArrive(!own.IsDead && !own.IsGone && !bot.IsPod,
                         (bot.FinaleGrantVerified || forRetarget && bot.Granted.HullId == ActualHullId(bot))
                             && !bot.FinaleStrikeSpent, bot.FinaleBomberReserved,

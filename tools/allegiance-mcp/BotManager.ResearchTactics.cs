@@ -7,26 +7,30 @@ namespace Allegiance.Tools.McpSpawner;
 
 internal sealed partial class BotManager
 {
-    private (ResearchTactics.Pilot[] Pilots, ResearchTactics.Target[] Targets, int StrikeRoster) ResearchTacticalSnapshot(short side)
+    internal volatile bool SustainableRaidEnabled;
+
+    private (ResearchTactics.Pilot[] Pilots, ResearchTactics.Target[] Targets, int StrikeRoster, bool FinaleTriggered, ActiveBot[] Bots, Dictionary<short, SustainableRaid.MemberObservation>? Members) ResearchTacticalSnapshot(short side, string? raidEpoch)
     {
         ActiveBot[] bots;
         int strikeRoster;
+        bool finaleTriggered;
+        bool AvailableForTactics(ActiveBot b) => !b.IsPod && !b.FinaleBomberActive && !b.FinaleBomberReserved
+            && !b.FinaleRefitting && !((FlagsGame(b.Cs!) || KillsGame(b.Cs!)) && b.FlagTask != FlagDuty.None);
+        HashSet<ActiveBot>? available = null;
         lock (_gate)
         {
-            // P801 — finale-duty bombers are driven by the finale strike mass
-            // coordinator, not by this wave policy: exclude them from both the
-            // snapshot and the roster so the two do not fight over one ship.
-            bots = _bots.Where(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
-                && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting
-                // Flag pilots own an objective; the ordinary attack-order loop
-                // must not pull the raid/guard away (P832c bot policy).
-                && !((FlagsGame(b.Cs!) || KillsGame(b.Cs!)) && b.FlagTask != FlagDuty.None)).ToArray();
-            // SC9 — the quorum counts the side's whole strike roster (docked or
-            // launched), not just the pilots visible in this snapshot.
+            finaleTriggered = raidEpoch is not null && _bots.Any(b => b.Side == side && b.Finale is { Rotated: false, TriggeredAt: not null });
+            // On a raid pass keep the owner's life/duty evidence even when a
+            // separate coordinator owns its orders. The legacy roster still
+            // includes docked strike pilots and excludes finale reservations.
+            bots = _bots.Where(b => b.Side == side && b.Cs is not null && IsParticipating(b)
+                && (raidEpoch is not null || AvailableForTactics(b))).ToArray();
+            if (raidEpoch is not null) available = bots.Where(AvailableForTactics).ToHashSet();
             strikeRoster = _bots.Count(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
                 && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting
                 && IsStrikeCapable(b.FinaleBomberActive, b.Role, b.HullId));
         }
+        Dictionary<short, SustainableRaid.MemberObservation>? members = raidEpoch is null ? null : [];
         var pilots = new List<ResearchTactics.Pilot>();
         var targets = new List<ResearchTactics.Target>();
         foreach (var bot in bots)
@@ -34,7 +38,10 @@ internal sealed partial class BotManager
             var cs = bot.Cs!;
             lock (cs.Gate)
             {
-                if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own) || own.IsDead
+                if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own)) continue;
+                if (members is not null && cs.World.ResearchBriefing?.Epoch == raidEpoch)
+                    members[bot.ShipId] = new(RaidMemberState(bot, own), bot.Deaths);
+                if (available is not null && !available.Contains(bot) || own.IsDead
                     || own.StationId >= 0 || own.ParentId >= 0 || own.Latest is not { HullFraction: > 0 } pose) continue;
                 bool support = IsSupport(bot);
                 if (support && !HasNanite(bot)) continue;
@@ -42,7 +49,8 @@ internal sealed partial class BotManager
                     bot.Granted.HullId == own.HullId && bot.Granted.Parts is { Count: > 0 } granted ? granted : bot.Parts);
                 pilots.Add(new(bot.ShipId, own.SectorId, pose.Position, support,
                     IsStrikeCapable(bot.FinaleBomberActive, bot.Role, own.HullId),
-                    loadout, loadout?.CloakCapable == true));
+                    loadout, loadout?.CloakCapable == true, raidEpoch is not null && cs.World.ResearchBriefing?.Epoch == raidEpoch
+                        ? ObserveRaidFit(bot, cs.World, own) : null));
                 // Team pilots report only what their ordinary clients can see.
                 var observed = ObserveTacticalTargets(cs.World, side);
                 if (KillsGame(cs) && !ConquestGame(cs))
@@ -50,7 +58,7 @@ internal sealed partial class BotManager
                 targets.AddRange(observed);
             }
         }
-        return (pilots.ToArray(), targets.ToArray(), strikeRoster);
+        return (pilots.ToArray(), targets.ToArray(), strikeRoster, finaleTriggered, bots, members);
     }
 
     /// <summary>Native broadcasts economic-victory BUCKET_STATUS mission-wide

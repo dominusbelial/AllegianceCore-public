@@ -109,6 +109,7 @@ internal static partial class McpTools
                         finale_reachable_strike = new { type = "boolean", @default = false, description = "P961 experimental showcase policy: count threats near the wing's path, cap at reachable armed reserved hulls, retarget impossible kills, and commit useful assembly plateaus. Rig A/B decides the default." },
                         finale_plateau_seconds = new { type = "number", @default = 45, minimum = 0, maximum = 600, description = "P961 — time without a new assembly high-water mark before a planner-useful short mass commits; 0 disables plateaus. Requires finale_reachable_strike." },
                         finale_engagement_range = new { type = "number", @default = 2500, exclusiveMinimum = 0, maximum = 10000, description = "P961 — threat envelope around each wing member's staging/release path, in game units. Recent actual wing attackers also count. Requires finale_reachable_strike." },
+                        sustainable_raid = new { type = "boolean", @default = false, description = "Research commander: send one ordinary wing per side when its observed target, route, home reserve and mounted grants support a station kill. Does not start the finale." },
                         finale_prearm_minutes = new { type = "number", @default = 0, minimum = 0, description = "P959 — how many minutes before finale_after_minutes the reserved wing is docked and legally refitted, so refit trips inside the strike window drop (0 disables)." },
                         finale_early_pressure_minutes = new { type = "number", @default = 0, minimum = 0, description = "P959 — arm ONE real strike wave (same corrected requirement and massing) at this match age before the finale, for pre-finale pressure. 0 (default) disables: the old timeline is unchanged." },
                         finale_max_wing = new { type = "integer", @default = 18, minimum = 1, maximum = 18, description = "P959 — the wing cap the corrected requirement may grow to from spare fighters (legal purchased strike loadouts only)." },
@@ -459,6 +460,7 @@ internal static partial class McpTools
         // host asks for it when the whole battle is a handful of bots (see
         // BotManager.ConfigureMeetingEngagement). Every other scenario keeps the
         // P539d staging/transit discipline untouched.
+        mgr.SustainableRaidEnabled = OptBool(args, "sustainable_raid", def: false);
         mgr.ConfigureMeetingEngagement(OptBool(args, "meeting_engagement", def: false));
         bool mixed = args.ContainsKey("sides") || args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
                      || (OptStr(args, "preset") is { Length: > 0 })

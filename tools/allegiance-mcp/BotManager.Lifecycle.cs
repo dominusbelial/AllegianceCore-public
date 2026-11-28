@@ -42,6 +42,7 @@ internal sealed partial class BotManager
     {
         bot.Inactive = true;
         bot.TargetId = bot.OrderedTargetId = null;
+        Interlocked.Exchange(ref bot.ExpiredRaidOrder, null);
         bot.OrderedCommand = null;
         bot.AcceptedQueuedOrder = null;
         bot.OrderedWarpOrigin = null;
@@ -128,6 +129,7 @@ internal sealed partial class BotManager
         bot.ExitClearFrom = null;
         bot.ExitClearRadius = 0;
         bot.TargetId = bot.OrderedTargetId = null;
+        Interlocked.Exchange(ref bot.ExpiredRaidOrder, null);
         bot.OrderedCommand = null;
         bot.AcceptedQueuedOrder = null;
         bot.OrderedWarpOrigin = null;
@@ -265,6 +267,9 @@ internal sealed partial class BotManager
         lock (cs.Gate)
         {
             var world = cs.World;
+            if (Volatile.Read(ref bot.ExpiredRaidOrder) is { } stale &&
+                (stale.Generation != world.MissionGeneration || stale.Epoch != world.ResearchBriefing?.Epoch))
+                Interlocked.CompareExchange(ref bot.ExpiredRaidOrder, null, stale);
             if (world.MyShipId is not { } ship) return false;
             bool missionChanged = bot.LifeSession is not null &&
                 (bot.LifeSession != cs || bot.LifeGeneration != world.MissionGeneration ||

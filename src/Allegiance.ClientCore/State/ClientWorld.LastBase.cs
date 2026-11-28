@@ -6,6 +6,8 @@ public sealed partial class ClientWorld
 {
     private LastBaseNotice _lastBases = new();
 
+    public bool FinaleClockArmed => _lastBases.FinaleSecondsRemaining >= 0;
+
     /// <summary>Only seated humans consume this HUD model. Observer worlds have no own ship;
     /// the renderer additionally passes its spectate flag for a seated spectator camera.</summary>
     public IReadOnlyList<LastBaseObjective> LastBaseObjectives(bool spectating = false)

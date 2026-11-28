@@ -62,6 +62,16 @@ list in **reverse**.
   provides loopback identity/list/side/launch with the resident starter core.
   Proof: `tools/p1048b-browser-join.cjs`, `tools/p1048b-browser-host/Program.cs`;
   report: `docs/reports/BROWSER_WS_JOIN_P1048B.md`. No new native game rule.
+- **Sustainable ordinary raid (P1104)** — the research commander's opt-in
+  `sustainable_raid` searches side-visible stations for a small reachable
+  wing with a mounted kill volley and an available home defender. Each side gets
+  12 candidate checks and 768 replayed rounds per tick, including a greedy fallback. Other pilots keep
+  their legacy wave and support assignments.
+  `tools/allegiance-mcp/SustainableRaid.cs` replays the mixed grants.
+  `tools/allegiance-mcp/BotManager.SustainableRaid.cs` supplies the client
+  observations. `tools/p1104b-raid-report.py` rebuilds the paired tables from the
+  receipts in `docs/reports/FIRST_SUSTAINABLE_ATTACK_P1104_assets/`. Operator
+  settings and results are in `docs/reports/FIRST_SUSTAINABLE_ATTACK_P1104.md`.
 - **WebSocket bot load tests (P1072)** — `tools/allegiance-mcp/BotTransportOptions.cs`
   validates explicit CLI/environment routes and optional single-CA trust;
   `tools/allegiance-mcp/BotManager.Transport.cs` assigns stable bot/control indices

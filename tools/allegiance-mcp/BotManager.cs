@@ -2349,6 +2349,8 @@ bool isThreat =
             bot.AcceptedQueuedOrder = pq;
             if (pq.TargetId >= 0 && pq.TargetType is IgcObjectType.Ship or IgcObjectType.Station or IgcObjectType.Asteroid or IgcObjectType.Warp)
             {
+                Interlocked.Increment(ref bot.OrderAcceptance);
+                Interlocked.Exchange(ref bot.ExpiredRaidOrder, null);
                 bot.OrderedCommand = pq;
                 bot.OrderedWarpOrigin = null;
             }
@@ -6555,6 +6557,8 @@ bool isThreat =
         // spawn-time `Behavior` and from `TargetId` (the current live engagement).
         public short? OrderedTargetId;
         public QueuedCommandState? OrderedCommand;
+        public RaidOrderExpiry? ExpiredRaidOrder;
+        public long OrderAcceptance;
         public QueuedCommandState? AcceptedQueuedOrder;
         public short? OrderedWarpOrigin;
         // P474 — true while this bot is owned by an active run_scenario preset's

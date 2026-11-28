@@ -43,6 +43,8 @@ string loadout = Option("--loadout", "varied");
 string map = Option("--map", "m2xspiderw.igc");
 string mapGen = Option("--mapgen", teams == 3 ? "DiamondRing" : "");
 int mapSeed = int.Parse(Option("--map-seed", "959"), CultureInfo.InvariantCulture);
+bool matched = args.Contains("--matched");
+if (matched && mapGen.Length == 0) throw new ArgumentException("--matched requires a seeded --mapgen");
 int count = int.Parse(Option("--count", "15"), CultureInfo.InvariantCulture);
 int researchScale = int.Parse(Option("--research-scale", "64"), CultureInfo.InvariantCulture);
 string label = Option("--label", $"t{teams}-m{marginTag()}");
@@ -65,6 +67,7 @@ using var server = new Srv();
 var game = new Allegiance.Server.GameConfig
 {
     Name = "P959 strike", Map = map, Teams = teams,
+    CivSeed = matched ? mapSeed : null,
     CivIds = civs.Select(int.Parse).ToArray(),
     SideNames = teams == 3 ? ["Alpha", "Bravo", "Charlie"] : ["Alpha", "Bravo"],
     GameLengthSeconds = gameSeconds, MaxTeamImbalance = 32767, MaxPlayersPerTeam = 40,
@@ -74,9 +77,10 @@ var game = new Allegiance.Server.GameConfig
 };
 server.Boot(new()
 {
-    Port = 0, SideSelectAutoSeatSeconds = 30, ConsoleVerbose = true,
+    BenchmarkSeed = matched ? mapSeed : null, Bots = new() { CivStrategy = args.Contains("--civ-strategy") },
+    BindAddress = System.Net.IPAddress.Loopback.ToString(), Port = 0, SideSelectAutoSeatSeconds = 30, ConsoleVerbose = true,
     Showcase = new() { TechMode = "research", IncomeMultiplier = 5000, ResearchTimeScale = researchScale,
-        FinaleTimeoutSeconds = finaleSeconds },
+        StationKillsDecideDeadline = matched, MatchCapSeconds = matched ? gameSeconds : 3600, FinaleTimeoutSeconds = finaleSeconds },
     LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { Enabled = false } },
     Games = [game],
 });
@@ -139,7 +143,14 @@ try
         ["finale_after_minutes"] = JsonSerializer.SerializeToElement(finaleMinutes),
         ["loadout_mode"] = JsonSerializer.SerializeToElement(loadout),
     };
-    if (teams == 3)
+    if (args.Contains("--raid-delivery-fleet"))
+    {
+        if (count < 5) throw new ArgumentException("--raid-delivery-fleet requires at least five pilots per side");
+        scenario["sides"] = JsonSerializer.SerializeToElement(Enumerable.Range(0, teams).Select(_ =>
+            new { count, fleet = new[] { new { hull = "Bomber", count = count - 4 }, new { hull = "Fighter", count = 3 },
+                new { hull = "Scout", count = 1 } } }));
+    }
+    else if (teams == 3)
         scenario["sides"] = JsonSerializer.SerializeToElement(Enumerable.Range(0, teams)
             .Select(_ => new { count }).ToArray());
     else
@@ -147,6 +158,8 @@ try
         scenario["count_a"] = JsonSerializer.SerializeToElement(count);
         scenario["count_b"] = JsonSerializer.SerializeToElement(count);
     }
+    if (args.Contains("--sustainable-raid")) scenario["sustainable_raid"] = JsonSerializer.SerializeToElement(true);
+    if (matched) scenario["finale_deadline_seconds"] = JsonSerializer.SerializeToElement(finaleSeconds);
     if (reachable) scenario["finale_reachable_strike"] = JsonSerializer.SerializeToElement(true);
     if (survivalMargin >= 0) scenario["finale_survival_margin"] = JsonSerializer.SerializeToElement(survivalMargin);
     if (earlyMinutes > 0) scenario["finale_early_pressure_minutes"] = JsonSerializer.SerializeToElement(earlyMinutes);
@@ -168,7 +181,7 @@ try
                 st.SideVisibility.SetSideVisibility(sideId, true);
     File.WriteAllText(Path.Combine(directory, label + "-geometry.json"), JsonSerializer.Serialize(new
     {
-        Map = map,
+        Map = map, MapGen = mapGen, Seed = mapSeed, Civs = civs,
         Sectors = mission.Sectors.Select(s => new { s.Id, s.Name,
             Stations = s.StationRuntimes.Select(st => new { st.StationId, st.SideId, Type = st.Type.StationTypeId,
                 Class = st.Type.ClassId, Armor = st.Type.MaxArmorHitPoints, Shield = st.Type.MaxShieldHitPoints,
@@ -383,6 +396,32 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
     var finaleStart = triggerLine >= 0 ? lines[triggerLine] : "";
     var refitInWindow = triggerLine < 0 ? 0 : refits.Count(r => r.Line > triggerLine);
     var earlyWaves = lines.Where(l => l.Contains("[strike]") && l.Contains("early pressure")).Select(l => l.Trim()).ToArray();
+    var raidEvents = lines.Where(l => l.StartsWith("[ordinary-raid]")).ToArray();
+    static bool Effective(Hit h) => h.Killed || h.ShieldAfter < h.ShieldBefore || h.HullAfter < h.HullBefore;
+    var usefulHits = hits.Where(Effective).ToArray();
+    var raidFirstHits = raidEvents.Where(l => Field(l, "stage") == "ready").Select(ready =>
+    {
+        var members = Field(ready, "members").Split(',').Select(short.Parse).ToHashSet();
+        var side = Side(ready);
+        var target = Int(ready, "target");
+        var events = raidEvents.Where(l => Field(l, "epoch") == Field(ready, "epoch") && Side(l) == side
+            && Int(l, "target") == target).ToArray();
+        string? Edge(string stage) => events.FirstOrDefault(l => Field(l, "stage") == stage);
+        var launchEvent = Edge("launch");
+        double? launch = launchEvent is null ? null : double.Parse(Field(launchEvent, "sim"), CultureInfo.InvariantCulture);
+        var outcome = Edge("outcome");
+        int launchLine = launchEvent is null ? lines.Length : Array.IndexOf(lines, launchEvent);
+        int endLine = outcome is null ? lines.Length : Array.IndexOf(lines, outcome);
+        // The client clock advances in samples. Slice by the local transcript
+        // to avoid losing hits between the last clock sample and the receipt.
+        // A credited lethal hit may flush at end-of-tick just after GAME_OVER.
+        var hit = damageByLine.Where(kv => kv.Key > launchLine && (kv.Key < endLine
+                || kv.Value.Killed && outcome is not null && Field(outcome, "result") == "credited-kill"
+                    && kv.Value.Ship == Int(outcome, "launcher")))
+            .Select(kv => kv.Value).FirstOrDefault(h => h.AttackerSide == side && h.StationId == target
+                && members.Contains(h.Ship) && Effective(h));
+        return new { Side = side, Target = target, Launch = launch, FirstEffectiveHit = hit?.T, Shooter = hit?.Ship };
+    }).ToArray();
     return new
     {
         Label = label,
@@ -414,6 +453,12 @@ static object Summarize(string log, Mission mission, object[] finale, string lab
         GarrisonKillCount = garrisonKills.Select(k => k.StationId).Distinct().Count(),
         TimeToFirstGarrisonKill = garrisonKills.Length > 0 ? Math.Round(garrisonKills.Min(k => k.T), 1) : (double?)null,
         FinaleEnd = finaleEnd,
+        MatchStartSim = mission.CountdownStart,
+        StationCredit = Enumerable.Range(0, teams).Select(id => mission.StationKills((short)id)).ToArray(),
+        RaidEvents = raidEvents, RaidFirstHits = raidFirstHits,
+        EffectiveHits = usefulHits
+            .Select(h => new { h.T, h.StationId, h.Ship, h.AttackerSide }).ToArray(),
+        LastRestartLosses = lines.Where(l => l.Contains("[sideinactive]") && l.Contains("lost last restart")).ToArray(),
         GameOver = lines.Where(l => l.Contains("[gameover]") && l.Contains("Stage Over")).Select(l => l.Trim()).ToArray(),
         FinaleState = finale.Select(f => JsonSerializer.SerializeToElement(f).GetProperty("state").GetString()).ToArray(),
     };

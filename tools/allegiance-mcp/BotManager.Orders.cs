@@ -54,7 +54,18 @@ internal sealed partial class BotManager
     // Igc/shipIGC.cpp:1936-1939; command defaults Igc/shipIGC.h:2071-2161.
     private bool DriveCommanderOrder(ActiveBot bot, double now)
     {
+        var expiry = bot.ExpiredRaidOrder is null ? null : Interlocked.Exchange(ref bot.ExpiredRaidOrder, null);
         if (bot.OrderedCommand is not { } command || bot.Cs is not { } cs) return false;
+        if (expiry is { Order: var expired } && expiry.Acceptance == bot.OrderAcceptance
+            && expiry.Generation == cs.World.MissionGeneration && expiry.Epoch == cs.World.ResearchBriefing?.Epoch
+            && expired.Recipient == bot.ShipId && expired.Command == command.CommandId
+            && expired.Type == command.TargetType && expired.Target == command.TargetId)
+        {
+            cs.SendOrderChange(bot.ShipId, OrderChange.CidNone, OrderChange.CmdAccepted);
+            bot.OrderedCommand = null;
+            bot.OrderedTargetId = bot.TargetId = null;
+            return false;
+        }
         if (bot.OrderedWarpOrigin is { } origin && CsSector(cs) != origin)
         {
             bot.OrderedCommand = null; bot.OrderedWarpOrigin = null; return false;

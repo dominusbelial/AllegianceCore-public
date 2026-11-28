@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900, string? LogonFile = null, int? BackfillSeats = null, string[]? BotNames = null, string? ClientVersion = null, BotTransportOptions? Transport = null)
+internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null, double RecoveryDeadlineSeconds = 900, string? LogonFile = null, int? BackfillSeats = null, string[]? BotNames = null, string? ClientVersion = null, BotTransportOptions? Transport = null, bool SustainableRaid = false)
 {
     internal static DriverOptions Parse(string[] args)
     {
@@ -20,6 +20,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
         string? skirmish = null;
         double recoveryDeadline = 900;
         string? logonFile = null;
+        bool sustainableRaid = false;
         bool explicitWorkers = false;
         int? backfillSeats = null;
         string[]? botNames = null;
@@ -34,6 +35,10 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
                     if (!double.TryParse(args[i + 1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out recoveryDeadline)
                         || !double.IsFinite(recoveryDeadline) || recoveryDeadline <= 0 || recoveryDeadline > 86400)
                         throw new ArgumentException("--recovery-deadline-seconds requires a number greater than 0 and at most 86400");
+                    break;
+                case "--sustainable-raid":
+                    if (!bool.TryParse(args[i + 1], out sustainableRaid))
+                        throw new ArgumentException("--sustainable-raid requires true or false");
                     break;
                 case "--backfill-seats":
                     if (backfillSeats is not null || !int.TryParse(args[i + 1], out int seats) || seats is < 1 or > 200)
@@ -80,13 +85,14 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
             throw new ArgumentException("--logon-file is a loopback identity fixture only.");
         if (backfillSeats is not null && (worker is not null || skirmish is not null || workers != 1))
             throw new ArgumentException("--backfill-seats owns one driver; cannot combine with worker/skirmish modes");
+        if (sustainableRaid && backfillSeats is null) throw new ArgumentException("--sustainable-raid requires --backfill-seats");
         if (clientVersion is not null && backfillSeats is null) throw new ArgumentException("--client-version requires --backfill-seats");
         if (botNames is not null && backfillSeats is null) throw new ArgumentException("--bot-names requires --backfill-seats");
         transport.Validate();
         if (logonFile is not null && (transport.Protocol == "ws" || transport.Fraction is > 0)
             && !Allegiance.Core.Transport.WebSocketEndpoint.FromConfiguration(transport.Url!).Uri.IsLoopback)
             throw new ArgumentException("--logon-file requires a loopback WebSocket endpoint too");
-        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline, logonFile, backfillSeats, botNames, clientVersion, transport);
+        return new(args[0], port, workers, worker, parent, skirmish, recoveryDeadline, logonFile, backfillSeats, botNames, clientVersion, transport, sustainableRaid);
     }
 }
 
@@ -113,6 +119,7 @@ internal static class Program
             if (options.BackfillSeats is { } seats)
             {
                 using var manager = new BotManager(options.Host, options.Port, backfill: true, clientVersion: options.ClientVersion, transport: options.Transport);
+                manager.SustainableRaidEnabled = options.SustainableRaid;
                 var driver = new BackfillDriver(manager, seats, options.BotNames);
                 await driver.RunAsync(stop.Token);
             }

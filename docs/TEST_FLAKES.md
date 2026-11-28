@@ -11505,3 +11505,37 @@ Targeted P1101/P1102/P1103 + broadcast/transport/treasure/discovery set: 249/249
 | `ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout` | fail 188 ms | Class-level A/B, 10 runs each: base `dd973eb3` 7/10 runs with a failure, P1102 7/10, same two methods — pre-existing, not P1102 |
 | `SideEliminationLiveTests.Debug_mode_elimination_still_declares_winner_with_zero_players` | fail 19 s (lethal-hit timeout) | pass / pass / pass, 0.34–0.35 s |
 | `DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station` | fail 3 s | pass / pass / pass |
+
+### P1104 local Fast qualification
+
+`P841MissionRulesCertifyTests.Departing_flag_carrier_drops_flag_treasure`
+timed out while seating its observer (`P841OBS did not seat`) in the full Fast
+sweep. It passed in all three method-only runs. The fixture had not reached its
+flag-drop assertion. [P1104 qualification](reports/FIRST_SUSTAINABLE_ATTACK_P1104.md)
+
+The intermediate Fast sweep also timed
+`P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack`
+at 16.072 seconds against its 16.033-second calibrated limit. The assertion
+passed. All three isolated method runs passed in approximately one second each.
+## P1105 Fast qualification, 2026-11-28
+
+Two previously unlisted parameter cases of the ledgered
+`P942ResearchCommanderTests.Generated_commander_funds_buyable_research_before_optional_production`
+passed their assertions and exceeded the calibrated 17.693 s limit. Civ 18 took
+20.861 s in the sweep and 2.609, 2.740 and 2.749 s in three exact-case reruns.
+Civ 4 took 22.292 s in the sweep and 2.446, 2.469 and 2.527 s alone.
+The sweep ran alongside paced bot matches. [P1105 qualification](reports/STRIKE_WEAPON_ENVELOPE_P1105.md)
+## P1106 Fast sweep, 2026-11-28
+
+A Core Fast test host exited after 4,389 passes and three skips with an unhandled
+`System.InvalidOperationException` from `NetworkStream.Read` (“The stream does not support reading”).
+The stack ran through `TcpTransport.ReadSome`, `ReadExactly`, `ReadFrame` and the client
+`ReadDataLoop` on its background thread. The log showed the P841 rejoining-player fixture
+and P847 non-leader-exit fixture seating clients at the time. Each method passed on all
+three isolated reruns. The first full Fast invocation completed Core without this exception.
+The owning test for the background exception remains unidentified.
+[P1106 qualification](reports/HOME_SECTOR_SATURATION_P1106.md)
+
+## P1104b Fast sweep, 2026-11-28
+
+`LiveRelaunchTests.Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied` failed once in the full Fast sweep. Both clients had received the relaunch. At `LiveRelaunchTests.cs:201`, the message cookie was 2 and the lander's current pose cookie was 1. Three method-only runs passed in fresh processes (625, 461 and 480 ms). The cause of the timing difference remains open. [P1104b qualification](reports/FIRST_SUSTAINABLE_ATTACK_P1104.md#p1104b-review-fixes)

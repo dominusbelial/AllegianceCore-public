@@ -311,6 +311,12 @@ internal static class StrikeVolley
     /// The loopback test uses this for the massed and the trickle runs.</summary>
     internal static VolleyResult Replay(StationProfile station,
         IReadOnlyList<(double At, Loadout Owner, Shot Shot)> schedule, double horizon)
+        => ReplayInOrder(station, schedule.OrderBy(s => s.At), horizon);
+
+    // A caller merging ordered mount streams can stop producing rounds as
+    // soon as the station dies or its observation budget is exhausted.
+    internal static VolleyResult ReplayInOrder(StationProfile station,
+        IEnumerable<(double At, Loadout Owner, Shot Shot)> schedule, double horizon)
     {
         float shield = station.MaxShield > 0 ? 1f : 0f;
         float armor = 1f;
@@ -331,7 +337,7 @@ internal static class StrikeVolley
             now = until;
         }
 
-        foreach (var (at, owner, shot) in schedule.OrderBy(s => s.At))
+        foreach (var (at, owner, shot) in schedule)
         {
             if (at > horizon) break;
             Regenerate(at);

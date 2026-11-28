@@ -51,6 +51,22 @@ internal sealed partial class BotManager
         lock (_researchGate) return _research.Values.Select(c => c.Telemetry).OfType<ResearchCommander.Report>().OrderBy(r => r.Side).ToArray();
     }
 
+    internal ResearchTactics TacticsForSide(short side, string epoch)
+    {
+        if (!_researchTactics.TryGetValue(side, out var tactics) || tactics.Epoch != epoch)
+            _researchTactics[side] = tactics = (epoch, new ResearchTactics());
+        return tactics.Policy;
+    }
+
+    internal string? OrdinaryRaidEpoch(Allegiance.ClientCore.State.ClientWorld world)
+    {
+        if (!SustainableRaidEnabled) return null;
+        var goals = world.MissionGoals;
+        return world.ResearchBriefing is { TechMode: "research" } briefing
+            && !goals.IsConquestGame && !goals.IsFlagsGame && !goals.IsArtifactsGame
+            && !goals.IsProsperityGame && !goals.IsDeathMatchGame && !goals.IsTerritoryGame ? briefing.Epoch : null;
+    }
+
     /// <summary>Independent low-frequency loop: seating a commander must not block combat decisions.</summary>
     private void ResearchLoop()
     {
@@ -78,7 +94,10 @@ internal sealed partial class BotManager
                         peer.SendPing();
                         // Read pilots before taking the commander gate: the combat
                         // loop also takes individual session gates under _gate.
-                        var tactical = ResearchTacticalSnapshot(side);
+                        string? raidEpoch = null;
+                        if (SustainableRaidEnabled)
+                            lock (peer.Gate) raidEpoch = OrdinaryRaidEpoch(peer.World);
+                        var tactical = ResearchTacticalSnapshot(side, raidEpoch);
                         // P973 — the side's own knowledge record (per mission), read BEFORE
                         // the peer gate so the intel lock is never taken inside it (the
                         // intel scan and SideIntelReport take them in the other order).
@@ -139,24 +158,31 @@ internal sealed partial class BotManager
                                 // tactical commander merely because it has a plan.
                                 if (!ResearchTacticsEnabled(briefing))
                                 { _researchTactics.Remove(side); continue; }
-                                if (!_researchTactics.TryGetValue(side, out var tactics) || tactics.Epoch != briefing.Epoch)
-                                    _researchTactics[side] = tactics = (briefing.Epoch, new ResearchTactics());
+                                var policy = TacticsForSide(side, briefing.Epoch);
                                 var targets = ObserveTacticalTargets(peer.World, side).Concat(tactical.Targets)
                                     .DistinctBy(t => (t.Type, t.Id)).ToArray();
-                                foreach (var order in tactics.Policy.Tick(peer.World.SimulationTimeSeconds,
+                                var raid = raidEpoch == briefing.Epoch ? ObserveRaid(peer.World, briefing.Plan, core,
+                                    tactical.FinaleTriggered, tactical.Members) : null;
+                                var previousRaid = policy.ActiveRaid;
+                                var orders = policy.Tick(peer.World.SimulationTimeSeconds,
                                     peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets,
                                     tactical.StrikeRoster, ObserveEnemyProsperity(peer.World, side, core),
-                                    peer.World.SideRoster?.Sides.Length > 2 ? () => MultiSideEnemy.Choose(peer.World, side) : null))
+                                    peer.World.SideRoster?.Sides.Length > 2 ? () => MultiSideEnemy.Choose(peer.World, side) : null, raid);
+                                if (raid is not null)
+                                    UpdateRaidOrders(peer.World, side, briefing.Epoch, policy, previousRaid,
+                                        tactical.Bots, orders);
+                                foreach (var order in orders)
                                 {
                                     peer.SendChat("", ChatTarget.Individual, oidRecipient: order.Recipient,
                                         commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);
                                     Console.WriteLine($"[commander] side={side} sender={peer.World.MyShipId} recipient={order.Recipient} command={order.Command} target={order.Type}#{order.Target}"
-                                        + (tactics.Policy.EconomicRaidActive && targets.Any(t => t.Type == order.Type && t.Id == order.Target && t.Miner && !t.Friendly)
+                                        + (policy.EconomicRaidActive && targets.Any(t => t.Type == order.Type && t.Id == order.Target && t.Miner && !t.Friendly)
                                             ? " economyRaid=true" : ""));
                                 }
+                                if (raid is not null) LogRaidEvents(policy, briefing.Epoch, side);
                                 // SC8 — one summary line per strike-wave commit/end, where
                                 // the other commander telemetry is printed (not per tick).
-                                foreach (var wave in tactics.Policy.TakeStrikeEvents())
+                                foreach (var wave in policy.TakeStrikeEvents())
                                 {
                                     // Once per wave edge; UTC closes the b63 worker/server
                                     // join gap. Target geometry identifies expansions.

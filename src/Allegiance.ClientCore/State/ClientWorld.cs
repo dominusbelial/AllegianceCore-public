@@ -514,7 +514,7 @@ public sealed partial class ClientWorld
     /// that never saw the station. Absence from <see cref="Stations"/> is NOT: under
     /// native map discovery (P797) a station a side has never observed is simply
     /// not exported (<c>Fsmission.cpp:4169-4250</c>).</summary>
-    private readonly HashSet<short> _destroyedStations = new();
+    private readonly Dictionary<short, short> _destroyedStations = new();
     private Dictionary<short, DataWarpIGC> _warps = new();
     private Dictionary<short, DataAsteroidIGC> _asteroids = new();
 
@@ -1559,7 +1559,12 @@ public sealed partial class ClientWorld
     /// for <paramref name="stationId"/> in the current mission? Consumers that need
     /// "destroyed" must ask this instead of inferring death from a station's
     /// absence, which under native fog only means "not observed".</summary>
-    public bool StationWasDestroyed(short stationId) => _destroyedStations.Contains(stationId);
+    public bool StationWasDestroyed(short stationId) => _destroyedStations.ContainsKey(stationId);
+    public short? StationDestroyer(short stationId) => _destroyedStations.TryGetValue(stationId, out var ship) ? ship : null;
+
+    // The export table remembers discoveries. This batch is the server’s latest
+    // side-visible set (FedSrv/fsship.cpp:817-849), including unchanged health.
+    public (StationsUpdate? Batch, double At) LatestStationObservation { get; private set; }
 
     /// <summary>Warps keyed by WarpId, from EXPORT(26)/OT_warp (7).</summary>
     public IReadOnlyDictionary<short, DataWarpIGC> Warps => _warps;
@@ -2022,6 +2027,9 @@ public sealed partial class ClientWorld
     /// first GAME_OVER arrives — the MonoGame client shows its on-screen
     /// result panel only once this is set (i.e. only on a real end-of-game).</summary>
     public GameOver? GameOverResult => _gameOver;
+    // Subscribers can finish mission-scoped observations before MISSION_STAGE
+    // Over clears the station and launcher records in the same receive batch.
+    public event Action? GameOverReceived;
 
     /// <summary>The local ship's missile lock (P230) — the snapshot delivered on
     /// the owner-only <c>MISSILE_LOCK_UPDATE(204)</c> (server-computed, P226).
@@ -2370,6 +2378,7 @@ public sealed partial class ClientWorld
         _asteroids.Clear();
         _asteroidLive.Clear();
         _stationLive.Clear();
+        LatestStationObservation = default;
         _projectiles.Clear();
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
@@ -3623,6 +3632,7 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(StationsUpdate u)
     {
+        LatestStationObservation = (u, SimulationTimeSeconds);
         foreach (var e in u.Entries)
             _stationLive[e.StationId] = new StationLiveState(
                 HullFraction: e.BpHullFraction / 240.0f,
@@ -4072,7 +4082,7 @@ public sealed partial class ClientWorld
         // P896 — record the evidence BEFORE the table lookup: the message is a
         // WHOLE-MISSION broadcast, so it also arrives for a station this world
         // never had exported (an unobserved enemy station under P797 fog).
-        _destroyedStations.Add(destroyed.StationId);
+        _destroyedStations[destroyed.StationId] = destroyed.Launcher;
         MarkSnapshotDirty();
         if (!_stations.TryGetValue(destroyed.StationId, out var st)) return;
         bool friendly = IsFriendlyStationSide(st.SideId);
@@ -5566,6 +5576,7 @@ public sealed partial class ClientWorld
         _asteroids.Clear();
         _asteroidLive.Clear();
         _stationLive.Clear();
+        LatestStationObservation = default;
         _projectiles.Clear();
         _ownProjectileCount = 0;
         _projectileDrainCursor = 0;
@@ -5670,6 +5681,7 @@ public sealed partial class ClientWorld
         // for the on-screen result panel. The stage is NOT touched here; see
         // the class remark above (P481).
         _gameOver = gameOver;
+        GameOverReceived?.Invoke();
         // A GAME_OVER begins a new result; following native 50-player chunks
         // update the same roster (clintlib/appmsg.cpp:3048-3111). P975 — the index
         // and the dropped-record counter reset with it.

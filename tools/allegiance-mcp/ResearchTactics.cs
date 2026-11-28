@@ -13,7 +13,7 @@ internal sealed class ResearchTactics
     // (legal lone wolf). Both default to null/false so SC7/SC8/SC9 fixtures
     // keep their exact legacy behaviour.
     internal sealed record Pilot(short Id, short Sector, Vector3 Position, bool Support, bool Strike,
-        StrikeVolley.Loadout? Loadout = null, bool CloakCapable = false);
+        StrikeVolley.Loadout? Loadout = null, bool CloakCapable = false, SustainableRaid.Fit? Raid = null);
     internal sealed record Target(short Id, IgcObjectType Type, short Sector, Vector3 Position,
         bool Friendly, bool Damaged = false, bool Bomber = false,
         bool Garrison = false, short DestinationSector = -1,
@@ -152,6 +152,16 @@ internal sealed class ResearchTactics
     // P791 — minimal shared phase signal for the support driver: whether a
     // strike wave is committed (rally gathered/committed, one shared station,
     // ResearchTactics.cs SC-7/8/9) and which sector it is headed for.
+    private SustainableRaid? _firstRaid;
+    internal SustainableRaid.Wing? ActiveRaid => _firstRaid?.Active;
+    private Order[] _releasedRaidOrders = [];
+    internal Order[] TakeReleasedRaidOrders()
+    {
+        var released = _releasedRaidOrders;
+        _releasedRaidOrders = [];
+        return released;
+    }
+    internal SustainableRaid.Event[] TakeRaidEvents() => _firstRaid?.TakeEvents() ?? [];
     internal bool StrikeWaveActive => _waveMembers.Count > 0 && _strikeTarget is not null;
     internal short StrikeSector => _strikeSector;
     private Target? _rally;
@@ -195,10 +205,18 @@ internal sealed class ResearchTactics
 
     internal bool EconomicRaidActive { get; private set; }
 
-    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1, double enemyProsperityProgress = 0, Func<short?>? selectEnemy = null)
+    internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets, int strikeRoster = -1, double enemyProsperityProgress = 0, Func<short?>? selectEnemy = null, SustainableRaid.Observation? raid = null)
     {
         EconomicRaidActive = started && enemyProsperityProgress >= .1;
-        if (!started) return [];
+        if (!started)
+        {
+            if (raid is not null && _firstRaid is not null)
+            {
+                _firstRaid.Observe(time, false, raid, [], targets, pilots);
+                _releasedRaidOrders = _firstRaid.TakeReleasedOrders();
+            }
+            return [];
+        }
         foreach (short id in _sent.Keys.Where(id => !pilots.Any(p => p.Id == id)).ToArray()) _sent.Remove(id);
         var result = new List<Order>();
         var friendlyStations = targets.Where(t => t.Friendly && t.Type == IgcObjectType.Station).ToArray();
@@ -213,6 +231,41 @@ internal sealed class ResearchTactics
             _selectedEnemy ??= selectEnemy();
             enemyStations = enemyStations.Where(t => t.Side == _selectedEnemy).ToArray();
         }
+        if (raid is not null)
+        {
+            _firstRaid ??= new();
+            var previous = _firstRaid.Active;
+            _firstRaid.Observe(time, true, raid, enemyStations, targets, pilots);
+            _releasedRaidOrders = _firstRaid.TakeReleasedOrders();
+            foreach (var released in _releasedRaidOrders) _sent.Remove(released.Recipient);
+            if (previous is null && _firstRaid.Active is { } changed)
+            {
+                foreach (short id in changed.Members) _sent.Remove(id);
+                _sent.Remove(changed.Defender);
+            }
+        }
+        if (_firstRaid?.Active is { } wing && raid is not null)
+        {
+            bool Claimed(Pilot p) => p.Id == wing.Defender || wing.Members.Contains(p.Id) && _firstRaid.Available(p.Id);
+            // Leave the chosen defender at its current restart base; scouts
+            // retain their exploration duties. Use the existing order budget.
+            foreach (var pilot in pilots.Where(Claimed)
+                         .OrderByDescending(p => p.Id == wing.Defender)
+                         .ThenBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity)
+                         .ThenBy(p => p.Id))
+            {
+                bool guard = pilot.Id == wing.Defender;
+                var order = new Order(pilot.Id, guard ? OrderChange.CidDefend : OrderChange.CidAttack,
+                    IgcObjectType.Station, guard ? wing.Home : wing.Station.Id);
+                if (!ShouldSend(pilot, order, time, 0, guard ? pilot.Sector : wing.Station.Sector)) continue;
+                RecordSend(pilot, order, time, 0);
+                result.Add(order);
+                _firstRaid.SentOrder(time, order);
+                if (result.Count == MaxOrdersPerTick) break;
+            }
+            if (strikeRoster >= 0) strikeRoster -= pilots.Count(p => p.Strike && !p.Support && Claimed(p));
+            pilots = pilots.Where(p => !Claimed(p)).ToArray();
+        }
         // Strike pilots: pure anti-base-capable hulls (never support). Support/bombers keep their repair duty.
         var strikePilots = pilots.Where(p => p.Strike && !p.Support).ToArray();
         // SC9 — the quorum is stated against the side's whole strike roster (docked
@@ -223,13 +276,13 @@ internal sealed class ResearchTactics
         // ---- SC7/SC8/SC9 strike wave: rally with goto, then focus ONE shared station ----
         if (strikePilots.Length == 0)
         {
-            EndWave(time, "no-strike-pilots");
+            if (_waveMembers.Count > 0 || _staging) EndWave(time, "no-strike-pilots");
             // Keep the chosen rally: bomber crews dock to reload all the time, and
             // the next launch must re-form at the same aleph (SC8). Only the timeout
             // restarts, so returning pilots rally afresh.
             _rallySince = double.NaN;
         }
-        if (strikePilots.Length > 0)
+        else
         {
             // SC9 — re-pick the target at every wave boundary. While a wave is in
             // flight the target stays put (SC7: commit, don't flick). This is where
@@ -355,6 +408,7 @@ internal sealed class ResearchTactics
                     // next wave. While staging, nobody may shortcut: even a pilot
                     // already at the station holds for the mass. A lone wolf flies to
                     // its OWN entry aleph, never the visible element's lane.
+                    if (result.Count >= MaxOrdersPerTick) break;
                     bool stagingNow = _staging && _waveMembers.Count == 0;
                     bool wolf = _loneWolfRoute.TryGetValue(pilot.Id, out var wolfRoute);
                     bool alreadyOn = !stagingNow && pilot.Sector == station.Sector
