@@ -11464,3 +11464,9 @@ failed once (37 ms), then its class passed 3/3 alone. Both are already ledgered 
 | `P847MissionRulesCertifyTests.Npc_cash_pickup_pays_the_side_out_immediately` | One full-suite run missed the expected 700 PAYDAY in the server fixture. The method passed in three fresh isolated hosts. |
 
 The separate P1100 replay compares complete backbuffers on the same software renderer. [Qualification report](reports/RENDER_SNAPSHOT_COHERENCE_P1100.md)
+
+**P1100 merge gate (2026-11-27), new entry.** `P1066NativeSceneTests.Warm_shared_light_strobes_and_dust_preparation_allocate_zero_bytes`
+failed once in round 1 of three full `Tier!=Live` MonoGame runs (43 ms), then its class passed 3/3 alone. Same family as
+the `JetStoresCautionTests` zero-allocation sighting: a thread allocation counter read while the parallel suite runs.
+Rounds 2 and 3 were clean. The P1100 merge also needed two follow-ups where it meets P1098 (unload resets the sky
+latches to `null`; the P1098 sky proof now publishes the frame snapshot's sky before drawing), both folded into the commit.
