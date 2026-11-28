@@ -2299,6 +2299,7 @@ public sealed partial class ClientWorld
 
     private void ResetCore(bool bumpMissionGeneration)
     {
+        _observerTerrainVersion = null;
         DetachBotWorld();
         OwnMissilesFired = 0;
         _waitingForRestart = false;
@@ -5520,6 +5521,7 @@ public sealed partial class ClientWorld
 
     public void BeginNextMission()
     {
+        _observerTerrainVersion = null;
         if (_botWorld is not null) _botWorlds!.Retire(_botWorld);
         DetachBotWorld();
         OwnMissilesFired = 0;

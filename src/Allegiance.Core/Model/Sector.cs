@@ -45,6 +45,9 @@ public sealed partial class Sector : IClusterIgc
     /// </summary>
     public IReadOnlyList<ResolvedWarp> Warps => _warps;
 
+    /// <summary>Changes when the ordered static warp or asteroid records change.</summary>
+    public long TerrainRevision { get; private set; }
+
     /// <summary>This sector's stations.</summary>
     public IReadOnlyList<DataStationIGC> Stations => _stations;
 
@@ -431,12 +434,14 @@ public sealed partial class Sector : IClusterIgc
     {
         ArgumentNullException.ThrowIfNull(warp);
         bool removed = _warps.Remove(warp);
+        if (removed) TerrainRevision++;
         if (removed) RemovePickable(warp);
         if (removed) { Mission?.DeleteWarp(warp); Mission?.DetachThingSite(warp); }
         return removed;
     }
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
+        TerrainRevision++;
         _asteroids.AddRange(asteroids);
         foreach (var a in asteroids)
         {
@@ -450,6 +455,7 @@ public sealed partial class Sector : IClusterIgc
     /// injection in the loopback mining tests).</summary>
     internal void AttachAsteroid(Asteroid asteroid)
     {
+        TerrainRevision++;
         _asteroids.Add(asteroid.Data);
         _mineable.Add(asteroid);
         AddPickable(asteroid);
@@ -458,6 +464,7 @@ public sealed partial class Sector : IClusterIgc
     }
     internal void AttachWarp(ResolvedWarp warp)
     {
+        TerrainRevision++;
         _warps.Add(warp);
         AddPickable(warp);
     }
@@ -596,7 +603,7 @@ public sealed partial class Sector : IClusterIgc
     {
         // Native Terminate removes the rock from the cluster, including future join exports
         // (FedSrv.CPP:11459-11462). Keep the port's record and runtime lists in agreement.
-        _asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId);
+        if (_asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId) != 0) TerrainRevision++;
         bool removed = _mineable.Remove(asteroid);
         if (removed) RemovePickable(asteroid);
         if (removed) { Mission?.DeleteAsteroid(asteroid); Mission?.DetachThingSite(asteroid); }

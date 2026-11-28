@@ -35,6 +35,10 @@ namespace Allegiance.Core.Wire;
 /// </summary>
 public readonly record struct StationsUpdateEntry(short StationId, byte BpHullFraction, byte BpShieldFraction)
 {
+    public static StationsUpdateEntry FromStation(Station station) => new(station.StationId,
+        CompactQuant.Percent(Math.Clamp(station.ArmorFraction, 0f, 1f)),
+        CompactQuant.Percent(Math.Clamp(station.ShieldFraction, 0f, 1f)));
+
     /// <summary>Wire width of one record = native <c>sizeof(StationState)</c> = 4.</summary>
     public const int Size = 4;
 
@@ -119,10 +123,7 @@ public sealed class StationsUpdate : IFedMessage
     public static StationsUpdate FromStations(IEnumerable<Station> stations)
     {
         var entries = stations
-            .Select(st => new StationsUpdateEntry(
-                st.StationId,
-                CompactQuant.Percent(Math.Clamp(st.ArmorFraction, 0f, 1f)),
-                CompactQuant.Percent(Math.Clamp(st.ShieldFraction, 0f, 1f))))
+            .Select(StationsUpdateEntry.FromStation)
             .ToArray();
         return new StationsUpdate { Entries = entries };
     }

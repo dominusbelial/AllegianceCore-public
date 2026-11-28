@@ -197,7 +197,7 @@ public sealed partial class Game1
             lock (_session.Gate)
             {
                 if (_observation?.Epoch != frame.Epoch) _session.World.Reset();
-                _session.World.ApplyLocalObservation(frame.Objects, frame.Projectiles, frame.Missiles);
+                frame.ApplyTo(_session.World);
                 // P789 — the throttled ship-count sample rides this EXISTING
                 // observer lock; the recorder never takes _session.Gate itself.
                 SampleSessionPerformanceSpectatorLocked(_session.World);

@@ -2512,6 +2512,12 @@ list in **reverse**.
   worker passes and individual bot decisions. The skirmish heartbeat reports the
   worst worker streak and the affected bots. A recoverable host warning appears at
   three failures. Proof in `docs/reports/BOT_DECISION_HEALTH_P1095.md`.
+- **Skirmish spectator observation (P1099)** — `src/Allegiance.SinglePlayer/SkirmishObservationSampler.cs`
+  captures a coherent local sample under the embedded tick gate and assembles the ordered
+  frame after release. Warp/rock membership uses the sector's terrain revision. Station
+  membership, identity and live damage are sampled independently.
+  `src/Allegiance.ClientCore/State/ClientWorld.LocalObserver.cs` applies ordered frames.
+  Evidence is in `docs/reports/OBSERVER_EXPORT_COST_P1099.md`.
 - **Station attack alerts (P1007)** — `src/Allegiance.Core/Sim/Station.cs`
   raises damage notifications after friendly immunity, experience scaling and
   shield eligibility; `src/Allegiance.Server/Server.Combat.cs` sends the native
